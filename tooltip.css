@@ -1,0 +1,42 @@
+.tooltip {
+	display: none;
+	position: absolute;
+	background-color: rgb(240,255,255); /* azure */
+	border: 2px solid rgb(128,0,128); /* purple */
+	border-radius: 20px;
+	box-shadow: 0 0 6px 0 rgb(128,0,128); /* offset-x offset-y blur-radius spread-radius color */
+	padding: 4px 10px 4px 10px; /* top right bottom left */
+	text-align: center;
+}
+.ttbq { /* ToolTip BlockQuote */
+	text-align: justify;
+	width: 500px;
+	white-space: normal;
+}
+.tooltipArrowDiv {
+	overflow: hidden;
+	position: absolute;
+	bottom: -40px;
+	width: 28px;
+	height: 40px;
+}
+.tooltipArrow1 {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	border-left: 14px double rgba(128,0,128,0);
+	border-right: 14px double rgba(128,0,128,0);
+	border-top: 40px solid rgb(128,0,128);
+}
+.tooltipArrow2 {
+	position: absolute;
+	left: 0;
+	top: -8px;
+	width: 0;
+	height: 0;
+	border-left: 14px double rgba(240,255,255,0);
+	border-right: 14px double rgba(240,255,255,0);
+	border-top: 40px solid rgb(240,255,255);
+}
