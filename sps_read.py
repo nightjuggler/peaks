@@ -206,7 +206,8 @@ def printLandManagementAreas():
 
 ngsLinkPrefix = 'http://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 elevFromNGS = re.compile('^([0-9]{4}\\.[0-9])m \\(NAVD 88\\) NGS Data Sheet &quot;[ A-Za-z]+&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
-elevFromTopo = re.compile('^((?:[0-9]{4}(?:\\.[0-9])?m)|(?:[0-9]{4,5}\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;[\\. A-Za-z]+, CA&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
+elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;[\\. A-Za-z]+, CA&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
+contourIntervals = (10, 20, 40, 80)
 
 def checkElevationTooltip(peak, lineNumber):
 	if peak.elevationLink.startswith(ngsLinkPrefix):
@@ -224,16 +225,28 @@ def checkElevationTooltip(peak, lineNumber):
 			badLine(lineNumber)
 		elevation, quad, scale1, scale2, year = m.groups()
 		scale = scale1 + scale2
-		if not (quad == '7.5' and scale == '24000' or quad == '15' and scale == '62500'):
+		if quad == '7.5' and scale != '24000' or quad == '15' and scale != '62500':
 			badLine(lineNumber)
 		suffix = '_{}_{}.jpg'.format(year, scale)
 		if not peak.elevationLink.endswith(suffix):
 			badLine(lineNumber)
-		if elevation[-1] == 'm':
-			elevation = int(float(elevation[:-1]) / 0.3048 + 0.5)
+		unit = elevation[-1]
+		elevation = elevation[:-1]
+		if '-' in elevation:
+			elevation, elevationMax = elevation.split('-')
+			elevationMin = int(elevation)
+			elevationMax = int(elevationMax)
+			interval = elevationMax - elevationMin + 1
+			if interval not in contourIntervals or elevationMin % interval != 0:
+				sys.exit("Elevation range in tooltip not valid on line {0}".format(lineNumber))
+			suffix = '+'
 		else:
-			elevation = int(elevation[:-1])
-		elevation = '{},{:03}'.format(*divmod(elevation, 1000))
+			suffix = ''
+		if unit == 'm':
+			elevation = int(float(elevation) / 0.3048 + 0.5)
+		else:
+			elevation = int(elevation)
+		elevation = '{},{:03}'.format(*divmod(elevation, 1000)) + suffix
 		if elevation != peak.elevation:
 			sys.exit("Elevation in tooltip doesn't match on line {0}".format(lineNumber))
 		return
@@ -247,7 +260,7 @@ def readHTML():
 	column1Pattern = re.compile('^<td(?: id="SPS([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
 	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=t4">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2})?</td>$')
 	elevationPattern1 = re.compile('^<td>([0-9]{1,2},[0-9]{3}\\+?)</td>$')
-	elevationPattern2 = re.compile('^<td><span><a href="([^"]+)">([0-9]{1,2},[0-9]{3})</a><div class="tooltip">(.+)</div></span></td>$')
+	elevationPattern2 = re.compile('^<td><span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">(.+)</div></span></td>$')
 	gradePattern = re.compile('^<td>Class ([12345](?:s[2345])?)</td>$')
 	prominencePattern1 = re.compile('^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$')
 	prominencePattern2 = re.compile('^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$')
