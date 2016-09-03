@@ -13,8 +13,6 @@ class Peak(object):
 		self.longitude = ''
 		self.zoom = ''
 		self.elevation = ''
-		self.elevationLink = None
-		self.elevationTooltip = None
 		self.prominence = ''
 		self.prominenceLink = None
 		self.grade = ''
@@ -211,18 +209,18 @@ elevFromNGS = re.compile('^([0-9]{4}\\.[0-9])m \\(NAVD 88\\) NGS Data Sheet &quo
 elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), CA&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
 contourIntervals = (10, 20, 40, 80)
 
-def checkElevationTooltip(peak, lineNumber):
-	if peak.elevationLink.startswith(ngsLinkPrefix):
-		m = elevFromNGS.match(peak.elevationTooltip)
-		if m is None or peak.elevationLink[len(ngsLinkPrefix):] != m.group(2):
+def checkElevationTooltip(e, lineNumber):
+	if e.link.startswith(ngsLinkPrefix):
+		m = elevFromNGS.match(e.tooltip)
+		if m is None or e.link[len(ngsLinkPrefix):] != m.group(2):
 			badLine(lineNumber)
 		elevation = int(float(m.group(1)) / 0.3048 + 0.5)
 		elevation = '{},{:03}'.format(*divmod(elevation, 1000))
-		if elevation != peak.elevation:
+		if elevation != e.elevation:
 			sys.exit("Elevation in tooltip doesn't match on line {0}".format(lineNumber))
 		return
-	if peak.elevationLink.startswith(topoLinkPrefix):
-		m = elevFromTopo.match(peak.elevationTooltip)
+	if e.link.startswith(topoLinkPrefix):
+		m = elevFromTopo.match(e.tooltip)
 		if m is None:
 			badLine(lineNumber)
 		elevation, quad, scale1, scale2, quadName, year = m.groups()
@@ -231,7 +229,7 @@ def checkElevationTooltip(peak, lineNumber):
 			badLine(lineNumber)
 		quadName = quadName.replace('.', '')
 		quadName = quadName.replace(' ', '%20')
-		m = topoLinkPattern.match(peak.elevationLink[len(topoLinkPrefix):])
+		m = topoLinkPattern.match(e.link[len(topoLinkPrefix):])
 		if m is None:
 			badLine(lineNumber)
 		if quadName != m.group(1) or year != m.group(2) or scale != m.group(3):
@@ -253,10 +251,56 @@ def checkElevationTooltip(peak, lineNumber):
 		else:
 			elevation = int(elevation)
 		elevation = '{},{:03}'.format(*divmod(elevation, 1000)) + suffix
-		if elevation != peak.elevation:
+		if elevation != e.elevation:
 			sys.exit("Elevation in tooltip doesn't match on line {0}".format(lineNumber))
 		return
 	badLine(lineNumber)
+
+class Elevation(object):
+	pattern1 = re.compile('^([0-9]{1,2},[0-9]{3}\\+?)')
+	pattern2 = re.compile('^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">([^"<>]+)</div></span>')
+
+	def __init__(self, elevation, link=None, tooltip=None):
+		self.elevation = elevation
+		self.link = link
+		self.tooltip = tooltip
+
+	def html(self):
+		if self.link is None:
+			return self.elevation
+
+		return '<span><a href="{}">{}</a><div class="tooltip">{}</div></span>'.format(
+			self.link, self.elevation, self.tooltip)
+
+def parseElevation(line, lineNumber):
+	elevations = []
+
+	if line[:4] != '<td>' or line[-6:] != '</td>\n':
+		badLine(lineNumber)
+	line = line[4:-6]
+
+	while True:
+		m = Elevation.pattern1.match(line)
+		if m is not None:
+			e = Elevation(m.group(1))
+		else:
+			m = Elevation.pattern2.match(line)
+			if m is None:
+				badLine(lineNumber)
+
+			e = Elevation(m.group(2), m.group(1), m.group(3))
+			checkElevationTooltip(e, lineNumber)
+
+		elevations.append(e)
+
+		line = line[m.end():]
+		if line == '':
+			break
+		if line[:4] != '<br>':
+			badLine(lineNumber)
+		line = line[4:]
+
+	return '<br>'.join([e.html() for e in elevations])
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
@@ -265,8 +309,6 @@ def readHTML():
 	peakRowPattern = re.compile('^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?>$')
 	column1Pattern = re.compile('^<td(?: id="SPS([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
 	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=t4">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2})?</td>$')
-	elevationPattern1 = re.compile('^<td>([0-9]{1,2},[0-9]{3}\\+?)</td>$')
-	elevationPattern2 = re.compile('^<td><span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">(.+)</div></span></td>$')
 	gradePattern = re.compile('^<td>Class ([12345](?:s[2345])?)</td>$')
 	prominencePattern1 = re.compile('^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$')
 	prominencePattern2 = re.compile('^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$')
@@ -346,17 +388,7 @@ def readHTML():
 
 			line = htmlFile.next()
 			lineNumber += 1
-			m = elevationPattern1.match(line)
-			if m is not None:
-				peak.elevation = m.group(1)
-			else:
-				m = elevationPattern2.match(line)
-				if m is None:
-					badLine(lineNumber)
-				peak.elevationLink = m.group(1)
-				peak.elevation = m.group(2)
-				peak.elevationTooltip = m.group(3)
-				checkElevationTooltip(peak, lineNumber)
+			peak.elevation = parseElevation(line, lineNumber)
 
 			line = htmlFile.next()
 			lineNumber += 1
@@ -548,12 +580,7 @@ def writeHTML():
 		else:
 			print '<td>{0}</td>'.format(peak.landManagement)
 
-		if peak.elevationLink is None:
-			print '<td>{0}</td>'.format(peak.elevation)
-		else:
-			print '<td><span><a href="{0}">{1}</a><div class="tooltip">{2}</div></span></td>'.format(
-				peak.elevationLink, peak.elevation, peak.elevationTooltip)
-
+		print '<td>{0}</td>'.format(peak.elevation)
 		print '<td>Class {0}</td>'.format(peak.grade)
 
 		if peak.prominenceLink is None:
