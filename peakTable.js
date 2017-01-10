@@ -133,11 +133,11 @@ function createMapLinkBox(mapLinkSpan)
 			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
 
 	addMapLink(listNode, 'CalTopo with Land Management',
-		'http://caltopo.com/map.html#ll=' + latCommaLong + '&z=14&b=t&o=r&n=0.25&a=sma');
+		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=14&b=t&o=r&n=0.25&a=sma');
 
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
-		'http://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
-
+		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
+/*
 	addMapLink(listNode, 'GeoCommunicator (BLM)',
 		'http://www.geocommunicator.gov/blmMap/Map.jsp?MAP=SITEMAPPER'
 		+ '&LAT=' + latLong[0]
@@ -154,8 +154,8 @@ function createMapLinkBox(mapLinkSpan)
 	addMapLink(listNode, 'Gmap4 with Land Management',
 		'https://mappingsupport.com/p/gmap4.php?ll=' + latCommaLong +
 		'&z=12&t=Land_Management,Land_Management_Labels&symbol=pgs' +
-		'&q=http://nightjuggler.com/gmap4/SMA.txt'); /* SMA = Surface Management Agency */
-
+		'&q=https://nightjuggler.com/gmap4/SMA.txt');
+*/
 	addMapLink(listNode, 'Gmap4 with Wilderness Boundaries',
 		mapLink.href + ',Wilderness_Boundaries&markers=title=' + legendLink(wildernessMapServer)
 		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Boundaries&layers=1&transparent=true'
@@ -164,8 +164,10 @@ function createMapLinkBox(mapLinkSpan)
 
 	addMapLink(listNode, 'Gmap4 (default)', mapLink.href);
 
+	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
+
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
-		'http://www.ngs.noaa.gov/cgi-bin/ds_radius.prl'
+		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl'
 		+ '?FormatBox=Decimal%20Degrees'
 		+ '&selectedFormat=Decimal%20Degrees'
 		+ '&DLatBox=' + latLong[0]
@@ -178,12 +180,17 @@ function createMapLinkBox(mapLinkSpan)
 		+ '&db_debug=false');
 
 	addMapLink(listNode, 'USGS National Map',
-		'http://viewer.nationalmap.gov/viewer/?p=default&b=base1&l=14'
+		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=14&bbox='
+		+ latLong[1] + ',' + latLong[0] + ','
+		+ latLong[1] + ',' + latLong[0]);
+
+	addMapLink(listNode, 'USGS National Map (Legacy)',
+		'https://viewer.nationalmap.gov/viewer/?p=default&b=base1&l=14'
 		+ '&x=' + longitudeToWebMercatorX(longitude)
 		+ '&y=' + latitudeToWebMercatorY(latitude));
 
 	addMapLink(listNode, 'USGS TopoView',
-		'http://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
+		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
 
 	addMapLink(listNode, 'Wilderness.net', wildernessURL(latitude, longitude));
 
