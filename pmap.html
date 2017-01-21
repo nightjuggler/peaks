@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Desert Peaks Section</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<script src="https://api.mapbox.com/mapbox.js/v3.0.1/mapbox.js"></script>
+<link href="https://api.mapbox.com/mapbox.js/v3.0.1/mapbox.css" rel="stylesheet">
+<style>
+body {margin: 0; padding: 0;}
+#map {position: absolute; top: 0; bottom: 0; width: 100%;}
+a {text-decoration: none;}
+a:hover {color: rgb(218,69,0);}
+#llDiv {
+	position: absolute;
+	bottom: 30px;
+	right: 10px;
+	font-family: verdana;
+	font-size: 10pt;
+}
+#llText {
+	background-color: rgba(255,255,255,0.8);
+	border-radius: 5px;
+	padding: 3px 5px;
+}
+#fitLink {
+	background-color: rgba(255,255,255,0.8);
+	border: 1px solid rgb(128,128,128);
+	border-radius: 5px;
+	padding: 3px 5px;
+}
+#fitLink:hover {
+	background-color: rgba(236,236,236,0.8);
+	cursor: pointer;
+}
+.peakIcon {}
+.centerIcon {}
+</style>
+<script>
+function isValidId(s)
+{
+	return s.length <= 8 && s.match(/^[a-z][0-9a-z]*$/) !== null;
+}
+function parseLatLng(q, v)
+{
+	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
+
+	if (m === null) return;
+
+	var lat = parseFloat(m[1]);
+	if (lat < -90 || lat > 90) return;
+
+	var lng = parseFloat(m[2]);
+	if (lng < -180 || lng > 180) return;
+
+	q.ll = [lat, lng];
+}
+function parseZoom(q, v)
+{
+	if (v.match(/^[1-9][0-9]?$/) === null) return;
+
+	var zoom = parseInt(v);
+	if (zoom < 1 || zoom > 22) return;
+
+	q.zoom = zoom;
+}
+var validOverlays = {
+	dps: 'dps.json',
+	sps: 'sps.json',
+};
+function parseOverlay(q, v)
+{
+	if (isValidId(v) && validOverlays[v])
+	{
+		q.overlays.push(validOverlays[v]);
+		delete validOverlays[v];
+	}
+}
+var validBaseLayers = {
+	o: 'Outdoors',
+	rbh: 'Run Bike Hike',
+	s: 'Satellite',
+	sts: 'Streets Satellite',
+	st: 'Streets',
+	p: 'Pencil',
+	e: 'Emerald',
+};
+function parseBaseLayer(q, v)
+{
+	if (isValidId(v) && validBaseLayers[v])
+		q.baseLayer = validBaseLayers[v];
+}
+function parseQueryString(queryString)
+{
+	var q = window.location.search;
+
+	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
+
+	var handlers = {
+		b: parseBaseLayer,
+		ll: parseLatLng,
+		o: parseOverlay,
+		z: parseZoom,
+	};
+
+	for (var s of q.substr(1).split('&'))
+	{
+		var i = s.indexOf('=');
+		if (i < 1 || i === s.length - 1) continue;
+		var k = s.substr(0, i);
+		var v = s.substr(i + 1);
+
+		if (isValidId(k) && handlers[k])
+			handlers[k](queryString, v);
+	}
+}
+function formatNumber(n)
+{
+	var r = n % 1000;
+	var s = String(r);
+	while (n >= 1000) {
+		if (r < 100) {
+			s = '0' + s;
+			if (r < 10)
+				s = '0' + s;
+		}
+		n = Math.trunc(n / 1000);
+		r = n % 1000;
+		s = String(r) + ',' + s;
+	}
+	return s;
+}
+function popupHtml(p)
+{
+	var elevFt = formatNumber(p.elevation);
+	var elevM = formatNumber(Math.round(p.elevation * 0.3048));
+	return '<h2>' + p.name + '</h2>' +
+		'<p>Elevation: ' + elevFt + "' (" + elevM + 'm)</p>';
+}
+function peakIcon(p)
+{
+	var fill = p.isEmblem ? 'magenta' : p.isMtneer ? 'cyan' : 'none';
+	var stroke = p.isClimbed ? 'green' : 'red';
+
+	var o = {iconSize: [20, 26], className: 'peakIcon'};
+	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">'
+		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" '
+		+ 'd="M 10,2 L 1,19 19,19 Z" /></svg>';
+	return L.divIcon(o);
+}
+function centerIcon()
+{
+	var o = {iconSize: [28, 28], className: 'centerIcon'};
+	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">'
+		+ '<line x1="13" y1="0" x2="13" y2="28" stroke="white" stroke-dasharray="9 10" />'
+		+ '<line x1="14" y1="0" x2="14" y2="28" stroke="black" stroke-dasharray="9 10" />'
+		+ '<line x1="15" y1="0" x2="15" y2="28" stroke="white" stroke-dasharray="9 10" />'
+		+ '<line y1="13" x1="0" y2="13" x2="28" stroke="white" stroke-dasharray="9 10" />'
+		+ '<line y1="14" x1="0" y2="14" x2="28" stroke="black" stroke-dasharray="9 10" />'
+		+ '<line y1="15" x1="0" y2="15" x2="28" stroke="white" stroke-dasharray="9 10" />'
+		+ '</svg>';
+	return L.divIcon(o);
+}
+function loadJSON(url, onready)
+{
+	var xhr = new XMLHttpRequest();
+
+	xhr.responseType = 'json';
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4)
+			if (xhr.status === 200)
+				onready(xhr.response);
+	}
+
+	xhr.open('GET', url);
+	xhr.send();
+}
+function createMap(options)
+{
+	var queryString = {
+		baseLayer: 'Outdoors',
+		overlays: [],
+	};
+	parseQueryString(queryString);
+
+	var layers = [
+		'Outdoors',
+		'Run Bike Hike',
+		'Satellite',
+		'Streets Satellite',
+		'Streets',
+		'Pencil',
+		'Emerald',
+	];
+
+	var baseLayers = {};
+	for (var layer of layers)
+	{
+		var id = 'mapbox.' + layer.toLowerCase().replace(/ /g, '-');
+		baseLayers[layer] = L.mapbox.tileLayer(id, options);
+	}
+
+	var map = L.mapbox.map('map');
+	baseLayers[queryString.baseLayer].addTo(map);
+	var layersControl = L.control.layers(baseLayers).addTo(map);
+	L.control.scale().addTo(map);
+
+	var mapBounds = [[42, -114.1], [32.5, -124.4]]; // California
+
+	if (queryString.ll) {
+		var minZoom = map.getMinZoom();
+		var maxZoom = map.getMaxZoom();
+
+		var zoom = queryString.zoom || (maxZoom - 5);
+
+		if (zoom < minZoom) zoom = minZoom; else
+		if (zoom > maxZoom) zoom = maxZoom;
+
+		map.setView(queryString.ll, zoom);
+	} else
+		map.fitBounds(mapBounds);
+
+	document.getElementById('fitLink').addEventListener('click',
+		function(e) { map.fitBounds(mapBounds);	}, false);
+
+	var llText = document.getElementById('llText').firstChild;
+	function updateCenter()
+	{
+		var center = map.getCenter();
+		llText.nodeValue = center.lat.toFixed(6) + ',' + center.lng.toFixed(6);
+		return center;
+	}
+
+	var centerMarker = L.marker(updateCenter(), {
+		keyboard: false,
+		interactive: false,
+		icon: centerIcon()
+	}).addTo(map);
+
+	map.on('move', function(e) {
+		centerMarker.setLatLng(updateCenter());
+	});
+
+	options.pointToLayer = function(feature, latlng) {
+		var p = feature.properties;
+		return L.marker(latlng, {icon: peakIcon(p)})
+			.bindPopup(popupHtml(p))
+			.on('dblclick', function(e) {
+				map.setView(latlng, map.getMaxZoom() - 5);
+			});
+	}
+
+	function addOverlay(geojson)
+	{
+		var title = geojson.title;
+		delete geojson.title;
+
+		var featureLayer = L.mapbox.featureLayer(geojson, options).addTo(map);
+		layersControl.addOverlay(featureLayer, title);
+
+		mapBounds = featureLayer.getBounds();
+		if (!queryString.ll)
+			map.fitBounds(mapBounds);
+	}
+
+	for (var url of queryString.overlays)
+		loadJSON(url, addOverlay);
+}
+</script>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="llDiv"><span id="llText">Latitude, Longitude</span>
+<span id="fitLink">&#9634;</span></div>
+
+<script>
+loadJSON('mapbox.cgi', createMap);
+</script>
+
+</body>
+</html>
