@@ -2,18 +2,25 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Desert Peaks Section</title>
+<title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <script src="https://api.mapbox.com/mapbox.js/v3.0.1/mapbox.js"></script>
 <link href="https://api.mapbox.com/mapbox.js/v3.0.1/mapbox.css" rel="stylesheet">
+<link href="tooltip.css" rel="stylesheet">
+<script src="tooltip.js"></script>
 <style>
 body {margin: 0; padding: 0;}
 #map {position: absolute; top: 0; bottom: 0; width: 100%;}
 a {text-decoration: none;}
-a:hover {color: rgb(218,69,0);}
+.popupDiv {
+	font-family: verdana;
+	font-size: 10pt;
+	white-space: nowrap;
+}
+.elevDiv {display: inline-block; vertical-align: top;}
 #llDiv {
 	position: absolute;
-	bottom: 30px;
+	bottom: 40px;
 	right: 10px;
 	font-family: verdana;
 	font-size: 10pt;
@@ -114,35 +121,17 @@ function parseQueryString(queryString)
 			handlers[k](queryString, v);
 	}
 }
-function formatNumber(n)
-{
-	var r = n % 1000;
-	var s = String(r);
-	while (n >= 1000) {
-		if (r < 100) {
-			s = '0' + s;
-			if (r < 10)
-				s = '0' + s;
-		}
-		n = Math.trunc(n / 1000);
-		r = n % 1000;
-		s = String(r) + ',' + s;
-	}
-	return s;
-}
 function popupHtml(p)
 {
-	var elevFt = formatNumber(p.elevation);
-	var elevM = formatNumber(Math.round(p.elevation * 0.3048));
-	return '<h2>' + p.name + '</h2>' +
-		'<p>Elevation: ' + elevFt + "' (" + elevM + 'm)</p>';
+	return '<div class="popupDiv"><h2>' + p.name + '</h2>' +
+		'Elevation: <div class="elevDiv">' + p.elevation + '</div></div>';
 }
 function peakIcon(p)
 {
-	var fill = p.isEmblem ? 'magenta' : p.isMtneer ? 'cyan' : 'none';
+	var fill = p.isEmblem ? 'magenta' : p.isMtneer ? 'cyan' : 'white';
 	var stroke = p.isClimbed ? 'green' : 'red';
 
-	var o = {iconSize: [20, 26], className: 'peakIcon'};
+	var o = {iconSize: [20, 26], className: 'peakIcon', popupAnchor: [0, -8]};
 	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">'
 		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" '
 		+ 'd="M 10,2 L 1,19 19,19 Z" /></svg>';
@@ -161,7 +150,7 @@ function centerIcon()
 		+ '</svg>';
 	return L.divIcon(o);
 }
-function loadJSON(url, onready)
+function loadJSON(url, onSuccess, onFailure)
 {
 	var xhr = new XMLHttpRequest();
 
@@ -169,7 +158,9 @@ function loadJSON(url, onready)
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4)
 			if (xhr.status === 200)
-				onready(xhr.response);
+				onSuccess(xhr.response);
+			else if (onFailure)
+				onFailure();
 	}
 
 	xhr.open('GET', url);
@@ -206,6 +197,8 @@ function createMap(options)
 	L.control.scale().addTo(map);
 
 	var mapBounds = [[42, -114.1], [32.5, -124.4]]; // California
+	var mapBoundsFromOverlay = false;
+	var overlaysToLoad = queryString.overlays.length;
 
 	if (queryString.ll) {
 		var minZoom = map.getMinZoom();
@@ -234,6 +227,7 @@ function createMap(options)
 	var centerMarker = L.marker(updateCenter(), {
 		keyboard: false,
 		interactive: false,
+		zIndexOffset: 1000,
 		icon: centerIcon()
 	}).addTo(map);
 
@@ -245,6 +239,7 @@ function createMap(options)
 		var p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
 			.bindPopup(popupHtml(p))
+			.on('popupopen', enableTooltips)
 			.on('dblclick', function(e) {
 				map.setView(latlng, map.getMaxZoom() - 5);
 			});
@@ -258,25 +253,33 @@ function createMap(options)
 		var featureLayer = L.mapbox.featureLayer(geojson, options).addTo(map);
 		layersControl.addOverlay(featureLayer, title);
 
-		mapBounds = featureLayer.getBounds();
-		if (!queryString.ll)
+		if (mapBoundsFromOverlay) {
+			mapBounds.extend(featureLayer.getBounds());
+		} else {
+			mapBounds = featureLayer.getBounds();
+			mapBoundsFromOverlay = true;
+		}
+		if (!queryString.ll && --overlaysToLoad === 0)
 			map.fitBounds(mapBounds);
 	}
 
 	for (var url of queryString.overlays)
 		loadJSON(url, addOverlay);
 }
+function init()
+{
+	var protocol = window.location.protocol;
+	var suffix = (protocol === 'file:' || protocol === '') ? 'json' : 'cgi';
+
+	loadJSON('mapbox.' + suffix, createMap);
+}
 </script>
 </head>
-<body>
+<body onload="init()">
 
 <div id="map"></div>
 <div id="llDiv"><span id="llText">Latitude, Longitude</span>
 <span id="fitLink">&#9634;</span></div>
-
-<script>
-loadJSON('mapbox.cgi', createMap);
-</script>
 
 </body>
 </html>
