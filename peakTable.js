@@ -179,6 +179,9 @@ function createMapLinkBox(mapLinkSpan)
 		+ '&dump_app_trace=false'
 		+ '&db_debug=false');
 
+	addMapLink(listNode, 'PMap (Mapbox)',
+		'https://nightjuggler.com/nature/pmap.html?o=dps&o=sps&ll=' + latCommaLong)
+
 	addMapLink(listNode, 'USGS National Map',
 		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=14&bbox='
 		+ latLong[1] + ',' + latLong[0] + ','
