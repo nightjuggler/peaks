@@ -2,6 +2,31 @@
 import re
 import sys
 
+class G(object):
+	sps = True
+	dps = False
+	peakIdPrefix = 'SPS'
+	htmlFilename = 'sps.html'
+	colspan = '14'
+	colspanMinus1 = '13'
+	section1 = 'Southern Sierra'
+	geojsonTitle = 'Sierra Peaks'
+	numPeaks = 247
+	numSections = 24
+
+	@classmethod
+	def setDPS(self):
+		self.dps = True
+		self.sps = False
+		self.peakIdPrefix = 'DPS'
+		self.htmlFilename = 'dps.html'
+		self.colspan = '13'
+		self.colspanMinus1 = '12'
+		self.section1 = 'Trans-Sierra &mdash; Mono and Inyo Counties'
+		self.geojsonTitle = 'Desert Peaks'
+		self.numPeaks = 99
+		self.numSections = 9
+
 peakArray = []
 sectionArray = []
 
@@ -9,9 +34,11 @@ class Peak(object):
 	def __init__(self):
 		self.id = ''
 		self.name = ''
+		self.otherName = None
 		self.latitude = ''
 		self.longitude = ''
 		self.zoom = ''
+		self.baseLayer = ''
 		self.elevation = ''
 		self.prominence = ''
 		self.prominenceLink = None
@@ -22,7 +49,7 @@ class Peak(object):
 		self.summitpostName = None
 		self.wikipediaLink = None
 		self.bobBurdId = ''
-		self.listsOfJohnId = ''
+		self.listsOfJohnId = None
 		self.peakbaggerId = ''
 		self.climbed = None
 		self.extraRow = None
@@ -30,6 +57,7 @@ class Peak(object):
 		self.isClimbed = False
 		self.isEmblem = False
 		self.isMtneer = False
+		self.isHighPoint = False
 		self.landClass = None
 		self.landManagement = None
 
@@ -117,18 +145,71 @@ class LandMgmtArea(object):
 			self.highPoint = peak
 		return None
 
-landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([- A-Za-z]+)')
-npsLinkPattern = re.compile('^https://www\\.nps\\.gov/([a-z]{4})/index\\.htm$')
-fsLinkPattern = re.compile('^http://www\\.fs\\.usda\\.gov/([a-z]+)$')
+landNameLookup = {
+	"Giant Sequoia National Monument":      'Sequoia National Forest',
+	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
+	"Lake Mead NRA":                        'landNPS',
+	"Lake Tahoe Basin Management Unit":     'landFS',
+	"Navajo Nation":                        'landRez',
+	"NAWS China Lake":                      'landDOD',
+	"Organ Pipe Cactus NM":                 'landNPS',
+	"Providence Mountains SRA":             'landSP',
+	"Red Rock Canyon NCA":                  'landBLM',
+	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
+	"Tohono O'odham Indian Reservation":    'landRez',
+	"Virgin Peak Instant Study Area":       'landBLM',
+}
+landNameSuffixes = [
+	(' National Forest',            'landFS'),
+	(' National Park',              'landNPS'),
+	(' National Preserve',          'landNPS'),
+	(' National Wildlife Range',    'landFWS'),
+	(' National Wildlife Refuge',   'landFWS'),
+	(' State Park',                 'landSP'),
+]
+landNamePrefixes = [
+	('BLM ',                        'landBLM'),
+]
 landMgmtAreas = {}
+landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
+fsLinkPattern = re.compile('^http://www\\.fs\\.usda\\.gov/[a-z]+$')
+fwsLinkPattern = re.compile('^https://www\\.fws\\.gov/refuge/[a-z]+/$')
+npsLinkPattern = re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$')
+stateParkPattern = re.compile('^http://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$')
+wildernessPattern = re.compile('^http://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$')
+landLinkPattern = {
+	'landFS':       fsLinkPattern,
+	'landFWS':      fwsLinkPattern,
+	'landNPS':      npsLinkPattern,
+	'landSP':       stateParkPattern,
+}
+landOrder = {
+	'landDOD':      0,
+	'landRez':      1,
+	'landFWS':      2,
+	'landBLM':      3,
+	'landFS':       4,
+	'landBLMW':     5,
+	'landFSW':      6,
+	'landSP':       7,
+	'landNPS':      8,
+}
 
-def parseLandManagement(peak, line, lineNumber):
-	landList = []
-	landClass = None
+def parseLandManagement(peak, lineNumber, htmlFile):
+	line = htmlFile.next()
+	lineNumber += 1
 
 	if line[:4] != '<td>' or line[-6:] != '</td>\n':
 		badLine(lineNumber)
 	line = line[4:-6]
+
+	if G.dps and peak.section == 9:
+		if line == '&nbsp;':
+			return lineNumber
+		badLine(lineNumber)
+
+	landList = []
+	landClass = None
 
 	while True:
 		m = landMgmtPattern.match(line)
@@ -138,39 +219,52 @@ def parseLandManagement(peak, line, lineNumber):
 		landLink, landName, landHP, landName2 = m.groups()
 		line = line[m.end():]
 
-		if landName2 is None:
-			if landName.endswith(' National Park'):
-				m = npsLinkPattern.match(landLink)
-				if m is None:
-					badLine(lineNumber)
-				landClass = 'landNPS'
-			elif (landName.endswith(' National Forest') or
-				landName == 'Lake Tahoe Basin Management Unit'):
-				m = fsLinkPattern.match(landLink)
-				if m is None:
-					badLine(lineNumber)
-				if landClass is None:
-					landClass = 'landFS'
-			else:
-				badLine(lineNumber)
-		else:
+		if landName2 is not None:
 			landName = landName2
 			if landName[-3:] == ' HP':
 				landHP = landName[-3:]
 				landName = landName[:-3]
-			if landName.endswith(' Wilderness'):
-				if landClass == 'landFS':
-					landClass = 'landFSW'
-				elif landClass is None:
-					landClass = 'landBLMW'
-			elif landName == 'Harvey Monroe Hall RNA':
-				if landClass != 'landNPS':
-					badLine(lineNumber)
-			elif landName == 'Giant Sequoia National Monument':
-				if landClass != 'landFS':
-					badLine(lineNumber)
-			else:
-				badLine(lineNumber)
+
+		if landName.endswith(' Wilderness'):
+			if landClass == 'landFS':
+				landClass = 'landFSW'
+			elif landClass is None or landClass == 'landBLM':
+				landClass = 'landBLMW'
+			if landLink is not None and wildernessPattern.match(landLink) is None:
+				e = "Wilderness URL doesn't match expected pattern on line {}"
+				sys.exit(e.format(lineNumber))
+		else:
+			currentClass = landNameLookup.get(landName)
+			if currentClass is None:
+				for suffix, suffixClass in landNameSuffixes:
+					if landName.endswith(suffix):
+						currentClass = suffixClass
+						break
+				else:
+					for prefix, prefixClass in landNamePrefixes:
+						if landName.startswith(prefix):
+							currentClass = prefixClass
+							break
+					else:
+						e = "Unrecognized land management name on line {}"
+						sys.exit(e.format(lineNumber))
+
+			if currentClass.startswith('land'):
+				linkPattern = landLinkPattern.get(currentClass)
+				if linkPattern is not None:
+					if landLink is None or linkPattern.match(landLink) is None:
+						e = "Land management URL doesn't match expected pattern on line {}"
+						sys.exit(e.format(lineNumber))
+
+				if landClass is None:
+					landClass = currentClass
+				elif landOrder[landClass] < landOrder[currentClass]:
+					e = "Unexpected order of land management areas on line {}"
+					sys.exit(e.format(lineNumber))
+
+			elif not (landList and currentClass == landList[-1][1]):
+				e = '"{}" must follow "{}" on line {}'
+				sys.exit(e.format(landName, currentClass, lineNumber))
 
 		if landName in landMgmtAreas:
 			errorMsg = landMgmtAreas[landName].add(peak, landLink, landHP is not None)
@@ -194,6 +288,7 @@ def parseLandManagement(peak, line, lineNumber):
 		'<a href="{}">{}</a>{}'.format(landLink, landName, landHP) if landLink
 		else landName + landHP
 		for (landLink, landName, landHP) in landList])
+	return lineNumber
 
 def printLandManagementAreas():
 	for name, area in sorted(landMgmtAreas.iteritems()):
@@ -205,7 +300,7 @@ def printLandManagementAreas():
 ngsLinkPrefix = 'http://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 topoLinkPrefix = 'http://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_'
 topoLinkPattern = re.compile('^([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_[0-9]{6}_([0-9]{4})_([0-9]{5})\\.jpg$')
-elevFromNGS = re.compile('^([0-9]{4}\\.[0-9])m \\(NAVD 88\\) NGS Data Sheet &quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
+elevFromNGS = re.compile('^([0-9]{4}(?:\\.[0-9])?)m \\(NAVD 88\\) NGS Data Sheet &quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), CA&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
 contourIntervals = (10, 20, 40, 80)
 
@@ -217,7 +312,7 @@ def checkElevationTooltip(e, lineNumber):
 		elevation = int(float(m.group(1)) / 0.3048 + 0.49)
 		elevation = '{},{:03}'.format(*divmod(elevation, 1000))
 		if elevation != e.elevation:
-			sys.exit("Elevation in tooltip doesn't match on line {0}".format(lineNumber))
+			sys.exit("Elevation in tooltip doesn't match on line {}".format(lineNumber))
 		return
 	if e.link.startswith(topoLinkPrefix):
 		m = elevFromTopo.match(e.tooltip)
@@ -231,9 +326,9 @@ def checkElevationTooltip(e, lineNumber):
 		quadName = quadName.replace(' ', '%20')
 		m = topoLinkPattern.match(e.link[len(topoLinkPrefix):])
 		if m is None:
-			badLine(lineNumber)
+			sys.exit("Topo URL doesn't match expected pattern on line {}".format(lineNumber))
 		if quadName != m.group(1) or year != m.group(2) or scale != m.group(3):
-			badLine(lineNumber)
+			sys.exit("Quad name, year, or scale doesn't match topo URL on line {}".format(lineNumber))
 		unit = elevation[-1]
 		elevation = elevation[:-1]
 		if '-' in elevation:
@@ -242,7 +337,7 @@ def checkElevationTooltip(e, lineNumber):
 			elevationMax = int(elevationMax)
 			interval = elevationMax - elevationMin + 1
 			if interval not in contourIntervals or elevationMin % interval != 0:
-				sys.exit("Elevation range in tooltip not valid on line {0}".format(lineNumber))
+				sys.exit("Elevation range in tooltip not valid on line {}".format(lineNumber))
 			suffix = '+'
 		else:
 			suffix = ''
@@ -252,37 +347,42 @@ def checkElevationTooltip(e, lineNumber):
 			elevation = int(elevation)
 		elevation = '{},{:03}'.format(*divmod(elevation, 1000)) + suffix
 		if elevation != e.elevation:
-			sys.exit("Elevation in tooltip doesn't match on line {0}".format(lineNumber))
+			sys.exit("Elevation in tooltip doesn't match on line {}".format(lineNumber))
 		return
 	badLine(lineNumber)
 
 class Elevation(object):
 	pattern1 = re.compile('^([0-9]{1,2},[0-9]{3}\\+?)')
-	pattern2 = re.compile('^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">([^"<>]+)</div></span>')
+	pattern2 = re.compile('^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">([- &\'(),\\.:;/0-9A-Za-z]+)(?:(</div></span>)|$)')
 
 	def __init__(self, elevation, link=None, tooltip=None):
 		self.elevation = elevation
 		self.link = link
 		self.tooltip = tooltip
+		self.extraLines = ''
 
 	def html(self):
 		if self.link is None:
 			return self.elevation
 
-		return '<span><a href="{}">{}</a><div class="tooltip">{}</div></span>'.format(
-			self.link, self.elevation, self.tooltip)
+		return '<span><a href="{}">{}</a><div class="tooltip">{}{}</div></span>'.format(
+			self.link, self.elevation, self.tooltip, self.extraLines)
 
-def parseElevation(line, lineNumber):
-	elevations = []
+def parseElevation(peak, lineNumber, htmlFile):
+	line = htmlFile.next()
+	lineNumber += 1
 
-	if line[:4] != '<td>' or line[-6:] != '</td>\n':
+	if line[:4] != '<td>':
 		badLine(lineNumber)
-	line = line[4:-6]
+	line = line[4:]
+
+	elevations = []
 
 	while True:
 		m = Elevation.pattern1.match(line)
 		if m is not None:
 			e = Elevation(m.group(1))
+			line = line[m.end():]
 		else:
 			m = Elevation.pattern2.match(line)
 			if m is None:
@@ -290,39 +390,50 @@ def parseElevation(line, lineNumber):
 
 			e = Elevation(m.group(2), m.group(1), m.group(3))
 			checkElevationTooltip(e, lineNumber)
+			if m.group(4) is None:
+				e.extraLines = '\n'
+				for line in htmlFile:
+					lineNumber += 1
+					if line.startswith('</div></span>'):
+						line = line[13:]
+						break
+					e.extraLines += line
+			else:
+				line = line[m.end():]
 
 		elevations.append(e)
 
-		line = line[m.end():]
-		if line == '':
+		if line == '</td>\n':
 			break
 		if line[:4] != '<br>':
 			badLine(lineNumber)
 		line = line[4:]
 
-	return '<br>'.join([e.html() for e in elevations])
+	peak.elevation = '<br>'.join([e.html() for e in elevations])
+	return lineNumber
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
 def readHTML():
-	sectionRowPattern = re.compile('^<tr class="section"><td colspan="14">([0-9]+)\\. ([- A-Za-z]+)</td></tr>$')
+	sectionRowPattern = re.compile('^<tr class="section"><td (?:id="' + G.peakIdPrefix + '[0-9]+" )?colspan="' + G.colspan + '">([0-9]+)\\. ([- &,;A-Za-z]+)</td></tr>$')
 	peakRowPattern = re.compile('^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?>$')
-	column1Pattern = re.compile('^<td(?: id="SPS([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
-	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=t4">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2})?</td>$')
-	gradePattern = re.compile('^<td>Class ([12345](?:s[2345])?)</td>$')
+	column1Pattern = re.compile('^<td(?: id="' + G.peakIdPrefix + '([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
+	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$')
+	gradePattern = re.compile('^<td>Class ([123456](?:s[23456])?)</td>$')
 	prominencePattern1 = re.compile('^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$')
 	prominencePattern2 = re.compile('^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$')
 	summitpostPattern = re.compile('^<td><a href="http://www\\.summitpost\\.org/([-a-z]+)/([0-9]+)">SP</a></td>$')
-	wikipediaPattern = re.compile('^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()A-Za-z]+)">W</a></td>$')
+	wikipediaPattern = re.compile('^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()%0-9A-Za-z]+)">W</a></td>$')
 	bobBurdPattern = re.compile('^<td><a href="http://www\\.snwburd\\.com/dayhikes/peak/([0-9]+)">BB</a></td>$')
 	listsOfJohnPattern = re.compile('^<td><a href="http://listsofjohn\\.com/peak/([0-9]+)">LoJ</a></td>$')
 	peakbaggerPattern = re.compile('^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$')
 	closedContourPattern = re.compile('^<td><a href="http://www\\.closedcontour\\.com/sps/\\?zoom=7&lat=([0-9]+\\.[0-9]+)&lon=-([0-9]+\\.[0-9]+)">CC</a></td>$')
 	weatherPattern = re.compile('^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$')
-	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(<a href="/photos/[0-9A-Za-z]+/">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))?</td>$')
+	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(<a href="(?:https://nightjuggler\\.com)?/photos/[0-9A-Za-z]+/">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))?</td>$')
+	emptyCell = '<td>&nbsp;</td>\n'
 	lineNumber = 0
 
-	htmlFile = open('sps.html')
+	htmlFile = open(G.htmlFilename)
 	for line in htmlFile:
 		lineNumber += 1
 		if line == tableLine:
@@ -369,8 +480,17 @@ def readHTML():
 			peak.latitude = m.group(1)
 			peak.longitude = m.group(2)
 			peak.zoom = m.group(3)
-			peak.name = m.group(4)
-			suffix = m.group(5)
+			peak.baseLayer = m.group(4)
+			peak.name = m.group(5)
+			suffix = m.group(6)
+			peak.otherName = m.group(7)
+
+			if G.dps and peak.section == 9:
+				if peak.baseLayer != 't1':
+					badLine(lineNumber)
+			else:
+				if peak.baseLayer != 't4':
+					badLine(lineNumber)
 
 			if suffix is None:
 				if peak.isEmblem or peak.isMtneer:
@@ -378,17 +498,14 @@ def readHTML():
 			elif suffix == ' *':
 				if not peak.isMtneer:
 					badSuffix(lineNumber)
-			else:
+			elif suffix == ' **':
 				if not peak.isEmblem:
 					badSuffix(lineNumber)
+			else:
+				peak.isHighPoint = True
 
-			line = htmlFile.next()
-			lineNumber += 1
-			parseLandManagement(peak, line, lineNumber)
-
-			line = htmlFile.next()
-			lineNumber += 1
-			peak.elevation = parseElevation(line, lineNumber)
+			lineNumber = parseLandManagement(peak, lineNumber, htmlFile)
+			lineNumber = parseElevation(peak, lineNumber, htmlFile)
 
 			line = htmlFile.next()
 			lineNumber += 1
@@ -411,7 +528,7 @@ def readHTML():
 
 			line = htmlFile.next()
 			lineNumber += 1
-			if line != '<td>&nbsp;</td>\n':
+			if line != emptyCell:
 				m = summitpostPattern.match(line)
 				if m is None:
 					badLine(lineNumber)
@@ -420,7 +537,7 @@ def readHTML():
 
 			line = htmlFile.next()
 			lineNumber += 1
-			if line != '<td>&nbsp;</td>\n':
+			if line != emptyCell:
 				m = wikipediaPattern.match(line)
 				if m is None:
 					badLine(lineNumber)
@@ -437,8 +554,10 @@ def readHTML():
 			lineNumber += 1
 			m = listsOfJohnPattern.match(line)
 			if m is None:
-				badLine(lineNumber)
-			peak.listsOfJohnId = m.group(1)
+				if not (G.dps and peak.section == 9 and line == emptyCell):
+					badLine(lineNumber)
+			else:
+				peak.listsOfJohnId = m.group(1)
 
 			line = htmlFile.next()
 			lineNumber += 1
@@ -447,30 +566,31 @@ def readHTML():
 				badLine(lineNumber)
 			peak.peakbaggerId = m.group(1)
 
-			line = htmlFile.next()
-			lineNumber += 1
-			m = closedContourPattern.match(line)
-			if m is None:
-				badLine(lineNumber)
-			peak.ccLatitude = m.group(1)
-			peak.ccLongitude = m.group(2)
-
-#			compareLatLong(peak)
+			if G.sps:
+				line = htmlFile.next()
+				lineNumber += 1
+				m = closedContourPattern.match(line)
+				if m is None:
+					badLine(lineNumber)
+				peak.ccLatitude = m.group(1)
+				peak.ccLongitude = m.group(2)
+#				compareLatLong(peak)
 
 			line = htmlFile.next()
 			lineNumber += 1
 			m = weatherPattern.match(line)
 			if m is None:
-				badLine(lineNumber)
-			wxLatitude = m.group(2)
-			wxLongitude = m.group(1)
-
-			if wxLatitude != peak.latitude or wxLongitude != peak.longitude:
-				badWxLatLong(lineNumber)
+				if not (G.dps and peak.section == 9 and line == emptyCell):
+					badLine(lineNumber)
+			else:
+				wxLatitude = m.group(2)
+				wxLongitude = m.group(1)
+				if wxLatitude != peak.latitude or wxLongitude != peak.longitude:
+					badWxLatLong(lineNumber)
 
 			line = htmlFile.next()
 			lineNumber += 1
-			if line == '<td>&nbsp;</td>\n':
+			if line == emptyCell:
 				if peak.isClimbed:
 					badClimbed(lineNumber)
 			else:
@@ -488,7 +608,7 @@ def readHTML():
 			if peak.extraRow is not None:
 				line = htmlFile.next()
 				lineNumber += 1
-				if line != '<tr><td colspan="13"><ul>\n':
+				if line != '<tr><td colspan="' + G.colspanMinus1 + '"><ul>\n':
 					badLine(lineNumber)
 				for line in htmlFile:
 					lineNumber += 1
@@ -508,16 +628,16 @@ def readHTML():
 			else:
 				badLine(lineNumber)
 	htmlFile.close()
-	if len(peakArray) != 247:
-		sys.exit("Number of peaks in HTML file is not 247.")
-	if len(sectionArray) != 24:
-		sys.exit("Number of sections in HTML file is not 24.")
+	if len(peakArray) != G.numPeaks:
+		sys.exit("Number of peaks in HTML file is not {}.".format(G.numPeaks))
+	if len(sectionArray) != G.numSections:
+		sys.exit("Number of sections in HTML file is not {}.".format(G.numSections))
 
 def writeHTML():
-	oldColspan = ' colspan="14"'
-	newColspan = ' colspan="14"'
-	sectionFormat = '<tr class="section"><td colspan="14">{0}. {1}</td></tr>'
-	gmap4Format = '<a href="https://mappingsupport.com/p/gmap4.php?ll={0},-{1}&z={2}&t=t4">{3}</a>'
+	oldColspan = ' colspan="' + G.colspan + '"'
+	newColspan = ' colspan="' + G.colspan + '"'
+	sectionFormat = '<tr class="section"><td {}colspan="' + G.colspan + '">{}. {}</td></tr>'
+	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},-{}&z={}&t={}">{}</a>{}{}</td>'
 	summitpostFormat = '<td><a href="http://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
 	bobBurdFormat = '<td><a href="http://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
@@ -527,13 +647,13 @@ def writeHTML():
 	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon=-{0}&lat={1}">WX</a></td>'
 	emptyCell = '<td>&nbsp;</td>'
 
-	htmlFile = open('sps.html')
+	htmlFile = open(G.htmlFilename)
 	for line in htmlFile:
 		print line,
 		if line == tableLine:
 			break
 	for line in htmlFile:
-		if line == '<tr class="section"><td colspan="14">1. Southern Sierra</td></tr>\n':
+		if line == '<tr class="section"><td colspan="' + G.colspan + '">1. ' + G.section1 + '</td></tr>\n':
 			break
 		line = line.replace(oldColspan, newColspan)
 		print line,
@@ -542,14 +662,20 @@ def writeHTML():
 	for peak in peakArray:
 		if peak.section != sectionNumber:
 			sectionNumber = peak.section
-			print sectionFormat.format(sectionNumber, sectionArray[sectionNumber - 1])
+			if G.dps and sectionNumber == 2:
+				sectionId = 'id="' + G.peakIdPrefix + str(sectionNumber) + '" '
+			else:
+				sectionId = ''
+			print sectionFormat.format(sectionId, sectionNumber, sectionArray[sectionNumber - 1])
 
 		suffix = ''
 		classNames = []
 
 		if peak.isClimbed:
 			classNames.append('climbed')
-		if peak.isMtneer:
+		if peak.isHighPoint:
+			suffix = ' HP'
+		elif peak.isMtneer:
 			suffix = ' *'
 			classNames.append('mtneer')
 		elif peak.isEmblem:
@@ -565,15 +691,16 @@ def writeHTML():
 
 		attr = ''
 		if peak.hasHtmlId:
-			attr += ' id="SPS{0}"'.format(peak.id)
+			attr += ' id="{}{}"'.format(G.peakIdPrefix, peak.id)
 		if peak.extraRow is not None:
 			attr += ' rowspan="2"'
 
 		print '<td{0}>{1}</td>'.format(attr, peak.id)
 
-		print '<td>{0}{1}</td>'.format(
-			gmap4Format.format(peak.latitude, peak.longitude, peak.zoom, peak.name),
-			suffix)
+		otherName = '' if peak.otherName is None else '<br>({})'.format(peak.otherName)
+
+		print column2Format.format(peak.latitude, peak.longitude, peak.zoom, peak.baseLayer,
+			peak.name, suffix, otherName)
 
 		if peak.landManagement is None:
 			print emptyCell
@@ -599,10 +726,17 @@ def writeHTML():
 			print wikipediaFormat.format(peak.wikipediaLink)
 
 		print bobBurdFormat.format(peak.bobBurdId)
-		print listsOfJohnFormat.format(peak.listsOfJohnId)
+		if peak.listsOfJohnId is None:
+			print emptyCell
+		else:
+			print listsOfJohnFormat.format(peak.listsOfJohnId)
 		print peakbaggerFormat.format(peak.peakbaggerId)
-		print closedContourFormat.format(peak.ccLatitude, peak.ccLongitude)
-		print weatherFormat.format(peak.longitude, peak.latitude)
+		if G.sps:
+			print closedContourFormat.format(peak.ccLatitude, peak.ccLongitude)
+		if G.dps and peak.section == 9:
+			print emptyCell
+		else:
+			print weatherFormat.format(peak.longitude, peak.latitude)
 
 		if peak.climbed is None:
 			print emptyCell
@@ -611,7 +745,7 @@ def writeHTML():
 
 		print '</tr>'
 		if peak.extraRow is not None:
-			print '<tr><td colspan="13"><ul>'
+			print '<tr><td colspan="' + G.colspanMinus1 + '"><ul>'
 			print peak.extraRow,
 			print '</ul></td></tr>'
 
@@ -623,7 +757,61 @@ def writeHTML():
 		print line,
 	htmlFile.close()
 
+def writePeakJSON(f, peak):
+	f('{\n')
+	f('\t\t"type": "Feature",\n')
+	f('\t\t"geometry": {"type": "Point", "coordinates": [-')
+	f(peak.longitude)
+	f(',')
+	f(peak.latitude)
+	f(']},\n')
+	f('\t\t"properties": {\n')
+	f('\t\t\t"name": "')
+	f(peak.name)
+	f('",\n')
+	if peak.isClimbed:
+		f('\t\t\t"isClimbed": true,\n')
+	if peak.isEmblem:
+		f('\t\t\t"isEmblem": true,\n')
+	elif peak.isMtneer:
+		f('\t\t\t"isMtneer": true,\n')
+	f('\t\t\t"elevation": "')
+	f(peak.elevation.replace('"', '\\"').replace('\n', '\\n'))
+	f('"\n\t\t}}')
+
+def writeJSON():
+	f = sys.stdout.write
+	firstPeak = True
+
+	f('{\n')
+	f('\t"title": "')
+	f(G.geojsonTitle)
+	f('",\n')
+	f('\t"type": "FeatureCollection",\n')
+	f('\t"features": [')
+	for peak in peakArray:
+		if firstPeak:
+			firstPeak = False
+		else:
+			f(',')
+		writePeakJSON(f, peak)
+	f(']\n')
+	f('}\n')
+
 if __name__ == '__main__':
+	import argparse
+	parser = argparse.ArgumentParser()
+	parser.add_argument('inputMode', nargs='?', default='sps', choices=['dps', 'sps'])
+	parser.add_argument('outputMode', nargs='?', default='html', choices=['html', 'json', 'land'])
+	args = parser.parse_args()
+
+	if args.inputMode == 'dps':
+		G.setDPS()
+
 	readHTML()
-#	printLandManagementAreas()
-	writeHTML()
+	if args.outputMode == 'html':
+		writeHTML()
+	elif args.outputMode == 'json':
+		writeJSON()
+	elif args.outputMode == 'land':
+		printLandManagementAreas()
