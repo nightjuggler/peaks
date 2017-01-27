@@ -17,6 +17,9 @@ a {text-decoration: none;}
 	font-size: 10pt;
 	white-space: nowrap;
 }
+.popupDiv b a {
+	font-weight: bold;
+}
 .elevDiv {display: inline-block; vertical-align: top;}
 #llDiv {
 	position: absolute;
@@ -121,15 +124,43 @@ function parseQueryString(queryString)
 			handlers[k](queryString, v);
 	}
 }
-function popupHtml(p)
+function makeLink(url, txt)
 {
-	return '<div class="popupDiv"><h2>' + p.name + '</h2>' +
-		'Elevation: <div class="elevDiv">' + p.elevation + '</div></div>';
+	return '<a href="' + url + '">' + txt + '</a>';
+}
+function popupHtml(p, ll)
+{
+	var g4URL = 'https://mappingsupport.com/p/gmap4.php?ll=' + ll.lat + ',' + ll.lng + '&' + p.G4;
+
+	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
+
+	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
+
+	var name = makeLink(g4URL, p.name) + suffix + otherName;
+
+	var links = [];
+	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
+	if (p.W) links.push(makeLink('https://en.wikipedia.org/wiki/' + p.W, 'W'));
+	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
+	if (p.LoJ) links.push(makeLink('http://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
+	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
+	if (!p.noWX) links.push(makeLink('http://forecast.weather.gov/MapClick.php?lon='
+		+ ll.lng + '&lat=' + ll.lat, 'WX'));
+
+	links = links.length === 0 ? '' : '<br>' + links.join(', ');
+
+	var climbed = p.climbed ? '<br>Climbed ' + p.climbed : '';
+
+	return '<div class="popupDiv"><b>' + name + '</b>'
+		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
+		+ '<br>Prominence: ' + p.prom
+		+ '<br>Class ' + p.YDS
+		+ links + climbed + '</div>';
 }
 function peakIcon(p)
 {
-	var fill = p.isEmblem ? 'magenta' : p.isMtneer ? 'cyan' : 'white';
-	var stroke = p.isClimbed ? 'green' : 'red';
+	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
+	var stroke = p.climbed ? 'green' : 'red';
 
 	var o = {iconSize: [20, 26], className: 'peakIcon', popupAnchor: [0, -8]};
 	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">'
@@ -238,7 +269,7 @@ function createMap(options)
 	options.pointToLayer = function(feature, latlng) {
 		var p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
-			.bindPopup(popupHtml(p))
+			.bindPopup(popupHtml(p, latlng))
 			.on('popupopen', enableTooltips)
 			.on('dblclick', function(e) {
 				map.setView(latlng, map.getMaxZoom() - 5);
