@@ -48,10 +48,12 @@ class Peak(object):
 		self.summitpostId = None
 		self.summitpostName = None
 		self.wikipediaLink = None
-		self.bobBurdId = ''
+		self.bobBurdId = None
 		self.listsOfJohnId = None
-		self.peakbaggerId = ''
-		self.climbed = None
+		self.peakbaggerId = None
+		self.climbDate = None
+		self.climbPhotos = None
+		self.climbWith = None
 		self.extraRow = None
 		self.hasHtmlId = False
 		self.isClimbed = False
@@ -429,7 +431,7 @@ def readHTML():
 	peakbaggerPattern = re.compile('^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$')
 	closedContourPattern = re.compile('^<td><a href="http://www\\.closedcontour\\.com/sps/\\?zoom=7&lat=([0-9]+\\.[0-9]+)&lon=-([0-9]+\\.[0-9]+)">CC</a></td>$')
 	weatherPattern = re.compile('^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$')
-	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(<a href="(?:https://nightjuggler\\.com)?/photos/[0-9A-Za-z]+/">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))?</td>$')
+	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(?:<a href="/photos/([0-9A-Za-z]+)/">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$')
 	emptyCell = '<td>&nbsp;</td>\n'
 	lineNumber = 0
 
@@ -599,7 +601,9 @@ def readHTML():
 					badLine(lineNumber)
 				if not peak.isClimbed:
 					badClimbed(lineNumber)
-				peak.climbed = line[4:-6]
+				climbDate, peak.climbPhotos, peak.climbDate, peak.climbWith = m.groups()
+				if peak.climbDate is None:
+					peak.climbDate = climbDate
 
 			line = htmlFile.next()
 			lineNumber += 1
@@ -738,10 +742,14 @@ def writeHTML():
 		else:
 			print weatherFormat.format(peak.longitude, peak.latitude)
 
-		if peak.climbed is None:
-			print emptyCell
+		if peak.isClimbed:
+			if peak.climbPhotos is None:
+				print '<td>{} {}</td>'.format(peak.climbDate, peak.climbWith)
+			else:
+				print '<td><a href="/photos/{}/">{}</a> {}</td>'.format(
+					peak.climbPhotos, peak.climbDate, peak.climbWith)
 		else:
-			print '<td>{0}</td>'.format(peak.climbed)
+			print emptyCell
 
 		print '</tr>'
 		if peak.extraRow is not None:
@@ -766,16 +774,48 @@ def writePeakJSON(f, peak):
 	f(peak.latitude)
 	f(']},\n')
 	f('\t\t"properties": {\n')
-	f('\t\t\t"name": "')
-	f(peak.name)
-	f('",\n')
+
+	p = [('name', peak.name)]
+	if peak.otherName is not None:
+		p.append(('name2', peak.otherName))
+
+	p.append(('prom', peak.prominence))
+	p.append(('YDS', peak.grade))
+	p.append(('G4', 'z={}&t={}'.format(peak.zoom, peak.baseLayer)))
+	if peak.bobBurdId is not None:
+		p.append(('BB', peak.bobBurdId))
+	if peak.listsOfJohnId is not None:
+		p.append(('LoJ', peak.listsOfJohnId))
+	if peak.peakbaggerId is not None:
+		p.append(('Pb', peak.peakbaggerId))
+	if peak.summitpostId is not None:
+		p.append(('SP', '{}/{}'.format(peak.summitpostName, peak.summitpostId)))
+	if peak.wikipediaLink is not None:
+		p.append(('W', peak.wikipediaLink))
 	if peak.isClimbed:
-		f('\t\t\t"isClimbed": true,\n')
-	if peak.isEmblem:
-		f('\t\t\t"isEmblem": true,\n')
+		if peak.climbPhotos is None:
+			p.append(('climbed', peak.climbDate))
+		else:
+			p.append(('climbed', '<a href=\\"https://nightjuggler.com/photos/{}/\\">{}</a>'.format(
+				peak.climbPhotos, peak.climbDate)))
+
+	for k, v in p:
+		f('\t\t\t"')
+		f(k)
+		f('": "')
+		f(v)
+		f('",\n')
+
+	if peak.isHighPoint:
+		f('\t\t\t"HP": true,\n')
+	elif peak.isEmblem:
+		f('\t\t\t"emblem": true,\n')
 	elif peak.isMtneer:
-		f('\t\t\t"isMtneer": true,\n')
-	f('\t\t\t"elevation": "')
+		f('\t\t\t"mtneer": true,\n')
+	if G.dps and peak.section == 9:
+		f('\t\t\t"noWX": true,\n')
+
+	f('\t\t\t"elev": "')
 	f(peak.elevation.replace('"', '\\"').replace('\n', '\\n'))
 	f('"\n\t\t}}')
 
