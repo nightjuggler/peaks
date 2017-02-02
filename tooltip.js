@@ -53,6 +53,8 @@ function enableTooltips()
 	for (var i = 0; i < tooltips.length; ++i)
 	{
 		var tooltip = tooltips[i];
+		if (tooltip.tooltipEnabled) continue;
+
 		var arrowDiv = document.createElement('div');
 		var arrow1 = document.createElement('div');
 		var arrow2 = document.createElement('div');
@@ -68,6 +70,7 @@ function enableTooltips()
 		var parent = tooltip.parentElement;
 		parent.addEventListener('mouseenter', showTooltip, false);
 		parent.addEventListener('mouseleave', hideTooltip, false);
+		tooltip.tooltipEnabled = true;
 	}
 }
 window.addEventListener('DOMContentLoaded', enableTooltips, false);
