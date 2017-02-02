@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Peak Map</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<script src="https://api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css" rel="stylesheet">
+<link href="tooltip.css" rel="stylesheet">
+<script src="tooltip.js"></script>
+<style>
+body {margin: 0; padding: 0;}
+#map {position: absolute; top: 0; bottom: 0; width: 100%;}
+a {text-decoration: none;}
+.popupDiv {
+	font-family: verdana;
+	font-size: 10pt;
+	white-space: nowrap;
+}
+.popupDiv b a {
+	font-weight: bold;
+}
+.elevDiv {display: inline-block; vertical-align: top;}
+#llDiv {
+	position: absolute;
+	bottom: 40px;
+	right: 10px;
+	font-family: verdana;
+	font-size: 10pt;
+}
+#llText, #bearingText, #pitchText {
+	background-color: rgba(255,255,255,0.8);
+	border-radius: 5px;
+	padding: 3px 5px;
+}
+#bearingIcon, #pitchIcon {
+	font-size: 14pt;
+}
+#fitLink {
+	background-color: rgba(255,255,255,0.8);
+	border: 1px solid rgb(128,128,128);
+	border-radius: 5px;
+	padding: 3px 5px;
+}
+#fitLink:hover {
+	background-color: rgba(236,236,236,0.8);
+	cursor: pointer;
+}
+.peakIcon {
+	cursor: pointer;
+}
+</style>
+<script>
+function isValidId(s)
+{
+	return s.length <= 8 && s.match(/^[a-z][0-9a-z]*$/) !== null;
+}
+function parseLatLng(q, v)
+{
+	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
+
+	if (m === null) return;
+
+	var lat = parseFloat(m[1]);
+	if (lat < -90 || lat > 90) return;
+
+	var lng = parseFloat(m[2]);
+	if (lng < -180 || lng > 180) return;
+
+	q.ll = [lng, lat];
+}
+function parseZoom(q, v)
+{
+	if (v.match(/^[1-9][0-9]?$/) === null) return;
+
+	var zoom = parseInt(v);
+	if (zoom < 1 || zoom > 22) return;
+
+	q.zoom = zoom;
+}
+function parseBearing(q, v)
+{
+	if (v.match(/^[0-9]{1,3}$/) === null) return;
+
+	var bearing = parseInt(v);
+	if (bearing > 359) return;
+
+	q.bearing = bearing;
+}
+function parsePitch(q, v)
+{
+	if (v.match(/^[0-9]{1,2}$/) === null) return;
+
+	var pitch = parseInt(v);
+	if (pitch > 60) return;
+
+	q.pitch = pitch;
+}
+var validOverlays = {
+	dps: 'dps.json',
+	sps: 'sps.json',
+};
+function parseOverlay(q, v)
+{
+	if (isValidId(v) && validOverlays[v])
+	{
+		q.overlays.push(validOverlays[v]);
+		delete validOverlays[v];
+	}
+}
+var validBaseLayers = {
+	o: 'Outdoors',
+	s: 'Satellite',
+	sts: 'Satellite Streets',
+	st: 'Streets',
+};
+function parseBaseLayer(q, v)
+{
+	if (isValidId(v) && validBaseLayers[v])
+		q.baseLayer = validBaseLayers[v];
+}
+function parseQueryString(queryString)
+{
+	var q = window.location.search;
+
+	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
+
+	var handlers = {
+		b: parseBaseLayer,
+		ll: parseLatLng,
+		o: parseOverlay,
+		rx: parsePitch,
+		rz: parseBearing,
+		z: parseZoom,
+	};
+
+	for (var s of q.substr(1).split('&'))
+	{
+		var i = s.indexOf('=');
+		if (i < 1 || i === s.length - 1) continue;
+		var k = s.substr(0, i);
+		var v = s.substr(i + 1);
+
+		if (isValidId(k) && handlers[k])
+			handlers[k](queryString, v);
+	}
+}
+function makeLink(url, txt)
+{
+	return '<a href="' + url + '">' + txt + '</a>';
+}
+function popupHtml(ll, p)
+{
+	var lng = ll[0];
+	var lat = ll[1];
+
+	var g4URL = 'https://mappingsupport.com/p/gmap4.php?ll=' + lat + ',' + lng + '&' + p.G4;
+
+	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
+
+	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
+
+	var name = makeLink(g4URL, p.name) + suffix + otherName;
+
+	var links = [];
+	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
+	if (p.W) links.push(makeLink('https://en.wikipedia.org/wiki/' + p.W, 'W'));
+	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
+	if (p.LoJ) links.push(makeLink('http://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
+	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
+	if (!p.noWX) links.push(makeLink('http://forecast.weather.gov/MapClick.php?lon='
+		+ lng + '&lat=' + lat, 'WX'));
+
+	links = links.length === 0 ? '' : '<br>' + links.join(', ');
+
+	var climbed = p.climbed ? '<br>Climbed ' + p.climbed : '';
+
+	return '<div class="popupDiv"><b>' + name + '</b>'
+		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
+		+ '<br>Prominence: ' + p.prom
+		+ '<br>Class ' + p.YDS
+		+ links + climbed + '</div>';
+}
+var svgNS = 'http://www.w3.org/2000/svg';
+function peakIcon(p)
+{
+	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
+	var stroke = p.climbed ? 'green' : 'red';
+
+	var svg = document.createElementNS(svgNS, 'svg');
+	svg.setAttribute('width', 20);
+	svg.setAttribute('height', 26);
+	svg.setAttribute('viewBox', '0 0 20 26');
+
+	var path = document.createElementNS(svgNS, 'path');
+	path.setAttribute('fill', fill);
+	path.setAttribute('stroke', stroke);
+	path.setAttribute('stroke-width', '3');
+	path.setAttribute('d', 'M 10,2 L 1,19 19,19 Z');
+	svg.appendChild(path);
+
+	var div = document.createElement('div');
+	div.className = 'peakIcon';
+	div.appendChild(svg);
+	return div;
+}
+function centerIcon()
+{
+	var lines = [
+		{x1: '13', y1: '0', x2: '13', y2: '28', stroke: 'white'},
+		{x1: '14', y1: '0', x2: '14', y2: '28', stroke: 'black'},
+		{x1: '15', y1: '0', x2: '15', y2: '28', stroke: 'white'},
+		{y1: '13', x1: '0', y2: '13', x2: '28', stroke: 'white'},
+		{y1: '14', x1: '0', y2: '14', x2: '28', stroke: 'black'},
+		{y1: '15', x1: '0', y2: '15', x2: '28', stroke: 'white'},
+	];
+
+	var svgNode = document.createElementNS(svgNS, 'svg');
+	svgNode.setAttribute('width', 28);
+	svgNode.setAttribute('height', 28);
+	svgNode.setAttribute('viewBox', '0 0 28 28');
+
+	for (var line of lines)
+	{
+		var node = document.createElementNS(svgNS, 'line');
+		node.setAttribute('x1', line.x1);
+		node.setAttribute('y1', line.y1);
+		node.setAttribute('x2', line.x2);
+		node.setAttribute('y2', line.y2);
+		node.setAttribute('stroke', line.stroke);
+		node.setAttribute('stroke-dasharray', '9 10');
+		svgNode.appendChild(node);
+	}
+
+	return svgNode;
+}
+function loadJSON(url, onSuccess, onFailure)
+{
+	var xhr = new XMLHttpRequest();
+
+	xhr.responseType = 'json';
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4)
+			if (xhr.status === 200)
+				onSuccess(xhr.response);
+			else if (onFailure)
+				onFailure();
+	}
+
+	xhr.open('GET', url);
+	xhr.send();
+}
+function createMap(options)
+{
+	var queryString = {
+		baseLayer: 'Outdoors',
+		bearing: 0,
+		overlays: [],
+		pitch: 0,
+	};
+	parseQueryString(queryString);
+
+	var layers = [
+		'Outdoors',
+		'Satellite',
+		'Satellite Streets',
+		'Streets',
+	];
+
+	var baseLayers = {};
+	for (var layer of layers)
+	{
+		var id = 'mapbox://styles/mapbox/' + layer.toLowerCase().replace(/ /g, '-') + '-v9';
+		baseLayers[layer] = id;
+	}
+
+	mapboxgl.accessToken = options.accessToken;
+
+	options.container = 'map';
+	options.style = baseLayers[queryString.baseLayer];
+	options.bearing = queryString.bearing;
+	options.pitch = queryString.pitch;
+
+	var map = new mapboxgl.Map(options);
+
+	map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+	map.addControl(new mapboxgl.ScaleControl({unit: 'imperial'}), 'bottom-left');
+
+	var mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
+	var mapBoundsFromOverlay = false;
+	var overlaysToLoad = queryString.overlays.length;
+
+	if (queryString.ll) {
+		var minZoom = map.getMinZoom();
+		var maxZoom = map.getMaxZoom();
+
+		var zoom = queryString.zoom || (maxZoom - 5);
+
+		if (zoom < minZoom) zoom = minZoom; else
+		if (zoom > maxZoom) zoom = maxZoom;
+
+		map.jumpTo({center: queryString.ll, zoom: zoom});
+	} else
+		map.fitBounds(mapBounds);
+
+	document.getElementById('fitLink').addEventListener('click', function(e) {
+		if (mapBoundsFromOverlay)
+			map.fitBounds(mapBounds, {padding: 30});
+		else
+			map.fitBounds(mapBounds);
+	}, false);
+
+	var llText = document.getElementById('llText').firstChild;
+	function updateCenter()
+	{
+		var center = map.getCenter();
+		llText.nodeValue = center.lat.toFixed(6) + ',' + center.lng.toFixed(6);
+		return center;
+	}
+
+	var centerMarker = new mapboxgl.Marker(centerIcon(), {offset: [-14, -14]})
+		.setLngLat(updateCenter())
+		.addTo(map);
+
+	map.on('move', function(e) {
+		centerMarker.setLngLat(updateCenter());
+	});
+
+	var bearingSpan = document.getElementById('bearingText');
+	var pitchSpan = document.getElementById('pitchText');
+
+	var bearingText = bearingSpan.lastChild;
+	var pitchText = pitchSpan.lastChild;
+
+	function updateBearing(event)
+	{
+		var bearing = Math.round(map.getBearing());
+		if (bearing < 0)
+			bearing += 360;
+		bearingText.nodeValue = bearing + '\u00B0'; // \u00B0 is the degree symbol (&deg;)
+	}
+	function updatePitch(event)
+	{
+		pitchText.nodeValue = Math.round(map.getPitch()) + '\u00B0';
+	}
+	function resetBearing(event)
+	{
+		var duration = 1000 + Math.round(1000 * Math.abs(map.getBearing()) / 180);
+		map.easeTo({bearing: 0, duration: duration});
+	}
+	function resetPitch(event)
+	{
+		var duration = 1000 + Math.round(1000 * map.getPitch() / 60);
+		map.easeTo({pitch: 0, duration: duration});
+	}
+
+	updateBearing();
+	updatePitch();
+
+	map.on('rotate', updateBearing);
+	map.on('pitch', updatePitch);
+
+	bearingSpan.addEventListener('click', updateBearing, false);
+	pitchSpan.addEventListener('click', updatePitch, false);
+
+	bearingSpan.addEventListener('dblclick', resetBearing, false);
+	pitchSpan.addEventListener('dblclick', resetPitch, false);
+
+	function addOverlay(geojson)
+	{
+		if (geojson.features.length === 0) return;
+
+		function addPeak(ll, p)
+		{
+			var icon = peakIcon(p);
+
+			icon.addEventListener('dblclick', function(event) {
+				event.preventDefault();
+				event.stopPropagation();
+				map.flyTo({center: ll, zoom: map.getMaxZoom() - 5});
+			}, false);
+			icon.addEventListener('click', function(event) {
+				setTimeout(enableTooltips, 100);
+			}, false);
+
+			var popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
+				.setLngLat(ll)
+				.setHTML(popupHtml(ll, p));
+
+			var peakMarker = new mapboxgl.Marker(icon, {offset: [-10, -13]})
+				.setLngLat(ll)
+				.setPopup(popup)
+				.addTo(map);
+		}
+
+		var minLng, minLat;
+		var maxLng, maxLat;
+		var first = true;
+
+		for (var feature of geojson.features)
+		{
+			var ll = feature.geometry.coordinates;
+			var lng = ll[0];
+			var lat = ll[1];
+			if (first) {
+				minLng = maxLng = lng;
+				minLat = maxLat = lat;
+				first = false;
+			} else {
+				if (lng < minLng) minLng = lng; else if (lng > maxLng) maxLng = lng;
+				if (lat < minLat) minLat = lat; else if (lat > maxLat) maxLat = lat;
+			}
+			addPeak(ll, feature.properties);
+		}
+
+		var bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
+
+		if (mapBoundsFromOverlay) {
+			mapBounds.extend(bounds);
+		} else {
+			mapBounds = bounds;
+			mapBoundsFromOverlay = true;
+		}
+		if (!queryString.ll && --overlaysToLoad === 0)
+			map.fitBounds(mapBounds, {padding: 30});
+	}
+
+	for (var url of queryString.overlays)
+		loadJSON(url, addOverlay);
+}
+function init()
+{
+	var protocol = window.location.protocol;
+	var suffix = (protocol === 'file:' || protocol === '') ? 'json' : 'cgi';
+
+	loadJSON('mapbox.' + suffix, createMap);
+}
+</script>
+</head>
+<body onload="init()">
+
+<div id="map"></div>
+<div id="llDiv"><span id="llText">Latitude, Longitude</span>
+<span id="bearingText"><span id="bearingIcon">&#8634;</span>0&deg;</span>
+<span id="pitchText"><span id="pitchIcon">&#9727;</span>0&deg;</span>
+<span id="fitLink">&#9634;</span></div>
+
+</body>
+</html>
