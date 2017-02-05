@@ -128,7 +128,7 @@ function makeLink(url, txt)
 {
 	return '<a href="' + url + '">' + txt + '</a>';
 }
-function popupHtml(p, ll)
+function popupHtml(ll, p, htmlFilename)
 {
 	var g4URL = 'https://mappingsupport.com/p/gmap4.php?ll=' + ll.lat + ',' + ll.lng + '&' + p.G4;
 
@@ -136,7 +136,8 @@ function popupHtml(p, ll)
 
 	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
 
-	var name = makeLink(g4URL, p.name) + suffix + otherName;
+	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' '
+		+ makeLink(g4URL, p.name) + suffix + otherName;
 
 	var links = [];
 	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
@@ -266,10 +267,12 @@ function createMap(options)
 		centerMarker.setLatLng(updateCenter());
 	});
 
+	var htmlFilename;
+
 	options.pointToLayer = function(feature, latlng) {
 		var p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
-			.bindPopup(popupHtml(p, latlng))
+			.bindPopup(popupHtml(latlng, p, htmlFilename))
 			.on('popupopen', enableTooltips)
 			.on('dblclick', function(e) {
 				map.setView(latlng, map.getMaxZoom() - 5);
@@ -278,11 +281,16 @@ function createMap(options)
 
 	function addOverlay(geojson)
 	{
-		var title = geojson.title;
-		delete geojson.title;
+		var name = geojson.name;
+		delete geojson.name;
+
+		var id = geojson.id;
+		delete geojson.id;
+
+		htmlFilename = id.toLowerCase() + '.html#' + id;
 
 		var featureLayer = L.mapbox.featureLayer(geojson, options).addTo(map);
-		layersControl.addOverlay(featureLayer, title);
+		layersControl.addOverlay(featureLayer, name);
 
 		if (mapBoundsFromOverlay) {
 			mapBounds.extend(featureLayer.getBounds());

@@ -184,7 +184,7 @@ function makeLink(url, txt)
 {
 	return '<a href="' + url + '">' + txt + '</a>';
 }
-function popupHtml(ll, p)
+function popupHtml(ll, p, htmlFilename)
 {
 	var lng = ll[0];
 	var lat = ll[1];
@@ -195,7 +195,8 @@ function popupHtml(ll, p)
 
 	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
 
-	var name = makeLink(g4URL, p.name) + suffix + otherName;
+	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' '
+		+ makeLink(g4URL, p.name) + suffix + otherName;
 
 	var links = [];
 	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
@@ -481,6 +482,9 @@ function createMap(options)
 	{
 		if (geojson.features.length === 0) return;
 
+		var idPrefix = geojson.id;
+		var htmlFilename = idPrefix.toLowerCase() + '.html#' + idPrefix;
+
 		function addPeak(ll, p)
 		{
 			var icon = peakIcon(p);
@@ -496,7 +500,7 @@ function createMap(options)
 
 			var popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
 				.setLngLat(ll)
-				.setHTML(popupHtml(ll, p));
+				.setHTML(popupHtml(ll, p, htmlFilename));
 
 			return new mapboxgl.Marker(icon, {offset: [-10, -13]})
 				.setLngLat(ll)
@@ -536,7 +540,7 @@ function createMap(options)
 		if (--overlaysToLoad === 0 && !queryString.ll)
 			map.fitBounds(mapBounds, {padding: 30});
 
-		layerControl.addOverlay(geojson.title, markers);
+		layerControl.addOverlay(geojson.name, markers);
 	}
 
 	for (var url of queryString.overlays)
