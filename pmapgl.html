@@ -46,11 +46,46 @@ a {text-decoration: none;}
 	background-color: rgba(236,236,236,0.8);
 	cursor: pointer;
 }
+#layerControlIcon {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 26px;
+	height: 25px;
+	background-color: rgb(255,255,255);
+	border: 1px solid rgb(128,128,128);
+	border-radius: 5px;
+}
+#layerControl {
+	position: absolute;
+	top: -1px;
+	right: -1px;
+	width: 150px;
+	background-color: rgb(255,255,255);
+	border: 1px solid rgb(128,128,128);
+	border-radius: 5px;
+	cursor: default;
+	display: none;
+	font-family: verdana;
+	font-size: 10pt;
+	padding: 3px 0px;
+}
+#layerControl > div {
+	padding: 2px;
+}
+#layerControl > div:hover {
+	background-color: rgb(232,232,232);
+}
+.centerIcon {
+	pointer-events: none;
+	z-index: 1000;
+}
 .peakIcon {
 	cursor: pointer;
 }
 </style>
 <script>
+"use strict";
 function isValidId(s)
 {
 	return s.length <= 8 && s.match(/^[a-z][0-9a-z]*$/) !== null;
@@ -215,10 +250,10 @@ function centerIcon()
 		{y1: '15', x1: '0', y2: '15', x2: '28', stroke: 'white'},
 	];
 
-	var svgNode = document.createElementNS(svgNS, 'svg');
-	svgNode.setAttribute('width', 28);
-	svgNode.setAttribute('height', 28);
-	svgNode.setAttribute('viewBox', '0 0 28 28');
+	var svg = document.createElementNS(svgNS, 'svg');
+	svg.setAttribute('width', 28);
+	svg.setAttribute('height', 28);
+	svg.setAttribute('viewBox', '0 0 28 28');
 
 	for (var line of lines)
 	{
@@ -229,10 +264,83 @@ function centerIcon()
 		node.setAttribute('y2', line.y2);
 		node.setAttribute('stroke', line.stroke);
 		node.setAttribute('stroke-dasharray', '9 10');
-		svgNode.appendChild(node);
+		svg.appendChild(node);
 	}
 
-	return svgNode;
+	var div = document.createElement('div');
+	div.className = 'centerIcon';
+	div.appendChild(svg);
+	return div;
+}
+function LayerControl(map, currentLayer)
+{
+	var div = document.getElementById('layerControl');
+	var icon = document.getElementById('layerControlIcon');
+
+	icon.addEventListener('mouseenter', function() {div.style.display = 'block';}, false);
+	icon.addEventListener('mouseleave', function() {div.style.display = 'none';}, false);
+
+	this.map = map;
+	this.div = div;
+	this.currentLayer = currentLayer;
+}
+LayerControl.prototype.addLayer = function(name, style)
+{
+	var ctrl = this;
+
+	var input = document.createElement('input');
+	input.type = 'radio';
+	input.name = 'style';
+	input.checked = (name === ctrl.currentLayer);
+
+	function changeStyle()
+	{
+		if (name === ctrl.currentLayer) return;
+		ctrl.currentLayer = name;
+		input.checked = true;
+		ctrl.map.setStyle(style);
+	}
+
+	var div = document.createElement('div');
+	div.appendChild(input);
+	div.appendChild(document.createTextNode(' ' + name));
+	div.addEventListener('click', changeStyle, false);
+
+	ctrl.div.appendChild(div);
+}
+LayerControl.prototype.addOverlay = function(name, markers)
+{
+	var ctrl = this;
+
+	if (ctrl.div.lastChild && ctrl.div.lastChild.firstChild.type === 'radio')
+		ctrl.div.appendChild(document.createElement('hr'));
+
+	var div = document.createElement('div');
+	var input = document.createElement('input');
+
+	function toggleMarkers()
+	{
+		var m;
+		if (input.checked) {
+			for (m of markers) m.addTo(ctrl.map);
+		} else {
+			for (m of markers) m.remove();
+		}
+	}
+	function clickInput(event)
+	{
+		if (event.target !== input) input.click();
+	}
+
+	input.type = 'checkbox';
+	input.checked = true;
+	input.addEventListener('change', toggleMarkers, false);
+
+	div.appendChild(input);
+	div.appendChild(document.createTextNode(' ' + name));
+	div.addEventListener('click', clickInput, false);
+
+	ctrl.div.appendChild(div);
 }
 function loadJSON(url, onSuccess, onFailure)
 {
@@ -267,24 +375,27 @@ function createMap(options)
 		'Streets',
 	];
 
-	var baseLayers = {};
+	var styles = {};
 	for (var layer of layers)
-	{
-		var id = 'mapbox://styles/mapbox/' + layer.toLowerCase().replace(/ /g, '-') + '-v9';
-		baseLayers[layer] = id;
-	}
+		styles[layer] = 'mapbox://styles/mapbox/' + layer.toLowerCase().replace(/ /g, '-') + '-v9';
 
 	mapboxgl.accessToken = options.accessToken;
 
+	options.center = [-119.25, 37.4];
 	options.container = 'map';
-	options.style = baseLayers[queryString.baseLayer];
+	options.style = styles[queryString.baseLayer];
 	options.bearing = queryString.bearing;
 	options.pitch = queryString.pitch;
+	options.zoom = 6;
 
 	var map = new mapboxgl.Map(options);
 
 	map.addControl(new mapboxgl.NavigationControl(), 'top-left');
 	map.addControl(new mapboxgl.ScaleControl({unit: 'imperial'}), 'bottom-left');
+
+	var layerControl = new LayerControl(map, queryString.baseLayer);
+	for (var layer of layers)
+		layerControl.addLayer(layer, styles[layer]);
 
 	var mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
 	var mapBoundsFromOverlay = false;
@@ -303,7 +414,7 @@ function createMap(options)
 	} else
 		map.fitBounds(mapBounds);
 
-	document.getElementById('fitLink').addEventListener('click', function(e) {
+	document.getElementById('fitLink').addEventListener('click', function() {
 		if (mapBoundsFromOverlay)
 			map.fitBounds(mapBounds, {padding: 30});
 		else
@@ -322,7 +433,7 @@ function createMap(options)
 		.setLngLat(updateCenter())
 		.addTo(map);
 
-	map.on('move', function(e) {
+	map.on('move', function() {
 		centerMarker.setLngLat(updateCenter());
 	});
 
@@ -387,12 +498,13 @@ function createMap(options)
 				.setLngLat(ll)
 				.setHTML(popupHtml(ll, p));
 
-			var peakMarker = new mapboxgl.Marker(icon, {offset: [-10, -13]})
+			return new mapboxgl.Marker(icon, {offset: [-10, -13]})
 				.setLngLat(ll)
 				.setPopup(popup)
 				.addTo(map);
 		}
 
+		var markers = [];
 		var minLng, minLat;
 		var maxLng, maxLat;
 		var first = true;
@@ -410,7 +522,7 @@ function createMap(options)
 				if (lng < minLng) minLng = lng; else if (lng > maxLng) maxLng = lng;
 				if (lat < minLat) minLat = lat; else if (lat > maxLat) maxLat = lat;
 			}
-			addPeak(ll, feature.properties);
+			markers.push(addPeak(ll, feature.properties));
 		}
 
 		var bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
@@ -421,8 +533,10 @@ function createMap(options)
 			mapBounds = bounds;
 			mapBoundsFromOverlay = true;
 		}
-		if (!queryString.ll && --overlaysToLoad === 0)
+		if (--overlaysToLoad === 0 && !queryString.ll)
 			map.fitBounds(mapBounds, {padding: 30});
+
+		layerControl.addOverlay(geojson.title, markers);
 	}
 
 	for (var url of queryString.overlays)
@@ -444,6 +558,7 @@ function init()
 <span id="bearingText"><span id="bearingIcon">&#8634;</span>0&deg;</span>
 <span id="pitchText"><span id="pitchIcon">&#9727;</span>0&deg;</span>
 <span id="fitLink">&#9634;</span></div>
+<div id="layerControlIcon"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="25" viewBox="0 0 26 25"><path fill="black" d="M 6,9 l 7,2 7,-2 0,-1 -7,-2 -7,2 Z M 6,13 l 7,2 7,-2 0,-2 -7,2 -7,-2 Z M 6,17 l 7,2 7,-2 0,-2 -7,2 -7,-2 Z" /></svg><div id="layerControl"></div></div>
 
 </body>
 </html>
