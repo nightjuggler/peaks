@@ -9,7 +9,6 @@ class G(object):
 	htmlFilename = 'sps.html'
 	colspan = '14'
 	colspanMinus1 = '13'
-	section1 = 'Southern Sierra'
 	geojsonTitle = 'Sierra Peaks'
 	numPeaks = 247
 	numSections = 24
@@ -22,7 +21,6 @@ class G(object):
 		self.htmlFilename = 'dps.html'
 		self.colspan = '13'
 		self.colspanMinus1 = '12'
-		self.section1 = 'Trans-Sierra &mdash; Mono and Inyo Counties'
 		self.geojsonTitle = 'Desert Peaks'
 		self.numPeaks = 99
 		self.numSections = 9
@@ -640,7 +638,7 @@ def readHTML():
 def writeHTML():
 	oldColspan = ' colspan="' + G.colspan + '"'
 	newColspan = ' colspan="' + G.colspan + '"'
-	sectionFormat = '<tr class="section"><td {}colspan="' + G.colspan + '">{}. {}</td></tr>'
+	sectionFormat = '<tr class="section"><td id="{0}{1}"' + newColspan + '>{1}. {2}</td></tr>'
 	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},-{}&z={}&t={}">{}</a>{}{}</td>'
 	summitpostFormat = '<td><a href="http://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
@@ -650,6 +648,7 @@ def writeHTML():
 	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
 	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon=-{0}&lat={1}">WX</a></td>'
 	emptyCell = '<td>&nbsp;</td>'
+	section1Line = sectionFormat.format(G.peakIdPrefix, 1, sectionArray[0]) + '\n';
 
 	htmlFile = open(G.htmlFilename)
 	for line in htmlFile:
@@ -657,7 +656,7 @@ def writeHTML():
 		if line == tableLine:
 			break
 	for line in htmlFile:
-		if line == '<tr class="section"><td colspan="' + G.colspan + '">1. ' + G.section1 + '</td></tr>\n':
+		if line == section1Line:
 			break
 		line = line.replace(oldColspan, newColspan)
 		print line,
@@ -666,11 +665,7 @@ def writeHTML():
 	for peak in peakArray:
 		if peak.section != sectionNumber:
 			sectionNumber = peak.section
-			if G.dps and sectionNumber == 2:
-				sectionId = 'id="' + G.peakIdPrefix + str(sectionNumber) + '" '
-			else:
-				sectionId = ''
-			print sectionFormat.format(sectionId, sectionNumber, sectionArray[sectionNumber - 1])
+			print sectionFormat.format(G.peakIdPrefix, sectionNumber, sectionArray[sectionNumber - 1])
 
 		suffix = ''
 		classNames = []
@@ -775,7 +770,7 @@ def writePeakJSON(f, peak):
 	f(']},\n')
 	f('\t\t"properties": {\n')
 
-	p = [('name', peak.name)]
+	p = [('id', peak.id), ('name', peak.name)]
 	if peak.otherName is not None:
 		p.append(('name2', peak.otherName))
 
@@ -824,7 +819,9 @@ def writeJSON():
 	firstPeak = True
 
 	f('{\n')
-	f('\t"title": "')
+	f('\t"id": "')
+	f(G.peakIdPrefix)
+	f('",\n\t"name": "')
 	f(G.geojsonTitle)
 	f('",\n')
 	f('\t"type": "FeatureCollection",\n')
