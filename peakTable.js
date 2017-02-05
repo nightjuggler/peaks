@@ -301,6 +301,8 @@ function decorateTable()
 			mapLinkSpan.addEventListener('click', showMapLinkBox, false);
 		}
 	}
+	if (window.location.hash)
+		window.location.replace(window.location.href);
 }
 window.addEventListener('DOMContentLoaded', decorateTable, false);
 
