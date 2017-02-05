@@ -27,6 +27,7 @@ var isUSPeak = function(peakId) { return Number(peakId.split('.')[0]) < 9; }
 <tr class="section"><td id="header" colspan="13">
 <a href="http://desertpeaks.org/">Desert Peaks Section</a>
 [<a href="pmap.html?o=dps">Map</a>,
+<a href="pmapgl.html?o=dps">MapGL</a>,
 <a href="http://www.summitpost.org/desert-peaks-section-dps-peaks-list/605644">SP</a>]
 <span id="legendLink" onclick="showLegend()">LEGEND</span>
 </td></tr>
@@ -47,7 +48,7 @@ var isUSPeak = function(peakId) { return Number(peakId.split('.')[0]) < 9; }
 <option value="classic">Classic</option>
 <option value="nocolor">None</option>
 </select></div></td></tr>
-<tr class="section"><td colspan="13">1. Trans-Sierra &mdash; Mono and Inyo Counties</td></tr>
+<tr class="section"><td id="DPS1" colspan="13">1. Trans-Sierra &mdash; Mono and Inyo Counties</td></tr>
 <tr class="climbed landFS">
 <td>1.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=38.43693,-119.30508&z=14&t=t4">Mount Patterson</a></td>
@@ -637,7 +638,7 @@ of the mountain</b>.&quot; (1956)
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-117.3806&lat=36.549">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="13">3. San Bernardino County</td></tr>
+<tr class="section"><td id="DPS3" colspan="13">3. San Bernardino County</td></tr>
 <tr class="landBLM">
 <td>3.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=35.51267,-116.33157&z=14&t=t4">Avawatz Peak</a></td>
@@ -881,7 +882,7 @@ of the mountain</b>.&quot; (1956)
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-114.41107&lat=34.31455">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="13">4. Riverside County</td></tr>
+<tr class="section"><td id="DPS4" colspan="13">4. Riverside County</td></tr>
 <tr class="landFSW">
 <td rowspan="2">4.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=33.55429,-116.34528&z=14&t=t4">Martinez Mountain</a></td>
@@ -1103,7 +1104,7 @@ pages 365-367
 <li>Note from the DPS Peaks List (29th Edition, April 2003):
 <br>Prior to 1980, the summit was designated as point 3379', which is 0.8 mi NNE of the present summit.
 </ul></td></tr>
-<tr class="section"><td colspan="13">5. San Diego and Imperial Counties</td></tr>
+<tr class="section"><td id="DPS5" colspan="13">5. San Diego and Imperial Counties</td></tr>
 <tr class="landSP">
 <td>5.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=33.2926,-116.4304&z=16&t=t4">Indianhead</a></td>
@@ -1164,7 +1165,7 @@ pages 365-367
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-114.6639&lat=32.9725">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="13">6. Nevada</td></tr>
+<tr class="section"><td id="DPS6" colspan="13">6. Nevada</td></tr>
 <tr class="landFSW">
 <td>6.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.6217,-115.4754&z=16&t=t4">Ruby Dome</a></td>
@@ -1398,7 +1399,7 @@ pages 365-367
 <li>Note from the DPS Peaks List (29th Edition, April 2003):
 <br>This is not the high point of the Muddy Mountains; it is the &quot;Muddy Peak&quot; named on the topo which is 1.1 miles to the east.
 </ul></td></tr>
-<tr class="section"><td colspan="13">7. Utah</td></tr>
+<tr class="section"><td id="DPS7" colspan="13">7. Utah</td></tr>
 <tr class="landNPS">
 <td>7.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.3162,-113.0583&z=16&t=t4">North Guardian Angel</a></td>
@@ -1444,7 +1445,7 @@ pages 365-367
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-110.86958&lat=37.03426">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="13">8. Arizona</td></tr>
+<tr class="section"><td id="DPS8" colspan="13">8. Arizona</td></tr>
 <tr class="landBLMW">
 <td>8.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=35.5388,-114.1927&z=16&t=t4">Mount Tipton</a></td>
@@ -1580,7 +1581,7 @@ pages 365-367
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-111.59584&lat=31.7711">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="13">9. Mexico</td></tr>
+<tr class="section"><td id="DPS9" colspan="13">9. Mexico</td></tr>
 <tr>
 <td>9.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=32.3675,-115.4461&z=14&t=t1">Cerro Pescadores</a></td>

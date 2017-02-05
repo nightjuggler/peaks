@@ -28,6 +28,7 @@ NAVD 88 = <a href="https://en.wikipedia.org/wiki/North_American_Vertical_Datum_o
 <tr class="section"><td id="header" colspan="14">
 <a href="http://sierrapeaks.org/">Sierra Peaks Section</a>
 [<a href="pmap.html?o=sps">Map</a>,
+<a href="pmapgl.html?o=sps">MapGL</a>,
 <a href="http://www.summitpost.org/sierra-peaks-section-sps/404706">SP</a>,
 <a href="https://en.wikipedia.org/wiki/Sierra_Peaks_Section">W</a>]
 <span id="legendLink" onclick="showLegend()">LEGEND</span>
@@ -51,7 +52,7 @@ NAVD 88 = <a href="https://en.wikipedia.org/wiki/North_American_Vertical_Datum_o
 <option value="classic">Classic</option>
 <option value="nocolor">None</option>
 </select></div></td></tr>
-<tr class="section"><td colspan="14">1. Southern Sierra</td></tr>
+<tr class="section"><td id="SPS1" colspan="14">1. Southern Sierra</td></tr>
 <tr class="climbed landBLMW">
 <td id="SPS1.2" rowspan="2">1.2</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=35.73828,-117.997&z=14&t=t4">Owens Peak</a></td>
@@ -222,7 +223,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.22442&lat=36.12726">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">2. Mineral King and Kern River</td></tr>
+<tr class="section"><td id="SPS2" colspan="14">2. Mineral King and Kern River</td></tr>
 <tr class="landFSW">
 <td>2.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.30843,-118.28799&z=14&t=t4">Kern Peak</a></td>
@@ -383,7 +384,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.5371&lat=36.4545">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">3. Olancha to Langley and West</td></tr>
+<tr class="section"><td id="SPS3" colspan="14">3. Olancha to Langley and West</td></tr>
 <tr class="emblem landFSW">
 <td rowspan="2">3.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.26512,-118.11816&z=15&t=t4">Olancha Peak</a> **</td>
@@ -565,7 +566,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.3117&lat=36.5548">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">4. Corcoran to Whitney</td></tr>
+<tr class="section"><td id="SPS4" colspan="14">4. Corcoran to Whitney</td></tr>
 <tr class="landNPS">
 <td>4.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.5386,-118.2506&z=16&t=t4">Mount Corcoran</a></td>
@@ -717,7 +718,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.2257&lat=36.5617">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">5. Whitney to Williamson</td></tr>
+<tr class="section"><td id="SPS5" colspan="14">5. Whitney to Williamson</td></tr>
 <tr class="landNPS">
 <td>5.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.5812,-118.3273&z=16&t=t4">Mount Young</a></td>
@@ -890,7 +891,7 @@ on Canebrake Road
 <li><a href="http://highwire.stanford.edu/~galic/hiking/williamson/">H. Galic</a> (7/27/2012)
 <li><a href="http://www.scaruffi.com/travel/williams.html">Piero Scaruffi</a>
 </ul></td></tr>
-<tr class="section"><td colspan="14">6. Kaweahs and West</td></tr>
+<tr class="section"><td id="SPS6" colspan="14">6. Kaweahs and West</td></tr>
 <tr class="landNPS">
 <td>6.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.5906,-118.6634&z=16&t=t4">Alta Peak</a></td>
@@ -1083,7 +1084,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.4445&lat=36.5966">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">7. Great Western Divide</td></tr>
+<tr class="section"><td id="SPS7" colspan="14">7. Great Western Divide</td></tr>
 <tr class="mtneer landNPS">
 <td>7.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.5929,-118.5307&z=16&t=t4">Triple Divide Peak</a> *</td>
@@ -1244,7 +1245,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.4898&lat=36.7166">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">8. Kings Kern Divide</td></tr>
+<tr class="section"><td id="SPS8" colspan="14">8. Kings Kern Divide</td></tr>
 <tr class="landNPS">
 <td>8.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.6822,-118.4497&z=16&t=t4">Mount Jordan</a></td>
@@ -1437,7 +1438,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.3905&lat=36.6888">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">9. Kearsarge Pass Vicinity</td></tr>
+<tr class="section"><td id="SPS9" colspan="14">9. Kearsarge Pass Vicinity</td></tr>
 <tr class="mtneer landNPS">
 <td>9.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.748,-118.3618&z=16&t=t4">University Peak</a> *</td>
@@ -1633,7 +1634,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.3901&lat=36.8264">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">10. Baxter Pass to Taboose Pass</td></tr>
+<tr class="section"><td id="SPS10" colspan="14">10. Baxter Pass to Taboose Pass</td></tr>
 <tr class="landNPS">
 <td>10.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.8619,-118.3653&z=16&t=t4">Mount Baxter</a></td>
@@ -1794,7 +1795,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.4125&lat=36.9995">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">11. Western Mid-Sierra</td></tr>
+<tr class="section"><td id="SPS11" colspan="14">11. Western Mid-Sierra</td></tr>
 <tr class="mtneer landNPS">
 <td>11.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.9785,-118.4732&z=16&t=t4">Mount Ruskin</a> *</td>
@@ -1939,7 +1940,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-119.06083&lat=37.1412">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">12. South Palisades</td></tr>
+<tr class="section"><td id="SPS12" colspan="14">12. South Palisades</td></tr>
 <tr class="climbed emblem landNPS">
 <td id="SPS12.1" rowspan="2">12.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.02092,-118.42245&z=15&t=t4">Split Mountain</a> **</td>
@@ -2111,7 +2112,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.4896&lat=37.0814">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">13. Mount Goddard Vicinity</td></tr>
+<tr class="section"><td id="SPS13" colspan="14">13. Mount Goddard Vicinity</td></tr>
 <tr class="landNPS">
 <td>13.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.0232,-118.5236&z=16&t=t4">Observation Peak</a></td>
@@ -2304,7 +2305,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.6883&lat=36.9955">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">14. North Palisades</td></tr>
+<tr class="section"><td id="SPS14" colspan="14">14. North Palisades</td></tr>
 <tr class="landFSW">
 <td>14.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.1095,-118.4911&z=16&t=t4">Temple Crag</a></td>
@@ -2500,7 +2501,7 @@ on Canebrake Road
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.5983&lat=37.1365">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">15. Evolution Area</td></tr>
+<tr class="section"><td id="SPS15" colspan="14">15. Evolution Area</td></tr>
 <tr class="landNPS">
 <td>15.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.1427,-118.6134&z=16&t=t4">Mount Thompson</a></td>
@@ -2723,7 +2724,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.8273&lat=37.1834">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">16. Humphreys Basin and West</td></tr>
+<tr class="section"><td id="SPS16" colspan="14">16. Humphreys Basin and West</td></tr>
 <tr class="landNPS">
 <td>16.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.2061,-118.7019&z=16&t=t4">Mount Goethe</a></td>
@@ -2903,7 +2904,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.8947&lat=37.2924">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">17. Bear Creek Spire Area</td></tr>
+<tr class="section"><td id="SPS17" colspan="14">17. Bear Creek Spire Area</td></tr>
 <tr class="landFSW">
 <td>17.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.3091,-118.7653&z=16&t=t4">Merriam Peak</a></td>
@@ -3080,7 +3081,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.73294&lat=37.40524">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">18. Mono Creek to Mammoth</td></tr>
+<tr class="section"><td id="SPS18" colspan="14">18. Mono Creek to Mammoth</td></tr>
 <tr class="landFSW">
 <td>18.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.4696,-119.0212&z=16&t=t4">Silver Peak</a></td>
@@ -3225,7 +3226,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.9069&lat=37.5606">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">19. Ritter Range and Vicinity</td></tr>
+<tr class="section"><td id="SPS19" colspan="14">19. Ritter Range and Vicinity</td></tr>
 <tr class="landFSW">
 <td>19.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.6116,-119.1644&z=16&t=t4">Iron Mountain</a></td>
@@ -3377,7 +3378,7 @@ parking area near the North Lake pack station</a>
 <li><a href="http://calipidder.com/wp/2014/09/san-joaquin-mountain-11601/">Calipidder</a> (8/14/2014)
 (<a href="http://photos.calipidder.com/SierraAdventures/San-Joaquin-Mountain-11601-081/">Photos</a>)
 </ul></td></tr>
-<tr class="section"><td colspan="14">20. Clark Range and Vicinity</td></tr>
+<tr class="section"><td id="SPS20" colspan="14">20. Clark Range and Vicinity</td></tr>
 <tr class="landNPS">
 <td>20.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.6351,-119.3945&z=16&t=t4">Merced Peak</a></td>
@@ -3490,7 +3491,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-119.48924&lat=37.767865">WX</a></td>
 <td>10/8/2015 solo</td>
 </tr>
-<tr class="section"><td colspan="14">21. Mount Lyell and North</td></tr>
+<tr class="section"><td id="SPS21" colspan="14">21. Mount Lyell and North</td></tr>
 <tr class="mtneer landNPS">
 <td>21.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.8477,-119.4057&z=16&t=t4">Cathedral Peak</a> *</td>
@@ -3619,7 +3620,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-119.221165&lat=37.899865">WX</a></td>
 <td><a href="/photos/20120804Sierra/">8/7/2012</a> with <a href="http://photo.maxp.net/Outdoors/20120807-sierra/">Max</a></td>
 </tr>
-<tr class="section"><td colspan="14">22. Tioga Pass to Bond Pass</td></tr>
+<tr class="section"><td id="SPS22" colspan="14">22. Tioga Pass to Bond Pass</td></tr>
 <tr class="landFSW">
 <td>22.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.98986,-119.22349&z=14&t=t4">Mount Warren</a></td>
@@ -3837,7 +3838,7 @@ parking area near the North Lake pack station</a>
 <td><a href="http://forecast.weather.gov/MapClick.php?lon=-119.5477&lat=38.14455">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td colspan="14">23. Bond Pass to Lake Tahoe</td></tr>
+<tr class="section"><td id="SPS23" colspan="14">23. Bond Pass to Lake Tahoe</td></tr>
 <tr class="landFSW">
 <td>23.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=38.2062,-119.7089&z=16&t=t4">Black Hawk Mountain</a></td>
@@ -4024,7 +4025,7 @@ off of Wrights Lake Road
 <li><a href="http://www.petesthousandpeaks.com/Captions/nspg/mttallac.html">Pete Yamagata</a>
 <li>Approx. 4.5 miles one-way and 3,300' elevation gain via the Mount Tallac Trail from the <a href="https://www.google.com/maps/place/Mt.+Tallac+Trailhead/">Mount Tallac Trailhead</a> (6400'+)
 </ul></td></tr>
-<tr class="section"><td colspan="14">24. Northern Sierra</td></tr>
+<tr class="section"><td id="SPS24" colspan="14">24. Northern Sierra</td></tr>
 <tr class="landFSW">
 <td>24.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.198256,-120.286992&z=15&t=t4">Granite Chief</a></td>
