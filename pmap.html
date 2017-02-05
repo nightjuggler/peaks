@@ -290,7 +290,7 @@ function createMap(options)
 			mapBounds = featureLayer.getBounds();
 			mapBoundsFromOverlay = true;
 		}
-		if (!queryString.ll && --overlaysToLoad === 0)
+		if (--overlaysToLoad === 0 && !queryString.ll)
 			map.fitBounds(mapBounds);
 	}
 
