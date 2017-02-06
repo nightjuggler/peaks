@@ -415,7 +415,7 @@ def parseElevation(peak, lineNumber, htmlFile):
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
 def readHTML():
-	sectionRowPattern = re.compile('^<tr class="section"><td (?:id="' + G.peakIdPrefix + '[0-9]+" )?colspan="' + G.colspan + '">([0-9]+)\\. ([- &,;A-Za-z]+)</td></tr>$')
+	sectionRowPattern = re.compile('^<tr class="section"><td id="' + G.peakIdPrefix + '([0-9]+)" colspan="' + G.colspan + '">\\1\\. ([- &,;A-Za-z]+)</td></tr>$')
 	peakRowPattern = re.compile('^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?>$')
 	column1Pattern = re.compile('^<td(?: id="' + G.peakIdPrefix + '([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
 	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$')
