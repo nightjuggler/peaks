@@ -13,17 +13,18 @@ class Spheroid(object):
 			self.f = 1.0 / inverseFlattening
 
 		# a = equatorial radius (aka semi-major axis)
-		# c = polar radius (aka semi-minor axis)
-		# f = flattening = 1 - c/a
-		# ee = eccentricity squared = 1 - (c*c)/(a*a) = (1 - c/a)*(1 + c/a) = f*(2 - f)
+		# b = polar radius (aka semi-minor axis)
+		# f = flattening = 1 - b/a
+		# ee = eccentricity squared = 1 - (b*b)/(a*a) = (1 - b/a)*(1 + b/a) = f*(2 - f)
 		# e = eccentricity = sqrt(ee)
 
-		self.c = self.a * (1 - self.f)
+		self.b = self.a * (1 - self.f)
 		self.ee = self.f * (2 - self.f)
 		self.e = math.sqrt(self.ee)
 
 Clarke_1866_Ellipsoid = Spheroid(6378206.4, 294.9786982) # See https://en.wikipedia.org/wiki/North_American_Datum
 GRS_1980_Ellipsoid = Spheroid(6378137.0, 298.257222101) # See https://en.wikipedia.org/wiki/GRS_80
+WGS_84_Ellipsoid = Spheroid(6378137.0, 298.257223563) # See https://en.wikipedia.org/wiki/World_Geodetic_System
 
 class AlbersEllipsoid(object):
 	#
@@ -55,9 +56,11 @@ class AlbersEllipsoid(object):
 
 	def setFalseEasting(self, falseEasting):
 		self.falseEasting = falseEasting
+		return self
 
 	def setFalseNorthing(self, falseNorthing):
 		self.falseNorthing = falseNorthing
+		return self
 
 	def genMQ(self, latitude):
 		latitude *= radiansPerDegree
@@ -130,12 +133,18 @@ class AlbersEllipsoid(object):
 			delta = d1 * d2
 			latitude += delta
 
-			if abs(delta / radiansPerDegree) < 0.00000001:
+			if abs(delta / radiansPerDegree) < 1e-8:
 				break
 
 		return longitude, latitude / radiansPerDegree
 
 class AlbersSphere(object):
+	#
+	# This should be mathematically identical to using AlbersEllipsoid with an
+	# unflattened spheroid, i.e. with Spheroid(R, 0). The equations used in this
+	# class are the simpler "Formulas for the Sphere" from pages 100-101 of
+	# Snyder's "Map Projections - A Working Manual".
+	#
 	def __init__(self, lat0, lng0, lat1, lat2, R):
 		self.originLatitude = lat0
 		self.originLongitude = lng0
@@ -157,9 +166,11 @@ class AlbersSphere(object):
 
 	def setFalseEasting(self, falseEasting):
 		self.falseEasting = falseEasting
+		return self
 
 	def setFalseNorthing(self, falseNorthing):
 		self.falseNorthing = falseNorthing
+		return self
 
 	def project(self, longitude, latitude):
 		s = math.sin(latitude * radiansPerDegree)
@@ -266,6 +277,27 @@ def test2():
 
 	lnglat = check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
 	check(projection, lnglat, xy)
+
+	#
+	# The following two tests are expected to fail with identical results.
+	#
+	# The first test uses the AlbersEllipsoid class, while the second uses AlbersSphere,
+	# but they both do the same thing. They inverse project the x and y coordinates of
+	# the Bishop Field Office back to longitude and latitude using the Albers projection
+	# for a sphere.
+	#
+	# Since the original projection used the GRS 1980 ellipsoid, the location resulting
+	# from the inverse projection here is some 12.5 miles away from the correct location:
+	#
+	# https://mappingsupport.com/p/gmap4.php?t=h&z=11&label=on&markers=37.182288,-118.412701%5EIncorrect%20Location||37.362647,-118.410863%5ECorrect%20Location
+	#
+	R = GRS_1980_Ellipsoid.a # Equatorial Radius of the Earth
+
+	projection = AlbersEllipsoid(0.0, -120.0, 34.0, 40.5, Spheroid(R, 0)).setFalseNorthing(-4000000.0)
+	check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
+
+	projection = AlbersSphere(0.0, -120.0, 34.0, 40.5, R).setFalseNorthing(-4000000.0)
+	check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
 
 if __name__ == '__main__':
 	test1()
