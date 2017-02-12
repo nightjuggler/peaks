@@ -33,7 +33,7 @@ class AlbersEllipsoid(object):
 	# (Chapter 14. Albers Equal-Area Conic Projection - Formulas for the Ellipsoid)
 	# Available at https://pubs.er.usgs.gov/publication/pp1395
 	#
-	def __init__(self, lat0, lng0, lat1, lat2, spheroid):
+	def __init__(self, lng0, lat0, lat1, lat2, spheroid):
 		self.originLatitude = lat0
 		self.originLongitude = lng0
 		self.standardParallel1 = lat1
@@ -138,6 +138,9 @@ class AlbersEllipsoid(object):
 
 		return longitude, latitude / radiansPerDegree
 
+def CaliforniaAlbers():
+	return AlbersEllipsoid(-120.0, 0.0, 34.0, 40.5, GRS_1980_Ellipsoid).setFalseNorthing(-4000000.0)
+
 class AlbersSphere(object):
 	#
 	# This should be mathematically identical to using AlbersEllipsoid with an
@@ -145,7 +148,7 @@ class AlbersSphere(object):
 	# class are the simpler "Formulas for the Sphere" from pages 100-101 of
 	# Snyder's "Map Projections - A Working Manual".
 	#
-	def __init__(self, lat0, lng0, lat1, lat2, R):
+	def __init__(self, lng0, lat0, lat1, lat2, R):
 		self.originLatitude = lat0
 		self.originLongitude = lng0
 		self.standardParallel1 = lat1
@@ -231,18 +234,18 @@ def test1():
 	lnglat = (-75, 35)
 	xy = (0.2952720, 0.2416774)
 
-	projection = AlbersSphere(23.0, -96.0, 29.5, 45.5, 1)
+	projection = AlbersSphere(-96.0, 23.0, 29.5, 45.5, 1)
 	output = check(projection, lnglat, xy, roundDigits=7)
 	check(projection, output, lnglat, roundDigits=0, inverse=True)
 
-	projection = AlbersEllipsoid(23.0, -96.0, 29.5, 45.5, Spheroid(1, 0))
+	projection = AlbersEllipsoid(-96.0, 23.0, 29.5, 45.5, Spheroid(1, 0))
 	output = check(projection, lnglat, xy, roundDigits=7)
 	check(projection, output, lnglat, roundDigits=0, inverse=True)
 
 	#
 	# Numerical Example from page 292 of "Map Projections"
 	#
-	projection = AlbersEllipsoid(23.0, -96.0, 29.5, 45.5, Clarke_1866_Ellipsoid)
+	projection = AlbersEllipsoid(-96.0, 23.0, 29.5, 45.5, Clarke_1866_Ellipsoid)
 
 	lnglat = (-75, 35)
 	xy = (1885472.7, 1535925.0)
@@ -269,8 +272,7 @@ def test2():
 	# The coordinate system used is EPSG:3310 (see http://epsg.io/3310)
 	# aka NAD83 / California Albers
 	#
-	projection = AlbersEllipsoid(0.0, -120.0, 34.0, 40.5, GRS_1980_Ellipsoid)
-	projection.setFalseNorthing(-4000000.0)
+	projection = CaliforniaAlbers()
 
 	xy = (140545.134, -71493.1984)
 	expectedLngLat = (-118.410863, 37.362647)
@@ -293,10 +295,10 @@ def test2():
 	#
 	R = GRS_1980_Ellipsoid.a # Equatorial Radius of the Earth
 
-	projection = AlbersEllipsoid(0.0, -120.0, 34.0, 40.5, Spheroid(R, 0)).setFalseNorthing(-4000000.0)
+	projection = AlbersEllipsoid(-120.0, 0.0, 34.0, 40.5, Spheroid(R, 0)).setFalseNorthing(-4000000.0)
 	check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
 
-	projection = AlbersSphere(0.0, -120.0, 34.0, 40.5, R).setFalseNorthing(-4000000.0)
+	projection = AlbersSphere(-120.0, 0.0, 34.0, 40.5, R).setFalseNorthing(-4000000.0)
 	check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
 
 if __name__ == '__main__':
