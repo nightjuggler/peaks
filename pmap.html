@@ -20,6 +20,9 @@ a {text-decoration: none;}
 .popupDiv b a {
 	font-weight: bold;
 }
+.blmPopup {
+	text-align: center;
+}
 .elevDiv {display: inline-block; vertical-align: top;}
 #llDiv {
 	position: absolute;
@@ -47,9 +50,14 @@ a {text-decoration: none;}
 .centerIcon {}
 </style>
 <script>
+"use strict";
+
+var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
+var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
+
 function isValidId(s)
 {
-	return s.length <= 8 && s.match(/^[a-z][0-9a-z]*$/) !== null;
+	return s.length <= 16 && s.match(/^[a-z][_0-9a-z]*$/) !== null;
 }
 function parseLatLng(q, v)
 {
@@ -75,6 +83,9 @@ function parseZoom(q, v)
 	q.zoom = zoom;
 }
 var validOverlays = {
+	blm_ca_aa: 'blm_ca_aa.json',
+	blm_ca_fo: 'blm_ca_fo.json',
+	blm_ca_sa: 'blm_ca_sa.json',
 	dps: 'dps.json',
 	sps: 'sps.json',
 };
@@ -182,6 +193,17 @@ function centerIcon()
 		+ '</svg>';
 	return L.divIcon(o);
 }
+function officeIcon()
+{
+	var fill = 'cyan';
+	var stroke = 'blue';
+
+	var o = {iconSize: [26, 20], className: 'officeIcon', popupAnchor: [0, -4]};
+	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" viewBox="0 0 26 20">'
+		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="2" '
+		+ 'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>';
+	return L.divIcon(o);
+}
 function loadJSON(url, onSuccess, onFailure)
 {
 	var xhr = new XMLHttpRequest();
@@ -246,7 +268,7 @@ function createMap(options)
 		map.fitBounds(mapBounds);
 
 	document.getElementById('fitLink').addEventListener('click',
-		function(e) { map.fitBounds(mapBounds);	}, false);
+		function() { map.fitBounds(mapBounds); }, false);
 
 	var llText = document.getElementById('llText').firstChild;
 	function updateCenter()
@@ -263,23 +285,34 @@ function createMap(options)
 		icon: centerIcon()
 	}).addTo(map);
 
-	map.on('move', function(e) {
+	map.on('move', function() {
 		centerMarker.setLatLng(updateCenter());
 	});
 
+	var layerOrder = ['blm_ca_aa', 'blm_ca_sa'];
+	var layerGroup = {};
+	for (var layerName of layerOrder)
+		layerGroup[layerName] = [];
+
+	function removeAddLayerGroup(layerName)
+	{
+		for (var layer of layerGroup[layerName])
+			layer.remove().addTo(map);
+	}
+
 	var htmlFilename;
 
-	options.pointToLayer = function(feature, latlng) {
+	function addPeak(feature, latlng)
+	{
 		var p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
 			.bindPopup(popupHtml(latlng, p, htmlFilename))
 			.on('popupopen', enableTooltips)
-			.on('dblclick', function(e) {
+			.on('dblclick', function() {
 				map.setView(latlng, map.getMaxZoom() - 5);
 			});
 	}
-
-	function addOverlay(geojson)
+	function addPeakOverlay(geojson)
 	{
 		var name = geojson.name;
 		delete geojson.name;
@@ -289,21 +322,94 @@ function createMap(options)
 
 		htmlFilename = id.toLowerCase() + '.html#' + id;
 
-		var featureLayer = L.mapbox.featureLayer(geojson, options).addTo(map);
-		layersControl.addOverlay(featureLayer, name);
+		var overlay = L.geoJSON(geojson, {pointToLayer: addPeak}).addTo(map);
+		layersControl.addOverlay(overlay, name);
 
 		if (mapBoundsFromOverlay) {
-			mapBounds.extend(featureLayer.getBounds());
+			mapBounds.extend(overlay.getBounds());
 		} else {
-			mapBounds = featureLayer.getBounds();
+			mapBounds = overlay.getBounds();
 			mapBoundsFromOverlay = true;
 		}
 		if (--overlaysToLoad === 0 && !queryString.ll)
 			map.fitBounds(mapBounds);
 	}
+	var styleBLM = {
+		'Northern California District': {
+			color: '#4169E1', // RoyalBlue
+		},
+		'Central California District': {
+			color: '#1E90FF', // DodgerBlue
+		},
+		'California Desert District': {
+			color: '#00BFFF', // DeepSkyBlue
+		},
+	};
+	function getBLM_AA_Style(feature)
+	{
+		return styleBLM[feature.properties.parent] || {};
+	}
+	function addBLM_AA_Popup(feature, layer)
+	{
+		var name = 'BLM ' + feature.properties.name.slice(0, -13); // strip trailing " Field Office"
+		var parent = feature.properties.parent;
+		var html = '<div class="popupDiv blmPopup"><b>' + name + '</b><br>(' + parent + ')</div>';
+		layer.bindPopup(html);
+		layersControl.addOverlay(layer, name);
+	}
+	function addBLM_AA(geojson)
+	{
+		L.geoJSON(geojson, {onEachFeature: addBLM_AA_Popup, style: getBLM_AA_Style}).addTo(map);
+		removeAddLayerGroup('blm_ca_sa');
+	}
+	function addBLM_FO_Popup(feature, latlng)
+	{
+		var name = 'BLM ' + feature.properties.name;
+		var html = '<div class="popupDiv blmPopup"><b>' + name + '</b></div>';
+		return L.marker(latlng, {icon: officeIcon()})
+			.bindPopup(html, {maxWidth: 600})
+			.on('dblclick', function() {
+				map.setView(latlng, map.getMaxZoom() - 5);
+			});
+	}
+	function addBLM_FO(geojson)
+	{
+		var layer = L.geoJSON(geojson, {pointToLayer: addBLM_FO_Popup}).addTo(map);
+		layersControl.addOverlay(layer, 'BLM CA Offices');
+	}
+	function getBLM_SA_Style(feature)
+	{
+		return styleBLM[feature.properties.name] || {color: '#00008B'};
+	}
+	function addBLM_SA_Popup(feature, layer)
+	{
+		var name = 'BLM ' + feature.properties.name;
+		var html = '<div class="popupDiv blmPopup"><b>'
+			+ makeLink(BLM_CA_NLCS_Prefix + feature.properties.BLM, name) + ' ['
+			+ makeLink(Wikipedia_Prefix + feature.properties.W, 'W')
+			+ ']</b></div>';
+		layer.bindPopup(html, {maxWidth: 600});
+		layersControl.addOverlay(layer, name);
+		layerGroup.blm_ca_sa.push(layer);
+	}
+	function addBLM_SA(geojson)
+	{
+		L.geoJSON(geojson, {onEachFeature: addBLM_SA_Popup, style: getBLM_SA_Style}).addTo(map);
+	}
+	var howToAddOverlay = {
+		'blm_ca_aa.json': addBLM_AA,
+		'blm_ca_fo.json': addBLM_FO,
+		'blm_ca_sa.json': addBLM_SA,
+		'dps.json': addPeakOverlay,
+		'sps.json': addPeakOverlay,
+	};
 
 	for (var url of queryString.overlays)
+	{
+		var addOverlay = howToAddOverlay[url];
+		if (addOverlay !== addPeakOverlay) --overlaysToLoad;
 		loadJSON(url, addOverlay);
+	}
 }
 function init()
 {
