@@ -2,21 +2,28 @@
 import json
 import sys
 
+G = None
 XY2LL = None
 
-PalmSpringsFO = 'Palm Springs Field Office'
-PiedrasBlancas = 'Piedras Blancas Light Station<br>Outstanding Natural Area'
-SantaRosaSanJacintoNM = 'Santa Rosa and San Jacinto Mountains<br>National Monument'
-
-nameMap = {
+NAME_SUFFIXES = [
+	' Forest Preserve',
+	' Forest Reserve',
+	' National Conservation Area',
+	' National Monument',
+	' NM',
+	' ONA',
+	' Outstanding Natural Area',
+]
+BLM_CA_NAME_MAP = {
 	'BAKERSFIELD FIELD OFFICE':                     'Bakersfield Field Office',
-	'Headwaters Forest Preserve':                   'Headwaters Forest Reserve',
-	'Palm Springs S. Coast Field Office':           PalmSpringsFO,
-	'Palm Springs/S. Coast Field Office':           PalmSpringsFO,
-	'Palm Springs/SouthCoast Field Office':         PalmSpringsFO,
-	'Piedras Blancas Light Station ONA':            PiedrasBlancas,
-	'Santa Rosa National Monument':                 SantaRosaSanJacintoNM,
-	'Santa Rosa and San Jacinto Mountains NM':      SantaRosaSanJacintoNM,
+	'Palm Springs S. Coast Field Office':           'Palm Springs Field Office',
+	'Palm Springs/S. Coast Field Office':           'Palm Springs Field Office',
+	'Palm Springs/SouthCoast Field Office':         'Palm Springs Field Office',
+
+	'Piedras Blancas':                              'Piedras Blancas Light Station',
+	'Sand To Snow':                                 'Sand to Snow',
+	'Santa Rosa':                                   'Santa Rosa and San Jacinto Mountains',
+	'Santa Rosa-San Jacinto Mountains':             'Santa Rosa and San Jacinto Mountains',
 }
 BLM_CA_Districts = (
 	'Northern California',
@@ -43,42 +50,63 @@ BLM_CA_OtherOffices = (
 	'California State Office',
 	'Surprise Field Station',
 )
-BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/'
 BLM_CA_OtherAreas = {
-	'Berryessa Snow Mountain National Monument': {
+	'Berryessa Snow Mountain': {
 		'BLM': 'Berryessa_Snow_Mountain.html',
+		'D': 'National Monument',
+		'FS': 'berryessa-snow-mountain-national-monument',
+		'NF': 'mendocino',
+		'NFW': 'Mendocino_National_Forest',
 		'W': 'Berryessa_Snow_Mountain_National_Monument',
 	},
-	'Carrizo Plain National Monument': {
+	'California Coastal': {
+		'BLM': 'California_Coastal_NM.html',
+		'D': 'National Monument',
+		'W': 'California_Coastal_National_Monument',
+	},
+	'Carrizo Plain': {
 		'BLM': 'Carrizo_Plain_NM.html',
+		'D': 'National Monument',
 		'W': 'Carrizo_Plain',
 	},
-	'Fort Ord National Monument': {
+	'Fort Ord': {
 		'BLM': 'Fort_Ord_NM.html',
+		'D': 'National Monument',
 		'W': 'Fort_Ord',
 	},
-	'Headwaters Forest Reserve': {
+	'Headwaters': {
 		'BLM': 'Headwaters_ForestReserve.html',
+		'D': 'Forest Reserve',
 		'W': 'Headwaters_Forest_Reserve',
 	},
-	'King Range National Conservation Area': {
+	'King Range': {
 		'BLM': 'King_Range_NCA.html',
+		'D': 'National Conservation Area',
 		'W': 'King_Range_(California)',
 	},
-	'Mojave Trails National Monument': {
+	'Mojave Trails': {
 		'BLM': 'Mojave_Trails.html',
+		'D': 'National Monument',
 		'W': 'Mojave_Trails_National_Monument',
 	},
-	PiedrasBlancas: {
+	'Piedras Blancas Light Station': {
 		'BLM': 'PBLS.html',
+		'D': 'Outstanding Natural Area',
 		'W': 'Piedras_Blancas_Light_Station',
 	},
-	'Sand to Snow National Monument': {
+	'Sand to Snow': {
 		'BLM': 'Sand-to-Snow.html',
+		'D': 'National Monument',
+		'FS': 'sand-to-snow-national-monument',
+		'NF': 'sbnf',
+		'NFW': 'San_Bernardino_National_Forest',
 		'W': 'Sand_to_Snow_National_Monument',
 	},
-	SantaRosaSanJacintoNM: {
+	'Santa Rosa and San Jacinto Mountains': {
 		'BLM': 'SantaRosa_SanJacintoMtns_NM.html',
+		'D': 'National Monument',
+		'NF': 'sbnf',
+		'NFW': 'San_Bernardino_National_Forest',
 		'W': 'Santa_Rosa_and_San_Jacinto_Mountains_National_Monument',
 	},
 }
@@ -91,13 +119,29 @@ def log(message, *formatArgs):
 	print >>sys.stderr, message.format(*formatArgs)
 
 def featureKey(feature):
-	return feature['properties']['name']
+	p = feature['properties']
+	name = p['name']
+
+	d = p.get('D')
+	if d is not None:
+		name += ' ' + d
+
+		agency = p.get('agency')
+		if agency is not None:
+			name += ' (' + agency + ')'
+
+	return name
 
 @staticmethod
 def stripHoles(geojson):
+	geojson['features'].sort(key=featureKey)
+
 	for feature in geojson['features']:
 		name = feature['properties']['name']
 		coordinates = feature['geometry']['coordinates']
+
+		numPolygons = len(coordinates)
+		log('> "{}" has {} polygon{}', featureKey(feature), numPolygons, '' if numPolygons == 1 else 's')
 
 		for polygon in coordinates:
 			for subpolygon in polygon:
@@ -107,14 +151,12 @@ def stripHoles(geojson):
 				for subpolygon in polygon[1:]:
 					hole = tuple([tuple(point) for point in subpolygon[:-1]])
 					if hole in HolesToRemove:
-						log('Removing the following hole for "{}": {}', name, hole)
+						log('\tRemoving the following hole: {}', hole)
 					else:
-						log('Keeping the {}-point hole starting/ending at {} for "{}"',
-							len(subpolygon) - 1, subpolygon[0], name)
+						log('\tKeeping the {}-point hole starting/ending at {}',
+							len(subpolygon) - 1, subpolygon[0])
 						holes.append(subpolygon)
 				polygon[1:] = holes
-
-	geojson['features'].sort(key=featureKey)
 
 def nameRank(name):
 	if name.endswith(' Field Office'):
@@ -178,40 +220,24 @@ def stripPoint(geoType, coordinates):
 
 	return {'type': 'Point', 'coordinates': coordinates}
 
-@staticmethod
-def stripPropertiesAA(o):
-	name, parent = o['ADMU_NAME'], o['PARENT_NAME']
-	if name in nameMap:
-		name = nameMap[name]
-	if parent in nameMap:
-		parent = nameMap[parent]
-	if name.endswith(' Field Office'):
-		assert name[:-13] in BLM_CA_FieldOffices
-		assert parent.endswith(' District')
-		assert parent[:-9] in BLM_CA_Districts
-	else:
-		assert name in BLM_CA_OtherAreas
-		if parent.endswith(' Field Office'):
-			assert parent[:-13] in BLM_CA_FieldOffices
-		elif parent.endswith(' District'):
-			assert parent[:-9] in BLM_CA_Districts
-		else:
-			sys.exit('Parent for "{}" must be a Field Office or District'.format(name))
-		return None
-	return {'name': name, 'parent': parent}
+def getName(name):
+	for suffix in NAME_SUFFIXES:
+		if name.endswith(suffix):
+			name = name[:-len(suffix)]
+			break
+	return BLM_CA_NAME_MAP.get(name, name)
 
 @staticmethod
-def stripPropertiesSA(o):
-	name, parent = o['ADMU_NAME'], o['PARENT_NAME']
-	if name in nameMap:
-		name = nameMap[name]
-	if parent in nameMap:
-		parent = nameMap[parent]
+def stripPropertiesAA(o):
+	name = getName(o[G.nameField])
+	parent = getName(o['PARENT_NAME'])
+
 	if name.endswith(' Field Office'):
 		assert name[:-13] in BLM_CA_FieldOffices
 		assert parent.endswith(' District')
 		assert parent[:-9] in BLM_CA_Districts
-		return None
+		if G is BLM_CA_SA:
+			return None
 	else:
 		assert name in BLM_CA_OtherAreas
 		if parent.endswith(' Field Office'):
@@ -220,58 +246,108 @@ def stripPropertiesSA(o):
 			assert parent[:-9] in BLM_CA_Districts
 		else:
 			sys.exit('Parent for "{}" must be a Field Office or District'.format(name))
-	o = {'name': name, 'parent': parent}
-	o.update(BLM_CA_OtherAreas[name])
-	return o
+		if G is BLM_CA_AA:
+			return None
+
+	p = {'name': name, 'parent': parent}
+	if G is BLM_CA_SA:
+		p.update(BLM_CA_OtherAreas[name])
+	return p
 
 @staticmethod
 def stripPropertiesFO(o):
-	name = o['ADMU_NAME']
-	if name in nameMap:
-		name = nameMap[name]
+	name = getName(o[G.nameField])
+
 	if name.endswith(' Field Office'):
 		assert name[:-13] in BLM_CA_FieldOffices
 	elif name.endswith(' District Office'):
 		assert name[:-16] in BLM_CA_Districts
 	else:
-		assert name in BLM_CA_OtherAreas or name in BLM_CA_OtherOffices
+		if name in BLM_CA_OtherAreas:
+			landType = BLM_CA_OtherAreas[name]['D']
+			sep = ' ' if len(name) < 23 else '<br>'
+			name = '{}{}{}'.format(name, sep, landType)
+		else:
+			assert name in BLM_CA_OtherOffices
 
 	return {'name': name}
+
+@staticmethod
+def stripPropertiesNM(o):
+	name = getName(o[G.nameField])
+
+	assert name in BLM_CA_OtherAreas
+
+	p = {'name': name}
+	p.update(BLM_CA_OtherAreas[name])
+
+	agency = o.get('AGENCY_CODE_ca')
+	if 'NF' in p:
+		assert agency == 'BLM' or agency == 'USFS'
+		p['agency'] = agency
+	else:
+		assert agency == 'BLM'
+
+	subunit = o.get('NLCS_SUBUNIT_ID_ca')
+	assert subunit in (0, 1, 2)
+	if subunit != 0:
+		p['subunit'] = subunit
+
+	if name == 'California Coastal' and subunit == 1:
+		return p if G is BLM_CA_CCNM else None
+
+	return p if G is BLM_CA_NM else None
 
 class BLM_CA_AA(object):
 	#
 	# Administrative Areas (Field Office boundaries)
 	#
 	filename = 'blm/ca/admu_ofc_poly'
+	nameField = 'ADMU_NAME'
 	stripGeometry = stripMultiPolygon
 	stripProperties = stripPropertiesAA
 	postprocess = stripHoles
 
-class BLM_CA_SA(object):
+class BLM_CA_SA(BLM_CA_AA):
 	#
-	# Special Areas (e.g. National Monument boundaries)
+	# Conservation Lands (e.g. National Monument boundaries)
+	# Not as correct or complete as BLM_CA_NM
 	#
-	filename = 'blm/ca/admu_ofc_poly'
-	stripGeometry = stripMultiPolygon
-	stripProperties = stripPropertiesSA
-	postprocess = stripHoles
+	pass
 
 class BLM_CA_FO(object):
 	#
-	# Field Offices (Field Office locations)
+	# Field Offices (Field/District/State Office locations)
 	#
 	filename = 'blm/ca/admu_ofc_pt'
+	nameField = 'ADMU_NAME'
 	stripGeometry = stripPoint
 	stripProperties = stripPropertiesFO
 	postprocess = stripDuplicates
 
-G = None
+class BLM_CA_NM(object):
+	#
+	# Conservation Lands (e.g. National Monument boundaries)
+	# More correct and complete than BLM_CA_SA
+	#
+	filename = 'blm/ca/nlcs_nm_nca_poly'
+	nameField = 'NLCS_NAME'
+	stripGeometry = stripMultiPolygon
+	stripProperties = stripPropertiesNM
+	postprocess = stripHoles
+
+class BLM_CA_CCNM(BLM_CA_NM):
+	#
+	# California Coastal National Monument, Subunit 1
+	# Thousands of small polygons all along the coast!
+	#
+	pass
 
 def stripHook(o):
 	if 'coordinates' in o:
 		return G.stripGeometry(o['type'], o['coordinates'])
 
-	if 'ADMU_NAME' in o:
+	if G.nameField in o:
 		return G.stripProperties(o)
 
 	if 'properties' in o:
@@ -308,19 +384,24 @@ def strip():
 	G.postprocess(data)
 	json.dump(data, sys.stdout, separators=(',', ':'))
 
-if __name__ == '__main__':
+def parseArgs():
+	global G, XY2LL
+
+	modeMap = {
+		'blm/ca/aa':    BLM_CA_AA,
+		'blm/ca/sa':    BLM_CA_SA,
+		'blm/ca/fo':    BLM_CA_FO,
+		'blm/ca/nm':    BLM_CA_NM,
+		'blm/ca/ccnm':  BLM_CA_CCNM,
+	}
+
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('mode', choices=('blm_ca_aa', 'blm_ca_sa', 'blm_ca_fo'))
+	parser.add_argument('mode', choices=sorted(modeMap.keys()))
 	parser.add_argument('--xy2ll', choices=('ca', 'sca'))
 	args = parser.parse_args()
 
-	if args.mode == 'blm_ca_aa':
-		G = BLM_CA_AA
-	elif args.mode == 'blm_ca_sa':
-		G = BLM_CA_SA
-	elif args.mode == 'blm_ca_fo':
-		G = BLM_CA_FO
+	G = modeMap[args.mode]
 
 	if args.xy2ll:
 		import geo
@@ -329,4 +410,7 @@ if __name__ == '__main__':
 		elif args.xy2ll == 'sca':
 			R = geo.GRS_1980_Ellipsoid.a
 			XY2LL = geo.AlbersSphere(-120.0, 0.0, 34.0, 40.5, R).setFalseNorthing(-4000000.0).inverse
+
+if __name__ == '__main__':
+	parseArgs()
 	strip()
