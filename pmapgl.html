@@ -40,7 +40,9 @@ a {text-decoration: none;}
 	background-color: rgba(255,255,255,0.8);
 	border: 1px solid rgb(128,128,128);
 	border-radius: 5px;
+	margin-bottom: 3px;
 	padding: 3px 5px;
+	vertical-align: middle;
 }
 #fitLink:hover {
 	background-color: rgba(236,236,236,0.8);
@@ -132,8 +134,8 @@ function parsePitch(q, v)
 	q.pitch = pitch;
 }
 var validOverlays = {
-	dps: 'dps.json',
-	sps: 'sps.json',
+	dps: 'json/peaks/dps.json',
+	sps: 'json/peaks/sps.json',
 };
 function parseOverlay(q, v)
 {
@@ -561,7 +563,7 @@ function init()
 <div id="llDiv"><span id="llText">Latitude, Longitude</span>
 <span id="bearingText"><span id="bearingIcon">&#8634;</span>0&deg;</span>
 <span id="pitchText"><span id="pitchIcon">&#9727;</span>0&deg;</span>
-<span id="fitLink">&#9634;</span></div>
+<img id="fitLink" src="ztf.svg" width="13" height="13"></div>
 <div id="layerControlIcon"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="25" viewBox="0 0 26 25"><path fill="black" d="M 6,9 l 7,2 7,-2 0,-1 -7,-2 -7,2 Z M 6,13 l 7,2 7,-2 0,-2 -7,2 -7,-2 Z M 6,17 l 7,2 7,-2 0,-2 -7,2 -7,-2 Z" /></svg><div id="layerControl"></div></div>
 
 </body>
