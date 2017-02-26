@@ -36,11 +36,24 @@ a {text-decoration: none;}
 	border-radius: 5px;
 	padding: 3px 5px;
 }
+.ztf {
+	margin: 1px 1px 3px 1px; /* top right bottom left */
+	vertical-align: middle;
+}
+.ztf:hover {
+	background-color: rgb(236,236,236);
+	cursor: pointer;
+	margin: 0px 0px 2px 0px;
+	width: 15px;
+	height: 15px;
+}
 #fitLink {
 	background-color: rgba(255,255,255,0.8);
 	border: 1px solid rgb(128,128,128);
 	border-radius: 5px;
+	margin-bottom: 3px;
 	padding: 3px 5px;
+	vertical-align: middle;
 }
 #fitLink:hover {
 	background-color: rgba(236,236,236,0.8);
@@ -66,12 +79,12 @@ function wikipediaLink(w)
 }
 function fitLink(fitBounds)
 {
-	var link = document.createElement('a');
-	link.href = '#';
-	link.style.fontSize = '12pt';
-	link.appendChild(document.createTextNode('\u2194'));
-	link.addEventListener('click', fitBounds, false);
-	return link;
+	var img = new Image(13, 13);
+	img.alt = 'Zoom To Fit';
+	img.src = 'ztf.svg';
+	img.className = 'ztf';
+	img.addEventListener('click', fitBounds, false);
+	return img;
 }
 function isValidId(s)
 {
@@ -432,12 +445,11 @@ function createMap(options)
 		}
 		bold.appendChild(link);
 		bold.appendChild(document.createTextNode(' ['));
-		bold.appendChild(fitLink(fitBounds));
-		bold.appendChild(document.createTextNode(', '));
 		bold.appendChild(wikipediaLink(feature.properties.W));
-		bold.appendChild(document.createTextNode(']'));
+		bold.appendChild(document.createTextNode('] '));
 
 		popupDiv.appendChild(bold);
+		popupDiv.appendChild(fitLink(fitBounds));
 
 		name += ' ' + feature.properties.D;
 		if (agency)
@@ -454,11 +466,11 @@ function createMap(options)
 					link.href = USFS_NM_Prefix + feature.properties.FS;
 					link.appendChild(document.createTextNode('Forest Service'));
 					popupDiv.appendChild(link);
-					popupDiv.appendChild(document.createTextNode('.'));
+					popupDiv.appendChild(document.createTextNode(':'));
 				}
 				else
 					popupDiv.appendChild(document.createTextNode(
-						'This part is managed by the Forest Service.'));
+						'This part is managed by the Forest Service:'));
 
 				var forestName = feature.properties.NFW.replace(/_/g, ' ');
 				link = document.createElement('a');
@@ -466,11 +478,10 @@ function createMap(options)
 				link.appendChild(document.createTextNode(forestName));
 
 				popupDiv.appendChild(document.createElement('br'));
-				popupDiv.appendChild(document.createTextNode('('));
 				popupDiv.appendChild(link);
 				popupDiv.appendChild(document.createTextNode(' ['));
 				popupDiv.appendChild(wikipediaLink(feature.properties.NFW));
-				popupDiv.appendChild(document.createTextNode('])'));
+				popupDiv.appendChild(document.createTextNode(']'));
 			}
 			else
 				popupDiv.appendChild(document.createTextNode(
@@ -512,7 +523,7 @@ function init()
 
 <div id="map"></div>
 <div id="llDiv"><span id="llText">Latitude, Longitude</span>
-<span id="fitLink">&#9634;</span></div>
+<img id="fitLink" src="ztf.svg" width="13" height="13"></div>
 
 </body>
 </html>
