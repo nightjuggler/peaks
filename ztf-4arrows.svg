@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 23 23">
+<path fill="black" stroke="blue" stroke-width="1"
+d="M  7, 1 l -6, 0  0, 6  2,-2  5, 5  2,-2 -5,-5 Z
+   M 16, 1 l  2, 2 -5, 5  2, 2  5,-5  2, 2  0,-6 Z
+   M  1,16 l  0, 6  6, 0 -2,-2  5,-5 -2,-2 -5, 5 Z
+   M 16,22 l  2,-2 -5,-5  2,-2  5, 5  2,-2  0, 6 Z" />
+</svg>
