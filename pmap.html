@@ -12,6 +12,9 @@
 body {margin: 0; padding: 0;}
 #map {position: absolute; top: 0; bottom: 0; width: 100%;}
 a {text-decoration: none;}
+progress {
+	margin-right: 4px;
+}
 .popupDiv {
 	font-family: verdana;
 	font-size: 10pt;
@@ -36,16 +39,33 @@ a {text-decoration: none;}
 	border-radius: 5px;
 	padding: 3px 5px;
 }
-.ztf {
-	margin: 1px 1px 3px 1px; /* top right bottom left */
+.popupZtf {
+	margin: 1px 1px 3px 5px; /* top right bottom left */
 	vertical-align: middle;
+	width: 13px;
+	height: 13px;
 }
-.ztf:hover {
+.popupZtf:hover {
 	background-color: rgb(236,236,236);
 	cursor: pointer;
-	margin: 0px 0px 2px 0px;
+	margin: 0px 0px 2px 4px;
+	vertical-align: middle;
 	width: 15px;
 	height: 15px;
+}
+.lcZtf {
+	margin: 3px 1px 2px 3px; /* top right bottom left */
+	vertical-align: top;
+	width: 11px;
+	height: 11px;
+}
+.lcZtf:hover {
+	background-color: rgb(236,236,236);
+	cursor: pointer;
+	margin: 2px 0px 1px 2px;
+	vertical-align: top;
+	width: 13px;
+	height: 13px;
 }
 #fitLink {
 	background-color: rgba(255,255,255,0.8);
@@ -59,36 +79,71 @@ a {text-decoration: none;}
 	background-color: rgba(236,236,236,0.8);
 	cursor: pointer;
 }
+#layerControlIcon {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	width: 26px;
+	height: 25px;
+	background-color: white;
+	border: 1px solid rgb(128,128,128);
+	border-radius: 5px;
+	z-index: 1000;
+}
+#layerControl {
+	position: absolute;
+	top: -1px;
+	left: -1px;
+	background-color: white;
+	border: 1px solid rgb(128,128,128);
+	border-radius: 5px;
+	cursor: default;
+	display: none;
+	font-family: verdana;
+	font-size: 9pt;
+	overflow: scroll;
+	padding: 3px 0px;
+}
+.lcArrow {
+	cursor: pointer;
+	display: inline-block;
+	text-align: center;
+	width: 12px;
+}
+.lcName {
+	display: inline-block;
+	padding-left: 2px;
+	padding-right: 2px;
+	vertical-align: top;
+}
+.lcMenu {
+	display: none;
+	padding-left: 14px;
+}
+.lcItem {
+	padding: 2px 8px 2px 6px;
+	white-space: nowrap;
+}
+.lcItem:hover {
+	background-color: rgb(232,232,232); /* If you change this, also change lcItemHoverColor in pmap-lc.js */
+}
+.lcItem > input[type="radio"] {
+	margin-left: 0px;
+	margin-right: 4px;
+}
+.lcItem > input[type="checkbox"] {
+	margin: 0px 2px 0px 2px;
+}
 .peakIcon {}
 .centerIcon {}
 </style>
+<script src="pmap-lc.js"></script>
 <script>
 "use strict";
 
-var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
-var USFS_Prefix = 'https://www.fs.usda.gov/';
-var USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
-var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
-
-function wikipediaLink(w)
+function isValidId(s, n)
 {
-	var link = document.createElement('a');
-	link.href = Wikipedia_Prefix + w;
-	link.appendChild(document.createTextNode('W'));
-	return link;
-}
-function fitLink(fitBounds)
-{
-	var img = new Image(13, 13);
-	img.alt = 'Zoom To Fit';
-	img.src = 'ztf.svg';
-	img.className = 'ztf';
-	img.addEventListener('click', fitBounds, false);
-	return img;
-}
-function isValidId(s)
-{
-	return s.length <= 16 && s.match(/^[a-z][_0-9a-z]*$/) !== null;
+	return s.length <= n && s.match(/^[a-z][_0-9a-z]*$/) !== null;
 }
 function parseLatLng(q, v)
 {
@@ -113,20 +168,10 @@ function parseZoom(q, v)
 
 	q.zoom = zoom;
 }
-var validOverlays = {
-	blm_ca_aa: 'json/blm/ca/aa.json',
-	blm_ca_fo: 'json/blm/ca/fo.json',
-	blm_ca_nm: 'json/blm/ca/nm.json',
-	dps: 'json/peaks/dps.json',
-	sps: 'json/peaks/sps.json',
-};
 function parseOverlay(q, v)
 {
-	if (isValidId(v) && validOverlays[v])
-	{
-		q.overlays.push(validOverlays[v]);
-		delete validOverlays[v];
-	}
+	if (isValidId(v, 32))
+		q.overlays.push(v);
 }
 var validBaseLayers = {
 	o: 'Outdoors',
@@ -139,7 +184,7 @@ var validBaseLayers = {
 };
 function parseBaseLayer(q, v)
 {
-	if (isValidId(v) && validBaseLayers[v])
+	if (isValidId(v, 3) && validBaseLayers[v])
 		q.baseLayer = validBaseLayers[v];
 }
 function parseQueryString(queryString)
@@ -162,54 +207,42 @@ function parseQueryString(queryString)
 		var k = s.substr(0, i);
 		var v = s.substr(i + 1);
 
-		if (isValidId(k) && handlers[k])
+		if (isValidId(k, 3) && handlers[k])
 			handlers[k](queryString, v);
 	}
 }
-function makeLink(url, txt)
+function getMapBounds(map, fitWhenDoneSetting)
 {
-	return '<a href="' + url + '">' + txt + '</a>';
-}
-function popupHtml(ll, p, htmlFilename)
-{
-	var g4URL = 'https://mappingsupport.com/p/gmap4.php?ll=' + ll.lat + ',' + ll.lng + '&' + p.G4;
-
-	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
-
-	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
-
-	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' '
-		+ makeLink(g4URL, p.name) + suffix + otherName;
-
-	var links = [];
-	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
-	if (p.W) links.push(makeLink('https://en.wikipedia.org/wiki/' + p.W, 'W'));
-	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
-	if (p.LoJ) links.push(makeLink('http://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
-	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
-	if (!p.noWX) links.push(makeLink('http://forecast.weather.gov/MapClick.php?lon='
-		+ ll.lng + '&lat=' + ll.lat, 'WX'));
-
-	links = links.length === 0 ? '' : '<br>' + links.join(', ');
-
-	var climbed = p.climbed ? '<br>Climbed ' + p.climbed : '';
-
-	return '<div class="popupDiv"><b>' + name + '</b>'
-		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
-		+ '<br>Prominence: ' + p.prom
-		+ '<br>Class ' + p.YDS
-		+ links + climbed + '</div>';
-}
-function peakIcon(p)
-{
-	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
-	var stroke = p.climbed ? 'green' : 'red';
-
-	var o = {iconSize: [20, 26], className: 'peakIcon', popupAnchor: [0, -8]};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">'
-		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" '
-		+ 'd="M 10,2 L 1,19 19,19 Z" /></svg>';
-	return L.divIcon(o);
+	var init = true;
+	var numSetters = 0;
+	var mapBounds = [[32.5, -124.4], [42, -114.1]]; // California
+	var methods = {
+		fit: function()
+		{
+			map.fitBounds(mapBounds);
+		},
+		extend: function(bounds)
+		{
+			if (init) {
+				mapBounds = bounds;
+				init = false;
+			} else
+				mapBounds.extend(bounds);
+		},
+		delSetter: function(object)
+		{
+			if (numSetters > 0 && --numSetters === 0 && fitWhenDoneSetting)
+				methods.fit();
+			delete object.mapBounds;
+		},
+		addSetter: function(object)
+		{
+			if (numSetters++ === 0)
+				init = true;
+			object.mapBounds = methods;
+		},
+	};
+	return methods;
 }
 function centerIcon()
 {
@@ -224,29 +257,29 @@ function centerIcon()
 		+ '</svg>';
 	return L.divIcon(o);
 }
-function officeIcon()
-{
-	var fill = 'cyan';
-	var stroke = 'blue';
-
-	var o = {iconSize: [26, 20], className: 'officeIcon', popupAnchor: [0, -4]};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" viewBox="0 0 26 20">'
-		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="2" '
-		+ 'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>';
-	return L.divIcon(o);
-}
-function loadJSON(url, onSuccess, onFailure)
+function loadJSON(url, onSuccess, onFailure, progressBar)
 {
 	var xhr = new XMLHttpRequest();
 
 	xhr.responseType = 'json';
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4)
+		{
 			if (xhr.status === 200)
 				onSuccess(xhr.response);
 			else if (onFailure)
 				onFailure();
+			if (progressBar)
+				progressBar.parentNode.removeChild(progressBar);
+		}
 	}
+	if (progressBar)
+		xhr.addEventListener('progress', function(event) {
+			if (event.lengthComputable) {
+				progressBar.max = event.total;
+				progressBar.value = event.loaded;
+			}
+		});
 
 	xhr.open('GET', url);
 	xhr.send();
@@ -276,14 +309,19 @@ function createMap(options)
 		baseLayers[layer] = L.mapbox.tileLayer(id, options);
 	}
 
-	var map = L.mapbox.map('map');
-	baseLayers[queryString.baseLayer].addTo(map);
-	var layersControl = L.control.layers(baseLayers).addTo(map);
-	L.control.scale().addTo(map);
+	var map = L.mapbox.map('map', null, {zoomControl: false, scrollWheelZoom: false});
+	var baseLayer = baseLayers[queryString.baseLayer].addTo(map);
 
-	var mapBounds = [[42, -114.1], [32.5, -124.4]]; // California
-	var mapBoundsFromOverlay = false;
-	var overlaysToLoad = queryString.overlays.length;
+	L.control.zoom({position: 'topright'}).addTo(map);
+
+	var scaleControl = L.control.scale().addTo(map);
+	scaleControl.getContainer().id = 'scaleControl';
+
+	var layerControl = new LayerControl(map, baseLayer);
+	for (var layer of layers)
+		layerControl.addBaseLayer(layer, baseLayers[layer]);
+
+	var mapBounds = getMapBounds(map, !queryString.ll);
 
 	if (queryString.ll) {
 		var minZoom = map.getMinZoom();
@@ -296,10 +334,9 @@ function createMap(options)
 
 		map.setView(queryString.ll, zoom);
 	} else
-		map.fitBounds(mapBounds);
+		mapBounds.fit();
 
-	document.getElementById('fitLink').addEventListener('click',
-		function() { map.fitBounds(mapBounds); }, false);
+	document.getElementById('fitLink').addEventListener('click', mapBounds.fit, false);
 
 	var llText = document.getElementById('llText').firstChild;
 	function updateCenter()
@@ -320,195 +357,13 @@ function createMap(options)
 		centerMarker.setLatLng(updateCenter());
 	});
 
-	var layerOrder = ['blm_ca_aa', 'blm_ca_nm'];
-	var layerGroup = {};
-	for (var layerName of layerOrder)
-		layerGroup[layerName] = [];
-
-	function removeAddLayerGroup(layerName)
+	function addOverlayMenu(lcdjson)
 	{
-		for (var layer of layerGroup[layerName])
-			layer.remove().addTo(map);
+		layerControl.div.appendChild(document.createElement('hr'));
+		layerControl.fillMenu(layerControl.div, lcdjson, []);
+		addOverlays(queryString.overlays, lcdjson, mapBounds);
 	}
-
-	var htmlFilename;
-
-	function addPeak(feature, latlng)
-	{
-		var p = feature.properties;
-		return L.marker(latlng, {icon: peakIcon(p)})
-			.bindPopup(popupHtml(latlng, p, htmlFilename))
-			.on('popupopen', enableTooltips)
-			.on('dblclick', function() {
-				map.setView(latlng, map.getMaxZoom() - 5);
-			});
-	}
-	function addPeakOverlay(geojson)
-	{
-		var name = geojson.name;
-		delete geojson.name;
-
-		var id = geojson.id;
-		delete geojson.id;
-
-		htmlFilename = id.toLowerCase() + '.html#' + id;
-
-		var overlay = L.geoJSON(geojson, {pointToLayer: addPeak}).addTo(map);
-		layersControl.addOverlay(overlay, name);
-
-		if (mapBoundsFromOverlay) {
-			mapBounds.extend(overlay.getBounds());
-		} else {
-			mapBounds = overlay.getBounds();
-			mapBoundsFromOverlay = true;
-		}
-		if (--overlaysToLoad === 0 && !queryString.ll)
-			map.fitBounds(mapBounds);
-	}
-	var styleBLM = {
-		'Northern California District': {
-			color: '#4169E1', // RoyalBlue
-		},
-		'Central California District': {
-			color: '#1E90FF', // DodgerBlue
-		},
-		'California Desert District': {
-			color: '#00BFFF', // DeepSkyBlue
-		},
-	};
-	function getBLM_AA_Style(feature)
-	{
-		return styleBLM[feature.properties.parent] || {};
-	}
-	function addBLM_AA_Popup(feature, layer)
-	{
-		var name = 'BLM ' + feature.properties.name.slice(0, -13); // strip trailing " Field Office"
-		var parent = feature.properties.parent;
-		var html = '<div class="popupDiv blmPopup"><b>' + name + '</b><br>(' + parent + ')</div>';
-		layer.bindPopup(html);
-		layersControl.addOverlay(layer, name);
-	}
-	function addBLM_AA(geojson)
-	{
-		L.geoJSON(geojson, {onEachFeature: addBLM_AA_Popup, style: getBLM_AA_Style}).addTo(map);
-		removeAddLayerGroup('blm_ca_nm');
-	}
-	function addBLM_FO_Popup(feature, latlng)
-	{
-		var name = 'BLM ' + feature.properties.name;
-		var html = '<div class="popupDiv blmPopup"><b>' + name + '</b></div>';
-		return L.marker(latlng, {icon: officeIcon()})
-			.bindPopup(html, {maxWidth: 600})
-			.on('dblclick', function() {
-				map.setView(latlng, map.getMaxZoom() - 5);
-			});
-	}
-	function addBLM_FO(geojson)
-	{
-		var layer = L.geoJSON(geojson, {pointToLayer: addBLM_FO_Popup}).addTo(map);
-		layersControl.addOverlay(layer, 'BLM CA Offices');
-	}
-	function getBLM_NM_Style(feature)
-	{
-		var style = styleBLM[feature.properties.name];
-		if (style)
-			return style;
-		if (feature.properties.agency === 'USFS')
-			return {color: '#008000'}; // Green
-		return {color: '#00008B'}; // DarkBlue
-	}
-	function addBLM_NM_Popup(feature, layer)
-	{
-		var name = feature.properties.name;
-		var agency = feature.properties.agency;
-
-		function fitBounds(event)
-		{
-			event.preventDefault();
-			layer.closePopup();
-			map.fitBounds(layer.getBounds());
-		}
-
-		var popupDiv = document.createElement('div');
-		popupDiv.className = 'popupDiv blmPopup';
-
-		var bold = document.createElement('b');
-		var link = document.createElement('a');
-
-		link.href = BLM_CA_NLCS_Prefix + feature.properties.BLM;
-		if (name.length < 23) {
-			link.appendChild(document.createTextNode(name + ' ' + feature.properties.D));
-		} else {
-			link.appendChild(document.createTextNode(name));
-			link.appendChild(document.createElement('br'));
-			link.appendChild(document.createTextNode(feature.properties.D));
-		}
-		bold.appendChild(link);
-		bold.appendChild(document.createTextNode(' ['));
-		bold.appendChild(wikipediaLink(feature.properties.W));
-		bold.appendChild(document.createTextNode('] '));
-
-		popupDiv.appendChild(bold);
-		popupDiv.appendChild(fitLink(fitBounds));
-
-		name += ' ' + feature.properties.D;
-		if (agency)
-		{
-			name += ' (' + agency + ')';
-			popupDiv.appendChild(document.createElement('br'));
-			if (agency === 'USFS')
-			{
-				if (feature.properties.FS)
-				{
-					popupDiv.appendChild(document.createTextNode(
-						'This part is managed by the '));
-					link = document.createElement('a');
-					link.href = USFS_NM_Prefix + feature.properties.FS;
-					link.appendChild(document.createTextNode('Forest Service'));
-					popupDiv.appendChild(link);
-					popupDiv.appendChild(document.createTextNode(':'));
-				}
-				else
-					popupDiv.appendChild(document.createTextNode(
-						'This part is managed by the Forest Service:'));
-
-				var forestName = feature.properties.NFW.replace(/_/g, ' ');
-				link = document.createElement('a');
-				link.href = USFS_Prefix + feature.properties.NF;
-				link.appendChild(document.createTextNode(forestName));
-
-				popupDiv.appendChild(document.createElement('br'));
-				popupDiv.appendChild(link);
-				popupDiv.appendChild(document.createTextNode(' ['));
-				popupDiv.appendChild(wikipediaLink(feature.properties.NFW));
-				popupDiv.appendChild(document.createTextNode(']'));
-			}
-			else
-				popupDiv.appendChild(document.createTextNode(
-					'This part is managed by the ' + agency + '.'));
-		}
-		layer.bindPopup(popupDiv, {maxWidth: 600});
-		layersControl.addOverlay(layer, name);
-		layerGroup.blm_ca_nm.push(layer);
-	}
-	function addBLM_NM(geojson)
-	{
-		L.geoJSON(geojson, {onEachFeature: addBLM_NM_Popup, style: getBLM_NM_Style}).addTo(map);
-	}
-	var howToAddOverlay = {
-		'json/blm/ca/aa.json': addBLM_AA,
-		'json/blm/ca/fo.json': addBLM_FO,
-		'json/blm/ca/nm.json': addBLM_NM,
-		'json/peaks/dps.json': addPeakOverlay,
-		'json/peaks/sps.json': addPeakOverlay,
-	};
-
-	for (var url of queryString.overlays)
-	{
-		var addOverlay = howToAddOverlay[url];
-		if (addOverlay !== addPeakOverlay) --overlaysToLoad;
-		loadJSON(url, addOverlay);
-	}
+	loadJSON('pmap_lcd.json', addOverlayMenu);
 }
 function init()
 {
@@ -524,6 +379,7 @@ function init()
 <div id="map"></div>
 <div id="llDiv"><span id="llText">Latitude, Longitude</span>
 <img id="fitLink" src="ztf.svg" width="13" height="13"></div>
+<div id="layerControlIcon"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="25" viewBox="0 0 26 25"><path fill="black" d="M 6,9 l 7,2 7,-2 0,-1 -7,-2 -7,2 Z M 6,13 l 7,2 7,-2 0,-2 -7,2 -7,-2 Z M 6,17 l 7,2 7,-2 0,-2 -7,2 -7,-2 Z" /></svg><div id="layerControl"></div></div>
 
 </body>
 </html>

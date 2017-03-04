@@ -1,0 +1,44 @@
+BLM /blm
+	California /ca
+		Administrative Districts :aa add_BLM_CA_Districts
+			Northern California District =north
+				Applegate Field Office =applegate^
+				Arcata Field Office =arcata^
+				Eagle Lake Field Office =eaglelake^
+				Redding Field Office =redding^
+			Central California District =central
+				Bakersfield Field Office =bakersfield^
+				Bishop Field Office =bishop^
+				Central Coast Field Office =centralcoast^
+				Mother Lode Field Office =motherlode^
+				Ukiah Field Office =ukiah^
+			California Desert District =desert
+				Barstow Field Office =barstow^
+				El Centro Field Office =elcentro^
+				Needles Field Office =needles^
+				Palm Springs Field Office =palmsprings^
+				Ridgecrest Field Office =ridgecrest^
+		Office Locations :fo add_BLM_Offices
+		Conservation Lands :nm add_BLM_Lands
+			Berryessa Snow Mountain|National Monument =besm
+				BLM Lands =blm
+				Forest Service Lands =usfs
+			California Coastal National Monument =coastal
+			Carrizo Plain National Monument =carrizo
+			Fort Ord National Monument =ord
+			Headwaters Forest Reserve =headwaters^
+			King Range National Conservation Area =kingrange^
+			Mojave Trails National Monument =motr
+			Piedras Blancas Light Station|Outstanding Natural Area =pbls^
+			Sand to Snow National Monument =sand
+				BLM Lands =blm
+				Forest Service Lands =usfs
+			Santa Rosa and San Jacinto Mountains|National Monument =srsj
+				BLM Lands =blm
+				Forest Service Lands =usfs
+#		Wilderness Areas :w
+#		Wilderness Study Areas :wsa
+#		Wilderness Study Areas - Released :wsar
+Peaks /peaks addPeakOverlay
+	Desert Peaks Section :dps^
+	Sierra Peaks Section :sps^
