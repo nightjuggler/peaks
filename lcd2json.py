@@ -1,13 +1,14 @@
 #!/usr/bin/python
 #
 # lcd2json - Convert Layer Control Data to JSON
+#            Usage: ./lcd2json.py pmap.lcd > pmap_lcd.json
 #
 import os
 import re
 import sys
 
 lineNumber = 0
-linePattern = re.compile('^(\t*)([A-Za-z]+(?:(?: |-| - |\\|)[A-Za-z]+)*) ([/:=])([a-z]+)(\\^*)(?: add([_A-Za-z]+))?$')
+linePattern = re.compile('^(\t*)([- /A-Za-z0-9\\|\\(\\)]+) ([:=])([a-z0-9]+)(\\^*)(?: add([_A-Za-z]+))?$')
 commentPattern = re.compile('^\t*#')
 
 addPatterns = [
@@ -29,7 +30,7 @@ def ppSize(bytes, fileName):
 	#
 	K = 1 << 10
 	M = 1 << 20
-	maxSize = 10 * M
+	maxSize = 20 * M
 
 	if bytes < K:
 		size = '{} B'.format(bytes)
@@ -72,6 +73,9 @@ def parseLCD(lcdFile):
 			err("Line {} doesn't match pattern", lineNumber)
 
 		indent, name, idType, id, upLevel, addFunction = m.groups()
+
+		if name[0] in ' ()-/|':
+			err("Name on line {} must begin with a letter or number", lineNumber)
 
 		item = {'name': name}
 
@@ -118,10 +122,7 @@ def parseLCD(lcdFile):
 		parentOrder.append(id)
 		path[level] = id
 
-		if idType == '=':
-			if not hasFile:
-				err('Cannot specify a layer outside a file on line {}', lineNumber)
-		elif idType == ':':
+		if idType == ':':
 			if hasFile:
 				err('Cannot specify a file within a file on line {}', lineNumber)
 
@@ -139,9 +140,6 @@ def parseLCD(lcdFile):
 						lineNumber, fileName, e.strerror, e.errno)
 
 			item['size'] = ppSize(statinfo.st_size, fileName)
-		else:
-			if hasFile:
-				err('Cannot specify a directory within a file on line {}', lineNumber)
 
 		upLevel = len(upLevel)
 		if upLevel > 0:

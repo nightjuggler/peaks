@@ -27,6 +27,16 @@ function fitLink(fitBounds, className)
 	img.addEventListener('click', fitBounds, false);
 	return img;
 }
+function popupFitLink(map, layer)
+{
+	function fitBounds(event)
+	{
+		event.preventDefault();
+		layer.closePopup();
+		map.fitBounds(layer.getBounds());
+	}
+	return fitLink(fitBounds, 'popupZtf');
+}
 function addNameMap(item)
 {
 	if (item.order)
@@ -89,6 +99,10 @@ function assignLayer(item, namePath, layer)
 		return;
 	}
 	item.layer = layer;
+}
+addFunctions.default = function(geojson, map, lcItem)
+{
+	return L.geoJSON(geojson, {style: {color: '#FF4500'/* OrangeRed */}});
 }
 addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 {
@@ -160,13 +174,6 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 		var name = feature.properties.name;
 		var agency = feature.properties.agency;
 
-		function fitBounds(event)
-		{
-			event.preventDefault();
-			layer.closePopup();
-			map.fitBounds(layer.getBounds());
-		}
-
 		var popupDiv = document.createElement('div');
 		popupDiv.className = 'popupDiv blmPopup';
 
@@ -187,7 +194,7 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 		bold.appendChild(document.createTextNode(']'));
 
 		popupDiv.appendChild(bold);
-		popupDiv.appendChild(fitLink(fitBounds, 'popupZtf'));
+		popupDiv.appendChild(popupFitLink(map, layer));
 
 		var namePath = [name + ' ' + feature.properties.D];
 		if (agency)
@@ -226,6 +233,39 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 					'This part is managed by the ' + agency + '.'));
 			}
 		}
+		layer.bindPopup(popupDiv, {maxWidth: 600});
+		assignLayer(lcItem, namePath, layer);
+	}
+
+	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
+}
+addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
+{
+	var style = {color: '#FF8C00'}; // DarkOrange
+
+	function getStyle(feature)
+	{
+		return style;
+	}
+	function addPopup(feature, layer)
+	{
+		var name = feature.properties.name + ' Wilderness';
+		var agency = feature.properties.agency;
+		var date = feature.properties.D;
+		var namePath = [name];
+		if (feature.properties.m)
+			namePath.push(date + ' ' + agency);
+
+		var popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
+		var bold = document.createElement('b');
+		bold.appendChild(document.createTextNode(name));
+		popupDiv.appendChild(bold);
+		popupDiv.appendChild(document.createTextNode(' (' + agency + ')'));
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('Designated ' + date));
+		popupDiv.appendChild(popupFitLink(map, layer));
+
 		layer.bindPopup(popupDiv, {maxWidth: 600});
 		assignLayer(lcItem, namePath, layer);
 	}
@@ -596,10 +636,9 @@ LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 				console.log(getPathStr(path, id) + ': Cannot have a file within a file!');
 				continue;
 			}
-			if (!item.add) {
-				console.log(getPathStr(path, id) + ' must have an add function!');
-				continue;
-			}
+			if (!item.add)
+				item.add = addFunctions.default;
+
 			var sizeSpan = document.createElement('span');
 			sizeSpan.appendChild(document.createTextNode('(' + item.size + ')'));
 			itemDiv.appendChild(sizeSpan);

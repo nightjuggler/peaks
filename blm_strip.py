@@ -186,6 +186,29 @@ def stripHoles(geojson):
 				del coordinates[i - n]
 			log('\tRemoved {} small polygon{}', n + 1, '' if n == 0 else 's')
 
+@staticmethod
+def postprocessWilderness(geojson):
+	for feature in geojson['features']:
+		name = feature['properties']['name']
+		if WildernessCount[name] > 1:
+			feature['properties']['m'] = True
+
+	G.postprocess = stripHoles
+	G.postprocess(geojson)
+
+	prevName = None
+	for feature in geojson['features']:
+		p = feature['properties']
+		name = p['name']
+		id = name.replace(' ', '').replace('-', '').replace('/', '').lower()
+		if name != prevName:
+			log('\t\t\t{} Wilderness ={}', name, id)
+			prevName = name
+		if 'm' in p:
+			date = p['D']
+			agency = p['agency']
+			log('\t\t\t\t{} {} ={}{}', date, agency, agency.lower(), date.replace('/', ''))
+
 def nameRank(name):
 	if name.endswith(' Field Office'):
 		return 0
@@ -326,6 +349,76 @@ def stripPropertiesNM(o):
 
 	return p if G is BLM_CA_NM else None
 
+AGENCY_ID_MAP = {
+	4: 'FWS',
+	5: 'NPS',
+	6: 'BLM',
+	8: 'USFS',
+}
+SMA_ID_MAP = {
+	2: 'BLM',
+	915: 'USFS',
+	1535: 'FWS',
+	2012: 'NPS',
+}
+PUBLIC_LAW_DATE = {}
+
+DifferentLawDate = {
+	'2011/01/13 17 Elkhorn Ridge':          '2006/10/17',
+	'2011/03/10 4 Bright Star':             '1964/09/03', # Audubon Bright Star Wilderness Addition
+	'2011/11/16 4 Kiavah':                  '1964/09/03',
+	'2012/12/21 4 Domeland':                '1964/09/03',
+	'2012/12/21 4 Sacatar Trail':           '1964/09/03',
+	'2014/10/23 4 Sawtooth Mountains':      '1964/09/03',
+}
+WrongDate = {
+	'1964/09/30 4 Ansel Adams':             '1964/09/03',
+	'1964/09/30 4 Caribou':                 '1964/09/03',
+	'1964/09/30 4 Cucamonga':               '1964/09/03',
+	'1964/09/30 4 Mokelumne':               '1964/09/03',
+	'1964/09/30 4 San Jacinto':             '1964/09/03',
+	'1964/09/30 4 South Warner':            '1964/09/03',
+	'1964/09/30 4 Thousand Lakes':          '1964/09/03',
+	'1994/09/28 2 Yolla Bolly-Middle Eel':  '1984/09/28',
+	'2009/03/20 20 Cahuilla Mountain':      '2009/03/30',
+	'2009/03/20 20 Magic Mountain':         '2009/03/30',
+	'2009/03/20 20 Pleasant View Ridge':    '2009/03/30',
+	'2009/03/20 20 Santa Rosa':             '2009/03/30',
+	'2009/03/20 20 South Fork San Jacinto': '2009/03/30',
+	'2009/03/30 7 Agua Tibia':              '1975/01/03',
+}
+WildernessCount = {}
+
+@staticmethod
+def stripPropertiesW(o):
+	name = o[G.nameField]
+	assert name.endswith(' Wilderness')
+
+	name = name[:-11]
+	date = o['DESIG_DATE'][:10]
+	agency = AGENCY_ID_MAP[o['ManagingAgency_ca']]
+	assert agency == SMA_ID_MAP[o['SMA_ID']]
+	publicLaw = o['PublicLaw_ID_ca']
+
+	key = '{} {} {}'.format(date, publicLaw, name)
+	if key in WrongDate:
+		date = WrongDate[key]
+
+	publicLawDate = DifferentLawDate.get(key, date)
+
+	log('{} {} {}', name, publicLaw, publicLawDate)
+	if publicLaw in PUBLIC_LAW_DATE:
+		assert publicLawDate == PUBLIC_LAW_DATE[publicLaw]
+	else:
+		PUBLIC_LAW_DATE[publicLaw] = publicLawDate
+
+	if name in WildernessCount:
+		WildernessCount[name] += 1
+	else:
+		WildernessCount[name] = 1
+
+	return {'name': name, 'agency': agency, 'D': date}
+
 class BLM_CA_AA(object):
 	#
 	# Administrative Areas (Field Office boundaries)
@@ -370,6 +463,16 @@ class BLM_CA_CCNM(BLM_CA_NM):
 	# Thousands of small polygons all along the coast!
 	#
 	pass
+
+class BLM_CA_W(object):
+	#
+	# Wilderness Areas
+	#
+	filename = 'blm/ca/nlcs_wld_poly'
+	nameField = 'NLCS_NAME'
+	stripGeometry = stripMultiPolygon
+	stripProperties = stripPropertiesW
+	postprocess = postprocessWilderness
 
 def stripHook(o):
 	if 'coordinates' in o:
@@ -421,6 +524,7 @@ def parseArgs():
 		'blm/ca/fo':    BLM_CA_FO,
 		'blm/ca/nm':    BLM_CA_NM,
 		'blm/ca/ccnm':  BLM_CA_CCNM,
+		'blm/ca/w':     BLM_CA_W,
 	}
 
 	import argparse
