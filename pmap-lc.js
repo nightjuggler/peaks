@@ -4,6 +4,7 @@ var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/
 var USFS_Prefix = 'https://www.fs.usda.gov/';
 var USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
 var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
+var Wilderness_Prefix = 'http://www.wilderness.net/NWPS/wildView?WID=';
 
 var lcItemFitLink;
 var lcItemHoverColor = 'rgb(232, 232, 232)';
@@ -264,6 +265,13 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 		popupDiv.appendChild(document.createTextNode(' (' + agency + ')'));
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('Designated ' + date));
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('['));
+		var wildLink = document.createElement('a');
+		wildLink.href = Wilderness_Prefix + feature.properties.id;
+		wildLink.appendChild(document.createTextNode('Wilderness.net'));
+		popupDiv.appendChild(wildLink);
+		popupDiv.appendChild(document.createTextNode(']'));
 		popupDiv.appendChild(popupFitLink(map, layer));
 
 		layer.bindPopup(popupDiv, {maxWidth: 600});

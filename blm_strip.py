@@ -186,12 +186,37 @@ def stripHoles(geojson):
 				del coordinates[i - n]
 			log('\tRemoved {} small polygon{}', n + 1, '' if n == 0 else 's')
 
+WildernessCount = {}
+WildernessID = {}
+
+def initWildernessID():
+	fileName = 'data/wilderness/wilderness.csv'
+	csvFile = open(fileName)
+	for line in csvFile:
+		id, name, state = line.rstrip().split(',')
+		if name.startswith('Mt. '):
+			name = 'Mount ' + name[4:]
+		if state:
+			name += ' (' + state + ')'
+		WildernessID[name] = id
+	csvFile.close()
+
 @staticmethod
 def postprocessWilderness(geojson):
+	initWildernessID()
+
 	for feature in geojson['features']:
-		name = feature['properties']['name']
+		p = feature['properties']
+		name = p['name']
 		if WildernessCount[name] > 1:
-			feature['properties']['m'] = True
+			p['m'] = True
+		id = WildernessID.get(name)
+		if id is None:
+			id = WildernessID.get(name + ' (CA)')
+			if id is None:
+				log('Failed to get ID for {} Wilderness', name)
+				continue
+		p['id'] = id
 
 	G.postprocess = stripHoles
 	G.postprocess(geojson)
@@ -387,7 +412,6 @@ WrongDate = {
 	'2009/03/20 20 South Fork San Jacinto': '2009/03/30',
 	'2009/03/30 7 Agua Tibia':              '1975/01/03',
 }
-WildernessCount = {}
 
 @staticmethod
 def stripPropertiesW(o):
