@@ -69,10 +69,11 @@ function assignLayer(item, namePath, layer)
 			console.log('assignLayer failed: "' + item.name + '" doesn\'t have a name map!');
 			return;
 		}
+		var bounds = layer.getBounds();
 		if (item.bounds)
-			item.bounds.extend(layer.getBounds());
+			item.bounds.extend(bounds);
 		else
-			item.bounds = layer.getBounds();
+			item.bounds = L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
 	}
 	if (!(nextItem = item.nameMap[lastName])) {
 		console.log('assignLayer failed to get from "' + item.name + '" to "' + lastName + '"');

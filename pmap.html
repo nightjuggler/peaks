@@ -224,7 +224,7 @@ function getMapBounds(map, fitWhenDoneSetting)
 		extend: function(bounds)
 		{
 			if (init) {
-				mapBounds = bounds;
+				mapBounds = L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
 				init = false;
 			} else
 				mapBounds.extend(bounds);
