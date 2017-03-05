@@ -122,6 +122,10 @@ def parseLCD(lcdFile):
 		parentOrder.append(id)
 		path[level] = id
 
+		pathStr = '_'.join(path)
+		if len(pathStr) > 48:
+			log('"{}" is {} characters long (line {})', pathStr, len(pathStr), lineNumber)
+
 		if idType == ':':
 			if hasFile:
 				err('Cannot specify a file within a file on line {}', lineNumber)
