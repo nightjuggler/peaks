@@ -428,8 +428,36 @@ function LayerControl(map, currentBaseLayer)
 	var div = document.getElementById('layerControl');
 	var icon = document.getElementById('layerControlIcon');
 
-	icon.addEventListener('mouseenter', function() {div.style.display = 'block';}, false);
-	icon.addEventListener('mouseleave', function() {div.style.display = 'none';}, false);
+	function show()
+	{
+		div.style.display = 'block';
+	}
+	function hide()
+	{
+		div.style.display = 'none';
+	}
+	function documentTouch(event)
+	{
+		var node = event.target;
+		while (node && node !== div)
+			node = node.parentNode;
+		if (!node) {
+			document.removeEventListener('touchstart', documentTouch);
+			icon.addEventListener('touchstart', iconTouch);
+			hide();
+		}
+	}
+	function iconTouch(event)
+	{
+		event.preventDefault();
+		event.stopPropagation();
+		icon.removeEventListener('touchstart', iconTouch);
+		document.addEventListener('touchstart', documentTouch);
+		show();
+	}
+	icon.addEventListener('mouseenter', show);
+	icon.addEventListener('mouseleave', hide);
+	icon.addEventListener('touchstart', iconTouch);
 
 	this.map = map;
 	this.div = div;
@@ -452,11 +480,15 @@ LayerControl.prototype.addBaseLayer = function(name, layer)
 		input.checked = true;
 	}
 
+	var nameSpan = document.createElement('span');
+	nameSpan.appendChild(document.createTextNode(name));
+	nameSpan.addEventListener('click', changeBaseLayer);
+	input.addEventListener('click', changeBaseLayer);
+
 	var div = document.createElement('div');
 	div.className = 'lcItem';
 	div.appendChild(input);
-	div.appendChild(document.createTextNode(name));
-	div.addEventListener('click', changeBaseLayer, false);
+	div.appendChild(nameSpan);
 
 	ctrl.div.appendChild(div);
 }
