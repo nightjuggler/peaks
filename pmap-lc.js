@@ -38,6 +38,34 @@ function popupFitLink(map, layer)
 	}
 	return fitLink(fitBounds, 'popupZtf');
 }
+function raiseLink(layer)
+{
+	function bringToFront(event)
+	{
+		event.preventDefault();
+		layer.closePopup().bringToFront();
+	}
+	var a = document.createElement('a');
+	a.href = '#';
+	a.className = 'bringToFront';
+	a.appendChild(document.createTextNode('\u25B2'));
+	a.addEventListener('click', bringToFront, false);
+	return a;
+}
+function lowerLink(layer)
+{
+	function bringToBack(event)
+	{
+		event.preventDefault();
+		layer.closePopup().bringToBack();
+	}
+	var a = document.createElement('a');
+	a.href = '#';
+	a.className = 'bringToBack';
+	a.appendChild(document.createTextNode('\u25BC'));
+	a.addEventListener('click', bringToBack, false);
+	return a;
+}
 function addNameMap(item)
 {
 	if (item.order)
@@ -108,15 +136,9 @@ addFunctions.default = function(geojson, map, lcItem)
 addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 {
 	var style = {
-		'Northern California District': {
-			color: '#4169E1', // RoyalBlue
-		},
-		'Central California District': {
-			color: '#1E90FF', // DodgerBlue
-		},
-		'California Desert District': {
-			color: '#00BFFF', // DeepSkyBlue
-		},
+		'Northern California District': {color: '#4169E1'}, // RoyalBlue
+		'Central California District': {color: '#1E90FF'}, // DodgerBlue
+		'California Desert District': {color: '#00BFFF'}, // DeepSkyBlue
 	};
 	function getStyle(feature)
 	{
@@ -126,9 +148,20 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 	{
 		var name = feature.properties.name.slice(0, -13); // strip trailing " Field Office"
 		var parent = feature.properties.parent;
-		var html = '<div class="popupDiv blmPopup"><b>BLM ' + name + '</b><br>(' + parent + ')</div>';
-		layer.bindPopup(html);
-		assignLayer(lcItem, [feature.properties.parent, feature.properties.name], layer);
+
+		var popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
+		var bold = document.createElement('b');
+		bold.appendChild(document.createTextNode('BLM ' + name));
+		popupDiv.appendChild(bold);
+		popupDiv.appendChild(popupFitLink(map, layer));
+		popupDiv.appendChild(lowerLink(layer));
+		popupDiv.appendChild(raiseLink(layer));
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('(' + parent + ')'));
+
+		layer.bindPopup(popupDiv);
+		assignLayer(lcItem, [parent, feature.properties.name], layer);
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
@@ -196,6 +229,8 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(popupFitLink(map, layer));
+		popupDiv.appendChild(lowerLink(layer));
+		popupDiv.appendChild(raiseLink(layer));
 
 		var namePath = [name + ' ' + feature.properties.D];
 		if (agency)
@@ -242,11 +277,15 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 }
 addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 {
-	var style = {color: '#FF8C00'}; // DarkOrange
-
+	var style = {
+		BLM: {color: '#FF8C00'}, // DarkOrange
+		FWS: {color: '#FFA07A'}, // LightSalmon
+		NPS: {color: '#FFD700'}, // Gold
+		USFS: {color: '#808000'}, // Olive
+	};
 	function getStyle(feature)
 	{
-		return style;
+		return style[feature.properties.agency] || {};
 	}
 	function addPopup(feature, layer)
 	{
@@ -273,6 +312,8 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 		popupDiv.appendChild(wildLink);
 		popupDiv.appendChild(document.createTextNode(']'));
 		popupDiv.appendChild(popupFitLink(map, layer));
+		popupDiv.appendChild(lowerLink(layer));
+		popupDiv.appendChild(raiseLink(layer));
 
 		layer.bindPopup(popupDiv, {maxWidth: 600});
 		assignLayer(lcItem, namePath, layer);
