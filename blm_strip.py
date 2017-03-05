@@ -132,6 +132,21 @@ def featureKey(feature):
 
 	return name
 
+def getBounds(points):
+	minLng, minLat = maxLng, maxLat = points[0]
+
+	for lng, lat in points[1:-1]:
+		if lng < minLng:
+			minLng = lng
+		elif lng > maxLng:
+			maxLng = lng
+		if lat < minLat:
+			minLat = lat
+		elif lat > maxLat:
+			maxLat = lat
+
+	return minLng, minLat, maxLng, maxLat
+
 @staticmethod
 def stripHoles(geojson):
 	geojson['features'].sort(key=featureKey)
@@ -143,9 +158,17 @@ def stripHoles(geojson):
 		numPolygons = len(coordinates)
 		log('> "{}" has {} polygon{}', featureKey(feature), numPolygons, '' if numPolygons == 1 else 's')
 
-		for polygon in coordinates:
+		smallPolygons = []
+		for i, polygon in enumerate(coordinates):
 			for subpolygon in polygon:
 				assert subpolygon[0] == subpolygon[-1]
+
+			minLng, minLat, maxLng, maxLat = getBounds(polygon[0])
+			if maxLng - minLng < 0.00025 and maxLat - minLat < 0.00025:
+				log('\tRemoving small polygon with bounds {:f},{:f}, {:f},{:f} ({} points)',
+					minLat, minLng, maxLat, maxLng, len(polygon[0]));
+				smallPolygons.append(i)
+
 			if len(polygon) > 1:
 				holes = []
 				for subpolygon in polygon[1:]:
@@ -157,6 +180,11 @@ def stripHoles(geojson):
 							len(subpolygon) - 1, subpolygon[0])
 						holes.append(subpolygon)
 				polygon[1:] = holes
+
+		if smallPolygons:
+			for n, i in enumerate(smallPolygons):
+				del coordinates[i - n]
+			log('\tRemoved {} small polygon{}', n + 1, '' if n == 0 else 's')
 
 def nameRank(name):
 	if name.endswith(' Field Office'):
