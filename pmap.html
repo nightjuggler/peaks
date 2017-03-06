@@ -261,6 +261,7 @@ function centerIcon()
 		+ '</svg>';
 	return L.divIcon(o);
 }
+var isLocal;
 function loadJSON(url, onSuccess, onFailure, progressBar)
 {
 	var xhr = new XMLHttpRequest();
@@ -269,7 +270,7 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4)
 		{
-			if (xhr.status === 200)
+			if (xhr.status === 200 || isLocal && xhr.status === 0)
 				onSuccess(xhr.response);
 			else if (onFailure)
 				onFailure();
@@ -372,7 +373,8 @@ function createMap(options)
 function init()
 {
 	var protocol = window.location.protocol;
-	var suffix = (protocol === 'file:' || protocol === '') ? 'json' : 'cgi';
+	isLocal = protocol === 'file:' || protocol === '';
+	var suffix = isLocal ? 'json' : 'cgi';
 
 	loadJSON('mapbox.' + suffix, createMap);
 }
