@@ -321,6 +321,54 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
 }
+addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
+{
+	function addPopup(feature, layer)
+	{
+		var p = feature.properties;
+
+		var popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
+		var bold = document.createElement('b');
+		bold.appendChild(document.createTextNode(p.name + ' Wilderness Study Area'));
+		popupDiv.appendChild(bold);
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
+		popupDiv.appendChild(popupFitLink(map, layer));
+		popupDiv.appendChild(lowerLink(layer));
+		popupDiv.appendChild(raiseLink(layer));
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('BLM Recommendation: ' + p.rcmnd));
+
+		layer.bindPopup(popupDiv, {maxWidth: 600});
+		assignLayer(lcItem, [p.name], layer);
+	}
+
+	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#000000'}});
+}
+addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
+{
+	function addPopup(feature, layer)
+	{
+		var p = feature.properties;
+
+		var popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
+		var bold = document.createElement('b');
+		bold.appendChild(document.createTextNode(p.name + ' WSA (Released)'));
+		popupDiv.appendChild(bold);
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
+		popupDiv.appendChild(popupFitLink(map, layer));
+		popupDiv.appendChild(lowerLink(layer));
+		popupDiv.appendChild(raiseLink(layer));
+
+		layer.bindPopup(popupDiv, {maxWidth: 600});
+		assignLayer(lcItem, [p.name], layer);
+	}
+
+	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#A52A2A'/* Brown */}});
+}
 function makeLink(url, txt)
 {
 	return '<a href="' + url + '">' + txt + '</a>';
@@ -398,7 +446,7 @@ function getTop(div)
 }
 function toggleLayerMenu(event)
 {
-	var arrowSpan = event.target;
+	var arrowSpan = event.currentTarget;
 	var menu = arrowSpan.parentNode.nextSibling;
 
 	var lcDiv = document.getElementById('layerControl');
@@ -494,7 +542,7 @@ LayerControl.prototype.addBaseLayer = function(name, layer)
 }
 function clickArrow(event)
 {
-	event.target.parentNode.firstChild.click();
+	event.currentTarget.parentNode.firstChild.click();
 }
 function lcItemFitBounds(map)
 {

@@ -234,6 +234,16 @@ def postprocessWilderness(geojson):
 			agency = p['agency']
 			log('\t\t\t\t{} {} ={}{}', date, agency, agency.lower(), date.replace('/', ''))
 
+@staticmethod
+def postprocessWSA(geojson):
+	G.postprocess = stripHoles
+	G.postprocess(geojson)
+
+	for feature in geojson['features']:
+		name = feature['properties']['name']
+		id = name.replace(' ', '').replace('-', '').replace('/', '').lower()
+		log('\t\t\t{} ={}', name, id)
+
 def nameRank(name):
 	if name.endswith(' Field Office'):
 		return 0
@@ -443,6 +453,36 @@ def stripPropertiesW(o):
 
 	return {'name': name, 'agency': agency, 'D': date}
 
+@staticmethod
+def stripPropertiesWSA(o):
+	name = o[G.nameField]
+	assert name.endswith(' Wilderness Study Area')
+	assert o['SMA_ID'] == 2
+
+	name = name[:-22]
+	code = o['WSACODE_ca']
+	rcmnd = o['WSA_RCMND']
+
+	if rcmnd == 'No recommendation':
+		rcmnd = 'None'
+	else:
+		assert rcmnd in ('Suitable', 'Non-suitable')
+
+	return {'name': name, 'code': code, 'rcmnd': rcmnd}
+
+@staticmethod
+def stripPropertiesWSAR(o):
+	name = o[G.nameField]
+	code = o['WSACODE']
+
+	yn = o['RELEASED']
+	if yn == 'n':
+		pass # Do something?
+	else:
+		assert yn == 'y'
+
+	return {'name': name, 'code': code}
+
 class BLM_CA_AA(object):
 	#
 	# Administrative Areas (Field Office boundaries)
@@ -498,6 +538,26 @@ class BLM_CA_W(object):
 	stripProperties = stripPropertiesW
 	postprocess = postprocessWilderness
 
+class BLM_CA_WSA(object):
+	#
+	# Wilderness Study Areas
+	#
+	filename = 'blm/ca/nlcs_wsa_poly'
+	nameField = 'NLCS_NAME'
+	stripGeometry = stripMultiPolygon
+	stripProperties = stripPropertiesWSA
+	postprocess = postprocessWSA
+
+class BLM_CA_WSAR(object):
+	#
+	# Wilderness Study Areas - Released
+	#
+	filename = 'blm/ca/nlcs_wsa_released_ca'
+	nameField = 'WSANAME'
+	stripGeometry = stripMultiPolygon
+	stripProperties = stripPropertiesWSAR
+	postprocess = postprocessWSA
+
 def stripHook(o):
 	if 'coordinates' in o:
 		return G.stripGeometry(o['type'], o['coordinates'])
@@ -549,6 +609,8 @@ def parseArgs():
 		'blm/ca/nm':    BLM_CA_NM,
 		'blm/ca/ccnm':  BLM_CA_CCNM,
 		'blm/ca/w':     BLM_CA_W,
+		'blm/ca/wsa':   BLM_CA_WSA,
+		'blm/ca/wsar':  BLM_CA_WSAR,
 	}
 
 	import argparse
