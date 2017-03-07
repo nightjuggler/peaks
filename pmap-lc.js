@@ -9,7 +9,14 @@ var Wilderness_Prefix = 'http://www.wilderness.net/NWPS/wildView?WID=';
 var lcItemFitLink;
 var lcItemHoverColor = 'rgb(232, 232, 232)';
 var menuDisplayedIcon = ' \u25BC';
-var menuCollapsedIcon = ' \u25B6';
+/*
+	\uFE0E is a variation selector to indicate that the preceding character - the
+	black right-pointing triangle (\u25B6) - should be rendered text-style rather
+	than emoji-style. If the variation selector isn't specified, desktop browsers
+	seem to default to text-style while mobile browsers seem to default to emoji-
+	style. [http://www.unicode.org/Public/UNIDATA/StandardizedVariants.txt]
+*/
+var menuCollapsedIcon = ' \u25B6\uFE0E';
 var addFunctions = {};
 
 function wikipediaLink(w)
@@ -591,6 +598,15 @@ function addZoomToFitHandlers(item)
 
 	itemDiv.addEventListener('mouseenter', showZoomToFit, false);
 	itemDiv.addEventListener('mouseleave', hideZoomToFit, false);
+/*
+	Mobile browsers won't fire a click event "if the contents of the page changes" on the
+	preceding mouseenter/mouseover event. Since the mouseenter handler (showZoomToFit)
+	would normally append the zoom-to-fit link to the div for the clicked menu item (thus
+	preventing the click event), instead intercept the initial touchstart event and add
+	the zoom-to-fit link in that handler so that the subsequent mouseenter handler won't
+	change the page (since the link was already added), thus allowing the click to fire.
+*/
+	itemDiv.addEventListener('touchstart', showZoomToFit, false);
 
 	if (item.order)
 		for (var id of item.order)
