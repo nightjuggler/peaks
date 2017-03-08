@@ -55,7 +55,7 @@ function raiseLink(layer)
 	var a = document.createElement('a');
 	a.href = '#';
 	a.className = 'bringToFront';
-	a.appendChild(document.createTextNode('\u25B2'));
+	a.appendChild(document.createTextNode('\u2B06\uFE0F'));
 	a.addEventListener('click', bringToFront, false);
 	return a;
 }
@@ -69,9 +69,37 @@ function lowerLink(layer)
 	var a = document.createElement('a');
 	a.href = '#';
 	a.className = 'bringToBack';
-	a.appendChild(document.createTextNode('\u25BC'));
+	a.appendChild(document.createTextNode('\u2B07\uFE0F'));
 	a.addEventListener('click', bringToBack, false);
 	return a;
+}
+function weatherLink(layer)
+{
+	var a = document.createElement('a');
+
+	function setWxLink()
+	{
+		var ll = layer.getPopup().getLatLng();
+		a.href = 'http://forecast.weather.gov/MapClick.php'
+			+ '?lon=' + ll.lng.toFixed(6)
+			+ '&lat=' + ll.lat.toFixed(6);
+	}
+
+	a.href = '#';
+	a.className = 'wxLink';
+	a.appendChild(document.createTextNode('\u26C5'));
+	a.addEventListener('click', setWxLink, false);
+
+	return a;
+}
+function bindPopup(popupDiv, map, layer)
+{
+	popupDiv.appendChild(document.createElement('br'));
+	popupDiv.appendChild(popupFitLink(map, layer));
+	popupDiv.appendChild(weatherLink(layer));
+	popupDiv.appendChild(lowerLink(layer));
+	popupDiv.appendChild(raiseLink(layer));
+	layer.bindPopup(popupDiv, {maxWidth: 600});
 }
 function addNameMap(item)
 {
@@ -161,13 +189,10 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 		var bold = document.createElement('b');
 		bold.appendChild(document.createTextNode('BLM ' + name));
 		popupDiv.appendChild(bold);
-		popupDiv.appendChild(popupFitLink(map, layer));
-		popupDiv.appendChild(lowerLink(layer));
-		popupDiv.appendChild(raiseLink(layer));
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + parent + ')'));
 
-		layer.bindPopup(popupDiv);
+		bindPopup(popupDiv, map, layer);
 		assignLayer(lcItem, [parent, feature.properties.name], layer);
 	}
 
@@ -233,11 +258,7 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 		bold.appendChild(document.createTextNode(' ['));
 		bold.appendChild(wikipediaLink(feature.properties.W));
 		bold.appendChild(document.createTextNode(']'));
-
 		popupDiv.appendChild(bold);
-		popupDiv.appendChild(popupFitLink(map, layer));
-		popupDiv.appendChild(lowerLink(layer));
-		popupDiv.appendChild(raiseLink(layer));
 
 		var namePath = [name + ' ' + feature.properties.D];
 		if (agency)
@@ -276,7 +297,8 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 					'This part is managed by the ' + agency + '.'));
 			}
 		}
-		layer.bindPopup(popupDiv, {maxWidth: 600});
+
+		bindPopup(popupDiv, map, layer);
 		assignLayer(lcItem, namePath, layer);
 	}
 
@@ -318,11 +340,8 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 		wildLink.appendChild(document.createTextNode('Wilderness.net'));
 		popupDiv.appendChild(wildLink);
 		popupDiv.appendChild(document.createTextNode(']'));
-		popupDiv.appendChild(popupFitLink(map, layer));
-		popupDiv.appendChild(lowerLink(layer));
-		popupDiv.appendChild(raiseLink(layer));
 
-		layer.bindPopup(popupDiv, {maxWidth: 600});
+		bindPopup(popupDiv, map, layer);
 		assignLayer(lcItem, namePath, layer);
 	}
 
@@ -341,13 +360,10 @@ addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
-		popupDiv.appendChild(popupFitLink(map, layer));
-		popupDiv.appendChild(lowerLink(layer));
-		popupDiv.appendChild(raiseLink(layer));
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('BLM Recommendation: ' + p.rcmnd));
 
-		layer.bindPopup(popupDiv, {maxWidth: 600});
+		bindPopup(popupDiv, map, layer);
 		assignLayer(lcItem, [p.name], layer);
 	}
 
@@ -366,11 +382,8 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
-		popupDiv.appendChild(popupFitLink(map, layer));
-		popupDiv.appendChild(lowerLink(layer));
-		popupDiv.appendChild(raiseLink(layer));
 
-		layer.bindPopup(popupDiv, {maxWidth: 600});
+		bindPopup(popupDiv, map, layer);
 		assignLayer(lcItem, [p.name], layer);
 	}
 
