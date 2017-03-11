@@ -612,12 +612,34 @@ function addZoomToFitHandlers(item)
 	itemDiv.addEventListener('mouseenter', showZoomToFit, false);
 	itemDiv.addEventListener('mouseleave', hideZoomToFit, false);
 /*
-	Mobile browsers won't fire a click event "if the contents of the page changes" on the
-	preceding mouseenter/mouseover event. Since the mouseenter handler (showZoomToFit)
-	would normally append the zoom-to-fit link to the div for the clicked menu item (thus
-	preventing the click event), instead intercept the initial touchstart event and add
-	the zoom-to-fit link in that handler so that the subsequent mouseenter handler won't
-	change the page (since the link was already added), thus allowing the click to fire.
+	Tapping an element in a mobile browser triggers the following sequence
+	of events: touchstart, touchmove, touchend, mouseover, mouseenter,
+	mousemove, mousedown, mouseup, and click. However, "if the contents of
+	the page changes" during the handling of the mouseover, mouseenter, or
+	mousemove events, the subsequent events (mousedown, mouseup, and click)
+	are not fired!
+
+	So in a mobile environment, when a menu item is first tapped, the
+	mouseenter handler (showZoomToFit) would append the zoom-to-fit link
+	to the menu item's div, and since that changes the contents of the
+	page, the click event would not occur and any associated submenu would
+	not open or close. When the item is tapped again, the zoom-to-fit link
+	will already have been added, and so the click will fire, and the
+	submenu will open or close.
+
+	To avoid the need for tapping twice, we'll handle the initial
+	touchstart event and add the zoom-to-fit link in that handler so that
+	the subsequent mouseenter handler won't change the page, thus allowing
+	the click to fire.
+
+	Note that currently (3/10/2017), it is sometimes possible to tap an
+	element such that only the mouse events fire but not the touch events!
+	This occurs in mobile versions of both Firefox and Safari (I haven't
+	checked other browsers), and it appears to occur only with menu items
+	whose text spans more than one line, e.g. Berryessa Snow Mountain
+	National Monument, and especially when tapping the second line of such
+	items. When that happens, a second tap will be necessary to open or
+	close any associated submenu.
 */
 	itemDiv.addEventListener('touchstart', showZoomToFit, false);
 
