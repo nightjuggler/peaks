@@ -627,10 +627,9 @@ function addZoomToFitHandlers(item)
 	will already have been added, and so the click will fire, and the
 	submenu will open or close.
 
-	To avoid the need for tapping twice, we'll handle the initial
-	touchstart event and add the zoom-to-fit link in that handler so that
-	the subsequent mouseenter handler won't change the page, thus allowing
-	the click to fire.
+	To avoid the need for tapping twice, we'll handle the initial touchstart
+	event and add the zoom-to-fit link in that handler so that the subsequent
+	mouseenter handler won't change the page, thus allowing the click to fire.
 
 	Note that currently (3/10/2017), it is sometimes possible to tap an
 	element such that only the mouse events fire but not the touch events!
@@ -717,7 +716,7 @@ function addCheckboxClickHandler(item, map)
 	function addWrapper(geojson)
 	{
 		addNameMap(fileParent);
-		fileParent.featureGroup = item.add(geojson, map, fileParent);
+		fileParent.featureGroup = fileParent.add(geojson, map, fileParent);
 		delNameMap(fileParent);
 
 		var sizeSpan = fileParent.div.lastChild;
@@ -775,12 +774,53 @@ function getPathStr(path, id)
 	path.pop();
 	return pathStr;
 }
+function validateItem(item, path, id)
+{
+	if (item.parent.fileParent)
+	{
+		if (item.add) {
+			console.log(getPathStr(path, id) + ': Cannot have an add function within a file!');
+			return false;
+		}
+		if (item.size) {
+			console.log(getPathStr(path, id) + ': Cannot have a file within a file!');
+			return false;
+		}
+		item.fileParent = item.parent.fileParent;
+		return true;
+	}
+
+	if (item.add)
+	{
+		var funcName = 'add' + item.add;
+		var addFunc = addFunctions[funcName];
+
+		if (typeof addFunc !== 'function') {
+			console.log(getPathStr(path, id) + ': "' + funcName + '" is not a function!');
+			return false;
+		}
+		item.add = addFunc;
+	}
+	else if (item.parent.add)
+		item.add = item.parent.add;
+
+	if (item.size)
+	{
+		item.fileName = 'json/' + getPathStr(path, id) + '.json';
+		item.fileParent = item;
+		if (!item.add)
+			item.add = addFunctions.default;
+	}
+	return true;
+}
 LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 {
 	for (var id of parentItem.order)
 	{
 		var item = parentItem.items[id];
 		item.parent = parentItem;
+
+		if (!validateItem(item, path, id)) continue;
 
 		var itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
@@ -797,38 +837,12 @@ LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 		item.name = parts.join(' ');
 		itemDiv.appendChild(nameSpan);
 
-		if (item.add)
-		{
-			var fnName = 'add' + item.add;
-			var fn = addFunctions[fnName];
-			if (typeof fn !== 'function') {
-				console.log(getPathStr(path, id) + ': "' + fnName + '" is not a function!');
-				continue;
-			}
-			item.add = fn;
-		}
-		else if (parentItem.add)
-			item.add = parentItem.add;
-
 		if (item.size)
 		{
-			if (item.fileParent) {
-				console.log(getPathStr(path, id) + ': Cannot have a file within a file!');
-				continue;
-			}
-			if (!item.add)
-				item.add = addFunctions.default;
-
 			var sizeSpan = document.createElement('span');
 			sizeSpan.appendChild(document.createTextNode('(' + item.size + ')'));
 			itemDiv.appendChild(sizeSpan);
-
-			item.fileName = 'json/' + getPathStr(path, id) + '.json';
-			item.fileParent = item;
 		}
-		else if (parentItem.fileParent)
-			item.fileParent = parentItem.fileParent;
-
 		if (item.fileParent)
 		{
 			var checkbox = document.createElement('input');
