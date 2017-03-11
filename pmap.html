@@ -198,6 +198,9 @@ function parseQueryString(queryString)
 
 	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
 
+	var flags = {
+		cc: 'clickCenter',
+	};
 	var handlers = {
 		b: parseBaseLayer,
 		ll: parseLatLng,
@@ -208,6 +211,10 @@ function parseQueryString(queryString)
 	for (var s of q.substr(1).split('&'))
 	{
 		var i = s.indexOf('=');
+		if (i < 0 && isValidId(s, 3) && flags[s]) {
+			queryString[flags[s]] = true;
+			continue;
+		}
 		if (i < 1 || i === s.length - 1) continue;
 		var k = s.substr(0, i);
 		var v = s.substr(i + 1);
@@ -216,7 +223,7 @@ function parseQueryString(queryString)
 			handlers[k](queryString, v);
 	}
 }
-function getMapBounds(map, fitWhenDoneSetting)
+function getMapBounds(map, options)
 {
 	var init = true;
 	var numSetters = 0;
@@ -234,19 +241,44 @@ function getMapBounds(map, fitWhenDoneSetting)
 			} else
 				mapBounds.extend(bounds);
 		},
-		delSetter: function(object)
-		{
-			if (numSetters > 0 && --numSetters === 0 && fitWhenDoneSetting)
-				methods.fit();
-			delete object.mapBounds;
-		},
-		addSetter: function(object)
-		{
-			if (numSetters++ === 0)
-				init = true;
-			object.mapBounds = methods;
-		},
 	};
+
+	function click() {
+		if (options.fitWhenDoneSetting)
+			map.off('moveend', click);
+		var center = map.latLngToContainerPoint(map.getCenter());
+		var element = document.elementFromPoint(center.x, center.y);
+		element.dispatchEvent(
+			new MouseEvent('click', {
+				bubbles: true,
+				cancelable: true,
+				view: window,
+				clientX: center.x,
+				clientY: center.y,
+			}));
+	}
+
+	methods.delSetter = function(object)
+	{
+		if (numSetters > 0 && --numSetters === 0) {
+			if (options.fitWhenDoneSetting) {
+				if (options.clickWhenDoneSetting)
+					map.on('moveend', click);
+				methods.fit();
+			} else {
+				if (options.clickWhenDoneSetting)
+					click();
+			}
+		}
+		delete object.mapBounds;
+	}
+	methods.addSetter = function(object)
+	{
+		if (numSetters++ === 0)
+			init = true;
+		object.mapBounds = methods;
+	}
+
 	return methods;
 }
 function centerIcon()
@@ -294,6 +326,7 @@ function createMap(options)
 {
 	var queryString = {
 		baseLayer: 'Outdoors',
+		clickCenter: false,
 		overlays: [],
 	};
 	parseQueryString(queryString);
@@ -327,7 +360,10 @@ function createMap(options)
 	for (var layer of layers)
 		layerControl.addBaseLayer(layer, baseLayers[layer]);
 
-	var mapBounds = getMapBounds(map, !queryString.ll);
+	var mapBounds = getMapBounds(map, {
+		fitWhenDoneSetting: !queryString.ll,
+		clickWhenDoneSetting: queryString.clickCenter,
+	});
 
 	if (queryString.ll) {
 		var minZoom = map.getMinZoom();
