@@ -406,7 +406,7 @@ function popupHtml(ll, p, htmlFilename)
 
 	var links = [];
 	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
-	if (p.W) links.push(makeLink('https://en.wikipedia.org/wiki/' + p.W, 'W'));
+	if (p.W) links.push(makeLink(Wikipedia_Prefix + p.W, 'W'));
 	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
 	if (p.LoJ) links.push(makeLink('http://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
 	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
@@ -627,8 +627,8 @@ function addZoomToFitHandlers(item)
 	will already have been added, and so the click will fire, and the
 	submenu will open or close.
 
-	To avoid the need for tapping twice, we'll handle the initial touchstart
-	event and add the zoom-to-fit link in that handler so that the subsequent
+	To avoid having to tap twice, we'll handle the initial touchstart event
+	and add the zoom-to-fit link in that handler so that the subsequent
 	mouseenter handler won't change the page, thus allowing the click to fire.
 
 	Note that currently (3/10/2017), it is sometimes possible to tap an
