@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <style>
@@ -20,7 +20,10 @@ a {text-decoration: none;}
 .popupDiv b a {
 	font-weight: bold;
 }
-.elevDiv {display: inline-block; vertical-align: top;}
+.elevDiv {
+	display: inline-block;
+	vertical-align: top;
+}
 #llDiv {
 	position: absolute;
 	bottom: 40px;
@@ -54,7 +57,7 @@ a {text-decoration: none;}
 	right: 10px;
 	width: 26px;
 	height: 25px;
-	background-color: rgb(255,255,255);
+	background-color: white;
 	border: 1px solid rgb(128,128,128);
 	border-radius: 5px;
 }
@@ -63,7 +66,7 @@ a {text-decoration: none;}
 	top: -1px;
 	right: -1px;
 	width: 150px;
-	background-color: rgb(255,255,255);
+	background-color: white;
 	border: 1px solid rgb(128,128,128);
 	border-radius: 5px;
 	cursor: default;
