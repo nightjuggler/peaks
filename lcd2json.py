@@ -8,7 +8,7 @@ import re
 import sys
 
 lineNumber = 0
-linePattern = re.compile('^(\t*)([- /A-Za-z0-9\\|\\(\\)]+) ([:=])([a-z0-9]+)(\\^*)(?: add([_A-Za-z]+))?$')
+linePattern = re.compile('^(\t*)([- \'\\./A-Za-z0-9\\|\\(\\)]+) ([:=])([a-z0-9]+)(\\^*)(?: add([_A-Za-z]+))?$')
 commentPattern = re.compile('^\t*#')
 
 addPatterns = [
