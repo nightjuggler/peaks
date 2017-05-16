@@ -31,6 +31,31 @@ PolygonsToRemove = (
 )
 SeparateFeatures = {
 #
+# NPS -> AZ -> Montezuma Castle National Monument
+#
+(-111.825721, 34.613346): Feature('Montezuma Castle', 'castle'),
+(-111.749979, 34.645673): Feature('Montezuma Well', 'well', W2='Montezuma_Well', flags=FeatureFlag_SkipBounds),
+#
+# NPS -> AZ -> Navajo National Monument
+#
+(-110.817732, 36.670105): Feature('Inscription House', 'ih', flags=FeatureFlag_SkipBounds),
+(-110.537306, 36.689120): Feature('Betatakin', 'bt'),
+(-110.501645, 36.764945): Feature('Keet Seel', 'ks', flags=FeatureFlag_SkipBounds),
+#
+# NPS -> AZ -> Saguaro National Park
+#
+(-110.498832, 32.230070): Feature('Rincon Mountain District', 'rmd'),
+(-111.113908, 32.315900): Feature('Tucson Mountain District', 'tmd'),
+#
+# NPS -> AZ -> Tumacacori National Historical Park
+#
+(-110.901675, 31.408678): Feature('Los Santos Angeles de Guevavi', 'g',
+	W2='Mission_Los_Santos_%C3%81ngeles_de_Guevavi', flags=FeatureFlag_SkipBounds),
+(-110.959223, 31.454015): Feature('San Cayetano de Calabazas', 'c',
+	W2='Mission_San_Cayetano_de_Calabazas', flags=FeatureFlag_SkipBounds),
+(-111.043785, 31.569337): Feature('San Jose de Tumacacori', 't',
+	W2='Mission_San_Jos%C3%A9_de_Tumac%C3%A1cori'),
+#
 # NPS -> CA -> Channel Islands National Park
 #
 (-119.037070, 33.448103): Feature('Santa Barbara Island', 'sb', W2='Santa_Barbara_Island'),
@@ -251,10 +276,13 @@ def stripPolygon(geoType, coordinates):
 	return {'type': geoType, 'coordinates': coordinates}
 
 NPS_Wikipedia = {
+	'fobo': 'Fort_Bowie',
 	'fopo': 'Fort_Point,_San_Francisco',
 	'manz': 'Manzanar',
 	'redw': 'Redwood_National_and_State_Parks',
 	'rori': 'Rosie_the_Riveter/World_War_II_Home_Front_National_Historical_Park',
+	'sucr': 'Sunset_Crater#Sunset_Crater_Volcano_National_Monument',
+	'tuma': 'Tumac%C3%A1cori_National_Historical_Park',
 	'whis': 'Whiskeytown%E2%80%93Shasta%E2%80%93Trinity_National_Recreation_Area',
 }
 NPS_Names = {
