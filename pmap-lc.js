@@ -123,10 +123,26 @@ function delNameMap(item)
 			delNameMap(item.items[id]);
 	}
 }
-function assignLayer(item, namePath, layer)
+function extendBounds(item, layer)
+{
+	var bounds = layer.getBounds();
+	if (item.bounds)
+		item.bounds.extend(bounds);
+	else
+		item.bounds = L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+}
+function assignLayer(item, namePath, layer, featureProperties)
 {
 	var nextItem;
 	var lastName = namePath.pop();
+
+	var setBounds = false;
+	var skipBounds = false;
+
+	if (featureProperties && featureProperties.flags) {
+		if (featureProperties.flags & 1) setBounds = true;
+		if (featureProperties.flags & 2) skipBounds = true;
+	}
 
 	if (!item.nameMap) {
 		console.log('assignLayer failed: "' + item.name + '" doesn\'t have a name map!');
@@ -143,18 +159,22 @@ function assignLayer(item, namePath, layer)
 			console.log('assignLayer failed: "' + item.name + '" doesn\'t have a name map!');
 			return;
 		}
-		var bounds = layer.getBounds();
-		if (item.bounds)
-			item.bounds.extend(bounds);
-		else
-			item.bounds = L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+		if (!skipBounds)
+			extendBounds(item, layer);
 	}
 	if (!(nextItem = item.nameMap[lastName])) {
 		console.log('assignLayer failed to get from "' + item.name + '" to "' + lastName + '"');
 		return;
 	}
 	item = nextItem;
-	if (item.nameMap) {
+	if (setBounds) {
+		if (!item.nameMap) {
+			console.log('assignLayer failed: "' + item.name + '" doesn\'t have a name map!');
+			return;
+		}
+		extendBounds(item, layer);
+	}
+	else if (item.nameMap) {
 		console.log('assignLayer failed: "' + item.name + '" has a name map!');
 		return;
 	}
@@ -389,6 +409,50 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#A52A2A'/* Brown */}});
 }
+addFunctions.add_NPS = function(geojson, map, lcItem)
+{
+	function addPopup(feature, layer)
+	{
+		var p = feature.properties;
+		var bold = document.createElement('b');
+		var link = document.createElement('a');
+		link.href = 'https://www.nps.gov/' + p.code + '/index.htm';
+
+		var parts = p.name.split('|');
+		link.appendChild(document.createTextNode(parts[0]));
+		for (var i = 1; i < parts.length; ++i)
+		{
+			link.appendChild(document.createElement('br'));
+			link.appendChild(document.createTextNode(parts[i]));
+		}
+		p.name = parts.join(' ');
+		bold.appendChild(link);
+		bold.appendChild(document.createTextNode(' ['));
+		bold.appendChild(wikipediaLink(p.W || p.name.replace(/ /g, '_')));
+		bold.appendChild(document.createTextNode(']'));
+
+		var popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
+		popupDiv.appendChild(bold);
+
+		var namePath = [p.name]
+		if (p.name2) {
+			namePath.push(p.name2)
+			popupDiv.appendChild(document.createElement('br'));
+			popupDiv.appendChild(document.createTextNode(p.name2));
+			if (p.W2) {
+				popupDiv.appendChild(document.createTextNode(' ['));
+				popupDiv.appendChild(wikipediaLink(p.W2));
+				popupDiv.appendChild(document.createTextNode(']'));
+			}
+		}
+
+		bindPopup(popupDiv, map, layer);
+		assignLayer(lcItem, namePath, layer, p);
+	}
+
+	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FFFF00'/* Yellow */}});
+}
 function makeLink(url, txt)
 {
 	return '<a href="' + url + '">' + txt + '</a>';
@@ -451,6 +515,30 @@ addFunctions.addPeakOverlay = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {pointToLayer: addPeak});
+}
+addFunctions.add_UC_Reserve = function(geojson, map, lcItem)
+{
+	function addPopup(feature, layer)
+	{
+		var p = feature.properties;
+
+		var popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
+		var bold = document.createElement('b');
+		bold.appendChild(document.createTextNode(p.name));
+		if (p.name2) {
+			bold.appendChild(document.createElement('br'));
+			bold.appendChild(document.createTextNode(p.name2));
+		}
+		popupDiv.appendChild(bold);
+		popupDiv.appendChild(document.createElement('br'));
+		popupDiv.appendChild(document.createTextNode('(' + p.campus + ')'));
+
+		bindPopup(popupDiv, map, layer);
+//		assignLayer(lcItem, [p.name], layer);
+	}
+
+	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FF00FF'/* Magenta */}});
 }
 function getTop(div)
 {
@@ -676,6 +764,11 @@ function isCheckedToFileParent(item)
 }
 function addLayersToMap(item, map, extendBounds)
 {
+	if (item.layer) {
+		item.layer.addTo(map);
+		if (extendBounds)
+			extendBounds(item.layer.getBounds());
+	}
 	if (item.order) {
 		for (var id of item.order)
 		{
@@ -687,14 +780,12 @@ function addLayersToMap(item, map, extendBounds)
 		item.featureGroup.addTo(map);
 		if (extendBounds)
 			extendBounds(item.featureGroup.getBounds());
-	} else {
-		item.layer.addTo(map);
-		if (extendBounds)
-			extendBounds(item.layer.getBounds());
 	}
 }
 function removeLayersFromMap(item)
 {
+	if (item.layer)
+		item.layer.remove();
 	if (item.order) {
 		for (var id of item.order)
 		{
@@ -702,11 +793,8 @@ function removeLayersFromMap(item)
 			if (child.checkbox.checked)
 				removeLayersFromMap(child);
 		}
-	} else if (item.featureGroup) {
+	} else if (item.featureGroup)
 		item.featureGroup.remove();
-	} else {
-		item.layer.remove();
-	}
 }
 function addCheckboxClickHandler(item, map)
 {
