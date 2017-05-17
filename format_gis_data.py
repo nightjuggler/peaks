@@ -15,20 +15,50 @@ G = None
 XY2LL = None
 SecondPoints = set()
 HolesToRemove = ()
-PolygonsToRemove = (
+PolygonsToRemove = {
+'nps_ca': (
 #
-# Why are the following areas included as part of the Golden Gate National Recreation Area?
+# Golden Gate National Recreation Area
 #
-(-122.519694, 37.533448), # includes Montara SMR and Pillar Point SMCA
-(-122.519702, 37.533489), # includes Point Montara Light
-(-122.517480, 37.539958), # small part of the coast near Montara
-(-122.509973, 37.584858), # near Devil's Slide
-(-122.513501, 37.594477), # Pedro Point Headlands (http://pedropointheadlands.org/)
+(-122.519694, 37.533448), # coastal area including Fitzgerald Marine Reserve
+(-122.519702, 37.533489), # coastal area including Point Montara Light
+(-122.517480, 37.539958), # small area near Montara
+(-122.509973, 37.584858), # small area near Devil's Slide
+(-122.513501, 37.594477), # Pedro Point Headlands
 (-122.499031, 37.600852), # Pacifica State Beach
 (-122.425814, 37.874280), # Angel Island State Park
 #
-(-121.600877, 40.348154), # Lassen Volcanic National Park Headquarters in Mineral, CA
-)
+# Lassen Volcanic National Park
+#
+(-121.600877, 40.348154), # Headquarters in Mineral, CA
+),
+'nps_nm': (
+#
+# Manhattan Project National Historical Park
+#
+(-84.317198, 35.928011), # Oak Ridge, TN: X-10 Graphite Reactor
+(-84.394445, 35.938672), # Oak Ridge, TN: K-25 Building
+(-84.256801, 35.984691), # Oak Ridge, TN: Y-12 Building 9204-3
+(-84.255495, 35.985871), # Oak Ridge, TN: Y-12 Building 9731
+(-119.387098, 46.587399), # Hanford, WA: Hanford High School
+(-119.646295, 46.628954), # Hanford, WA: B Reactor
+(-119.715131, 46.638641), # Hanford, WA: Bruggemann's Warehouse
+(-119.618684, 46.644369), # Hanford, WA: Allard Pump House
+(-119.478732, 46.660534), # Hanford, WA: White Bluffs Bank
+),
+'nps_wa': (
+#
+# Manhattan Project National Historical Park
+#
+(-84.317198, 35.928011), # Oak Ridge, TN: X-10 Graphite Reactor
+(-84.394445, 35.938672), # Oak Ridge, TN: K-25 Building
+(-84.256801, 35.984691), # Oak Ridge, TN: Y-12 Building 9204-3
+(-84.255495, 35.985871), # Oak Ridge, TN: Y-12 Building 9731
+(-106.264959, 35.840842), # Los Alamos, NM: Pajarito Site
+(-106.345095, 35.843839), # Los Alamos, NM: V-Site
+(-106.347393, 35.855718), # Los Alamos, NM: Gun Site
+),
+}
 SeparateFeatures = {
 #
 # NPS -> AZ -> Montezuma Castle National Monument
@@ -74,6 +104,84 @@ SeparateFeatures = {
 # NPS -> CA -> Lava Beds National Monument
 #
 (-121.394089, 41.851072): Feature('Petroglyph Section', 'p', W2='Petroglyph_Point_Archeological_Site'),
+#
+# NPS -> MT -> Little Bighorn Battlefield National Monument
+#
+(-107.384146, 45.521082): Feature('Reno-Benteen Battlefield', 'rb'),
+(-107.443667, 45.564359): Feature('Custer Battlefield', 'c'),
+#
+# NPS -> NM -> Bandelier National Monument
+#
+(-106.206648, 35.867916): Feature('Tsankawi Section', 't', W2='Tsankawi'),
+#
+# NPS -> NM -> Carlsbad Caverns National Park
+#
+(-104.460401, 32.109626): Feature('Rattlesnake Springs', 'rs', W2='Rattlesnake_Springs_Historic_District'),
+#
+# NPS -> NM -> Chaco Culture National Historical Park
+#
+(-108.109815, 35.674474): Feature("Kin Ya'a", 'ky', W2='Kin_Ya%27a', flags=FeatureFlag_SkipBounds),
+(-107.681287, 35.972367): Feature('Pueblo Pintado', 'pp', flags=FeatureFlag_SkipBounds),
+(-108.145752, 35.979813): Feature('Kin Bineola', 'kb', W2='Kin_Bineola', flags=FeatureFlag_SkipBounds),
+#
+# NPS -> NM -> El Malpais National Monument
+#
+(-107.819072, 35.096448): Feature('Northwest New Mexico Visitor Center', 'v', flags=FeatureFlag_SkipBounds),
+#
+# NPS -> NM -> Manhattan Project National Historical Park -> Los Alamos Unit
+#
+(-106.264959, 35.840842): Feature('Pajarito Site', 'p'),
+(-106.345095, 35.843839): Feature('V-Site', 'v'),
+(-106.347393, 35.855718): Feature('Gun Site', 'g'),
+#
+# NPS -> NM -> Pecos National Historical Park
+#
+(-105.817663, 35.539247): Feature('Glorieta Unit (Canoncito)', 'gwest', W2='Glorieta_Pass_Battlefield'),
+(-105.683200, 35.565951): Feature('Main Unit', 'main'),
+(-105.755533, 35.577073): Feature("Glorieta Unit (Pigeon's Ranch)", 'geast', W2='Glorieta_Pass_Battlefield'),
+#
+# NPS -> NM -> Petroglyph National Monument
+#
+(-106.749622, 35.153536): Feature('Southern Geologic Window', 'sgw'),
+(-106.758586, 35.174355): Feature('Northern Geologic Window', 'ngw'),
+(-106.688781, 35.189383): Feature('Piedras Marcadas Canyon', 'pmc'),
+#
+# NPS -> NM -> Salinas Pueblo Missions National Monument
+#
+(-106.075920, 34.260079): Feature('Gran Quivira Ruins', 'gq'),
+(-106.364623, 34.451208): Feature('Abo Ruins', 'a', W2='Abo_(historic_place)'),
+(-106.292308, 34.591781): Feature('Quarai Ruins', 'q', W2='Quarai'),
+#
+# NPS -> OR -> John Day Fossil Beds National Monument
+#
+(-119.618141, 44.596444): Feature('Sheep Rock Unit', 'sr'),
+(-119.643497, 44.629640): Feature('Sheep Rock Unit (Cathedral Rock)', 'cr'),
+(-119.632783, 44.659439): Feature('Sheep Rock Unit (Foree Area)', 'foree'),
+(-120.263931, 44.663927): Feature('Painted Hills Unit', 'ph'),
+(-120.402547, 44.929289): Feature('Clarno Unit', 'clarno'),
+#
+# NPS -> OR -> Oregon Caves National Monument and Preserve
+#
+(-123.644339, 42.160947): Feature('Illinois Valley Visitors Center', 'ivvc', flags=FeatureFlag_SkipBounds),
+#
+# NPS -> TN -> Manhattan Project National Historical Park -> Oak Ridge Unit
+#
+(-84.317198, 35.928011): Feature('X-10 Graphite Reactor', 'x10',
+	W2='X-10_Graphite_Reactor'),
+(-84.394445, 35.938672): Feature('K-25 Building', 'k25',
+	W2='K-25'),
+(-84.256801, 35.984691): Feature('Y-12 Building 9204-3', 'y9204',
+	W2='Clinton_Engineer_Works#Y-12_electromagnetic_separation_plant'),
+(-84.255495, 35.985871): Feature('Y-12 Building 9731', 'y9731',
+	W2='Clinton_Engineer_Works#Y-12_electromagnetic_separation_plant'),
+#
+# NPS -> WA -> Manhattan Project National Historical Park -> Hanford Unit
+#
+(-119.387098, 46.587399): Feature('Hanford High School', 'hh', W2='Hanford_Site'),
+(-119.646295, 46.628954): Feature('B Reactor', 'br', W2='B_Reactor'),
+(-119.715131, 46.638641): Feature("Bruggemann's Warehouse", 'bw'),
+(-119.618684, 46.644369): Feature('Allard Pump House', 'ap'),
+(-119.478732, 46.660534): Feature('White Bluffs Bank', 'wb', W2='White_Bluffs,_Washington'),
 }
 
 def log(message, *formatArgs):
@@ -276,8 +384,12 @@ def stripPolygon(geoType, coordinates):
 	return {'type': geoType, 'coordinates': coordinates}
 
 NPS_Wikipedia = {
+	'crmo': 'Craters_of_the_Moon_National_Monument_and_Preserve',
 	'fobo': 'Fort_Bowie',
 	'fopo': 'Fort_Point,_San_Francisco',
+	'glac': 'Glacier_National_Park_(U.S.)',
+	'grsa': 'Great_Sand_Dunes_National_Park_and_Preserve',
+	'gsdp': 'Great_Sand_Dunes_National_Park_and_Preserve',
 	'manz': 'Manzanar',
 	'redw': 'Redwood_National_and_State_Parks',
 	'rori': 'Rosie_the_Riveter/World_War_II_Home_Front_National_Historical_Park',
@@ -303,11 +415,11 @@ NPS_Codes = {
 
 @staticmethod
 def stripPropertiesNPS(o):
-	if o['STATE'] != G.state:
-		return None
-
 	name = o['UNIT_NAME']
 	code = o['UNIT_CODE'].lower()
+
+	if o['STATE'] != G.state and not (G.state in ('TN', 'WA') and code == 'mapr'):
+		return None
 
 	if name == 'Great Sand Dunes National Preserve':
 		code = 'gsdp'
@@ -416,6 +528,7 @@ def strip():
 
 def parseArgs():
 	global G, XY2LL
+	global PolygonsToRemove
 
 	modeMap = {
 		'uc/granites':          UC_GRANITES,
@@ -434,6 +547,8 @@ def parseArgs():
 	G.id = args.mode.replace('/', '_')
 	if G is NPS:
 		G.state = args.mode[-2:].upper()
+
+	PolygonsToRemove = PolygonsToRemove.get(G.id, ())
 
 	if args.xy2ll:
 		import geo
