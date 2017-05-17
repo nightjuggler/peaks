@@ -270,6 +270,19 @@ SeparateFeatures = {
 (-84.255495, 35.985871): Feature('Y-12 Building 9731', 'y9731',
 	W2='Clinton_Engineer_Works#Y-12_electromagnetic_separation_plant'),
 #
+# NPS -> UT -> Canyonlands National Park
+#
+(-110.189552, 38.441484): Feature('Horseshoe Canyon Unit', 'hc', W2='Horseshoe_Canyon_(Utah)'),
+#
+# NPS -> UT -> Hovenweep National Monument
+#
+(-109.186458, 37.302006): Feature('Cajon', 'cajon'),
+(-109.082068, 37.388997): Feature('Square Tower', 'st'),
+(-109.038125, 37.397360): Feature('Holly', 'holly'),
+(-109.033020, 37.405043): Feature('Horseshoe and Hackberry', 'hh'),
+(-108.722510, 37.413030): Feature('Goodman Point', 'gp'),
+(-108.983395, 37.444011): Feature('Cutthroat Castle', 'cc'),
+#
 # NPS -> WA -> Manhattan Project National Historical Park -> Hanford Unit
 #
 (-119.387098, 46.587399): Feature('Hanford High School', 'hh', W2='Hanford_Site'),
@@ -485,11 +498,13 @@ def stripPolygon(geoType, coordinates):
 
 NPS_Wikipedia = {
 	'crmo': 'Craters_of_the_Moon_National_Monument_and_Preserve',
+	'deto': 'Devils_Tower',
 	'fobo': 'Fort_Bowie',
 	'fopo': 'Fort_Point,_San_Francisco',
 	'glac': 'Glacier_National_Park_(U.S.)',
 	'grsa': 'Great_Sand_Dunes_National_Park_and_Preserve',
 	'gsdp': 'Great_Sand_Dunes_National_Park_and_Preserve',
+	'lewi': 'Lewis_and_Clark_National_and_State_Historical_Parks',
 	'manz': 'Manzanar',
 	'redw': 'Redwood_National_and_State_Parks',
 	'rori': 'Rosie_the_Riveter/World_War_II_Home_Front_National_Historical_Park',
