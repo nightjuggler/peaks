@@ -11,6 +11,9 @@ def Feature(name2, id, **kwargs):
 FeatureFlag_SetBounds   = 0x0001 # has partial subunits; set/extend item.bounds for this feature
 FeatureFlag_SkipBounds  = 0x0002 # don't extend parent/ancestor bounds for this feature
 
+NPS_NezPerce_BuffaloEddy = Feature('Buffalo Eddy', 'be')
+NPS_NezPerce_Spalding = Feature('Spalding', 'sp', W2='Spalding,_Idaho')
+
 G = None
 XY2LL = None
 SecondPoints = set()
@@ -32,6 +35,36 @@ PolygonsToRemove = {
 #
 (-121.600877, 40.348154), # Headquarters in Mineral, CA
 ),
+'nps_id': (
+#
+# Nez Perce National Historical Park
+#
+(-109.206051, 48.373056), # MT
+(-117.224839, 45.337427), # OR
+(-117.520354, 45.570223), # OR
+#
+# Minidoka National Historic Site
+#
+(-122.507464, 47.614825), # Bainbridge Island Japanese American Exclusion Memorial (WA)
+),
+'nps_mt': (
+#
+# Nez Perce National Historical Park
+#
+(-116.267642, 45.803354), # ID
+(-115.959301, 46.076778), # ID
+(-116.918370, 46.170823), # ID
+(-116.935269, 46.173151), # ID
+(-116.004092, 46.203655), # ID
+(-116.818266, 46.445164), # ID
+(-116.818326, 46.446846), # ID
+(-116.817829, 46.446914), # ID
+(-116.814847, 46.448688), # ID
+(-116.810456, 46.449968), # ID
+(-116.329538, 46.500551), # ID
+(-117.224839, 45.337427), # OR
+(-117.520354, 45.570223), # OR
+),
 'nps_nm': (
 #
 # Manhattan Project National Historical Park
@@ -46,6 +79,23 @@ PolygonsToRemove = {
 (-119.618684, 46.644369), # Hanford, WA: Allard Pump House
 (-119.478732, 46.660534), # Hanford, WA: White Bluffs Bank
 ),
+'nps_or': (
+#
+# Nez Perce National Historical Park
+#
+(-116.267642, 45.803354), # ID
+(-115.959301, 46.076778), # ID
+(-116.918370, 46.170823), # ID
+(-116.935269, 46.173151), # ID
+(-116.004092, 46.203655), # ID
+(-116.818266, 46.445164), # ID
+(-116.818326, 46.446846), # ID
+(-116.817829, 46.446914), # ID
+(-116.814847, 46.448688), # ID
+(-116.810456, 46.449968), # ID
+(-116.329538, 46.500551), # ID
+(-109.206051, 48.373056), # MT
+),
 'nps_wa': (
 #
 # Manhattan Project National Historical Park
@@ -57,6 +107,28 @@ PolygonsToRemove = {
 (-106.264959, 35.840842), # Los Alamos, NM: Pajarito Site
 (-106.345095, 35.843839), # Los Alamos, NM: V-Site
 (-106.347393, 35.855718), # Los Alamos, NM: Gun Site
+#
+# Minidoka National Historic Site
+#
+(-114.239971, 42.678247), # ID
+(-114.249704, 42.692788), # ID
+#
+# Nez Perce National Historical Park
+#
+(-116.267642, 45.803354), # ID
+(-115.959301, 46.076778), # ID
+(-116.918370, 46.170823), # ID
+(-116.935269, 46.173151), # ID
+(-116.004092, 46.203655), # ID
+(-116.818266, 46.445164), # ID
+(-116.818326, 46.446846), # ID
+(-116.817829, 46.446914), # ID
+(-116.814847, 46.448688), # ID
+(-116.810456, 46.449968), # ID
+(-116.329538, 46.500551), # ID
+(-109.206051, 48.373056), # MT
+(-117.224839, 45.337427), # OR
+(-117.520354, 45.570223), # OR
 ),
 }
 SeparateFeatures = {
@@ -105,10 +177,28 @@ SeparateFeatures = {
 #
 (-121.394089, 41.851072): Feature('Petroglyph Section', 'p', W2='Petroglyph_Point_Archeological_Site'),
 #
+# NPS -> ID -> Nez Perce National Historical Park
+#
+(-116.267642, 45.803354): Feature('White Bird Battlefield', 'wb', W2='Battle_of_White_Bird_Canyon'),
+(-115.959301, 46.076778): Feature('Clearwater Battlefield', 'cw', W2='Battle_of_the_Clearwater'),
+(-116.918370, 46.170823): NPS_NezPerce_BuffaloEddy,
+(-116.935269, 46.173151): NPS_NezPerce_BuffaloEddy,
+(-116.004092, 46.203655): Feature('Heart of the Monster', 'hm'),
+(-116.818266, 46.445164): NPS_NezPerce_Spalding,
+(-116.818326, 46.446846): NPS_NezPerce_Spalding,
+(-116.817829, 46.446914): NPS_NezPerce_Spalding,
+(-116.814847, 46.448688): NPS_NezPerce_Spalding,
+(-116.810456, 46.449968): NPS_NezPerce_Spalding,
+(-116.329538, 46.500551): Feature('Canoe Camp', 'cc'),
+#
 # NPS -> MT -> Little Bighorn Battlefield National Monument
 #
 (-107.384146, 45.521082): Feature('Reno-Benteen Battlefield', 'rb'),
 (-107.443667, 45.564359): Feature('Custer Battlefield', 'c'),
+#
+# NPS -> MT -> Nez Perce National Historical Park
+#
+(-109.206051, 48.373056): Feature('Bear Paw Battlefield', 'bp', W2='Battle_of_Bear_Paw'),
 #
 # NPS -> NM -> Bandelier National Monument
 #
@@ -164,6 +254,11 @@ SeparateFeatures = {
 #
 (-123.644339, 42.160947): Feature('Illinois Valley Visitors Center', 'ivvc', flags=FeatureFlag_SkipBounds),
 #
+# NPS -> OR -> Nez Perce National Historical Park
+#
+(-117.224839, 45.337427): Feature('Old Chief Joseph Gravesite', 'cj', W2='Old_Chief_Joseph_Gravesite'),
+(-117.520354, 45.570223): Feature('Lostine Homesite', 'lost'),
+#
 # NPS -> TN -> Manhattan Project National Historical Park -> Oak Ridge Unit
 #
 (-84.317198, 35.928011): Feature('X-10 Graphite Reactor', 'x10',
@@ -182,6 +277,11 @@ SeparateFeatures = {
 (-119.715131, 46.638641): Feature("Bruggemann's Warehouse", 'bw'),
 (-119.618684, 46.644369): Feature('Allard Pump House', 'ap'),
 (-119.478732, 46.660534): Feature('White Bluffs Bank', 'wb', W2='White_Bluffs,_Washington'),
+#
+# NPS -> WA -> Minidoka National Historic Site
+#
+(-122.507464, 47.614825): Feature('Bainbridge Island Japanese American Exclusion Memorial', 'jam',
+	W2='Bainbridge_Island_Japanese_American_Exclusion_Memorial'),
 }
 
 def log(message, *formatArgs):
@@ -412,13 +512,18 @@ NPS_Codes = {
 	'kica': 'seki',
 	'sequ': 'seki',
 }
+NPS_MultiState = {
+	'mapr': ('NM', 'TN', 'WA'),             # Manhattan Project National Historical Park
+	'miin': ('ID', 'WA'),                   # Minidoka National Historic Site
+	'nepe': ('ID', 'MT', 'OR', 'WA'),       # Nez Perce National Historical Park
+}
 
 @staticmethod
 def stripPropertiesNPS(o):
 	name = o['UNIT_NAME']
 	code = o['UNIT_CODE'].lower()
 
-	if o['STATE'] != G.state and not (G.state in ('TN', 'WA') and code == 'mapr'):
+	if o['STATE'] != G.state and G.state not in NPS_MultiState.get(code, ()):
 		return None
 
 	if name == 'Great Sand Dunes National Preserve':
