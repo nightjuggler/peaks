@@ -34,6 +34,21 @@ PolygonsToRemove = {
 # Lassen Volcanic National Park
 #
 (-121.600877, 40.348154), # Headquarters in Mineral, CA
+#
+# World War II Valor in the Pacific National Monument
+#
+(-157.954368, 21.363719), # HI
+(-157.954916, 21.363748), # HI
+(-157.949648, 21.364684), # HI
+(-157.937538, 21.366363), # HI
+(-157.936582, 21.367199), # HI
+(-157.937516, 21.369237), # HI
+),
+'nps_hi': (
+#
+# World War II Valor in the Pacific National Monument
+#
+(-121.378507, 41.887758), # Tule Lake Unit (CA)
 ),
 'nps_id': (
 #
@@ -176,6 +191,11 @@ SeparateFeatures = {
 # NPS -> CA -> Lava Beds National Monument
 #
 (-121.394089, 41.851072): Feature('Petroglyph Section', 'p', W2='Petroglyph_Point_Archeological_Site'),
+#
+# NPS -> CA -> World War II Valor in the Pacific National Monument
+#
+(-121.378507, 41.887758): Feature('Tule Lake Unit', 'tule',
+	W2='Tule_Lake_Unit,_World_War_II_Valor_in_the_Pacific_National_Monument'),
 #
 # NPS -> ID -> Nez Perce National Historical Park
 #
@@ -504,8 +524,15 @@ NPS_Wikipedia = {
 	'glac': 'Glacier_National_Park_(U.S.)',
 	'grsa': 'Great_Sand_Dunes_National_Park_and_Preserve',
 	'gsdp': 'Great_Sand_Dunes_National_Park_and_Preserve',
+	'hale': 'Haleakal%C4%81_National_Park',
+	'havo': 'Hawai%CA%BBi_Volcanoes_National_Park',
+	'hono': 'Honouliuli_Internment_Camp',
+	'kala': 'Kalaupapa_Leprosy_Settlement_and_National_Historical_Park',
+	'kaho': 'Honok%C5%8Dhau_Settlement_and_Kaloko-Honok%C5%8Dhau_National_Historical_Park',
 	'lewi': 'Lewis_and_Clark_National_and_State_Historical_Parks',
 	'manz': 'Manzanar',
+	'puhe': 'Pu%CA%BBukohol%C4%81_Heiau_National_Historic_Site',
+	'puho': 'Pu%CA%BBuhonua_o_H%C5%8Dnaunau_National_Historical_Park',
 	'redw': 'Redwood_National_and_State_Parks',
 	'rori': 'Rosie_the_Riveter/World_War_II_Home_Front_National_Historical_Park',
 	'sucr': 'Sunset_Crater#Sunset_Crater_Volcano_National_Monument',
@@ -520,6 +547,7 @@ NPS_Names = {
 	'rori': 'Rosie the Riveter|World War II Home Front|National Historical Park',
 	'safr': 'San Francisco Maritime|National Historical Park',
 	'samo': 'Santa Monica Mountains|National Recreation Area',
+	'valr': 'World War II Valor in the Pacific|National Monument',
 	'whis': 'Whiskeytown-Shasta-Trinity|National Recreation Area|(Whiskeytown Unit)',
 }
 NPS_Codes = {
@@ -531,6 +559,7 @@ NPS_MultiState = {
 	'mapr': ('NM', 'TN', 'WA'),             # Manhattan Project National Historical Park
 	'miin': ('ID', 'WA'),                   # Minidoka National Historic Site
 	'nepe': ('ID', 'MT', 'OR', 'WA'),       # Nez Perce National Historical Park
+	'valr': ('CA', 'HI'),                   # World War II Valor in the Pacific National Monument
 }
 
 @staticmethod
@@ -654,7 +683,7 @@ def parseArgs():
 		'uc/granites':          UC_GRANITES,
 	}
 
-	for state in ('az', 'ca', 'co', 'id', 'mt', 'nm', 'nv', 'or', 'ut', 'wa', 'wy'):
+	for state in ('az', 'ca', 'co', 'hi', 'id', 'mt', 'nm', 'nv', 'or', 'ut', 'wa', 'wy'):
 		modeMap['nps/' + state] = NPS
 
 	import argparse

@@ -432,6 +432,8 @@ NPS =nps add_NPS
 		Santa Monica Mountains|National Recreation Area =samo
 		Sequoia National Park =sequ
 		Whiskeytown-Shasta-Trinity|National Recreation Area|(Whiskeytown Unit) =whis
+		World War II Valor in the Pacific|National Monument =valr
+			Tule Lake Unit =tule
 		Yosemite National Park =yose
 	Colorado :co
 		Bent's Old Fort National Historic Site =beol
@@ -446,6 +448,16 @@ NPS =nps add_NPS
 		Rocky Mountain National Park =romo
 		Sand Creek Massacre National Historic Site =sand
 		Yucca House National Monument =yuho
+	Hawaii :hi
+		Ala Kahakai National Historic Trail =alka
+		Haleakala National Park =hale
+		Hawai'i Volcanoes National Park =havo
+		Honouliuli National Monument =hono
+		Kalaupapa National Historical Park =kala
+		Kaloko-Honokohau National Historical Park =kaho
+		Pu'uhonua o Honaunau National Historical Park =puho
+		Pu'ukohola Heiau National Historic Site =puhe
+		World War II Valor in the Pacific|National Monument =valr
 	Idaho :id
 		City of Rocks National Reserve =ciro
 		Craters of the Moon National Monument =crmo
