@@ -409,6 +409,20 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#A52A2A'/* Brown */}});
 }
+function appendName(name, node)
+{
+	var parts = name.split('|');
+	var lineBreak = node.lastChild !== null;
+	for (var part of parts)
+	{
+		if (lineBreak)
+			node.appendChild(document.createElement('br'));
+		else
+			lineBreak = true;
+		node.appendChild(document.createTextNode(part));
+	}
+	return parts.join(' ');
+}
 addFunctions.add_NPS = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
@@ -418,14 +432,8 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 		var link = document.createElement('a');
 		link.href = 'https://www.nps.gov/' + p.code + '/index.htm';
 
-		var parts = p.name.split('|');
-		link.appendChild(document.createTextNode(parts[0]));
-		for (var i = 1; i < parts.length; ++i)
-		{
-			link.appendChild(document.createElement('br'));
-			link.appendChild(document.createTextNode(parts[i]));
-		}
-		p.name = parts.join(' ');
+		p.name = appendName(p.name, link);
+
 		bold.appendChild(link);
 		bold.appendChild(document.createTextNode(' ['));
 		bold.appendChild(wikipediaLink(p.W || p.name.replace(/ /g, '_')));
@@ -437,9 +445,8 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 
 		var namePath = [p.name]
 		if (p.name2) {
+			p.name2 = appendName(p.name2, popupDiv);
 			namePath.push(p.name2)
-			popupDiv.appendChild(document.createElement('br'));
-			popupDiv.appendChild(document.createTextNode(p.name2));
 			if (p.W2) {
 				popupDiv.appendChild(document.createTextNode(' ['));
 				popupDiv.appendChild(wikipediaLink(p.W2));
@@ -910,19 +917,12 @@ LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 
 		if (!validateItem(item, path, id)) continue;
 
-		var itemDiv = document.createElement('div');
-		itemDiv.className = 'lcItem';
-
 		var nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
-		var parts = item.name.split('|');
-		nameSpan.appendChild(document.createTextNode(parts[0]));
-		for (var i = 1; i < parts.length; ++i)
-		{
-			nameSpan.appendChild(document.createElement('br'));
-			nameSpan.appendChild(document.createTextNode(parts[i]));
-		}
-		item.name = parts.join(' ');
+		item.name = appendName(item.name, nameSpan);
+
+		var itemDiv = document.createElement('div');
+		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
 		if (item.size)
