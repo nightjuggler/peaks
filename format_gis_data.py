@@ -1,9 +1,10 @@
 #!/usr/bin/python
 import json
+import re
 import sys
 
-def Feature(name2, id, **kwargs):
-	kwargs.update({'name2': name2, 'id': id})
+def Feature(name2, id2, **kwargs):
+	kwargs.update({'name2': name2, 'id2': id2})
 	return {'type': 'Feature',
 		'properties': kwargs,
 		'geometry': {'type': 'MultiPolygon', 'coordinates': []}}
@@ -313,7 +314,7 @@ SeparateFeatures = {
 #
 # NPS -> WA -> Minidoka National Historic Site
 #
-(-122.507464, 47.614825): Feature('Bainbridge Island Japanese American Exclusion Memorial', 'jam',
+(-122.507464, 47.614825): Feature('Bainbridge Island|Japanese American|Exclusion Memorial', 'jam',
 	W2='Bainbridge_Island_Japanese_American_Exclusion_Memorial'),
 }
 
@@ -430,8 +431,9 @@ def stripHoles(geojson):
 
 @staticmethod
 def postprocessNPS(geojson):
-	featureMap = {}
+	assert len(NPS_ParkAndPreserve) == 0
 
+	featureMap = {}
 	for feature in geojson['features']:
 		properties = feature['properties']
 		name = properties['name']
@@ -452,19 +454,18 @@ def postprocessNPS(geojson):
 	prevName = None
 	for feature in geojson['features']:
 		p = feature['properties']
+		id = p.pop('id')
+		id2 = p.pop('id2', None)
 		name = p['name']
-		code = p['code']
-		hasName2 = 'name2' in p
-		if code in NPS_Codes:
-			p['code'] = NPS_Codes[code]
+		name2 = p.get('name2')
 		if name != prevName:
-			log('\t\t{} ={}', name, code)
 			prevName = name
+			log('\t\t{} ={}', name, id)
 		else:
-			assert hasName2
-		if hasName2:
-			log('\t\t\t{} ={}', p['name2'], p['id'])
-			del p['id']
+			assert name2 is not None
+		if name2 is not None:
+			assert id2 is not None
+			log('\t\t\t{} ={}', name2, id2)
 
 @staticmethod
 def mergePolygons(geojson):
@@ -517,18 +518,24 @@ def stripPolygon(geoType, coordinates):
 	return {'type': geoType, 'coordinates': coordinates}
 
 NPS_Wikipedia = {
+	'alag': 'Alagnak_River',
+	'ania': 'Aniakchak_National_Monument_and_Preserve',
 	'crmo': 'Craters_of_the_Moon_National_Monument_and_Preserve',
+	'dena': 'Denali_National_Park_and_Preserve',
 	'deto': 'Devils_Tower',
 	'fobo': 'Fort_Bowie',
 	'fopo': 'Fort_Point,_San_Francisco',
+	'gaar': 'Gates_of_the_Arctic_National_Park_and_Preserve',
 	'glac': 'Glacier_National_Park_(U.S.)',
+	'glba': 'Glacier_Bay_National_Park_and_Preserve',
 	'grsa': 'Great_Sand_Dunes_National_Park_and_Preserve',
-	'gsdp': 'Great_Sand_Dunes_National_Park_and_Preserve',
 	'hale': 'Haleakal%C4%81_National_Park',
 	'havo': 'Hawai%CA%BBi_Volcanoes_National_Park',
 	'hono': 'Honouliuli_Internment_Camp',
-	'kala': 'Kalaupapa_Leprosy_Settlement_and_National_Historical_Park',
 	'kaho': 'Honok%C5%8Dhau_Settlement_and_Kaloko-Honok%C5%8Dhau_National_Historical_Park',
+	'kala': 'Kalaupapa_Leprosy_Settlement_and_National_Historical_Park',
+	'katm': 'Katmai_National_Park_and_Preserve',
+	'lacl': 'Lake_Clark_National_Park_and_Preserve',
 	'lewi': 'Lewis_and_Clark_National_and_State_Historical_Parks',
 	'manz': 'Manzanar',
 	'puhe': 'Pu%CA%BBukohol%C4%81_Heiau_National_Historic_Site',
@@ -538,6 +545,26 @@ NPS_Wikipedia = {
 	'sucr': 'Sunset_Crater#Sunset_Crater_Volcano_National_Monument',
 	'tuma': 'Tumac%C3%A1cori_National_Historical_Park',
 	'whis': 'Whiskeytown%E2%80%93Shasta%E2%80%93Trinity_National_Recreation_Area',
+	'wrst': 'Wrangell%E2%80%93St._Elias_National_Park_and_Preserve',
+	'yuch': 'Yukon%E2%80%93Charley_Rivers_National_Preserve',
+}
+class ParkAndPreserve(object):
+	def __init__(self, state, name, parkType='Park'):
+		self.state = state
+		self.name = name
+		self.parkType = parkType
+		self.gotPark = False
+		self.gotPreserve = False
+
+NPS_ParkAndPreserve = {
+	'ania': ParkAndPreserve('AK', 'Aniakchak', 'Monument'),
+	'dena': ParkAndPreserve('AK', 'Denali'),
+	'gaar': ParkAndPreserve('AK', 'Gates of the Arctic'),
+	'glba': ParkAndPreserve('AK', 'Glacier Bay'),
+	'grsa': ParkAndPreserve('CO', 'Great Sand Dunes'),
+	'katm': ParkAndPreserve('AK', 'Katmai'),
+	'lacl': ParkAndPreserve('AK', 'Lake Clark'),
+	'wrst': ParkAndPreserve('AK', 'Wrangell-St. Elias'),
 }
 NPS_Names = {
 	'cech': 'Cesar E. Chavez National Monument',
@@ -551,7 +578,6 @@ NPS_Names = {
 	'whis': 'Whiskeytown-Shasta-Trinity|National Recreation Area|(Whiskeytown Unit)',
 }
 NPS_Codes = {
-	'gsdp': 'grsa',
 	'kica': 'seki',
 	'sequ': 'seki',
 }
@@ -561,24 +587,63 @@ NPS_MultiState = {
 	'nepe': ('ID', 'MT', 'OR', 'WA'),       # Nez Perce National Historical Park
 	'valr': ('CA', 'HI'),                   # World War II Valor in the Pacific National Monument
 }
+NPS_StatePattern = re.compile('^[A-Z]{2}$')
+NPS_CodePattern = re.compile('^[A-Z]{4}$')
+NPS_ID_Set = set()
+
+def nps_split_name(name):
+	if name.endswith(' National Park'):
+		return name[:-14], 'Park'
+	if name.endswith(' National Preserve'):
+		return name[:-18], 'Preserve'
+	if name.endswith(' National Monument'):
+		return name[:-18], 'Monument'
+	err('"{}" is not a national park, preserve, or monument!', name)
 
 @staticmethod
 def stripPropertiesNPS(o):
 	name = o['UNIT_NAME']
-	code = o['UNIT_CODE'].lower()
+	code = o['UNIT_CODE']
+	if NPS_CodePattern.match(code) is None:
+		err('Code "{}" doesn\'t match pattern!', code)
+	state = o['STATE']
+	if NPS_StatePattern.match(state) is None:
+		err('State "{}" doesn\'t match pattern!', state)
 
-	if o['STATE'] != G.state and G.state not in NPS_MultiState.get(code, ()):
+	id = code.lower()
+	code = NPS_Codes.get(id, id)
+	displayName = NPS_Names.get(id, name)
+	w = NPS_Wikipedia.get(id)
+	pp = NPS_ParkAndPreserve.get(id)
+
+	if pp is not None:
+		assert pp.state == state
+		name, parkType = nps_split_name(name)
+		assert pp.name == name
+		if parkType == 'Preserve':
+			if pp.gotPark:
+				del NPS_ParkAndPreserve[id]
+			else:
+				pp.gotPreserve = True
+			id += 'pr'
+		else:
+			assert pp.parkType == parkType
+			if pp.gotPreserve:
+				del NPS_ParkAndPreserve[id]
+			else:
+				pp.gotPark = True
+
+	if id in NPS_ID_Set:
+		err('NPS ID "{}" for "{}" is not unique!', id, displayName)
+
+	NPS_ID_Set.add(id)
+
+	if state != G.state and G.state not in NPS_MultiState.get(id, ()):
 		return None
 
-	if name == 'Great Sand Dunes National Preserve':
-		code = 'gsdp'
-	if code in NPS_Names:
-		name = NPS_Names[code]
-
-	p = {'name': name, 'code': code}
-
-	if code in NPS_Wikipedia:
-		p['W'] = NPS_Wikipedia[code]
+	p = {'name': displayName, 'code': code, 'id': id}
+	if w is not None:
+		p['W'] = w
 
 	return p
 
@@ -683,7 +748,7 @@ def parseArgs():
 		'uc/granites':          UC_GRANITES,
 	}
 
-	for state in ('az', 'ca', 'co', 'hi', 'id', 'mt', 'nm', 'nv', 'or', 'ut', 'wa', 'wy'):
+	for state in ('ak', 'az', 'ca', 'co', 'hi', 'id', 'mt', 'nm', 'nv', 'or', 'ut', 'wa', 'wy'):
 		modeMap['nps/' + state] = NPS
 
 	import argparse
