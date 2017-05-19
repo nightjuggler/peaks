@@ -14,6 +14,11 @@ FeatureFlag_SkipBounds  = 0x0002 # don't extend parent/ancestor bounds for this 
 
 NPS_NezPerce_BuffaloEddy = Feature('Buffalo Eddy', 'be')
 NPS_NezPerce_Spalding = Feature('Spalding', 'sp', W2='Spalding,_Idaho')
+NPS_FortVancouver = Feature('Fort Vancouver', 'fv')
+NPS_WA_NetulLanding = Feature('Netul Landing', 'netul')
+NPS_WA_SunsetBeach = Feature('Sunset Beach', 'sunset')
+NPS_Rainier_Wilkeson = Feature('Wilkeson', 'wilkeson', flags=FeatureFlag_SkipBounds)
+NPS_SanJuan_EnglishCamp = Feature('English Camp', 'e')
 
 G = None
 XY2LL = None
@@ -111,6 +116,19 @@ PolygonsToRemove = {
 (-116.810456, 46.449968), # ID
 (-116.329538, 46.500551), # ID
 (-109.206051, 48.373056), # MT
+),
+'nps_tn': (
+#
+# Manhattan Project National Historical Park
+#
+(-106.264959, 35.840842), # Los Alamos, NM: Pajarito Site
+(-106.345095, 35.843839), # Los Alamos, NM: V-Site
+(-106.347393, 35.855718), # Los Alamos, NM: Gun Site
+(-119.387098, 46.587399), # Hanford, WA: Hanford High School
+(-119.646295, 46.628954), # Hanford, WA: B Reactor
+(-119.715131, 46.638641), # Hanford, WA: Bruggemann's Warehouse
+(-119.618684, 46.644369), # Hanford, WA: Allard Pump House
+(-119.478732, 46.660534), # Hanford, WA: White Bluffs Bank
 ),
 'nps_wa': (
 #
@@ -304,6 +322,26 @@ SeparateFeatures = {
 (-108.722510, 37.413030): Feature('Goodman Point', 'gp'),
 (-108.983395, 37.444011): Feature('Cutthroat Castle', 'cc'),
 #
+# NPS -> WA -> Fort Vancouver National Historic Site
+#
+(-122.605329, 45.357518): Feature('McLoughlin House', 'mh',
+	W2='Fort_Vancouver_National_Historic_Site#McLoughlin_House_site'),
+(-122.668086, 45.620146): NPS_FortVancouver,
+(-122.670418, 45.621595): NPS_FortVancouver,
+(-122.666020, 45.624453): NPS_FortVancouver,
+#
+# NPS -> WA -> Lewis and Clark National Historical Park
+#
+(-123.932193, 45.984622): Feature('Salt Works', 'salt'),
+(-123.929978, 46.093451): NPS_WA_SunsetBeach,
+(-123.929925, 46.105998): NPS_WA_SunsetBeach,
+(-123.860655, 46.117749): NPS_WA_NetulLanding,
+(-123.861380, 46.117812): NPS_WA_NetulLanding,
+(-123.870444, 46.138536): Feature('Fort Clatsop', 'clatsop', W2='Fort_Clatsop'),
+(-123.897380, 46.243354): Feature('Station Camp', 'station'),
+(-123.858657, 46.248833): Feature('Dismal Nitch', 'dn', W2='Dismal_Nitch'),
+(-124.074637, 46.302412): Feature('Cape Disappointment', 'cd', W2='Cape_Disappointment_(Washington)'),
+#
 # NPS -> WA -> Manhattan Project National Historical Park -> Hanford Unit
 #
 (-119.387098, 46.587399): Feature('Hanford High School', 'hh', W2='Hanford_Site'),
@@ -316,6 +354,21 @@ SeparateFeatures = {
 #
 (-122.507464, 47.614825): Feature('Bainbridge Island|Japanese American|Exclusion Memorial', 'jam',
 	W2='Bainbridge_Island_Japanese_American_Exclusion_Memorial'),
+#
+# NPS -> WA -> Mount Rainier National Park
+#
+(-122.110922, 46.753557): Feature('Elbe', 'elbe', flags=FeatureFlag_SkipBounds),
+(-121.952864, 46.992832): Feature('Carbon River Ranger Station', 'cr'),
+(-122.045713, 47.103524): NPS_Rainier_Wilkeson,
+(-122.046664, 47.103544): NPS_Rainier_Wilkeson,
+(-122.046975, 47.103899): NPS_Rainier_Wilkeson,
+#
+# NPS -> WA -> San Juan Island National Historical Park
+#
+(-123.004894, 48.469481): Feature('American Camp', 'a'),
+(-123.153833, 48.584716): NPS_SanJuan_EnglishCamp,
+(-123.133915, 48.594316): NPS_SanJuan_EnglishCamp,
+(-123.132979, 48.595408): NPS_SanJuan_EnglishCamp,
 }
 
 def log(message, *formatArgs):
