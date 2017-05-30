@@ -172,7 +172,7 @@ landNamePrefixes = [
 ]
 landMgmtAreas = {}
 landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
-fsLinkPattern = re.compile('^http://www\\.fs\\.usda\\.gov/[a-z]+$')
+fsLinkPattern = re.compile('^https://www\\.fs\\.usda\\.gov/[a-z]+$')
 fwsLinkPattern = re.compile('^https://www\\.fws\\.gov/refuge/[a-z]+/$')
 npsLinkPattern = re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$')
 stateParkPattern = re.compile('^http://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$')
@@ -297,8 +297,8 @@ def printLandManagementAreas():
 			area.highPoint.name if area.highPoint else '-',
 			area.url if area.url else '-')
 
-ngsLinkPrefix = 'http://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
-topoLinkPrefix = 'http://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_'
+ngsLinkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
+topoLinkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_'
 topoLinkPattern = re.compile('^([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_[0-9]{6}_([0-9]{4})_([0-9]{5})\\.jpg$')
 elevFromNGS = re.compile('^([0-9]{4}(?:\\.[0-9])?)m \\(NAVD 88\\) NGS Data Sheet &quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), CA&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
