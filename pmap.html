@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox.js/v3.1.0/mapbox.js"></script>
-<link href="https://api.mapbox.com/mapbox.js/v3.1.0/mapbox.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.js"></script>
+<link href="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <style>
@@ -150,20 +150,22 @@ function isValidId(s, n)
 {
 	return s.length <= n && s.match(/^[a-z][_0-9a-z]*$/) !== null;
 }
-function parseLatLng(q, v)
+function parseLL(q, v, latIndex, lngIndex)
 {
 	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
 
 	if (m === null) return;
 
-	var lat = parseFloat(m[1]);
+	var lat = parseFloat(m[latIndex]);
 	if (lat < -90 || lat > 90) return;
 
-	var lng = parseFloat(m[2]);
+	var lng = parseFloat(m[lngIndex]);
 	if (lng < -180 || lng > 180) return;
 
 	q.ll = [lat, lng];
 }
+function parseLatLng(q, v) { parseLL(q, v, 1, 2); }
+function parseLngLat(q, v) { parseLL(q, v, 2, 1); }
 function parseZoom(q, v)
 {
 	if (v.match(/^[1-9][0-9]?$/) === null) return;
@@ -205,6 +207,7 @@ function parseQueryString(queryString)
 		b: parseBaseLayer,
 		ll: parseLatLng,
 		o: parseOverlay,
+		xy: parseLngLat,
 		z: parseZoom,
 	};
 
