@@ -271,15 +271,16 @@ function clickFirstColumn(event)
 }
 function decorateTable()
 {
+	var numClimbed = 0;
 	var peakNumber = 0;
 	var peakTable = document.getElementById('peakTable');
 	peakTable = nextNode(peakTable.firstChild, 'TBODY');
 	var row = nextNode(peakTable.firstChild, 'TR');
-	while (row !== null)
+	for (; row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
 		var firstColumn = nextNode(row.firstChild, 'TD');
-		row = nextNode(row.nextSibling, 'TR');
 		if (firstColumn.colSpan !== 1) continue;
+		if (row.className.substr(0, 7) === 'climbed') ++numClimbed;
 		var peakId = firstColumn.firstChild.nodeValue;
 		peakNumber = peakNumber + 1;
 		if (firstColumn.rowSpan === 2)
@@ -295,8 +296,7 @@ function decorateTable()
 			firstColumn.rowSpan = 1;
 
 			var nextRow = nextNode(row.nextSibling, 'TR');
-			extraRow[firstColumn.id] = peakTable.removeChild(row);
-			row = nextRow;
+			extraRow[firstColumn.id] = peakTable.removeChild(nextRow);
 		}
 		if (isUSPeak(peakId))
 		{
@@ -313,6 +313,8 @@ function decorateTable()
 			mapLinkSpan.addEventListener('click', showMapLinkBox, false);
 		}
 	}
+	document.getElementById('climbedCountSpan').appendChild(
+		document.createTextNode('(' + numClimbed + '/' + peakNumber + ')'));
 	if (window.location.hash)
 		window.location.replace(window.location.href);
 }
