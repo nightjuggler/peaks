@@ -134,20 +134,13 @@ function addMapLink(listNode, linkText, url)
 	listItem.appendChild(linkNode);
 	listNode.appendChild(listItem);
 }
-function createMapLinkBox(mapLinkSpan)
+function createMapLinkBox(latCommaLong, inCalifornia)
 {
-	var listNode = document.createElement('UL');
-	var secondColumn = mapLinkSpan.parentNode;
-	var firstColumn = nextNode(secondColumn.parentNode.firstChild, 'TD');
-	var mapLink = nextNode(secondColumn.firstChild, 'A');
-
-	var latCommaLong = mapLink.search.split('&')[0].split('=')[1];
 	var latLong = latCommaLong.split(',');
 	var latitude = Number(latLong[0]);
 	var longitude = Number(latLong[1]);
 
-	var peakId = firstColumn.firstChild.nodeValue;
-	var inCalifornia = isCAPeak(peakId);
+	var listNode = document.createElement('UL');
 
 	if (inCalifornia)
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
@@ -211,7 +204,18 @@ function createMapLinkBox(mapLinkSpan)
 	var mapLinkBox = document.createElement('DIV');
 	mapLinkBox.className = 'mapLinkBox';
 	mapLinkBox.appendChild(listNode);
-	mapLinkSpan.appendChild(mapLinkBox);
+	return mapLinkBox;
+}
+function addMapLinkBox(mapLinkSpan)
+{
+	var secondColumn = mapLinkSpan.parentNode;
+	var firstColumn = nextNode(secondColumn.parentNode.firstChild, 'TD');
+
+	var peakId = firstColumn.firstChild.nodeValue;
+	var mapLink = nextNode(secondColumn.firstChild, 'A');
+	var latCommaLong = mapLink.search.split('&')[0].split('=')[1];
+
+	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, isCAPeak(peakId)));
 }
 function showMapLinkBox(event)
 {
@@ -220,7 +224,7 @@ function showMapLinkBox(event)
 	if (mapLinkSpan.lastChild !== mapLinkSpan.firstChild)
 		mapLinkSpan.lastChild.style.display = 'block';
 	else
-		createMapLinkBox(mapLinkSpan);
+		addMapLinkBox(mapLinkSpan);
 
 	var offsetTop = totalOffsetTop(mapLinkSpan);
 	var mapLinkBox = mapLinkSpan.lastChild;
