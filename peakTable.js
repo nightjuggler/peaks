@@ -78,6 +78,30 @@ function legendLink(mapServer)
 // See http://www.wilderness.net/NWPS/geography
 var wildernessMapServer = 'http://services.cfc.umt.edu/ArcGIS/rest/services/ProctectedAreas/Wilderness/MapServer';
 
+function wccLink(latitude, longitude)
+{
+	// WCC = National Water and Climate Center
+	var url = 'https://www.wcc.nrcs.usda.gov/webmap_beta/#';
+
+	var params = [
+		['activeForecastPointsOnly', 'true'],
+		['openSections', ''],
+		['base', 'esriNgwm'],
+		['dataElement', 'SNWD'], // Snow Depth
+		['parameter', 'OBS'],
+		['frequency', 'DAILY'],
+		['dayPart', 'B'],
+		['relativeDate', '-1'],
+		['lat', latitude],
+		['lon', longitude],
+		['zoom', '12'],
+	];
+
+	var q = []; for (var p of params) q.push(p.join('='));
+
+	return url + q.join('&');
+}
+
 // See https://en.wikipedia.org/wiki/Geometric_Shapes
 var rowCollapsedIcon = ' \u25B6';
 var rowExpandedIcon = ' \u25BC';
@@ -123,11 +147,9 @@ function createMapLinkBox(mapLinkSpan)
 	var longitude = Number(latLong[1]);
 
 	var peakId = firstColumn.firstChild.nodeValue;
-	var peakName = mapLink.firstChild.nodeValue;
-	if (peakName.substr(-10) === ' Mountains' || peakName.substr(-6) === ' Range')
-		peakName += ' HP';
+	var inCalifornia = isCAPeak(peakId);
 
-	if (isCAPeak(peakId))
+	if (inCalifornia)
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
 			'http://www.calands.org/map?simple=true&base=topo&y=' + latLong[0] + '&x=' +
 			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
@@ -137,32 +159,16 @@ function createMapLinkBox(mapLinkSpan)
 
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
-/*
-	addMapLink(listNode, 'GeoCommunicator (BLM)',
-		'http://www.geocommunicator.gov/blmMap/Map.jsp?MAP=SITEMAPPER'
-		+ '&LAT=' + latLong[0]
-		+ '&LONG=' + latLong[1]
-		+ '&LABEL=' + encodeURIComponent(peakName)
-		+ '&VISIBLELAYERS=Surface Management Agency:'
-		+ 'BLM_wilderness_areas,BLM_wilderness_areas_labels,'
-		+ 'BLM_lands_dissolved,BLM_lands|'
-		+ 'BLM Administrative Areas:blm_admin_arc_0,'
-		+ 'blm_admin_arc_1,blm_admin_arc_2,'
-		+ 'blm_admin_arc_3,blm_admin_arc_4,'
-		+ 'blm_admin_bound_labels,blm_admin_bound_parent_labels');
 
-	addMapLink(listNode, 'Gmap4 with Land Management',
-		'https://mappingsupport.com/p/gmap4.php?ll=' + latCommaLong +
-		'&z=12&t=Land_Management,Land_Management_Labels&symbol=pgs' +
-		'&q=https://nightjuggler.com/gmap4/SMA.txt');
-*/
+	var gmap4Link = 'https://mappingsupport.com/p/gmap4.php?ll=' + latCommaLong + '&z=15&t=t4';
+
+	addMapLink(listNode, 'Gmap4 (CalTopo Hi-res Basemap)', gmap4Link);
+
 	addMapLink(listNode, 'Gmap4 with Wilderness Boundaries',
-		mapLink.href + ',Wilderness_Boundaries&markers=title=' + legendLink(wildernessMapServer)
+		gmap4Link + ',Wilderness_Boundaries&markers=title=' + legendLink(wildernessMapServer)
 		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Boundaries&layers=1&transparent=true'
 		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Names&layers=0&transparent=true'
 		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Areas&layers=2&transparent=true');
-
-	addMapLink(listNode, 'Gmap4 (default)', mapLink.href);
 
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
 
@@ -179,10 +185,10 @@ function createMapLinkBox(mapLinkSpan)
 		+ '&dump_app_trace=false'
 		+ '&db_debug=false');
 
-	addMapLink(listNode, 'PMap (Mapbox)',
+	addMapLink(listNode, 'PMap (Mapbox.js)',
 		'https://nightjuggler.com/nature/pmap.html?o=dps&o=sps&ll=' + latCommaLong)
 
-	addMapLink(listNode, 'PMap GL',
+	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
 		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong)
 
 	addMapLink(listNode, 'USGS National Map',
@@ -197,6 +203,8 @@ function createMapLinkBox(mapLinkSpan)
 
 	addMapLink(listNode, 'USGS TopoView',
 		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
+
+	addMapLink(listNode, 'Water & Climate Center', wccLink(latLong[0], latLong[1]));
 
 	addMapLink(listNode, 'Wilderness.net', wildernessURL(latitude, longitude));
 
