@@ -97,6 +97,9 @@ def badWxLatLong(lineNumber):
 def badLandMgmt(lineNumber):
 	sys.exit("Land management column doesn't match class on line {0}".format(lineNumber))
 
+def badGrade(lineNumber):
+	sys.exit("Summit grade must be greater than approach grade on line {0}".format(lineNumber))
+
 def parseClasses(peak, classNames):
 	if classNames is None:
 		return True
@@ -298,10 +301,10 @@ def printLandManagementAreas():
 			area.url if area.url else '-')
 
 ngsLinkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
-topoLinkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_'
-topoLinkPattern = re.compile('^([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_[0-9]{6}_([0-9]{4})_([0-9]{5})\\.jpg$')
+topoLinkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
+topoLinkPattern = re.compile('^([A-Z][A-Z])/(\\1_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_[0-9]{6}_([0-9]{4})_([0-9]{5})\\.jpg$')
 elevFromNGS = re.compile('^([0-9]{4}(?:\\.[0-9])?)m \\(NAVD 88\\) NGS Data Sheet &quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
-elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), CA&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
+elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), ([A-Z][A-Z])&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
 contourIntervals = (10, 20, 40, 80)
 
 def checkElevationTooltip(e, lineNumber):
@@ -318,16 +321,17 @@ def checkElevationTooltip(e, lineNumber):
 		m = elevFromTopo.match(e.tooltip)
 		if m is None:
 			badLine(lineNumber)
-		elevation, quad, scale1, scale2, quadName, year = m.groups()
+		elevation, quad, scale1, scale2, quadName, state, year = m.groups()
 		scale = scale1 + scale2
 		if quad == '7.5' and scale != '24000' or quad == '15' and scale != '62500':
 			badLine(lineNumber)
 		quadName = quadName.replace('.', '')
 		quadName = quadName.replace(' ', '%20')
+		quadName = state + '_' + quadName
 		m = topoLinkPattern.match(e.link[len(topoLinkPrefix):])
 		if m is None:
 			sys.exit("Topo URL doesn't match expected pattern on line {}".format(lineNumber))
-		if quadName != m.group(1) or year != m.group(2) or scale != m.group(3):
+		if quadName != m.group(2) or year != m.group(3) or scale != m.group(4):
 			sys.exit("Quad name, year, or scale doesn't match topo URL on line {}".format(lineNumber))
 		unit = elevation[-1]
 		elevation = elevation[:-1]
@@ -419,7 +423,7 @@ def readHTML():
 	peakRowPattern = re.compile('^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?>$')
 	column1Pattern = re.compile('^<td(?: id="' + G.peakIdPrefix + '([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
 	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$')
-	gradePattern = re.compile('^<td>Class ([123456](?:s[23456])?)</td>$')
+	gradePattern = re.compile('^<td>Class ([123456](?:s[23456]\\+?)?)</td>$')
 	prominencePattern1 = re.compile('^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$')
 	prominencePattern2 = re.compile('^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$')
 	summitpostPattern = re.compile('^<td><a href="http://www\\.summitpost\\.org/([-a-z]+)/([0-9]+)">SP</a></td>$')
@@ -513,6 +517,12 @@ def readHTML():
 			if m is None:
 				badLine(lineNumber)
 			peak.grade = m.group(1)
+			if len(peak.grade) > 1:
+				approachGrade, summitGrade = int(peak.grade[0]), int(peak.grade[2])
+				if approachGrade >= summitGrade:
+					badGrade(lineNumber)
+				if summitGrade == 6 and peak.grade[-1] == '+':
+					sys.exit("Summit grade 6+ doesn't make sense on line {0}".format(lineNumber))
 
 			line = htmlFile.next()
 			lineNumber += 1
