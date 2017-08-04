@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v0.39.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v0.39.1/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <style>
@@ -148,16 +148,11 @@ function parseOverlay(q, v)
 		delete validOverlays[v];
 	}
 }
-var validBaseLayers = {
-	o: 'Outdoors',
-	s: 'Satellite',
-	sts: 'Satellite Streets',
-	st: 'Streets',
-};
+var baseLayers = {};
 function parseBaseLayer(q, v)
 {
-	if (isValidId(v) && validBaseLayers[v])
-		q.baseLayer = validBaseLayers[v];
+	if (isValidId(v) && baseLayers[v])
+		q.baseLayer = v;
 }
 function parseQueryString(queryString)
 {
@@ -288,28 +283,28 @@ function LayerControl(map, currentLayer)
 
 	this.map = map;
 	this.div = div;
-	this.currentLayer = currentLayer;
+	this.currentLayer = baseLayers[currentLayer];
 }
-LayerControl.prototype.addLayer = function(name, style)
+LayerControl.prototype.addLayer = function(layer)
 {
 	var ctrl = this;
 
 	var input = document.createElement('input');
 	input.type = 'radio';
 	input.name = 'style';
-	input.checked = (name === ctrl.currentLayer);
+	input.checked = (layer === ctrl.currentLayer);
 
 	function changeStyle()
 	{
-		if (name === ctrl.currentLayer) return;
-		ctrl.currentLayer = name;
+		if (layer === ctrl.currentLayer) return;
+		ctrl.currentLayer = layer;
 		input.checked = true;
-		ctrl.map.setStyle(style);
+		ctrl.map.setStyle(layer.style);
 	}
 
 	var div = document.createElement('div');
 	div.appendChild(input);
-	div.appendChild(document.createTextNode(' ' + name));
+	div.appendChild(document.createTextNode(' ' + layer.name));
 	div.addEventListener('click', changeStyle, false);
 
 	ctrl.div.appendChild(div);
@@ -367,29 +362,32 @@ function loadJSON(url, onSuccess, onFailure)
 function createMap(options)
 {
 	var queryString = {
-		baseLayer: 'Outdoors',
+		baseLayer: 'o',
 		bearing: 0,
 		overlays: [],
 		pitch: 0,
 	};
 	parseQueryString(queryString);
 
+	function BaseLayer(name, abbr, style)
+	{
+		this.name = name;
+		this.style = 'mapbox://styles/mapbox/' + style;
+		baseLayers[abbr] = this;
+	}
 	var layers = [
-		'Outdoors',
-		'Satellite',
-		'Satellite Streets',
-		'Streets',
+		new BaseLayer('Outdoors', 'o', 'outdoors-v10'),
+		new BaseLayer('Satellite', 's', 'satellite-v9'),
+		new BaseLayer('Satellite Streets', 'sts', 'satellite-streets-v10'),
+		new BaseLayer('Streets', 'st', 'streets-v10'),
+		new BaseLayer('Traffic', 'tf', 'traffic-day-v2'),
 	];
-
-	var styles = {};
-	for (var layer of layers)
-		styles[layer] = 'mapbox://styles/mapbox/' + layer.toLowerCase().replace(/ /g, '-') + '-v9';
 
 	mapboxgl.accessToken = options.accessToken;
 
 	options.center = [-119.25, 37.4];
 	options.container = 'map';
-	options.style = styles[queryString.baseLayer];
+	options.style = baseLayers[queryString.baseLayer].style;
 	options.bearing = queryString.bearing;
 	options.pitch = queryString.pitch;
 	options.zoom = 6;
@@ -401,7 +399,7 @@ function createMap(options)
 
 	var layerControl = new LayerControl(map, queryString.baseLayer);
 	for (var layer of layers)
-		layerControl.addLayer(layer, styles[layer]);
+		layerControl.addLayer(layer);
 
 	var mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
 	var mapBoundsFromOverlay = false;
