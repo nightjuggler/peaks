@@ -433,7 +433,7 @@ def readHTML():
 	peakbaggerPattern = re.compile('^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$')
 	closedContourPattern = re.compile('^<td><a href="http://www\\.closedcontour\\.com/sps/\\?zoom=7&lat=([0-9]+\\.[0-9]+)&lon=-([0-9]+\\.[0-9]+)">CC</a></td>$')
 	weatherPattern = re.compile('^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$')
-	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?)/">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$')
+	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$')
 	emptyCell = '<td>&nbsp;</td>\n'
 	lineNumber = 0
 
@@ -751,7 +751,7 @@ def writeHTML():
 			if peak.climbPhotos is None:
 				print '<td>{} {}</td>'.format(peak.climbDate, peak.climbWith)
 			else:
-				print '<td><a href="/photos/{}/">{}</a> {}</td>'.format(
+				print '<td><a href="/photos/{}">{}</a> {}</td>'.format(
 					peak.climbPhotos, peak.climbDate, peak.climbWith)
 		else:
 			print emptyCell
@@ -801,7 +801,7 @@ def writePeakJSON(f, peak):
 		if peak.climbPhotos is None:
 			p.append(('climbed', peak.climbDate))
 		else:
-			p.append(('climbed', '<a href=\\"https://nightjuggler.com/photos/{}/\\">{}</a>'.format(
+			p.append(('climbed', '<a href=\\"https://nightjuggler.com/photos/{}\\">{}</a>'.format(
 				peak.climbPhotos, peak.climbDate)))
 
 	for k, v in p:
