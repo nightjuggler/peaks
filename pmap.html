@@ -170,7 +170,7 @@ function parseZoom(q, v)
 {
 	if (v.match(/^[1-9][0-9]?$/) === null) return;
 
-	var zoom = parseInt(v);
+	var zoom = parseInt(v, 10);
 	if (zoom < 1 || zoom > 22) return;
 
 	q.zoom = zoom;

@@ -113,7 +113,7 @@ function parseZoom(q, v)
 {
 	if (v.match(/^[1-9][0-9]?$/) === null) return;
 
-	var zoom = parseInt(v);
+	var zoom = parseInt(v, 10);
 	if (zoom < 1 || zoom > 22) return;
 
 	q.zoom = zoom;
@@ -122,7 +122,7 @@ function parseBearing(q, v)
 {
 	if (v.match(/^[0-9]{1,3}$/) === null) return;
 
-	var bearing = parseInt(v);
+	var bearing = parseInt(v, 10);
 	if (bearing > 359) return;
 
 	q.bearing = bearing;
@@ -131,7 +131,7 @@ function parsePitch(q, v)
 {
 	if (v.match(/^[0-9]{1,2}$/) === null) return;
 
-	var pitch = parseInt(v);
+	var pitch = parseInt(v, 10);
 	if (pitch > 60) return;
 
 	q.pitch = pitch;
