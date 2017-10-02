@@ -1,3 +1,6 @@
+/* globals document, window */
+"use strict";
+
 var radiansPerDegree = Math.PI / 180.0; // 0.017453292519943295
 var degreesPerRadian = 180.0 / Math.PI;
 var earthRadius = 6378137.0; // WGS 84 equatorial radius in meters
@@ -109,8 +112,8 @@ var mapLinkIconUp = '\u25B2';
 var mapLinkIconDown = '\u25BC';
 var mapLinkHash = {};
 var extraRow = {};
-var isCAPeak = function(peakId) { return true; }
-var isUSPeak = function(peakId) { return true; }
+var isCAPeak = function(peakId) { return true; };
+var isUSPeak = function(peakId) { return true; };
 
 function nextNode(node, nodeName)
 {
@@ -179,10 +182,10 @@ function createMapLinkBox(latCommaLong, inCalifornia)
 		+ '&db_debug=false');
 
 	addMapLink(listNode, 'PMap (Mapbox.js)',
-		'https://nightjuggler.com/nature/pmap.html?o=dps&o=sps&ll=' + latCommaLong)
+		'https://nightjuggler.com/nature/pmap.html?o=dps&o=sps&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
-		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong)
+		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'USGS National Map',
 		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=14&bbox='
@@ -342,7 +345,7 @@ function insertClimbedColumn(row)
 function addRemoveColumn(addRemoveFunction, colDiff)
 {
 	var row = document.getElementById('header').parentNode;
-	while (row != null)
+	while (row !== null)
 	{
 		var firstColumn = row.children[0];
 		if (firstColumn.colSpan === 1) {
@@ -368,7 +371,7 @@ function setPeakTableClass(i, className)
 	classList[i] = className;
 	peakTable.className = classList.join(' ');
 }
-function toggleLandColumn(event)
+function toggleLandColumn()
 {
 	if (landColumnArray.length === 0) {
 		addRemoveColumn(removeLandColumn, -1);
@@ -378,14 +381,14 @@ function toggleLandColumn(event)
 		setPeakTableClass(1, 'landColumn');
 	}
 }
-function toggleClimbedColumn(event)
+function toggleClimbedColumn()
 {
 	if (climbedColumnArray.length === 0)
 		addRemoveColumn(removeClimbedColumn, -1);
 	else
 		addRemoveColumn(insertClimbedColumn, 1);
 }
-function changeColors(event)
+function changeColors()
 {
 	var colorMenu = document.getElementById('colorMenu');
 	setPeakTableClass(0, colorMenu.options[colorMenu.selectedIndex].value);

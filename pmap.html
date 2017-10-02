@@ -144,6 +144,10 @@ progress {
 </style>
 <script src="pmap-lc.js"></script>
 <script>
+/* globals document, window */
+/* globals MouseEvent, XMLHttpRequest */
+/* globals L */
+/* globals LayerControl, addOverlays */
 "use strict";
 
 function isValidId(s, n)
@@ -274,13 +278,13 @@ function getMapBounds(map, options)
 			}
 		}
 		delete object.mapBounds;
-	}
+	};
 	methods.addSetter = function(object)
 	{
 		if (numSetters++ === 0)
 			init = true;
 		object.mapBounds = methods;
-	}
+	};
 
 	return methods;
 }
@@ -313,7 +317,7 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 			if (progressBar)
 				progressBar.parentNode.removeChild(progressBar);
 		}
-	}
+	};
 	if (progressBar)
 		xhr.addEventListener('progress', function(event) {
 			if (event.lengthComputable) {

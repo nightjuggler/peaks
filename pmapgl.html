@@ -90,6 +90,9 @@ a {text-decoration: none;}
 }
 </style>
 <script>
+/* globals document, window, XMLHttpRequest */
+/* globals mapboxgl */
+/* globals enableTooltips */
 "use strict";
 function isValidId(s)
 {
@@ -308,7 +311,7 @@ LayerControl.prototype.addLayer = function(layer)
 	div.addEventListener('click', changeStyle, false);
 
 	ctrl.div.appendChild(div);
-}
+};
 LayerControl.prototype.addOverlay = function(name, markers)
 {
 	var ctrl = this;
@@ -342,7 +345,7 @@ LayerControl.prototype.addOverlay = function(name, markers)
 	div.addEventListener('click', clickInput, false);
 
 	ctrl.div.appendChild(div);
-}
+};
 function loadJSON(url, onSuccess, onFailure)
 {
 	var xhr = new XMLHttpRequest();
@@ -354,7 +357,7 @@ function loadJSON(url, onSuccess, onFailure)
 				onSuccess(xhr.response);
 			else if (onFailure)
 				onFailure();
-	}
+	};
 
 	xhr.open('GET', url);
 	xhr.send();
@@ -447,23 +450,23 @@ function createMap(options)
 	var bearingText = bearingSpan.lastChild;
 	var pitchText = pitchSpan.lastChild;
 
-	function updateBearing(event)
+	function updateBearing()
 	{
 		var bearing = Math.round(map.getBearing());
 		if (bearing < 0)
 			bearing += 360;
 		bearingText.nodeValue = bearing + '\u00B0'; // \u00B0 is the degree symbol (&deg;)
 	}
-	function updatePitch(event)
+	function updatePitch()
 	{
 		pitchText.nodeValue = Math.round(map.getPitch()) + '\u00B0';
 	}
-	function resetBearing(event)
+	function resetBearing()
 	{
 		var duration = 1000 + Math.round(1000 * Math.abs(map.getBearing()) / 180);
 		map.easeTo({bearing: 0, duration: duration});
 	}
-	function resetPitch(event)
+	function resetPitch()
 	{
 		var duration = 1000 + Math.round(1000 * map.getPitch() / 60);
 		map.easeTo({pitch: 0, duration: duration});
@@ -497,8 +500,8 @@ function createMap(options)
 				event.stopPropagation();
 				map.flyTo({center: ll, zoom: map.getMaxZoom() - 5});
 			}, false);
-			icon.addEventListener('click', function(event) {
-				setTimeout(enableTooltips, 100);
+			icon.addEventListener('click', function() {
+				window.setTimeout(enableTooltips, 100);
 			}, false);
 
 			var popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})

@@ -1,3 +1,6 @@
+/* globals document, window */
+"use strict";
+
 function positionTooltip(tooltip)
 {
 	tooltip.style.display = 'block';

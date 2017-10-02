@@ -1,4 +1,9 @@
 "use strict";
+/* globals console, document, Image, window */
+/* globals L */
+/* globals enableTooltips */
+/* globals loadJSON */
+/* exported addOverlays */
 
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 var USFS_Prefix = 'https://www.fs.usda.gov/';
@@ -187,7 +192,7 @@ function assignLayer(item, namePath, layer, featureProperties)
 addFunctions.default = function(geojson, map, lcItem)
 {
 	return L.geoJSON(geojson, {style: {color: '#FF4500'/* OrangeRed */}});
-}
+};
 addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 {
 	var style = {
@@ -217,7 +222,7 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
-}
+};
 function officeIcon()
 {
 	var fill = 'cyan';
@@ -243,7 +248,7 @@ addFunctions.add_BLM_Offices = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {pointToLayer: addPopup});
-}
+};
 addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 {
 	var USFS_Style = {color: '#008000'}; // Green
@@ -323,7 +328,7 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
-}
+};
 addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 {
 	var style = {
@@ -366,7 +371,7 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
-}
+};
 addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
@@ -388,7 +393,7 @@ addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#000000'}});
-}
+};
 addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
@@ -408,7 +413,7 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#A52A2A'/* Brown */}});
-}
+};
 function appendName(name, node)
 {
 	var parts = name.split('|');
@@ -443,10 +448,10 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 
-		var namePath = [p.name]
+		var namePath = [p.name];
 		if (p.name2) {
 			p.name2 = appendName(p.name2, popupDiv);
-			namePath.push(p.name2)
+			namePath.push(p.name2);
 			if (p.W2) {
 				popupDiv.appendChild(document.createTextNode(' ['));
 				popupDiv.appendChild(wikipediaLink(p.W2));
@@ -459,7 +464,7 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FFFF00'/* Yellow */}});
-}
+};
 function makeLink(url, txt)
 {
 	return '<a href="' + url + '">' + txt + '</a>';
@@ -522,7 +527,7 @@ addFunctions.addPeakOverlay = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {pointToLayer: addPeak});
-}
+};
 addFunctions.add_UC_Reserve = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
@@ -546,7 +551,7 @@ addFunctions.add_UC_Reserve = function(geojson, map, lcItem)
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FF00FF'/* Magenta */}});
-}
+};
 function getTop(div)
 {
 	var top = div.offsetTop;
@@ -654,7 +659,7 @@ LayerControl.prototype.addBaseLayer = function(name, layer)
 	div.appendChild(nameSpan);
 
 	ctrl.div.appendChild(div);
-}
+};
 function clickArrow(event)
 {
 	event.currentTarget.parentNode.firstChild.click();
@@ -674,7 +679,7 @@ function lcItemFitBounds(map)
 		} else if (item.featureGroup) {
 			map.fitBounds(item.featureGroup.getBounds());
 		}
-	}
+	};
 }
 function showZoomToFit(event)
 {
@@ -969,7 +974,7 @@ LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 			nameSpan.addEventListener('click', clickArrow, false);
 		}
 	}
-}
+};
 function getItem(path, item)
 {
 	for (var id of path)
