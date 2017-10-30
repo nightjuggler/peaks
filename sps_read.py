@@ -41,14 +41,13 @@ class Peak(object):
 		self.prominence = ''
 		self.prominenceLink = None
 		self.grade = ''
-		self.ccLatitude = ''
-		self.ccLongitude = ''
 		self.summitpostId = None
 		self.summitpostName = None
 		self.wikipediaLink = None
 		self.bobBurdId = None
 		self.listsOfJohnId = None
 		self.peakbaggerId = None
+		self.peteYamagataId = None
 		self.climbDate = None
 		self.climbPhotos = None
 		self.climbWith = None
@@ -60,24 +59,6 @@ class Peak(object):
 		self.isHighPoint = False
 		self.landClass = None
 		self.landManagement = None
-
-def compareLatLong(peak):
-	mmFormat = 'Mismatched {0:14s} for {1:22s}:'
-	llFormat = '{0:10.6f} != {1:10.6f} ({2:.6f})'
-
-	latitude = float(peak.latitude)
-	longitude = float(peak.longitude)
-	ccLatitude = float(peak.ccLatitude)
-	ccLongitude = float(peak.ccLongitude)
-	deltaLat = abs(latitude - ccLatitude)
-	deltaLong = abs(longitude - ccLongitude)
-
-	if deltaLat > 0.0002:
-		print >>sys.stderr, mmFormat.format('LATITUDE', peak.name),
-		print >>sys.stderr, llFormat.format(latitude, ccLatitude, deltaLat)
-	if deltaLong > 0.0002:
-		print >>sys.stderr, mmFormat.format('LONGITUDE', peak.name),
-		print >>sys.stderr, llFormat.format(longitude, ccLongitude, deltaLong)
 
 def badLine(lineNumber):
 	sys.exit("Line {0} doesn't match expected pattern!".format(lineNumber))
@@ -431,7 +412,7 @@ def readHTML():
 	bobBurdPattern = re.compile('^<td><a href="http://www\\.snwburd\\.com/dayhikes/peak/([0-9]+)">BB</a></td>$')
 	listsOfJohnPattern = re.compile('^<td><a href="http://listsofjohn\\.com/peak/([0-9]+)">LoJ</a></td>$')
 	peakbaggerPattern = re.compile('^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$')
-	closedContourPattern = re.compile('^<td><a href="http://www\\.closedcontour\\.com/sps/\\?zoom=7&lat=([0-9]+\\.[0-9]+)&lon=-([0-9]+\\.[0-9]+)">CC</a></td>$')
+	peteYamagataPattern = re.compile('^<td><a href="http://www\\.petesthousandpeaks\\.com/Captions/nspg/([a-z]+)\\.html">PY</a></td>$')
 	weatherPattern = re.compile('^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$')
 	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$')
 	emptyCell = '<td>&nbsp;</td>\n'
@@ -579,12 +560,11 @@ def readHTML():
 			if G.sps:
 				line = htmlFile.next()
 				lineNumber += 1
-				m = closedContourPattern.match(line)
-				if m is None:
-					badLine(lineNumber)
-				peak.ccLatitude = m.group(1)
-				peak.ccLongitude = m.group(2)
-#				compareLatLong(peak)
+				if line != emptyCell:
+					m = peteYamagataPattern.match(line)
+					if m is None:
+						badLine(lineNumber)
+					peak.peteYamagataId = m.group(1)
 
 			line = htmlFile.next()
 			lineNumber += 1
@@ -654,8 +634,8 @@ def writeHTML():
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
 	bobBurdFormat = '<td><a href="http://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
 	listsOfJohnFormat = '<td><a href="http://listsofjohn.com/peak/{0}">LoJ</a></td>'
-	closedContourFormat = '<td><a href="http://www.closedcontour.com/sps/?zoom=7&lat={0}&lon=-{1}">CC</a></td>'
 	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
+	peteYamagataFormat = '<td><a href="http://www.petesthousandpeaks.com/Captions/nspg/{0}.html">PY</a></td>'
 	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon=-{0}&lat={1}">WX</a></td>'
 	emptyCell = '<td>&nbsp;</td>'
 	section1Line = sectionFormat.format(G.peakIdPrefix, 1, sectionArray[0]) + '\n';
@@ -741,7 +721,10 @@ def writeHTML():
 			print listsOfJohnFormat.format(peak.listsOfJohnId)
 		print peakbaggerFormat.format(peak.peakbaggerId)
 		if G.sps:
-			print closedContourFormat.format(peak.ccLatitude, peak.ccLongitude)
+			if peak.peteYamagataId is None:
+				print emptyCell
+			else:
+				print peteYamagataFormat.format(peak.peteYamagataId)
 		if G.dps and peak.section == 9:
 			print emptyCell
 		else:

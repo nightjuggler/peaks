@@ -156,6 +156,10 @@ function createMapLinkBox(latCommaLong, inCalifornia)
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
 
+	if (window.location.pathname.substr(-9) === '/sps.html')
+		addMapLink(listNode, 'Closed Contour',
+			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
+
 	var gmap4Link = 'https://mappingsupport.com/p/gmap4.php?ll=' + latCommaLong + '&z=15&t=t4';
 
 	addMapLink(listNode, 'Gmap4 (CalTopo Hi-res Basemap)', gmap4Link);
@@ -320,6 +324,7 @@ function decorateTable()
 		document.createTextNode('(' + numClimbed + '/' + peakNumber + ')'));
 	if (window.location.hash)
 		window.location.replace(window.location.href);
+	window.removeEventListener('DOMContentLoaded', decorateTable, false);
 }
 window.addEventListener('DOMContentLoaded', decorateTable, false);
 
@@ -414,6 +419,7 @@ function addClickHandlers()
 			break;
 		}
 	colorMenu.addEventListener('change', changeColors, false);
+	window.removeEventListener('DOMContentLoaded', addClickHandlers, false);
 }
 window.addEventListener('DOMContentLoaded', addClickHandlers, false);
 
