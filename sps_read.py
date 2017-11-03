@@ -285,7 +285,7 @@ ngsLinkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 topoLinkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 topoLinkPattern = re.compile('^([A-Z][A-Z])/(\\1_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_[0-9]{6}_([0-9]{4})_([0-9]{5})\\.jpg$')
 elevFromNGS = re.compile('^([0-9]{4}(?:\\.[0-9]{1,2})?)m \\(NAVD 88\\) NGS Data Sheet &quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
-elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\(NGVD 29\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), ([A-Z][A-Z])&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
+elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\((MSL|NGVD 29)\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), ([A-Z][A-Z])&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
 contourIntervals = (10, 20, 40, 80)
 
 def checkElevationTooltip(e, lineNumber):
@@ -302,7 +302,7 @@ def checkElevationTooltip(e, lineNumber):
 		m = elevFromTopo.match(e.tooltip)
 		if m is None:
 			badLine(lineNumber)
-		elevation, quad, scale1, scale2, quadName, state, year = m.groups()
+		elevation, vdatum, quad, scale1, scale2, quadName, state, year = m.groups()
 		scale = scale1 + scale2
 		if quad == '7.5' and scale != '24000' or quad == '15' and scale != '62500':
 			badLine(lineNumber)
