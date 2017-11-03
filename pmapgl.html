@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox-gl-js/v0.40.1/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v0.40.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v0.41.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v0.41.0/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <style>
@@ -84,9 +84,13 @@ a {text-decoration: none;}
 .centerIcon {
 	pointer-events: none;
 	z-index: 1000;
+	width: 28px;
+	height: 28px;
 }
 .peakIcon {
 	cursor: pointer;
+	width: 20px;
+	height: 26px;
 }
 </style>
 <script>
@@ -436,7 +440,7 @@ function createMap(options)
 		return center;
 	}
 
-	var centerMarker = new mapboxgl.Marker(centerIcon(), {offset: [-14, -14]})
+	var centerMarker = new mapboxgl.Marker(centerIcon())
 		.setLngLat(updateCenter())
 		.addTo(map);
 
@@ -508,7 +512,7 @@ function createMap(options)
 				.setLngLat(ll)
 				.setHTML(popupHtml(ll, p, htmlFilename));
 
-			return new mapboxgl.Marker(icon, {offset: [-10, -13]})
+			return new mapboxgl.Marker(icon)
 				.setLngLat(ll)
 				.setPopup(popup)
 				.addTo(map);
