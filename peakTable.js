@@ -39,13 +39,13 @@ function latitudeToWebMercatorY(latitude)
 
 	var y = Math.sin(latitude * radiansPerDegree);
 
-	return earthRadius / 2.0 * Math.log((1.0 + y) / (1.0 - y));
+	return (earthRadius / 2.0 * Math.log((1.0 + y) / (1.0 - y))).toFixed(4);
 }
 function longitudeToWebMercatorX(longitude)
 {
 	// See https://en.wikipedia.org/wiki/Mercator_projection#Derivation_of_the_Mercator_projection
 
-	return earthRadius * longitude * radiansPerDegree;
+	return (earthRadius * longitude * radiansPerDegree).toFixed(4);
 }
 function wildernessURL(latitude, longitude)
 {
@@ -103,6 +103,36 @@ function wccLink(latitude, longitude)
 	var q = []; for (var p of params) q.push(p.join('='));
 
 	return url + q.join('&');
+}
+function round(number, precision)
+{
+	var p = Math.pow(10, precision);
+	return Math.round(number * p) / p;
+}
+function terriaObject(latitude, longitude)
+{
+	var distance = 600;
+	var deltaLat = deltaLatForDistanceNorth(distance);
+	var deltaLong = deltaLongForDistanceEast(latitude, distance * 4/3);
+
+	var camera = {
+		west: round(longitude - deltaLong, 6),
+		east: round(longitude + deltaLong, 6),
+		south: round(latitude - deltaLat, 6),
+		north: round(latitude + deltaLat, 6)
+	};
+	return {
+		version: "0.0.05",
+		initSources: [
+			"init/usgs.json",
+			{
+				initialCamera: camera,
+				homeCamera: camera,
+				baseMapName: "USGS Topo WMS",
+				viewerMode: "2d"
+			}
+		]
+	};
 }
 
 // See https://en.wikipedia.org/wiki/Geometric_Shapes
@@ -191,15 +221,20 @@ function createMapLinkBox(latCommaLong, inCalifornia)
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
 		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong);
 
-	addMapLink(listNode, 'USGS National Map',
-		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=14&bbox='
+	addMapLink(listNode, 'USGS National Map (Basic)',
+		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=15&bbox='
 		+ latLong[1] + ',' + latLong[0] + ','
 		+ latLong[1] + ',' + latLong[0]);
 
-	addMapLink(listNode, 'USGS National Map (Legacy)',
-		'https://viewer.nationalmap.gov/viewer/?p=default&b=base1&l=14'
-		+ '&x=' + longitudeToWebMercatorX(longitude)
-		+ '&y=' + latitudeToWebMercatorY(latitude));
+	addMapLink(listNode, 'USGS National Map (Advanced)',
+		'https://viewer.nationalmap.gov/advanced-viewer/viewer/index.html?center='
+		+ longitudeToWebMercatorX(longitude) + ','
+		+ latitudeToWebMercatorY(latitude) + ',102100&level=15');
+
+	addMapLink(listNode, 'USGS National Map (Terria)',
+		'https://viewer.nationalmap.gov/advanced/terriajs-usgs/#start='
+			+ encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude)))
+			+ '&hideExplorerPanel=1&activeTabId=DataCatalogue');
 
 	addMapLink(listNode, 'USGS TopoView',
 		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
