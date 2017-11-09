@@ -2,33 +2,49 @@
 import re
 import sys
 
-class G(object):
-	sps = True
-	dps = False
-	peakIdPrefix = 'SPS'
-	htmlFilename = 'sps.html'
-	colspan = '14'
-	colspanMinus1 = '13'
-	geojsonTitle = 'Sierra Peaks'
-	numPeaks = 247
-	numSections = 24
+peakLists = {
+	'sps': {
+		'geojsonTitle': 'Sierra Peaks',
+		'numColumns': 14,
+		'numPeaks': 247,
+		'numSections': 24,
+	},
+	'dps': {
+		'geojsonTitle': 'Desert Peaks',
+		'numColumns': 13,
+		'numPeaks': 99,
+		'numSections': 9,
+	},
+	'gbp': {
+		'geojsonTitle': 'Great Basin Peaks',
+		'numColumns': 13,
+		'numPeaks': 13,
+		'numSections': 12,
+	},
+}
 
-	@classmethod
-	def setDPS(self):
-		self.dps = True
-		self.sps = False
-		self.peakIdPrefix = 'DPS'
-		self.htmlFilename = 'dps.html'
-		self.colspan = '13'
-		self.colspanMinus1 = '12'
-		self.geojsonTitle = 'Desert Peaks'
-		self.numPeaks = 99
-		self.numSections = 9
+class GlobalParams(object):
+	def __init__(self, peakListId):
+		params = peakLists[peakListId]
+
+		self.peakIdPrefix = peakListId.upper()
+		self.htmlFilename = peakListId + '.html'
+		self.colspan = str(params['numColumns'])
+		self.colspanMinus1 = str(params['numColumns'] - 1)
+		self.numPeaks = params['numPeaks']
+		self.numSections = params['numSections']
+		self.geojsonTitle = params['geojsonTitle']
+
+	def sps(self):
+		return self.peakIdPrefix == 'SPS'
 
 peakArray = []
 sectionArray = []
 
 class Peak(object):
+	def nonUS(self):
+		return G.peakIdPrefix == 'DPS' and self.section == 9
+
 	def __init__(self):
 		self.id = ''
 		self.name = ''
@@ -134,6 +150,7 @@ landNameLookup = {
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
+	"Mono Basin Scenic Area":               'Inyo National Forest',
 	"Navajo Nation":                        'landRez',
 	"NAWS China Lake":                      'landDOD',
 	"Organ Pipe Cactus NM":                 'landNPS',
@@ -159,7 +176,7 @@ landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([-
 fsLinkPattern = re.compile('^https://www\\.fs\\.usda\\.gov/[a-z]+$')
 fwsLinkPattern = re.compile('^https://www\\.fws\\.gov/refuge/[a-z]+/$')
 npsLinkPattern = re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$')
-stateParkPattern = re.compile('^http://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$')
+stateParkPattern = re.compile('^https://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$')
 wildernessPattern = re.compile('^http://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$')
 landLinkPattern = {
 	'landFS':       fsLinkPattern,
@@ -187,7 +204,7 @@ def parseLandManagement(peak, lineNumber, htmlFile):
 		badLine(lineNumber)
 	line = line[4:-6]
 
-	if G.dps and peak.section == 9:
+	if peak.nonUS():
 		if line == '&nbsp;':
 			return lineNumber
 		badLine(lineNumber)
@@ -470,7 +487,7 @@ def readHTML():
 			suffix = m.group(6)
 			peak.otherName = m.group(7)
 
-			if G.dps and peak.section == 9:
+			if peak.nonUS():
 				if peak.baseLayer != 't1':
 					badLine(lineNumber)
 			else:
@@ -545,7 +562,7 @@ def readHTML():
 			lineNumber += 1
 			m = listsOfJohnPattern.match(line)
 			if m is None:
-				if not (G.dps and peak.section == 9 and line == emptyCell):
+				if not (peak.nonUS() and line == emptyCell):
 					badLine(lineNumber)
 			else:
 				peak.listsOfJohnId = m.group(1)
@@ -557,7 +574,7 @@ def readHTML():
 				badLine(lineNumber)
 			peak.peakbaggerId = m.group(1)
 
-			if G.sps:
+			if G.sps():
 				line = htmlFile.next()
 				lineNumber += 1
 				if line != emptyCell:
@@ -570,7 +587,7 @@ def readHTML():
 			lineNumber += 1
 			m = weatherPattern.match(line)
 			if m is None:
-				if not (G.dps and peak.section == 9 and line == emptyCell):
+				if not (peak.nonUS() and line == emptyCell):
 					badLine(lineNumber)
 			else:
 				wxLatitude = m.group(2)
@@ -720,12 +737,12 @@ def writeHTML():
 		else:
 			print listsOfJohnFormat.format(peak.listsOfJohnId)
 		print peakbaggerFormat.format(peak.peakbaggerId)
-		if G.sps:
+		if G.sps():
 			if peak.peteYamagataId is None:
 				print emptyCell
 			else:
 				print peteYamagataFormat.format(peak.peteYamagataId)
-		if G.dps and peak.section == 9:
+		if peak.nonUS():
 			print emptyCell
 		else:
 			print weatherFormat.format(peak.longitude, peak.latitude)
@@ -744,6 +761,10 @@ def writeHTML():
 			print '<tr><td colspan="' + G.colspanMinus1 + '"><ul>'
 			print peak.extraRow,
 			print '</ul></td></tr>'
+
+	while sectionNumber < G.numSections:
+		sectionNumber += 1
+		print sectionFormat.format(G.peakIdPrefix, sectionNumber, sectionArray[sectionNumber - 1])
 
 	for line in htmlFile:
 		if line == '</table>\n':
@@ -800,7 +821,7 @@ def writePeakJSON(f, peak):
 		f('\t\t\t"emblem": true,\n')
 	elif peak.isMtneer:
 		f('\t\t\t"mtneer": true,\n')
-	if G.dps and peak.section == 9:
+	if peak.nonUS():
 		f('\t\t\t"noWX": true,\n')
 
 	f('\t\t\t"elev": "')
@@ -831,12 +852,11 @@ def writeJSON():
 if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('inputMode', nargs='?', default='sps', choices=['dps', 'sps'])
+	parser.add_argument('inputMode', nargs='?', default='sps', choices=['dps', 'gbp', 'sps'])
 	parser.add_argument('outputMode', nargs='?', default='html', choices=['html', 'json', 'land'])
 	args = parser.parse_args()
 
-	if args.inputMode == 'dps':
-		G.setDPS()
+	G = GlobalParams(args.inputMode)
 
 	readHTML()
 	if args.outputMode == 'html':
