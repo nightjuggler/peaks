@@ -144,6 +144,15 @@ var mapLinkHash = {};
 var extraRow = {};
 var isCAPeak = function(peakId) { return true; };
 var isUSPeak = function(peakId) { return true; };
+var landColumnArray = [];
+var climbedColumnArray = [];
+var suspendedPeaks = [];
+var globalPeakInfo = {
+	numPeaks: 0,
+	numClimbed: 0,
+	numSuspended: 0,
+	numSuspendedClimbed: 0,
+};
 
 function nextNode(node, nodeName)
 {
@@ -311,20 +320,33 @@ function clickFirstColumn(event)
 	}
 	return false;
 }
+function suspendedHidden()
+{
+	return suspendedPeaks.length > 0 && suspendedPeaks[0][0].parentNode === null;
+}
+function peakTableFirstRow()
+{
+	return document.getElementById('header').parentNode;
+}
 function decorateTable()
 {
-	var numClimbed = 0;
-	var peakNumber = 0;
-	var peakTable = document.getElementById('peakTable');
-	peakTable = nextNode(peakTable.firstChild, 'TBODY');
-	var row = nextNode(peakTable.firstChild, 'TR');
-	for (; row !== null; row = nextNode(row.nextSibling, 'TR'))
+	var g = globalPeakInfo;
+
+	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
-		var firstColumn = nextNode(row.firstChild, 'TD');
+		var firstColumn = row.children[0];
 		if (firstColumn.colSpan !== 1) continue;
-		if (row.className.substr(0, 7) === 'climbed') ++numClimbed;
+
 		var peakId = firstColumn.firstChild.nodeValue;
-		peakNumber = peakNumber + 1;
+		var climbed = row.className.substr(0, 7) === 'climbed';
+		var suspended = row.className.substr(-9) === 'suspended';
+
+		g.numPeaks += 1;
+		if (climbed) {
+			g.numClimbed += 1;
+			if (suspended)
+				g.numSuspendedClimbed += 1;
+		}
 		if (firstColumn.rowSpan === 2)
 		{
 			var spanElement = document.createElement('SPAN');
@@ -332,13 +354,13 @@ function decorateTable()
 			spanElement.appendChild(document.createTextNode(rowCollapsedIcon));
 			firstColumn.appendChild(spanElement);
 			if (!firstColumn.id)
-				firstColumn.id = 'p' + peakNumber;
+				firstColumn.id = 'p' + g.numPeaks;
 			firstColumn.addEventListener('click', clickFirstColumn, false);
 			firstColumn.style.cursor = 'pointer';
 			firstColumn.rowSpan = 1;
 
 			var nextRow = nextNode(row.nextSibling, 'TR');
-			extraRow[firstColumn.id] = peakTable.removeChild(nextRow);
+			extraRow[firstColumn.id] = nextRow.parentNode.removeChild(nextRow);
 		}
 		if (isUSPeak(peakId))
 		{
@@ -347,25 +369,29 @@ function decorateTable()
 			var mapLinkSpan = document.createElement('SPAN');
 			mapLinkSpan.className = 'mapLinkHidden';
 			mapLinkSpan.appendChild(document.createTextNode(mapLinkIconUp));
-			secondColumn.id = 'm' + peakNumber;
+			secondColumn.id = 'm' + g.numPeaks;
 			secondColumn.insertBefore(mapLinkSpan, lineBreak);
 			secondColumn.addEventListener('mouseenter', showMapLinkIcon, false);
 			secondColumn.addEventListener('mouseleave', hideMapLinkIcon, false);
 			mapLinkHash[secondColumn.id] = mapLinkSpan;
 			mapLinkSpan.addEventListener('click', showMapLinkBox, false);
 		}
+		if (suspended) {
+			g.numSuspended += 1;
+			suspendedPeaks.unshift([row, row.nextSibling]);
+		}
 	}
-	document.getElementById('climbedCountSpan').appendChild(
-		document.createTextNode('(' + numClimbed + '/' + peakNumber + ')'));
+
+	removeSuspended();
+	updateClimbedCount();
+	updateSuspendedCount();
+	addClickHandlers();
+
 	if (window.location.hash)
 		window.location.replace(window.location.href);
+
 	window.removeEventListener('DOMContentLoaded', decorateTable, false);
 }
-window.addEventListener('DOMContentLoaded', decorateTable, false);
-
-var landColumnArray = [];
-var climbedColumnArray = [];
-
 function removeLandColumn(row)
 {
 	landColumnArray.push(row.removeChild(row.children[2]));
@@ -384,8 +410,10 @@ function insertClimbedColumn(row)
 }
 function addRemoveColumn(addRemoveFunction, colDiff)
 {
-	var row = document.getElementById('header').parentNode;
-	while (row !== null)
+	var addRemoveSuspended = suspendedHidden();
+	if (addRemoveSuspended) addSuspended();
+
+	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
 		var firstColumn = row.children[0];
 		if (firstColumn.colSpan === 1) {
@@ -393,11 +421,11 @@ function addRemoveColumn(addRemoveFunction, colDiff)
 			var row2 = extraRow[firstColumn.id];
 			if (row2 && !row2.parentNode)
 				row2.children[0].colSpan += colDiff;
-		} else {
+		} else
 			firstColumn.colSpan += colDiff;
-		}
-		row = nextNode(row.nextSibling, 'TR');
 	}
+
+	if (addRemoveSuspended) removeSuspended();
 }
 function getPeakTableClass(i)
 {
@@ -428,6 +456,73 @@ function toggleClimbedColumn()
 	else
 		addRemoveColumn(insertClimbedColumn, 1);
 }
+function updateClimbedCount()
+{
+	var span = document.getElementById('climbedCountSpan');
+	if (!span) return;
+
+	var numClimbed = globalPeakInfo.numClimbed;
+	var numPeaks = globalPeakInfo.numPeaks;
+
+	if (suspendedHidden()) {
+		numClimbed -= globalPeakInfo.numSuspendedClimbed;
+		numPeaks -= globalPeakInfo.numSuspended;
+	}
+
+	var text = '(' + numClimbed + '/' + numPeaks + ')';
+	if (span.firstChild)
+		span.firstChild.nodeValue = text;
+	else
+		span.appendChild(document.createTextNode(text));
+}
+function updateSuspendedCount()
+{
+	var span = document.getElementById('suspendedCountSpan');
+	if (!span) return;
+
+	var text = '(' + globalPeakInfo.numSuspended + ')';
+	if (span.firstChild)
+		span.firstChild.nodeValue = text;
+	else
+		span.appendChild(document.createTextNode(text));
+}
+function addSuspended()
+{
+	for (var item of suspendedPeaks)
+	{
+		var row = item[0];
+		var nextSibling = item[1];
+		var firstColumn = row.children[0];
+		if (firstColumn.rowSpan === 2)
+		{
+			var row2 = extraRow[firstColumn.id];
+			nextSibling.parentNode.insertBefore(row2, nextSibling);
+			nextSibling = row2;
+		}
+		nextSibling.parentNode.insertBefore(row, nextSibling);
+	}
+}
+function removeSuspended()
+{
+	for (var item of suspendedPeaks)
+	{
+		var row = item[0];
+		var firstColumn = row.children[0];
+		if (firstColumn.rowSpan === 2)
+			row.parentNode.removeChild(extraRow[firstColumn.id]);
+
+		row.parentNode.removeChild(row);
+	}
+}
+function toggleSuspended()
+{
+	if (suspendedHidden())
+		addSuspended();
+	else
+		removeSuspended();
+
+	updateClimbedCount();
+}
 function changeColors()
 {
 	var colorMenu = document.getElementById('colorMenu');
@@ -435,29 +530,35 @@ function changeColors()
 }
 function addClickHandlers()
 {
-	var checkbox;
-
-	checkbox = document.getElementById('toggleLandColumn');
-	checkbox.checked = landColumnArray.length === 0;
-	checkbox.addEventListener('click', toggleLandColumn, false);
+	var checkbox = document.getElementById('toggleLandColumn');
+	if (checkbox) {
+		checkbox.checked = landColumnArray.length === 0;
+		checkbox.addEventListener('click', toggleLandColumn, false);
+	}
 
 	checkbox = document.getElementById('toggleClimbedColumn');
-	checkbox.checked = climbedColumnArray.length === 0;
-	checkbox.addEventListener('click', toggleClimbedColumn, false);
+	if (checkbox) {
+		checkbox.checked = climbedColumnArray.length === 0;
+		checkbox.addEventListener('click', toggleClimbedColumn, false);
+	}
+
+	checkbox = document.getElementById('toggleSuspended');
+	if (checkbox) {
+		checkbox.checked = !suspendedHidden();
+		checkbox.addEventListener('click', toggleSuspended, false);
+	}
 
 	var colorMenu = document.getElementById('colorMenu');
-	var numColors = colorMenu.options.length;
-	var color = getPeakTableClass(0);
-	for (var i = 0; i < numColors; ++i)
-		if (colorMenu.options[i].value === color) {
-			colorMenu.selectedIndex = i;
-			break;
-		}
-	colorMenu.addEventListener('change', changeColors, false);
-	window.removeEventListener('DOMContentLoaded', addClickHandlers, false);
+	if (colorMenu) {
+		var color = getPeakTableClass(0);
+		for (var option of colorMenu.options)
+			if (option.value === color) {
+				colorMenu.selectedIndex = option.index;
+				break;
+			}
+		colorMenu.addEventListener('change', changeColors, false);
+	}
 }
-window.addEventListener('DOMContentLoaded', addClickHandlers, false);
-
 function showLegend()
 {
 	var legend = document.getElementById('legend');
@@ -468,3 +569,4 @@ function hideLegend()
 	var legend = document.getElementById('legend');
 	legend.style.display = 'none';
 }
+window.addEventListener('DOMContentLoaded', decorateTable, false);
