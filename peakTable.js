@@ -230,6 +230,11 @@ function createMapLinkBox(latCommaLong, inCalifornia)
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
 		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong);
 
+	addMapLink(listNode, 'USGS Elevation Point Query',
+		'https://nationalmap.gov/epqs/pqs.php'
+		+ '?x=' + latLong[1]
+		+ '&y=' + latLong[0] + '&units=Feet&output=json');
+
 	addMapLink(listNode, 'USGS National Map (Basic)',
 		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=15&bbox='
 		+ latLong[1] + ',' + latLong[0] + ','
