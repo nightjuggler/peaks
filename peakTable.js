@@ -1,4 +1,4 @@
-/* globals document, window */
+/* globals document, Option, window */
 "use strict";
 
 var radiansPerDegree = Math.PI / 180.0; // 0.017453292519943295
@@ -142,8 +142,6 @@ var mapLinkIconUp = '\u25B2';
 var mapLinkIconDown = '\u25BC';
 var mapLinkHash = {};
 var extraRow = {};
-var isCAPeak = function(peakId) { return true; };
-var isUSPeak = function(peakId) { return true; };
 var landColumnArray = [];
 var climbedColumnArray = [];
 var suspendedPeaks = [];
@@ -153,7 +151,73 @@ var globalPeakInfo = {
 	numSuspended: 0,
 	numSuspendedClimbed: 0,
 };
+var peakLists = [
+	{
+		id: 'dps',
+		name: 'Desert Peaks Section',
+		isCAPeak: function(peakId) { return Number(peakId.split('.')[0]) < 6; },
+		// Don't bother excepting 1.3 (Boundary Peak) and 2.12 (Grapevine Peak) (both in Nevada)
+		isUSPeak: function(peakId) { return Number(peakId.split('.')[0]) < 9; },
+	},
+	{
+		id: 'gbp',
+		name: 'Great Basin Peaks List',
+		isCAPeak: function(peakId) { return peakId.substr(0, 2) === '1.'; },
+	},
+	{
+		id: 'npc',
+		name: 'Nevada Peaks Club',
+		// isSierraPeak: Don't bother excepting Mount Rose (3.1)
+	},
+	{
+		id: 'sps',
+		name: 'Sierra Peaks Section',
+		isCAPeak: function() { return true; }, // Don't bother excepting Mount Rose (24.4)
+		isSierraPeak: function() { return true; },
+	},
+];
+function getPeakListId()
+{
+	var i, path = window.location.pathname;
 
+	if (path.substr(-5) === '.html' && (i = path.lastIndexOf('/')) >= 0)
+		return path.substr(i + 1, path.length - i - 6);
+
+	return null;
+}
+function initPeakListMenu()
+{
+	var id = getPeakListId();
+	var returnTrue = function() { return true; };
+	var returnFalse = function() { return false; };
+
+	var menu = document.getElementById('peakListMenu');
+	if (menu)
+		menu.addEventListener('change', function() {
+			var path = menu.options[menu.selectedIndex].value + '.html';
+			var href = window.location.href;
+
+			window.location = href.substr(0, href.lastIndexOf('/') + 1) + path;
+		}, false);
+
+	for (var pl of peakLists)
+	{
+		var selected = pl.id === id;
+		if (menu)
+			menu.add(new Option(pl.name, pl.id, selected, selected));
+		if (selected)
+		{
+			if (!pl.isCAPeak)
+				pl.isCAPeak = returnFalse;
+			if (!pl.isSierraPeak)
+				pl.isSierraPeak = returnFalse;
+			if (!pl.isUSPeak)
+				pl.isUSPeak = returnTrue;
+
+			globalPeakInfo.peakList = pl;
+		}
+	}
+}
 function nextNode(node, nodeName)
 {
 	while (node !== null && node.nodeName !== nodeName)
@@ -176,7 +240,7 @@ function addMapLink(listNode, linkText, url)
 	listItem.appendChild(linkNode);
 	listNode.appendChild(listItem);
 }
-function createMapLinkBox(latCommaLong, inCalifornia)
+function createMapLinkBox(latCommaLong, peakId)
 {
 	var latLong = latCommaLong.split(',');
 	var latitude = Number(latLong[0]);
@@ -184,7 +248,7 @@ function createMapLinkBox(latCommaLong, inCalifornia)
 
 	var listNode = document.createElement('UL');
 
-	if (inCalifornia)
+	if (globalPeakInfo.peakList.isCAPeak(peakId))
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
 			'http://www.calands.org/map?simple=true&base=topo&y=' + latLong[0] + '&x=' +
 			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
@@ -195,7 +259,7 @@ function createMapLinkBox(latCommaLong, inCalifornia)
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
 
-	if (window.location.pathname.substr(-9) === '/sps.html')
+	if (globalPeakInfo.peakList.isSierraPeak(peakId))
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
 
@@ -271,7 +335,7 @@ function addMapLinkBox(mapLinkSpan)
 	var mapLink = nextNode(secondColumn.firstChild, 'A');
 	var latCommaLong = mapLink.search.split('&')[0].split('=')[1];
 
-	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, isCAPeak(peakId)));
+	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakId));
 }
 function showMapLinkBox(event)
 {
@@ -336,6 +400,9 @@ function peakTableFirstRow()
 function decorateTable()
 {
 	var g = globalPeakInfo;
+
+	initPeakListMenu();
+	var isUSPeak = g.peakList.isUSPeak;
 
 	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
