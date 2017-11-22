@@ -2,6 +2,20 @@
 import re
 import sys
 
+class FormatError(Exception):
+	def __init__(self, message, *formatArgs):
+		self.message = message.format(*formatArgs)
+
+class InputFile(file):
+	def __init__(self, fileName):
+		self.lineNumber = 0
+		super(InputFile, self).__init__(fileName)
+
+	def next(self):
+		line = super(InputFile, self).next()
+		self.lineNumber += 1
+		return line
+
 peakLists = {}
 peakListParams = {
 	'sps': {
@@ -19,8 +33,14 @@ peakListParams = {
 	'gbp': {
 		'geojsonTitle': 'Great Basin Peaks',
 		'numColumns': 13,
-		'numPeaks': 13,
+		'numPeaks': 15,
 		'numSections': 12,
+	},
+	'npc': {
+		'geojsonTitle': 'Nevada Peaks Club',
+		'numColumns': 13,
+		'numPeaks': 19,
+		'numSections': 6,
 	},
 }
 
@@ -41,6 +61,12 @@ class PeakList(object):
 	def sps(self):
 		return self.id == 'SPS'
 
+	def readHTML(self):
+		try:
+			readHTML(self)
+		except FormatError as err:
+			sys.exit("[{}:{}] {}!".format(self.htmlFilename, self.htmlFile.lineNumber, err.message))
+
 class Peak(object):
 	def __init__(self):
 		self.id = ''
@@ -50,7 +76,7 @@ class Peak(object):
 		self.longitude = ''
 		self.zoom = ''
 		self.baseLayer = ''
-		self.elevation = ''
+		self.elevations = []
 		self.prominence = ''
 		self.prominenceLink = None
 		self.grade = ''
@@ -76,36 +102,27 @@ class Peak(object):
 		self.landManagement = None
 		self.suspended = False
 
+	def elevationHTML(self):
+		return '<br>'.join([e.html() for e in self.elevations])
+
 	def copyFrom(self, other):
 		doNotCopy = ('id', 'dataFrom', 'hasHtmlId', 'isEmblem', 'isMtneer', 'suspended')
 
 		if other.dataFrom is not None:
 			sys.exit("{} should not have the data-from attribute!".format(self.dataFrom))
 
-		for k, v in other.__dict__.iteritems():
+		for k, v in vars(other).iteritems():
 			if not (k[0] == '_' or k in doNotCopy):
-				self.__dict__[k] = v
+				setattr(self, k, v)
 
-def badLine(lineNumber):
-	sys.exit("Line {0} doesn't match expected pattern!".format(lineNumber))
+def badLine():
+	raise FormatError("Line doesn't match expected pattern")
 
-def badSuffix(lineNumber):
-	sys.exit("Suffix and class don't match on line {0}".format(lineNumber))
+def badSuffix():
+	raise FormatError("Suffix and class don't match")
 
-def badClimbed(lineNumber):
-	sys.exit("Climbed column doesn't match class on line {0}".format(lineNumber))
-
-def badSection(lineNumber):
-	sys.exit("Unexpected section number on line {0}".format(lineNumber))
-
-def badWxLatLong(lineNumber):
-	sys.exit("Peak lat/long doesn't match WX lat/long on line {0}".format(lineNumber))
-
-def badLandMgmt(lineNumber):
-	sys.exit("Land management column doesn't match class on line {0}".format(lineNumber))
-
-def badGrade(lineNumber):
-	sys.exit("Summit grade must be greater than approach grade on line {0}".format(lineNumber))
+def badClimbed():
+	raise FormatError("Climbed column doesn't match class")
 
 def parseClasses(peak, classNames):
 	if classNames is None:
@@ -213,18 +230,17 @@ landOrder = {
 	'landNPS':      8,
 }
 
-def parseLandManagement(pl, peak, lineNumber, htmlFile):
-	line = htmlFile.next()
-	lineNumber += 1
+def parseLandManagement(pl, peak):
+	line = pl.htmlFile.next()
 
 	if line[:4] != '<td>' or line[-6:] != '</td>\n':
-		badLine(lineNumber)
+		badLine()
 	line = line[4:-6]
 
 	if peak.nonUS:
 		if line == '&nbsp;':
-			return lineNumber
-		badLine(lineNumber)
+			return
+		badLine()
 
 	landList = []
 	landClass = None
@@ -232,7 +248,7 @@ def parseLandManagement(pl, peak, lineNumber, htmlFile):
 	while True:
 		m = landMgmtPattern.match(line)
 		if m is None:
-			badLine(lineNumber)
+			badLine()
 
 		landLink, landName, landHP, landName2 = m.groups()
 		line = line[m.end():]
@@ -249,8 +265,7 @@ def parseLandManagement(pl, peak, lineNumber, htmlFile):
 			elif landClass is None or landClass == 'landBLM':
 				landClass = 'landBLMW'
 			if landLink is not None and wildernessPattern.match(landLink) is None:
-				e = "Wilderness URL doesn't match expected pattern on line {}"
-				sys.exit(e.format(lineNumber))
+				raise FormatError("Wilderness URL doesn't match expected pattern")
 		else:
 			currentClass = landNameLookup.get(landName)
 			if currentClass is None:
@@ -264,30 +279,26 @@ def parseLandManagement(pl, peak, lineNumber, htmlFile):
 							currentClass = prefixClass
 							break
 					else:
-						e = "Unrecognized land management name on line {}"
-						sys.exit(e.format(lineNumber))
+						raise FormatError("Unrecognized land management name")
 
 			if currentClass.startswith('land'):
 				linkPattern = landLinkPattern.get(currentClass)
 				if linkPattern is not None:
 					if landLink is None or linkPattern.match(landLink) is None:
-						e = "Land management URL doesn't match expected pattern on line {}"
-						sys.exit(e.format(lineNumber))
+						raise FormatError("Land management URL doesn't match expected pattern")
 
 				if landClass is None:
 					landClass = currentClass
 				elif landOrder[landClass] < landOrder[currentClass]:
-					e = "Unexpected order of land management areas on line {}"
-					sys.exit(e.format(lineNumber))
+					raise FormatError("Unexpected order of land management areas")
 
 			elif not (landList and currentClass == landList[-1][1]):
-				e = '"{}" must follow "{}" on line {}'
-				sys.exit(e.format(landName, currentClass, lineNumber))
+				raise FormatError('"{}" must follow "{}"', landName, currentClass)
 
 		if landName in pl.landMgmtAreas:
 			errorMsg = pl.landMgmtAreas[landName].add(peak, landLink, landHP is not None)
 			if errorMsg:
-				sys.exit("{} for {} on line {}".format(errorMsg, landName, lineNumber))
+				raise FormatError("{} for {}", errorMsg, landName)
 		else:
 			pl.landMgmtAreas[landName] = LandMgmtArea(peak, landLink, landHP is not None)
 
@@ -297,16 +308,15 @@ def parseLandManagement(pl, peak, lineNumber, htmlFile):
 		if line == '':
 			break
 		if line[:4] != '<br>':
-			badLine(lineNumber)
+			badLine()
 		line = line[4:]
 
 	if peak.landClass != landClass:
-		badLandMgmt(lineNumber)
+		raise FormatError("Land management column doesn't match class")
 	peak.landManagement = '<br>'.join([
 		'<a href="{}">{}</a>{}'.format(landLink, landName, landHP) if landLink
 		else landName + landHP
 		for (landLink, landName, landHP) in landList])
-	return lineNumber
 
 def printLandManagementAreas(pl):
 	for name, area in sorted(pl.landMgmtAreas.iteritems()):
@@ -315,87 +325,172 @@ def printLandManagementAreas(pl):
 			area.highPoint.name if area.highPoint else '-',
 			area.url if area.url else '-')
 
-ngsLinkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
-topoLinkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
-topoLinkPattern = re.compile('^([A-Z][A-Z])/(\\1_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_[0-9]{6}_([0-9]{4})_([0-9]{5})\\.jpg$')
-elevFromNGS = re.compile('^([0-9]{4}(?:\\.[0-9]{1,2})?)m \\(NAVD 88\\) NGS Data Sheet &quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
-elevFromTopo = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\')) \\((MSL|NGVD 29)\\) USGS (7\\.5|15)\' Quad \\(1:([0-9]{2}),([0-9]{3})\\) &quot;([\\. A-Za-z]+), ([A-Z][A-Z])&quot; \\(([0-9]{4})(?:/[0-9]{4})?\\)$')
-contourIntervals = (10, 20, 40, 80)
+def toFeet(meters, delta=0.5):
+	return int(meters / 0.3048 + delta)
 
-def checkElevationTooltip(e, lineNumber):
-	if e.link.startswith(ngsLinkPrefix):
-		m = elevFromNGS.match(e.tooltip)
-		if m is None or e.link[len(ngsLinkPrefix):] != m.group(2):
-			badLine(lineNumber)
-		elevation = int(float(m.group(1)) / 0.3048 + 0.49)
-		elevation = '{},{:03}'.format(*divmod(elevation, 1000))
-		if elevation != e.elevation:
-			sys.exit("Elevation in tooltip doesn't match on line {}".format(lineNumber))
-		return
-	if e.link.startswith(topoLinkPrefix):
-		m = elevFromTopo.match(e.tooltip)
+class NGSDataSheet(object):
+	sources = {}
+	toFeetDelta = 0.488
+	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
+	tooltipPattern = re.compile('^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet &quot;([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?)&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
+
+	def __init__(self, name, id):
+		self.id = id
+		self.name = name
+		self.vdatum = 'NAVD 88'
+		self.linkSuffix = id
+
+	def __str__(self):
+		return "NGS Data Sheet &quot;{}&quot; ({})".format(self.name, self.id)
+
+	def setMeters(self):
+		self.inMeters = True
+
+class USGSTopo(object):
+	sources = {}
+	toFeetDelta = 0.5
+	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
+	linkPattern = re.compile('^([A-Z]{2})/\\1_([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_([0-9]{6})_([0-9]{4})_(24000|62500|250000)\\.jpg$')
+	tooltipPattern = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|60)\' Quad \\(1:(24,000|62,500|250,000)\\) &quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
+
+	quadScale = {'7.5': '24,000', '15': '62,500', '60': '250,000'}
+	quadVDatum = {'7.5': ('NGVD 29',), '15': ('MSL', 'NGVD 29'), '60': (None,)}
+
+	def __init__(self, vdatum, series, scale, name, state, year):
+		self.vdatum = vdatum
+		self.series = series
+		self.scale = scale
+		self.name = name
+		self.state = state
+		self.year = year
+
+		if scale != self.quadScale[series]:
+			raise FormatError("Scale doesn't match {}' quad", series)
+		if vdatum not in self.quadVDatum[series]:
+			if vdatum is None:
+				raise FormatError("Missing vertical datum for {}' quad", series)
+			raise FormatError("Unexpected vertical datum ({}) for {}' quad", vdatum, series)
+
+		self.linkSuffix = None
+		self.inMeters = False
+		self.contourInterval = None
+
+	def setLinkSuffix(self, linkSuffix):
+		m = self.linkPattern.match(linkSuffix)
 		if m is None:
-			badLine(lineNumber)
-		elevation, vdatum, quad, scale1, scale2, quadName, state, year = m.groups()
-		scale = scale1 + scale2
-		if quad == '7.5' and scale != '24000' or quad == '15' and scale != '62500':
-			badLine(lineNumber)
-		quadName = quadName.replace('.', '')
-		quadName = quadName.replace(' ', '%20')
-		quadName = state + '_' + quadName
-		m = topoLinkPattern.match(e.link[len(topoLinkPrefix):])
-		if m is None:
-			sys.exit("Topo URL doesn't match expected pattern on line {}".format(lineNumber))
-		if quadName != m.group(2) or year != m.group(3) or scale != m.group(4):
-			sys.exit("Quad name, year, or scale doesn't match topo URL on line {}".format(lineNumber))
-		unit = elevation[-1]
-		elevation = elevation[:-1]
-		if '-' in elevation:
-			elevation, elevationMax = elevation.split('-')
-			elevationMin = int(elevation)
-			elevationMax = int(elevationMax)
-			interval = elevationMax - elevationMin + 1
-			if interval not in contourIntervals or elevationMin % interval != 0:
-				sys.exit("Elevation range in tooltip not valid on line {}".format(lineNumber))
-			suffix = '+'
-		else:
-			suffix = ''
-		if unit == 'm':
-			elevation = int(float(elevation) / 0.3048 + 0.5)
-		else:
-			elevation = int(elevation)
-		elevation = '{},{:03}'.format(*divmod(elevation, 1000)) + suffix
-		if elevation != e.elevation:
-			sys.exit("Elevation in tooltip doesn't match on line {}".format(lineNumber))
-		return
-	badLine(lineNumber)
+			raise FormatError("Elevation link suffix doesn't match expected pattern")
+		self.id = m.group(3)
+
+		self.linkSuffix = "{0}/{0}_{1}_{2}_{3}_{4}{5}.jpg".format(
+			self.state,
+			self.name.replace('.', '').replace(' ', '%20'),
+			self.id,
+			self.year[:4],
+			self.scale[:-4],
+			self.scale[-3:])
+
+	def __str__(self):
+		return "USGS {}' Quad (1:{}) &quot;{}, {}&quot; ({})".format(
+			self.series, self.scale, self.name, self.state, self.year)
+
+	def setMeters(self):
+		if self.series != '7.5':
+			raise FormatError("Unexpected elevation in meters on {}' quad", self.series)
+		self.inMeters = True
+
+	def setContourInterval(self, interval):
+		if self.series != '7.5':
+			raise FormatError("Unexpected elevation range on {}' quad", self.series)
+		self.contourInterval = interval
+
+def parseElevationTooltip(e, link, tooltip):
+	for sourceClass in (NGSDataSheet, USGSTopo):
+		if link.startswith(sourceClass.linkPrefix):
+			m = sourceClass.tooltipPattern.match(tooltip)
+			if m is None:
+				raise FormatError("Tooltip doesn't match expected pattern")
+			e.source = sourceClass(*m.groups()[1:])
+			linkSuffix = link[len(sourceClass.linkPrefix):]
+			if e.source.linkSuffix is None:
+				e.source.setLinkSuffix(linkSuffix)
+			if linkSuffix != e.source.linkSuffix:
+				raise FormatError("Elevation link suffix doesn't match")
+			if not e.checkTooltipElevation(m.group(1)):
+				raise FormatError("Elevation in tooltip doesn't match")
+			return
+
+	raise FormatError("Unrecognized elevation link")
 
 class Elevation(object):
 	pattern1 = re.compile('^([0-9]{1,2},[0-9]{3}\\+?)')
 	pattern2 = re.compile('^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">([- &\'(),\\.:;/0-9A-Za-z]+)(?:(</div></span>)|$)')
 
-	def __init__(self, elevation, link=None, tooltip=None):
-		self.elevation = elevation
-		self.link = link
-		self.tooltip = tooltip
+	def __init__(self, elevation):
+		self.isRange = elevation[-1] == '+'
+		if self.isRange:
+			elevation = elevation[:-1]
+		self.elevationFeet = int(elevation[:-4] + elevation[-3:])
+		self.elevationMeters = None
 		self.extraLines = ''
+		self.source = None
+
+	def getElevation(self):
+		return '{},{:03}'.format(*divmod(self.elevationFeet, 1000)) + ('+' if self.isRange else '')
+
+	def getTooltip(self):
+		src = self.source
+
+		if self.elevationMeters is None:
+			elevation, suffix = self.elevationFeet, "'"
+		else:
+			elevation, suffix = self.elevationMeters, "m"
+
+		tooltip = [str(elevation), suffix, " ", str(src)]
+
+		if src.vdatum is not None:
+			tooltip[2:2] = [" (", src.vdatum, ")"]
+		if self.isRange:
+			tooltip[1:1] = ["-", str(elevation + src.contourInterval - 1)]
+
+		return ''.join(tooltip)
 
 	def html(self):
-		if self.link is None:
-			return self.elevation
+		if self.source is None:
+			return self.getElevation()
 
-		return '<span><a href="{}">{}</a><div class="tooltip">{}{}</div></span>'.format(
-			self.link, self.elevation, self.tooltip, self.extraLines)
+		return '<span><a href="{}{}">{}</a><div class="tooltip">{}{}</div></span>'.format(
+			self.source.linkPrefix,
+			self.source.linkSuffix,
+			self.getElevation(), self.getTooltip(), self.extraLines)
 
-def parseElevation(peak, lineNumber, htmlFile):
-	line = htmlFile.next()
-	lineNumber += 1
+	def checkTooltipElevation(self, elevation):
+		inMeters = elevation[-1] == 'm'
+		elevation = elevation[:-1]
+		isRange = '-' in elevation
+		if isRange:
+			elevation, elevationMax = elevation.split('-')
+			elevationMin = int(elevation)
+			elevationMax = int(elevationMax)
+			interval = elevationMax - elevationMin + 1
+			contourIntervals = (10, 20) if inMeters else (20, 40)
+			if interval not in contourIntervals or elevationMin % interval != 0:
+				raise FormatError("Elevation range in tooltip not valid")
+			self.source.setContourInterval(interval)
+		if inMeters:
+			self.source.setMeters()
+			self.elevationMeters = float(elevation) if '.' in elevation else int(elevation)
+			elevation = toFeet(self.elevationMeters, self.source.toFeetDelta)
+		else:
+			elevation = int(elevation)
+
+		return elevation == self.elevationFeet and isRange == self.isRange
+
+def parseElevation(pl, peak):
+	line = pl.htmlFile.next()
 
 	if line[:4] != '<td>':
-		badLine(lineNumber)
+		badLine()
 	line = line[4:]
-
-	elevations = []
 
 	while True:
 		m = Elevation.pattern1.match(line)
@@ -405,14 +500,14 @@ def parseElevation(peak, lineNumber, htmlFile):
 		else:
 			m = Elevation.pattern2.match(line)
 			if m is None:
-				badLine(lineNumber)
+				badLine()
 
-			e = Elevation(m.group(2), m.group(1), m.group(3))
-			checkElevationTooltip(e, lineNumber)
+			e = Elevation(m.group(2))
+			parseElevationTooltip(e, m.group(1), m.group(3))
+
 			if m.group(4) is None:
 				e.extraLines = '\n'
-				for line in htmlFile:
-					lineNumber += 1
+				for line in pl.htmlFile:
 					if line.startswith('</div></span>'):
 						line = line[13:]
 						break
@@ -420,16 +515,13 @@ def parseElevation(peak, lineNumber, htmlFile):
 			else:
 				line = line[m.end():]
 
-		elevations.append(e)
+		peak.elevations.append(e)
 
 		if line == '</td>\n':
 			break
 		if line[:4] != '<br>':
-			badLine(lineNumber)
+			badLine()
 		line = line[4:]
-
-	peak.elevation = '<br>'.join([e.html() for e in elevations])
-	return lineNumber
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
@@ -452,25 +544,21 @@ def readHTML(pl):
 	emptyCell = '<td>&nbsp;</td>\n'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>\n'.format(pl.colspanMinus1)
 	extraRowLastLine = '</ul></td></tr>\n'
-	lineNumber = 0
 	dataFromList = []
 
-	htmlFile = open(pl.htmlFilename)
+	pl.htmlFile = htmlFile = InputFile(pl.htmlFilename)
 	for line in htmlFile:
-		lineNumber += 1
 		if line == tableLine:
 			break
 	for line in htmlFile:
-		lineNumber += 1
 		m = sectionRowPattern.match(line)
 		if m is not None:
 			pl.sections.append(m.group(2))
 			if int(m.group(1)) != len(pl.sections):
-				badSection(lineNumber)
+				raise FormatError("Unexpected section number")
 			pl.peaks.append([])
 			break
 	for line in htmlFile:
-		lineNumber += 1
 		m = peakRowPattern.match(line)
 		if m is not None:
 			peak = Peak()
@@ -478,35 +566,33 @@ def readHTML(pl):
 				peak.dataFrom = m.group(2)
 				dataFromList.append([peak, m.group(3), int(m.group(4)), int(m.group(5))])
 			if not parseClasses(peak, m.group(1)):
-				sys.exit("Bad class names on line {0}".format(lineNumber))
+				raise FormatError("Bad class names")
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = column1Pattern.match(line)
 			if m is None:
-				badLine(lineNumber)
+				badLine()
 			if m.group(2) is not None:
 				peak.extraRow = ''
 			peak.id = m.group(3)
 			if m.group(1) is not None:
 				if peak.id != m.group(1):
-					sys.exit("HTML ID doesn't match peak ID on line {0}".format(lineNumber))
+					raise FormatError("HTML ID doesn't match peak ID")
 				peak.hasHtmlId = True
 
 			sectionNumber, peakNumber = peak.id.split('.')
 			sectionNumber, peakNumber = int(sectionNumber), int(peakNumber)
 			if sectionNumber != len(pl.sections):
-				sys.exit("Peak ID doesn't match section number on line {0}".format(lineNumber))
+				raise FormatError("Peak ID doesn't match section number")
 			if peakNumber != len(pl.peaks[-1]) + 1:
-				sys.exit("Peak ID doesn't match peak number on line {0}".format(lineNumber))
+				raise FormatError("Peak ID doesn't match peak number")
 			if pl.id == 'DPS' and sectionNumber == 9:
 				peak.nonUS = True
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = column2Pattern.match(line)
 			if m is None:
-				badLine(lineNumber)
+				badLine()
 			peak.latitude = m.group(1)
 			peak.longitude = m.group(2)
 			peak.zoom = m.group(3)
@@ -517,138 +603,127 @@ def readHTML(pl):
 
 			if peak.nonUS:
 				if peak.baseLayer != 't1':
-					badLine(lineNumber)
+					badLine()
 			else:
 				if peak.baseLayer != 't4':
-					badLine(lineNumber)
+					badLine()
 
 			if suffix is None:
 				if peak.isEmblem or peak.isMtneer:
-					badSuffix(lineNumber)
+					badSuffix()
 			elif suffix == ' *':
 				if not peak.isMtneer:
-					badSuffix(lineNumber)
+					badSuffix()
 			elif suffix == ' **':
 				if not peak.isEmblem:
-					badSuffix(lineNumber)
+					badSuffix()
 			else:
 				peak.isHighPoint = True
 
-			lineNumber = parseLandManagement(pl, peak, lineNumber, htmlFile)
-			lineNumber = parseElevation(peak, lineNumber, htmlFile)
+			parseLandManagement(pl, peak)
+			parseElevation(pl, peak)
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = gradePattern.match(line)
 			if m is None:
-				badLine(lineNumber)
+				badLine()
 			peak.grade = m.group(1)
 			if len(peak.grade) > 1:
 				approachGrade, summitGrade = int(peak.grade[0]), int(peak.grade[2])
 				if approachGrade >= summitGrade:
-					badGrade(lineNumber)
+					raise FormatError("Summit grade must be greater than approach grade")
 				if summitGrade == 6 and peak.grade[-1] == '+':
-					sys.exit("Summit grade 6+ doesn't make sense on line {0}".format(lineNumber))
+					raise FormatError("Summit grade 6+ doesn't make sense")
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = prominencePattern1.match(line)
 			if m is not None:
 				peak.prominence = m.group(1)
 			else:
 				m = prominencePattern2.match(line)
 				if m is None:
-					badLine(lineNumber)
+					badLine()
 				peak.prominenceLink = m.group(1)
 				peak.prominence = m.group(2)
 
 			line = htmlFile.next()
-			lineNumber += 1
 			if line != emptyCell:
 				m = summitpostPattern.match(line)
 				if m is None:
-					badLine(lineNumber)
+					badLine()
 				peak.summitpostName = m.group(1)
 				peak.summitpostId = int(m.group(2))
 
 			line = htmlFile.next()
-			lineNumber += 1
 			if line != emptyCell:
 				m = wikipediaPattern.match(line)
 				if m is None:
-					badLine(lineNumber)
+					badLine()
 				peak.wikipediaLink = m.group(1)
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = bobBurdPattern.match(line)
 			if m is None:
-				badLine(lineNumber)
-			peak.bobBurdId = m.group(1)
+				if pl.id in ('DPS', 'SPS') or line != emptyCell:
+					badLine()
+			else:
+				peak.bobBurdId = m.group(1)
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = listsOfJohnPattern.match(line)
 			if m is None:
 				if not (peak.nonUS and line == emptyCell):
-					badLine(lineNumber)
+					badLine()
 			else:
 				peak.listsOfJohnId = m.group(1)
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = peakbaggerPattern.match(line)
 			if m is None:
-				badLine(lineNumber)
+				badLine()
 			peak.peakbaggerId = m.group(1)
 
 			if pl.sps():
 				line = htmlFile.next()
-				lineNumber += 1
 				if line != emptyCell:
 					m = peteYamagataPattern.match(line)
 					if m is None:
-						badLine(lineNumber)
+						badLine()
 					peak.peteYamagataId = m.group(1)
 
 			line = htmlFile.next()
-			lineNumber += 1
 			m = weatherPattern.match(line)
 			if m is None:
 				if not (peak.nonUS and line == emptyCell):
-					badLine(lineNumber)
+					badLine()
 			else:
 				wxLatitude = m.group(2)
 				wxLongitude = m.group(1)
 				if wxLatitude != peak.latitude or wxLongitude != peak.longitude:
-					badWxLatLong(lineNumber)
+					raise FormatError("Peak lat/long doesn't match WX lat/long")
 
 			line = htmlFile.next()
-			lineNumber += 1
 			if line == emptyCell:
 				if peak.isClimbed:
-					badClimbed(lineNumber)
+					badClimbed()
 			else:
 				m = climbedPattern.match(line)
 				if m is None:
-					badLine(lineNumber)
+					badLine()
 				if not peak.isClimbed:
-					badClimbed(lineNumber)
+					badClimbed()
 				climbDate, peak.climbPhotos, peak.climbDate, peak.climbWith = m.groups()
 				if peak.climbDate is None:
 					peak.climbDate = climbDate
 
 			line = htmlFile.next()
-			lineNumber += 1
 			if line != '</tr>\n':
-				badLine(lineNumber)
+				badLine()
 			if peak.extraRow is not None:
 				line = htmlFile.next()
-				lineNumber += 1
 				if line != extraRowFirstLine:
-					badLine(lineNumber)
+					badLine()
 				for line in htmlFile:
-					lineNumber += 1
 					if line == extraRowLastLine:
 						break
 					peak.extraRow += line
@@ -659,23 +734,23 @@ def readHTML(pl):
 			if m is not None:
 				pl.sections.append(m.group(2))
 				if int(m.group(1)) != len(pl.sections):
-					badSection(lineNumber)
+					raise FormatError("Unexpected section number")
 				pl.peaks.append([])
 			elif line == '</table>\n':
 				break
 			else:
-				badLine(lineNumber)
+				badLine()
 	htmlFile.close()
 	if sum([len(peaks) for peaks in pl.peaks]) != pl.numPeaks:
-		sys.exit("Number of peaks in HTML file is not {}.".format(pl.numPeaks))
+		raise FormatError("Number of peaks in HTML file is not {}", pl.numPeaks)
 	if len(pl.sections) != pl.numSections:
-		sys.exit("Number of sections in HTML file is not {}.".format(pl.numSections))
+		raise FormatError("Number of sections in HTML file is not {}", pl.numSections)
 
 	for peak, pl2Id, numSection, numPeak in dataFromList:
 		pl2 = peakLists.get(pl2Id)
 		if pl2 is None:
 			pl2 = PeakList(pl2Id.lower())
-			readHTML(pl2)
+			pl2.readHTML()
 		peak.copyFrom(pl2.peaks[numSection - 1][numPeak - 1])
 
 def writeHTML(pl):
@@ -693,7 +768,7 @@ def writeHTML(pl):
 	emptyCell = '<td>&nbsp;</td>'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.colspanMinus1)
 	extraRowLastLine = '</ul></td></tr>'
-	section1Line = sectionFormat.format(pl.id, 1, pl.sections[0]) + '\n';
+	section1Line = sectionFormat.format(pl.id, 1, pl.sections[0]) + '\n'
 
 	htmlFile = open(pl.htmlFilename)
 	for line in htmlFile:
@@ -752,7 +827,7 @@ def writeHTML(pl):
 			else:
 				print '<td>{}</td>'.format(peak.landManagement)
 
-			print '<td>{}</td>'.format(peak.elevation)
+			print '<td>{}</td>'.format(peak.elevationHTML())
 			print '<td>Class {}</td>'.format(peak.grade)
 
 			if peak.prominenceLink is None:
@@ -770,7 +845,10 @@ def writeHTML(pl):
 			else:
 				print wikipediaFormat.format(peak.wikipediaLink)
 
-			print bobBurdFormat.format(peak.bobBurdId)
+			if peak.bobBurdId is None:
+				print emptyCell
+			else:
+				print bobBurdFormat.format(peak.bobBurdId)
 
 			if peak.listsOfJohnId is None:
 				print emptyCell
@@ -864,7 +942,7 @@ def writePeakJSON(f, peak):
 		f('\t\t\t"noWX": true,\n')
 
 	f('\t\t\t"elev": "')
-	f(peak.elevation.replace('"', '\\"').replace('\n', '\\n'))
+	f(peak.elevationHTML().replace('"', '\\"').replace('\n', '\\n'))
 	f('"\n\t\t}}')
 
 def writeJSON(pl):
@@ -898,8 +976,8 @@ def main():
 	args = parser.parse_args()
 
 	pl = PeakList(args.inputMode)
+	pl.readHTML()
 
-	readHTML(pl)
 	if args.outputMode == 'html':
 		writeHTML(pl)
 	elif args.outputMode == 'json':
