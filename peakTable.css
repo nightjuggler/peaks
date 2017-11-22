@@ -196,3 +196,10 @@ select {
 	display: inline-block;
 	text-align: center;
 }
+.abbr1 {
+	font-size: 8pt;
+}
+.abbr2 {
+	display: inline-block;
+	font-size: 9pt;
+}
