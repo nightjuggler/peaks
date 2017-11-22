@@ -7,9 +7,6 @@
 <link rel="stylesheet" href="tooltip.css">
 <script src="tooltip.js"></script>
 <script src="peakTable.js"></script>
-<script>
-var isCAPeak = function(peakId) { return peakId.substr(0, 2) === '1.'; };
-</script>
 <base href="https://nightjuggler.com/nature/">
 <link rel="icon" href="https://nightjuggler.com/logo/pilogo.ico">
 </head>
@@ -19,9 +16,10 @@ var isCAPeak = function(peakId) { return peakId.substr(0, 2) === '1.'; };
 | <a href="index.html">Nature</a>
 | <a href="BayArea.html">Bay Area</a>
 | <a href="Ventana.html">Big Sur</a>
-| <a href="desert.html">Desert</a> (<a href="dps.html">DPS</a>, GBP)
-| <a href="index.html#Sierra">Sierra</a> (<a href="sps.html">SPS</a>)
-</b>
+| <a href="desert.html">Desert</a>
+| <a href="index.html#Sierra">Sierra</a>
+| </b>
+<select id="peakListMenu"></select>
 
 <p><table id="peakTable" class="land landColumn">
 <tr class="section"><td id="header" colspan="13">
@@ -275,10 +273,40 @@ aka Glass Mountain-North Peak
 </tr>
 <tr class="section"><td id="GBP2" colspan="13">2. Northwest Nevada &mdash; Washoe County</td></tr>
 <tr class="section"><td id="GBP3" colspan="13">3. Northwest Nevada &mdash; Humboldt and Pershing Counties</td></tr>
+<tr class="landBLM">
+<td>3.1</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.52248,-118.17079&z=15&t=t4">Star Peak</a></td>
+<td>BLM Winnemucca</td>
+<td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=LS0554">9,840</a><div class="tooltip">2999.1m (NAVD 88) NGS Data Sheet &quot;Star Peak Reset&quot; (LS0554)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Star%20Peak_320168_1987_24000.jpg">9,836</a><div class="tooltip">9836' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Star Peak, NV&quot; (1987)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Imlay_321010_1956_62500.jpg">9,834</a><div class="tooltip">9834' (NGVD 29) USGS 15' Quad (1:62,500) &quot;Imlay, NV&quot; (1956)</div></span></td>
+<td>Class 1</td>
+<td>5,400</td>
+<td><a href="http://www.summitpost.org/star-peak/152140">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Star_Peak_(Nevada)">W</a></td>
+<td><a href="http://www.snwburd.com/dayhikes/peak/9726">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/16704">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=3442">Pb</a></td>
+<td><a href="http://forecast.weather.gov/MapClick.php?lon=-118.17079&lat=40.52248">WX</a></td>
+<td>&nbsp;</td>
+</tr>
 <tr class="section"><td id="GBP4" colspan="13">4. West-Central Nevada &mdash; Carson City, Douglas County, and Storey County</td></tr>
 <tr class="section"><td id="GBP5" colspan="13">5. West-Central Nevada &mdash; Churchill, Mineral, and Esmeralda Counties</td></tr>
 <tr class="section"><td id="GBP6" colspan="13">6. Central Nevada &mdash; Eureka, Lander, and Nye Counties</td></tr>
 <tr class="section"><td id="GBP7" colspan="13">7. Northeast Nevada &mdash; Elko County</td></tr>
+<tr class="landFSW">
+<td>7.1</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.02374,-115.10473&z=15&t=t4">Greys Peak</a></td>
+<td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="http://www.wilderness.net/NWPS/wildView?WID=173">East Humboldts Wilderness</a></td>
+<td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=MT0817">10,676</a><div class="tooltip">3254.2m (NAVD 88) NGS Data Sheet &quot;Grays&quot; (MT0817)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Welcome_320508_1967_24000.jpg">10,674</a><div class="tooltip">10674' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Welcome, NV&quot; (1967)</div></span></td>
+<td>Class 2</td>
+<td>714</td>
+<td><a href="http://www.summitpost.org/greys-peak-nevada/688513">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Greys_Peak">W</a></td>
+<td><a href="http://www.snwburd.com/dayhikes/peak/10223">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/40787">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=24369">Pb</a></td>
+<td><a href="http://forecast.weather.gov/MapClick.php?lon=-115.10473&lat=41.02374">WX</a></td>
+<td>&nbsp;</td>
+</tr>
 <tr class="section"><td id="GBP8" colspan="13">8. East-Central Nevada &mdash; White Pine County</td></tr>
 <tr class="section"><td id="GBP9" colspan="13">9. Southeast Nevada &mdash; Clark and Lincoln Counties</td></tr>
 <tr class="section"><td id="GBP10" colspan="13">10. Oregon</td></tr>
@@ -302,7 +330,15 @@ aka Glass Mountain-North Peak
 <div class="lab">Pb</div> Peakbagger (.com)<br>
 <div class="lab">SP</div> Summit Post (.org)<br>
 <div class="lab">W</div> Wikipedia (.org)<br>
-<div class="lab">WX</div> Weather (.gov)
+<div class="lab">WX</div> Weather (.gov)<br>
+
+<div class="lab abbr1">NAVD 88</div>
+<div class="abbr2"><a href="https://en.wikipedia.org/wiki/North_American_Vertical_Datum_of_1988">North American Vertical Datum of 1988</a></div><br>
+<div class="lab abbr1">NGS</div>
+<div class="abbr2"><a href="https://en.wikipedia.org/wiki/U.S._National_Geodetic_Survey">National Geodetic Survey</a></div><br>
+<div class="lab abbr1">NGVD 29</div>
+<div class="abbr2"><a href="https://en.wikipedia.org/wiki/Sea_Level_Datum_of_1929">National Geodetic Vertical Datum of 1929</a></div><br>
+
 <div class="wide section"><div id="closeLegend" onclick="hideLegend()">CLOSE</div></div>
 </div>
 
