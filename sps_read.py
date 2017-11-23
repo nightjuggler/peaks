@@ -58,7 +58,6 @@ class PeakList(object):
 		self.id = id.upper()
 		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
 		self.colspan = str(self.numColumns)
-		self.colspanMinus1 = str(self.numColumns - 1)
 		self.peaks = []
 		self.sections = []
 		self.landMgmtAreas = {}
@@ -581,10 +580,22 @@ def printElevationStats():
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
+def addSection(pl, m):
+	id, sectionNumber, colspan, sectionName = m.groups()
+	if id != pl.id:
+		raise FormatError("Section row ID prefix doesn't match peak list ID")
+	if colspan != pl.colspan:
+		raise FormatError("Section row colspan doesn't match expected value")
+
+	pl.sections.append(sectionName)
+	if int(sectionNumber) != len(pl.sections):
+		raise FormatError("Unexpected section number")
+	pl.peaks.append([])
+
 def readHTML(pl):
-	sectionRowPattern = re.compile('^<tr class="section"><td id="' + pl.id + '([0-9]+)" colspan="' + pl.colspan + '">\\1\\. ([- &,;A-Za-z]+)</td></tr>$')
+	sectionRowPattern = re.compile('^<tr class="section"><td id="([A-Z]+)([0-9]+)" colspan="([0-9]+)">\\2\\. ([- &,;A-Za-z]+)</td></tr>$')
 	peakRowPattern = re.compile('^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?(?: data-from="(([A-Z]+)([0-9]+)\\.([0-9]+))")?>$')
-	column1Pattern = re.compile('^<td(?: id="' + pl.id + '([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
+	column1Pattern = re.compile('^<td(?: id="([A-Z]+)([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
 	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$')
 	gradePattern = re.compile('^<td>Class ([123456](?:s[23456]\\+?)?)</td>$')
 	prominencePattern1 = re.compile('^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$')
@@ -597,8 +608,9 @@ def readHTML(pl):
 	peteYamagataPattern = re.compile('^<td><a href="http://www\\.petesthousandpeaks\\.com/Captions/nspg/([a-z]+)\\.html">PY</a></td>$')
 	weatherPattern = re.compile('^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$')
 	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$')
+
 	emptyCell = '<td>&nbsp;</td>\n'
-	extraRowFirstLine = '<tr><td colspan="{}"><ul>\n'.format(pl.colspanMinus1)
+	extraRowFirstLine = '<tr><td colspan="{}"><ul>\n'.format(pl.numColumns - 1)
 	extraRowLastLine = '</ul></td></tr>\n'
 	dataFromList = []
 
@@ -609,10 +621,7 @@ def readHTML(pl):
 	for line in htmlFile:
 		m = sectionRowPattern.match(line)
 		if m is not None:
-			pl.sections.append(m.group(2))
-			if int(m.group(1)) != len(pl.sections):
-				raise FormatError("Unexpected section number")
-			pl.peaks.append([])
+			addSection(pl, m)
 			break
 	for line in htmlFile:
 		m = peakRowPattern.match(line)
@@ -628,12 +637,13 @@ def readHTML(pl):
 			m = column1Pattern.match(line)
 			if m is None:
 				badLine()
-			if m.group(2) is not None:
+			htmlListId, htmlPeakId, extraRow, peakId = m.groups()
+			if extraRow is not None:
 				peak.extraRow = ''
-			peak.id = m.group(3)
-			if m.group(1) is not None:
-				if peak.id != m.group(1):
-					raise FormatError("HTML ID doesn't match peak ID")
+			peak.id = peakId
+			if htmlPeakId is not None:
+				if pl.id != htmlListId or peak.id != htmlPeakId:
+					raise FormatError("HTML ID doesn't match peak ID and/or peak list ID")
 				peak.hasHtmlId = True
 
 			sectionNumber, peakNumber = peak.id.split('.')
@@ -788,31 +798,26 @@ def readHTML(pl):
 		else:
 			m = sectionRowPattern.match(line)
 			if m is not None:
-				pl.sections.append(m.group(2))
-				if int(m.group(1)) != len(pl.sections):
-					raise FormatError("Unexpected section number")
-				pl.peaks.append([])
+				addSection(pl, m)
 			elif line == '</table>\n':
 				break
 			else:
 				badLine()
 	htmlFile.close()
 	if sum([len(peaks) for peaks in pl.peaks]) != pl.numPeaks:
-		raise FormatError("Number of peaks in HTML file is not {}", pl.numPeaks)
+		raise FormatError("Number of peaks is not {}", pl.numPeaks)
 	if len(pl.sections) != pl.numSections:
-		raise FormatError("Number of sections in HTML file is not {}", pl.numSections)
+		raise FormatError("Number of sections is not {}", pl.numSections)
 
-	for peak, pl2Id, numSection, numPeak in dataFromList:
+	for peak, pl2Id, sectionNumber, peakNumber in dataFromList:
 		pl2 = peakLists.get(pl2Id)
 		if pl2 is None:
 			pl2 = PeakList(pl2Id.lower())
 			pl2.readHTML()
-		peak.copyFrom(pl2.peaks[numSection - 1][numPeak - 1])
+		peak.copyFrom(pl2.peaks[sectionNumber - 1][peakNumber - 1])
 
 def writeHTML(pl):
-	oldColspan = ' colspan="' + pl.colspan + '"'
-	newColspan = ' colspan="' + pl.colspan + '"'
-	sectionFormat = '<tr class="section"><td id="{0}{1}"' + newColspan + '>{1}. {2}</td></tr>'
+	sectionFormat = '<tr class="section"><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
 	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},-{}&z={}&t={}">{}</a>{}{}</td>'
 	summitpostFormat = '<td><a href="http://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
@@ -821,10 +826,11 @@ def writeHTML(pl):
 	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
 	peteYamagataFormat = '<td><a href="http://www.petesthousandpeaks.com/Captions/nspg/{0}.html">PY</a></td>'
 	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon=-{0}&lat={1}">WX</a></td>'
+
 	emptyCell = '<td>&nbsp;</td>'
-	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.colspanMinus1)
+	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.numColumns - 1)
 	extraRowLastLine = '</ul></td></tr>'
-	section1Line = sectionFormat.format(pl.id, 1, pl.sections[0]) + '\n'
+	section1Line = sectionFormat.format(pl.id, 1, pl.colspan, pl.sections[0]) + '\n'
 
 	htmlFile = open(pl.htmlFilename)
 	for line in htmlFile:
@@ -834,11 +840,10 @@ def writeHTML(pl):
 	for line in htmlFile:
 		if line == section1Line:
 			break
-		line = line.replace(oldColspan, newColspan)
 		print line,
 
 	for sectionNumber, (sectionName, peaks) in enumerate(zip(pl.sections, pl.peaks)):
-		print sectionFormat.format(pl.id, sectionNumber + 1, sectionName)
+		print sectionFormat.format(pl.id, sectionNumber + 1, pl.colspan, sectionName)
 
 		for peak in peaks:
 			suffix = ''
