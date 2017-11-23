@@ -42,6 +42,13 @@ peakListParams = {
 		'numPeaks': 19,
 		'numSections': 6,
 	},
+	'osp': {
+		'baseFilename': 'OtherSierraPeaks',
+		'geojsonTitle': 'Other Sierra Peaks',
+		'numColumns': 14,
+		'numPeaks': 12,
+		'numSections': 24,
+	},
 }
 
 class PeakList(object):
@@ -49,7 +56,7 @@ class PeakList(object):
 		self.__dict__.update(peakListParams[id])
 
 		self.id = id.upper()
-		self.htmlFilename = id + '.html'
+		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
 		self.colspan = str(self.numColumns)
 		self.colspanMinus1 = str(self.numColumns - 1)
 		self.peaks = []
@@ -57,9 +64,6 @@ class PeakList(object):
 		self.landMgmtAreas = {}
 
 		peakLists[self.id] = self
-
-	def sps(self):
-		return self.id == 'SPS'
 
 	def readHTML(self):
 		try:
@@ -339,12 +343,23 @@ class NGSDataSheet(object):
 		self.name = name
 		self.vdatum = 'NAVD 88'
 		self.linkSuffix = id
+		self.inMeters = True
 
 	def __str__(self):
 		return "NGS Data Sheet &quot;{}&quot; ({})".format(self.name, self.id)
 
-	def setMeters(self):
-		self.inMeters = True
+	def setUnits(self, inMeters):
+		if not inMeters:
+			raise FormatError("Elevation from NGS Data Sheet expected to be in meters")
+
+	def addPeak(self, peak):
+		src = self.sources.setdefault(self.id, self)
+		if src is self:
+			self.peak = peak
+			return
+
+		raise FormatError("NGS Data Sheet ID {} referenced {} peak", self.id,
+			"more than once by the same" if src.peak is peak else "by more than one")
 
 class USGSTopo(object):
 	sources = {}
@@ -372,7 +387,6 @@ class USGSTopo(object):
 			raise FormatError("Unexpected vertical datum ({}) for {}' quad", vdatum, series)
 
 		self.linkSuffix = None
-		self.inMeters = False
 		self.contourInterval = None
 
 	def setLinkSuffix(self, linkSuffix):
@@ -393,15 +407,34 @@ class USGSTopo(object):
 		return "USGS {}' Quad (1:{}) &quot;{}, {}&quot; ({})".format(
 			self.series, self.scale, self.name, self.state, self.year)
 
-	def setMeters(self):
-		if self.series != '7.5':
+	def setUnits(self, inMeters):
+		if inMeters and self.series != '7.5':
 			raise FormatError("Unexpected elevation in meters on {}' quad", self.series)
-		self.inMeters = True
+		self.inMeters = inMeters
 
 	def setContourInterval(self, interval):
 		if self.series != '7.5':
 			raise FormatError("Unexpected elevation range on {}' quad", self.series)
 		self.contourInterval = interval
+
+	def addPeak(self, peak):
+		src = self.sources.setdefault(self.id, self)
+		if src is self:
+			self.peaks = [peak]
+			return
+
+		if src.contourInterval is None:
+			if self.contourInterval is not None:
+				src.contourInterval = self.contourInterval
+		elif self.contourInterval is None:
+			self.contourInterval = src.contourInterval
+		self.peaks = src.peaks
+
+		if vars(self) != vars(src):
+			raise FormatError("Topos with ID {} don't match", self.id)
+
+		peak.elevations[-1].source = src
+		src.peaks.append(peak)
 
 def parseElevationTooltip(e, link, tooltip):
 	for sourceClass in (NGSDataSheet, USGSTopo):
@@ -430,8 +463,6 @@ class Elevation(object):
 		if self.isRange:
 			elevation = elevation[:-1]
 		self.elevationFeet = int(elevation[:-4] + elevation[-3:])
-		self.elevationMeters = None
-		self.extraLines = ''
 		self.source = None
 
 	def getElevation(self):
@@ -440,10 +471,10 @@ class Elevation(object):
 	def getTooltip(self):
 		src = self.source
 
-		if self.elevationMeters is None:
-			elevation, suffix = self.elevationFeet, "'"
-		else:
+		if src.inMeters:
 			elevation, suffix = self.elevationMeters, "m"
+		else:
+			elevation, suffix = self.elevationFeet, "'"
 
 		tooltip = [str(elevation), suffix, " ", str(src)]
 
@@ -465,6 +496,7 @@ class Elevation(object):
 
 	def checkTooltipElevation(self, elevation):
 		inMeters = elevation[-1] == 'm'
+		self.source.setUnits(inMeters)
 		elevation = elevation[:-1]
 		isRange = '-' in elevation
 		if isRange:
@@ -477,7 +509,6 @@ class Elevation(object):
 				raise FormatError("Elevation range in tooltip not valid")
 			self.source.setContourInterval(interval)
 		if inMeters:
-			self.source.setMeters()
 			self.elevationMeters = float(elevation) if '.' in elevation else int(elevation)
 			elevation = toFeet(self.elevationMeters, self.source.toFeetDelta)
 		else:
@@ -496,6 +527,7 @@ def parseElevation(pl, peak):
 		m = Elevation.pattern1.match(line)
 		if m is not None:
 			e = Elevation(m.group(1))
+			peak.elevations.append(e)
 			line = line[m.end():]
 		else:
 			m = Elevation.pattern2.match(line)
@@ -504,6 +536,9 @@ def parseElevation(pl, peak):
 
 			e = Elevation(m.group(2))
 			parseElevationTooltip(e, m.group(1), m.group(3))
+			peak.elevations.append(e)
+			if peak.dataFrom is None:
+				e.source.addPeak(peak)
 
 			if m.group(4) is None:
 				e.extraLines = '\n'
@@ -513,15 +548,36 @@ def parseElevation(pl, peak):
 						break
 					e.extraLines += line
 			else:
+				e.extraLines = ''
 				line = line[m.end():]
-
-		peak.elevations.append(e)
 
 		if line == '</td>\n':
 			break
 		if line[:4] != '<br>':
 			badLine()
 		line = line[4:]
+
+def printElevationStats():
+	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
+
+	for id, src in sorted(NGSDataSheet.sources.iteritems()):
+		peak = src.peak
+		name = peak.name
+		if peak.isHighPoint:
+			name += ' HP'
+		if peak.otherName is not None:
+			name += ' ({})'.format(peak.otherName)
+		print '{} ({}) {}'.format(id, src.name, name)
+
+	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
+
+	for id, src in sorted(USGSTopo.sources.iteritems()):
+		numRefs = len(src.peaks)
+		numPeaks = len(set(src.peaks))
+
+		print '{}  {:>3}  {:>7}  {} {:20} {:9}  {}/{}{}'.format(id,
+			src.series, src.scale, src.state, src.name, src.year,
+			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
@@ -683,7 +739,7 @@ def readHTML(pl):
 				badLine()
 			peak.peakbaggerId = m.group(1)
 
-			if pl.sps():
+			if pl.id == 'SPS':
 				line = htmlFile.next()
 				if line != emptyCell:
 					m = peteYamagataPattern.match(line)
@@ -857,7 +913,7 @@ def writeHTML(pl):
 
 			print peakbaggerFormat.format(peak.peakbaggerId)
 
-			if pl.sps():
+			if pl.id == 'SPS':
 				if peak.peteYamagataId is None:
 					print emptyCell
 				else:
@@ -972,7 +1028,7 @@ def main():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inputMode', nargs='?', default='sps', choices=sorted(peakListParams.keys()))
-	parser.add_argument('outputMode', nargs='?', default='html', choices=['html', 'json', 'land'])
+	parser.add_argument('outputMode', nargs='?', default='html', choices=['elev', 'html', 'json', 'land'])
 	args = parser.parse_args()
 
 	pl = PeakList(args.inputMode)
@@ -984,6 +1040,8 @@ def main():
 		writeJSON(pl)
 	elif args.outputMode == 'land':
 		printLandManagementAreas(pl)
+	elif args.outputMode == 'elev':
+		printElevationStats()
 
 if __name__ == '__main__':
 	main()
