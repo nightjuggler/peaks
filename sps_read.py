@@ -335,7 +335,9 @@ class NGSDataSheet(object):
 	sources = {}
 	toFeetDelta = 0.488
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
-	tooltipPattern = re.compile('^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet &quot;([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?)&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
+	tooltipPattern = re.compile(
+		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
+		'&quot;([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?)&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, id):
 		self.id = id
@@ -364,8 +366,13 @@ class USGSTopo(object):
 	sources = {}
 	toFeetDelta = 0.5
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
-	linkPattern = re.compile('^([A-Z]{2})/\\1_([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_([0-9]{6})_([0-9]{4})_(24000|62500|250000)\\.jpg$')
-	tooltipPattern = re.compile('^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|60)\' Quad \\(1:(24,000|62,500|250,000)\\) &quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
+	linkPattern = re.compile(
+		'^([A-Z]{2})/\\1_([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_'
+		'([0-9]{6})_([0-9]{4})_(24000|62500|250000)\\.jpg$')
+	tooltipPattern = re.compile(
+		'^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
+		'(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|60)\' Quad \\(1:(24,000|62,500|250,000)\\) '
+		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
 
 	quadScale = {'7.5': '24,000', '15': '62,500', '60': '250,000'}
 	quadVDatum = {'7.5': ('NGVD 29',), '15': ('MSL', 'NGVD 29'), '60': (None,)}
@@ -455,7 +462,9 @@ def parseElevationTooltip(e, link, tooltip):
 
 class Elevation(object):
 	pattern1 = re.compile('^([0-9]{1,2},[0-9]{3}\\+?)')
-	pattern2 = re.compile('^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a><div class="tooltip">([- &\'(),\\.:;/0-9A-Za-z]+)(?:(</div></span>)|$)')
+	pattern2 = re.compile(
+		'^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a>'
+		'<div class="tooltip">([- &\'(),\\.:;/0-9A-Za-z]+)(?:(</div></span>)|$)')
 
 	def __init__(self, elevation):
 		self.isRange = elevation[-1] == '+'
@@ -592,23 +601,62 @@ def addSection(pl, m):
 		raise FormatError("Unexpected section number")
 	pl.peaks.append([])
 
-def readHTML(pl):
-	sectionRowPattern = re.compile('^<tr class="section"><td id="([A-Z]+)([0-9]+)" colspan="([0-9]+)">\\2\\. ([- &,;A-Za-z]+)</td></tr>$')
-	peakRowPattern = re.compile('^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?(?: data-from="(([A-Z]+)([0-9]+)\\.([0-9]+))")?>$')
-	column1Pattern = re.compile('^<td(?: id="([A-Z]+)([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$')
-	column2Pattern = re.compile('^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?ll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$')
-	gradePattern = re.compile('^<td>Class ([123456](?:s[23456]\\+?)?)</td>$')
-	prominencePattern1 = re.compile('^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$')
-	prominencePattern2 = re.compile('^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$')
-	summitpostPattern = re.compile('^<td><a href="http://www\\.summitpost\\.org/([-a-z]+)/([0-9]+)">SP</a></td>$')
-	wikipediaPattern = re.compile('^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()%0-9A-Za-z]+)">W</a></td>$')
-	bobBurdPattern = re.compile('^<td><a href="http://www\\.snwburd\\.com/dayhikes/peak/([0-9]+)">BB</a></td>$')
-	listsOfJohnPattern = re.compile('^<td><a href="https://listsofjohn\\.com/peak/([0-9]+)">LoJ</a></td>$')
-	peakbaggerPattern = re.compile('^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$')
-	peteYamagataPattern = re.compile('^<td><a href="http://www\\.petesthousandpeaks\\.com/Captions/nspg/([a-z]+)\\.html">PY</a></td>$')
-	weatherPattern = re.compile('^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$')
-	climbedPattern = re.compile('^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$')
+class RE(object):
+	sectionRow = re.compile(
+		'^<tr class="section">'
+		'<td id="([A-Z]+)([0-9]+)" colspan="([0-9]+)">'
+		'\\2\\. ([- &,;A-Za-z]+)</td></tr>$'
+	)
+	peakRow = re.compile(
+		'^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?'
+		'(?: data-from="(([A-Z]+)([0-9]+)\\.([0-9]+))")?>$'
+	)
+	column1 = re.compile(
+		'^<td(?: id="([A-Z]+)([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$'
+	)
+	column2 = re.compile(
+		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
+		'll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">'
+		'([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
+	)
+	grade = re.compile(
+		'^<td>Class ([123456](?:s[23456]\\+?)?)</td>$'
+	)
+	prominence1 = re.compile(
+		'^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$'
+	)
+	prominence2 = re.compile(
+		'^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$'
+	)
+	summitpost = re.compile(
+		'^<td><a href="http://www\\.summitpost\\.org/([-a-z]+)/([0-9]+)">SP</a></td>$'
+	)
+	wikipedia = re.compile(
+		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()%0-9A-Za-z]+)">W</a></td>$'
+	)
+	bobBurd = re.compile(
+		'^<td><a href="http://www\\.snwburd\\.com/dayhikes/peak/([0-9]+)">BB</a></td>$'
+	)
+	listsOfJohn = re.compile(
+		'^<td><a href="https://listsofjohn\\.com/peak/([0-9]+)">LoJ</a></td>$'
+	)
+	peakbagger = re.compile(
+		'^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$'
+	)
+	peteYamagata = re.compile(
+		'^<td><a href="http://www\\.petesthousandpeaks\\.com/Captions/nspg/([a-z]+)\\.html">PY</a></td>$'
+	)
+	weather = re.compile(
+		'^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?'
+		'lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$'
+	)
+	climbed = re.compile(
+		'^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|'
+		'(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">'
+		'([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$'
+	)
 
+def readHTML(pl):
 	emptyCell = '<td>&nbsp;</td>\n'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>\n'.format(pl.numColumns - 1)
 	extraRowLastLine = '</ul></td></tr>\n'
@@ -619,12 +667,12 @@ def readHTML(pl):
 		if line == tableLine:
 			break
 	for line in htmlFile:
-		m = sectionRowPattern.match(line)
+		m = RE.sectionRow.match(line)
 		if m is not None:
 			addSection(pl, m)
 			break
 	for line in htmlFile:
-		m = peakRowPattern.match(line)
+		m = RE.peakRow.match(line)
 		if m is not None:
 			peak = Peak()
 			if m.group(2) is not None:
@@ -634,7 +682,7 @@ def readHTML(pl):
 				raise FormatError("Bad class names")
 
 			line = htmlFile.next()
-			m = column1Pattern.match(line)
+			m = RE.column1.match(line)
 			if m is None:
 				badLine()
 			htmlListId, htmlPeakId, extraRow, peakId = m.groups()
@@ -646,8 +694,7 @@ def readHTML(pl):
 					raise FormatError("HTML ID doesn't match peak ID and/or peak list ID")
 				peak.hasHtmlId = True
 
-			sectionNumber, peakNumber = peak.id.split('.')
-			sectionNumber, peakNumber = int(sectionNumber), int(peakNumber)
+			sectionNumber, peakNumber = map(int, peak.id.split('.'))
 			if sectionNumber != len(pl.sections):
 				raise FormatError("Peak ID doesn't match section number")
 			if peakNumber != len(pl.peaks[-1]) + 1:
@@ -656,7 +703,7 @@ def readHTML(pl):
 				peak.nonUS = True
 
 			line = htmlFile.next()
-			m = column2Pattern.match(line)
+			m = RE.column2.match(line)
 			if m is None:
 				badLine()
 			peak.latitude = m.group(1)
@@ -690,7 +737,7 @@ def readHTML(pl):
 			parseElevation(pl, peak)
 
 			line = htmlFile.next()
-			m = gradePattern.match(line)
+			m = RE.grade.match(line)
 			if m is None:
 				badLine()
 			peak.grade = m.group(1)
@@ -702,11 +749,11 @@ def readHTML(pl):
 					raise FormatError("Summit grade 6+ doesn't make sense")
 
 			line = htmlFile.next()
-			m = prominencePattern1.match(line)
+			m = RE.prominence1.match(line)
 			if m is not None:
 				peak.prominence = m.group(1)
 			else:
-				m = prominencePattern2.match(line)
+				m = RE.prominence2.match(line)
 				if m is None:
 					badLine()
 				peak.prominenceLink = m.group(1)
@@ -714,7 +761,7 @@ def readHTML(pl):
 
 			line = htmlFile.next()
 			if line != emptyCell:
-				m = summitpostPattern.match(line)
+				m = RE.summitpost.match(line)
 				if m is None:
 					badLine()
 				peak.summitpostName = m.group(1)
@@ -722,13 +769,13 @@ def readHTML(pl):
 
 			line = htmlFile.next()
 			if line != emptyCell:
-				m = wikipediaPattern.match(line)
+				m = RE.wikipedia.match(line)
 				if m is None:
 					badLine()
 				peak.wikipediaLink = m.group(1)
 
 			line = htmlFile.next()
-			m = bobBurdPattern.match(line)
+			m = RE.bobBurd.match(line)
 			if m is None:
 				if pl.id in ('DPS', 'SPS') or line != emptyCell:
 					badLine()
@@ -736,7 +783,7 @@ def readHTML(pl):
 				peak.bobBurdId = m.group(1)
 
 			line = htmlFile.next()
-			m = listsOfJohnPattern.match(line)
+			m = RE.listsOfJohn.match(line)
 			if m is None:
 				if not (peak.nonUS and line == emptyCell):
 					badLine()
@@ -744,7 +791,7 @@ def readHTML(pl):
 				peak.listsOfJohnId = m.group(1)
 
 			line = htmlFile.next()
-			m = peakbaggerPattern.match(line)
+			m = RE.peakbagger.match(line)
 			if m is None:
 				badLine()
 			peak.peakbaggerId = m.group(1)
@@ -752,13 +799,13 @@ def readHTML(pl):
 			if pl.id == 'SPS':
 				line = htmlFile.next()
 				if line != emptyCell:
-					m = peteYamagataPattern.match(line)
+					m = RE.peteYamagata.match(line)
 					if m is None:
 						badLine()
 					peak.peteYamagataId = m.group(1)
 
 			line = htmlFile.next()
-			m = weatherPattern.match(line)
+			m = RE.weather.match(line)
 			if m is None:
 				if not (peak.nonUS and line == emptyCell):
 					badLine()
@@ -773,7 +820,7 @@ def readHTML(pl):
 				if peak.isClimbed:
 					badClimbed()
 			else:
-				m = climbedPattern.match(line)
+				m = RE.climbed.match(line)
 				if m is None:
 					badLine()
 				if not peak.isClimbed:
@@ -796,7 +843,7 @@ def readHTML(pl):
 
 			pl.peaks[-1].append(peak)
 		else:
-			m = sectionRowPattern.match(line)
+			m = RE.sectionRow.match(line)
 			if m is not None:
 				addSection(pl, m)
 			elif line == '</table>\n':
