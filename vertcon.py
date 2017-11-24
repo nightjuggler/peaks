@@ -13,16 +13,15 @@ class Grid(object):
 			"minLng={}, maxLng={}, minLat={}, maxLat={})".format(
 			self.region, self.margin,
 			self.numLng, self.numLat,
-			self.minLng - 360, round(self.maxLng - 360, 2),
+			self.minLng, round(self.maxLng, 2),
 			self.minLat, round(self.maxLat, 2)))
 
 	def readHeader(self, f):
-		identLen = 56
 		ident = "vertCON{}.94".format(self.region)
-		ident += " " * (identLen - len(ident))
+		ident += " " * (56 - len(ident))
+		ident += "vertc2.0"
 
-		assert f.read(identLen) == ident
-		assert f.read(8) == "vertc2.0"
+		assert len(ident) == 64 and f.read(64) == ident
 
 		(self.numLng, self.numLat, numZ,
 			self.minLng, self.deltaLng,
@@ -31,7 +30,6 @@ class Grid(object):
 		assert 3 <= self.numLng <= 461
 		assert 3 <= self.numLat
 
-		self.minLng += 360
 		self.maxLng = self.minLng + self.deltaLng * (self.numLng - 1)
 		self.maxLat = self.minLat + self.deltaLat * (self.numLat - 1)
 
@@ -70,8 +68,8 @@ class Grid(object):
 		c = t2 - t1
 		d = t4 - t3 - t2 + t1
 
-		row = ygrid - float(irow)
-		col = xgrid - float(jcol)
+		row = ygrid - irow
+		col = xgrid - jcol
 
 		return a + b*col + c*row + d*col*row
 
@@ -87,7 +85,7 @@ class Vertcon(object):
 		return None
 
 	def getShift(self, lat, lng):
-		n = self.interpolate(lat, lng + 360)
+		n = self.interpolate(lat, lng)
 		if n is not None:
 			# The Fortran code does the following:
 			# n *= 0.001
