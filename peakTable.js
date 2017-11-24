@@ -151,7 +151,22 @@ var globalPeakInfo = {
 	numSuspended: 0,
 	numSuspendedClimbed: 0,
 };
-var peakLists = [
+function getPeakListId()
+{
+	var i, path = window.location.pathname;
+
+	if (path.substr(-5) === '.html' && (i = path.lastIndexOf('/')) >= 0)
+		return path.substr(i + 1, path.length - i - 6);
+
+	return null;
+}
+function initPeakListMenu()
+{
+	var id = getPeakListId();
+	var returnTrue = function() { return true; };
+	var returnFalse = function() { return false; };
+
+	var peakLists = [
 	{
 		id: 'dps',
 		name: 'Desert Peaks Section',
@@ -172,24 +187,16 @@ var peakLists = [
 	{
 		id: 'sps',
 		name: 'Sierra Peaks Section',
-		isCAPeak: function() { return true; }, // Don't bother excepting Mount Rose (24.4)
-		isSierraPeak: function() { return true; },
+		isCAPeak: returnTrue, // Don't bother excepting Mount Rose (24.4)
+		isSierraPeak: returnTrue,
 	},
-];
-function getPeakListId()
-{
-	var i, path = window.location.pathname;
-
-	if (path.substr(-5) === '.html' && (i = path.lastIndexOf('/')) >= 0)
-		return path.substr(i + 1, path.length - i - 6);
-
-	return null;
-}
-function initPeakListMenu()
-{
-	var id = getPeakListId();
-	var returnTrue = function() { return true; };
-	var returnFalse = function() { return false; };
+	{
+		id: 'osp',
+		name: 'Other Sierra Peaks',
+		isCAPeak: returnTrue,
+		isSierraPeak: returnTrue,
+	},
+	];
 
 	var menu = document.getElementById('peakListMenu');
 	if (menu)
@@ -274,6 +281,10 @@ function createMapLinkBox(latCommaLong, peakId)
 		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Areas&layers=2&transparent=true');
 
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
+
+	addMapLink(listNode, 'Interagency Elevation Inventory',
+		'https://coast.noaa.gov/inventory/index.html?layers=1&zoom=14&center='
+		+ latLong[1] + ',' + latLong[0] + '&basemap=esristreet');
 
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
 		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl'
@@ -376,8 +387,7 @@ function clickFirstColumn(event)
 	var row = firstColumn.parentNode;
 	var peakTable = row.parentNode;
 	var nextRow = nextNode(row.nextSibling, 'TR');
-	var peakId = firstColumn.id;
-	row = extraRow[peakId];
+	row = extraRow[firstColumn.id];
 	if (row.parentNode === null) {
 		peakTable.insertBefore(row, nextRow);
 		firstColumn.rowSpan = 2;
