@@ -43,10 +43,9 @@ peakListParams = {
 		'numSections': 6,
 	},
 	'osp': {
-		'baseFilename': 'OtherSierraPeaks',
 		'geojsonTitle': 'Other Sierra Peaks',
 		'numColumns': 14,
-		'numPeaks': 12,
+		'numPeaks': 3,
 		'numSections': 24,
 	},
 }
@@ -61,6 +60,7 @@ class PeakList(object):
 		self.peaks = []
 		self.sections = []
 		self.landMgmtAreas = {}
+		self.peteYamagata = self.id in ('SPS', 'OSP')
 
 		peakLists[self.id] = self
 
@@ -107,6 +107,14 @@ class Peak(object):
 
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
+
+	def matchElevation(self, *args):
+		results = []
+		for e in self.elevations:
+			result = e.match(*args)
+			if result:
+				results.append((e, result))
+		return results
 
 	def copyFrom(self, other):
 		doNotCopy = ('id', 'dataFrom', 'hasHtmlId', 'isEmblem', 'isMtneer', 'suspended')
@@ -524,6 +532,71 @@ class Elevation(object):
 
 		return elevation == self.elevationFeet and isRange == self.isRange
 
+	def match(self, feet, isRange=None):
+		if feet == self.elevationFeet:
+			if self.isRange:
+				if not isRange:
+					return "Range minimum (but not a range)"
+			elif isRange:
+				return "Range minimum (but not a range on my list)"
+			return True
+
+		if self.source is None:
+			if not (self.isRange and isRange is None):
+				return False
+
+			result = "Range average{2} if contour interval is {0} {1}"
+			for contour in (40, 20):
+				if feet == self.elevationFeet + contour/2:
+					return result.format(contour, "feet", "")
+
+			meters = round(self.elevationFeet * 0.3048)
+			for contour in (20, 10):
+				average = meters + contour/2
+				if feet == toFeet(average):
+					return result.format(contour, "meters", "")
+				if feet == toFeet(average, 0):
+					return result.format(contour, "meters", " rounded down")
+		elif self.isRange:
+			if isRange is not None:
+				return False
+
+			if self.source.inMeters:
+				average = self.elevationMeters + self.source.contourInterval/2
+				if feet == toFeet(average):
+					return True
+				if feet == toFeet(average, 0):
+					return "Range average rounded down"
+			else:
+				if feet == self.elevationFeet + self.source.contourInterval/2:
+					return True
+		elif self.source.inMeters:
+			if isRange:
+				return False
+
+			meters = self.elevationMeters
+			if isinstance(meters, float):
+				m = "{:.2f}".format(meters)
+				if m[-1] == '0' and m[-2] != '.':
+					m = m[:-1]
+
+				if feet == toFeet(round(meters)):
+					return "round(round({})/0.3048)".format(m)
+				if feet == toFeet(round(meters), 0):
+					return "roundDown(round({})/0.3048)".format(m)
+
+				if feet == toFeet(meters, 0):
+					return "roundDown({}/0.3048)".format(m)
+
+				if feet == toFeet(int(meters)):
+					return "round(roundDown({})/0.3048)".format(m)
+				if feet == toFeet(int(meters), 0):
+					return "roundDown(roundDown({})/0.3048)".format(m)
+			else:
+				if feet == toFeet(meters, 0):
+					return "roundDown({}/0.3048)".format(meters)
+		return False
+
 def parseElevation(pl, peak):
 	line = pl.htmlFile.next()
 
@@ -565,7 +638,7 @@ def parseElevation(pl, peak):
 			badLine()
 		line = line[4:]
 
-def printElevationStats():
+def printElevationStats(pl):
 	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
 
 	for id, src in sorted(NGSDataSheet.sources.iteritems()):
@@ -587,14 +660,12 @@ def printElevationStats():
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
-tableLine = '<p><table id="peakTable" class="land landColumn">\n'
-
 def addSection(pl, m):
 	id, sectionNumber, colspan, sectionName = m.groups()
 	if id != pl.id:
-		raise FormatError("Section row ID prefix doesn't match peak list ID")
+		raise FormatError('Expected id="{}{}" for section row', pl.id, len(pl.sections) + 1)
 	if colspan != pl.colspan:
-		raise FormatError("Section row colspan doesn't match expected value")
+		raise FormatError('Expected colspan="{}" for section row', pl.colspan)
 
 	pl.sections.append(sectionName)
 	if int(sectionNumber) != len(pl.sections):
@@ -617,7 +688,7 @@ class RE(object):
 	column2 = re.compile(
 		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
 		'll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">'
-		'([ \'#()0-9A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
+		'([ #&\'()0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456]\\+?)?)</td>$'
@@ -629,7 +700,7 @@ class RE(object):
 		'^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$'
 	)
 	summitpost = re.compile(
-		'^<td><a href="http://www\\.summitpost\\.org/([-a-z]+)/([0-9]+)">SP</a></td>$'
+		'^<td><a href="http://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
 	)
 	wikipedia = re.compile(
 		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()%0-9A-Za-z]+)">W</a></td>$'
@@ -655,6 +726,8 @@ class RE(object):
 		'(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">'
 		'([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$'
 	)
+
+tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
 def readHTML(pl):
 	emptyCell = '<td>&nbsp;</td>\n'
@@ -777,7 +850,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.bobBurd.match(line)
 			if m is None:
-				if pl.id in ('DPS', 'SPS') or line != emptyCell:
+				if line != emptyCell or pl.id in ('DPS', 'SPS'):
 					badLine()
 			else:
 				peak.bobBurdId = m.group(1)
@@ -785,7 +858,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.listsOfJohn.match(line)
 			if m is None:
-				if not (peak.nonUS and line == emptyCell):
+				if line != emptyCell or not (peak.nonUS or pl.id in ('OSP',)):
 					badLine()
 			else:
 				peak.listsOfJohnId = m.group(1)
@@ -793,10 +866,12 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.peakbagger.match(line)
 			if m is None:
-				badLine()
-			peak.peakbaggerId = m.group(1)
+				if line != emptyCell or pl.id not in ('OSP',):
+					badLine()
+			else:
+				peak.peakbaggerId = m.group(1)
 
-			if pl.id == 'SPS':
+			if pl.peteYamagata:
 				line = htmlFile.next()
 				if line != emptyCell:
 					m = RE.peteYamagata.match(line)
@@ -963,9 +1038,12 @@ def writeHTML(pl):
 			else:
 				print listsOfJohnFormat.format(peak.listsOfJohnId)
 
-			print peakbaggerFormat.format(peak.peakbaggerId)
+			if peak.peakbaggerId is None:
+				print emptyCell
+			else:
+				print peakbaggerFormat.format(peak.peakbaggerId)
 
-			if pl.id == 'SPS':
+			if pl.peteYamagata:
 				if peak.peteYamagataId is None:
 					print emptyCell
 				else:
@@ -1076,24 +1154,27 @@ def writeJSON(pl):
 	f(']\n')
 	f('}\n')
 
+def checkData(pl):
+	import sps_check
+	getattr(sps_check, 'check' + pl.id)(pl)
+
 def main():
+	outputFunction = {
+		'check': checkData,
+		'elev': printElevationStats,
+		'html': writeHTML,
+		'json': writeJSON,
+		'land': printLandManagementAreas,
+	}
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inputMode', nargs='?', default='sps', choices=sorted(peakListParams.keys()))
-	parser.add_argument('outputMode', nargs='?', default='html', choices=['elev', 'html', 'json', 'land'])
+	parser.add_argument('outputMode', nargs='?', default='html', choices=sorted(outputFunction.keys()))
 	args = parser.parse_args()
 
 	pl = PeakList(args.inputMode)
 	pl.readHTML()
-
-	if args.outputMode == 'html':
-		writeHTML(pl)
-	elif args.outputMode == 'json':
-		writeJSON(pl)
-	elif args.outputMode == 'land':
-		printLandManagementAreas(pl)
-	elif args.outputMode == 'elev':
-		printElevationStats()
+	outputFunction[args.outputMode](pl)
 
 if __name__ == '__main__':
 	main()
