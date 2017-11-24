@@ -2,16 +2,19 @@
 import math
 import struct
 
-def readInt(f):
-	return struct.unpack("<i", f.read(4))[0]
-def readFloat(f):
-	return struct.unpack("<f", f.read(4))[0]
-
 class Grid(object):
 	def __init__(self, region, margin):
 		self.region = region
 		self.margin = margin
 		self.read()
+
+	def __str__(self):
+		return ("Grid(region={}, margin={}, numLng={}, numLat={}, "
+			"minLng={}, maxLng={}, minLat={}, maxLat={})".format(
+			self.region, self.margin,
+			self.numLng, self.numLat,
+			self.minLng - 360, round(self.maxLng - 360, 2),
+			self.minLat, round(self.maxLat, 2)))
 
 	def readHeader(self, f):
 		identLen = 56
@@ -21,29 +24,16 @@ class Grid(object):
 		assert f.read(identLen) == ident
 		assert f.read(8) == "vertc2.0"
 
-		self.numLng = readInt(f)
-		self.numLat = readInt(f)
-		numZ = readInt(f)
-
-#		print "{}: numLng = {}, numLat = {}, numZ = {}".format(self.region,
-#			self.numLng, self.numLat, numZ)
-
-		self.minLng = readFloat(f)
-		self.deltaLng = readFloat(f)
-		self.minLat = readFloat(f)
-		self.deltaLat = readFloat(f)
-
-		self.minLng += 360
-		self.maxLng = self.minLng + self.deltaLng * (self.numLng - 1)
-		self.maxLat = self.minLat + self.deltaLat * (self.numLat - 1)
+		(self.numLng, self.numLat, numZ,
+			self.minLng, self.deltaLng,
+			self.minLat, self.deltaLat) = struct.unpack("<iiiffff", f.read(28))
 
 		assert 3 <= self.numLng <= 461
 		assert 3 <= self.numLat
 
-#		print "{}: latitude from {} to {}".format(self.region,
-#			self.minLat, round(self.maxLat, 2))
-#		print "{}: longitude from {} to {}".format(self.region,
-#			self.minLng - 360, round(self.maxLng - 360, 2))
+		self.minLng += 360
+		self.maxLng = self.minLng + self.deltaLng * (self.numLng - 1)
+		self.maxLat = self.minLat + self.deltaLat * (self.numLat - 1)
 
 	def read(self):
 		fileName = "data/vertcon/vertcon{}.94".format(self.region)
@@ -103,9 +93,7 @@ class Vertcon(object):
 			# n *= 0.001
 			# n = int(math.copysign(1.0, n) * (abs(n) + 0.0005) * 1000.0)
 			# n *= 0.001
-
 			n = int(round(n)) * 0.001
-
 		return n
 
 def main():
