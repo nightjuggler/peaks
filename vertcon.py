@@ -72,10 +72,10 @@ class Grid(object):
 		row = ygrid - row
 		col = xgrid - col
 
-		return round(t1 +
+		return round((t1 +
 			(t3 - t1) * col +
 			(t2 - t1) * row +
-			(t4 - t3 - t2 + t1) * col * row) * 0.001
+			(t4 - t3 - t2 + t1) * col * row) / 1000.0, 3)
 
 class Vertcon(object):
 	def __init__(self):
@@ -88,6 +88,16 @@ class Vertcon(object):
 				return grid.interpolate(lat, lng)
 		return None
 
+globalVertcon = None
+
+def getShift(*args):
+	global globalVertcon
+
+	if globalVertcon is None:
+		globalVertcon = Vertcon()
+
+	return globalVertcon.getShift(*args)
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
@@ -98,7 +108,7 @@ def main():
 	assert -90 <= args.latitude <= 90
 	assert -180 <= args.longitude <= 180
 
-	print Vertcon().getShift(args.latitude, args.longitude)
+	print getShift(args.latitude, args.longitude)
 
 if __name__ == "__main__":
 	main()
