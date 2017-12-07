@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import re
 import sys
+import vertcon
 
 class FormatError(Exception):
 	def __init__(self, message, *formatArgs):
@@ -20,32 +21,27 @@ peakLists = {}
 peakListParams = {
 	'sps': {
 		'geojsonTitle': 'Sierra Peaks',
-		'numColumns': 14,
 		'numPeaks': 248,
 		'numSections': 24,
 	},
 	'dps': {
 		'geojsonTitle': 'Desert Peaks',
-		'numColumns': 13,
 		'numPeaks': 99,
 		'numSections': 9,
 	},
 	'gbp': {
 		'geojsonTitle': 'Great Basin Peaks',
-		'numColumns': 13,
 		'numPeaks': 15,
 		'numSections': 12,
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numColumns': 13,
 		'numPeaks': 19,
 		'numSections': 6,
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numColumns': 14,
-		'numPeaks': 3,
+		'numPeaks': 20,
 		'numSections': 24,
 	},
 }
@@ -56,11 +52,11 @@ class PeakList(object):
 
 		self.id = id.upper()
 		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
-		self.colspan = str(self.numColumns)
+		self.sierraPeaks = id in ('osp', 'sps')
+		self.numColumns = 14 if self.sierraPeaks else 13
 		self.peaks = []
 		self.sections = []
 		self.landMgmtAreas = {}
-		self.peteYamagata = self.id in ('SPS', 'OSP')
 
 		peakLists[self.id] = self
 
@@ -80,8 +76,7 @@ class Peak(object):
 		self.zoom = ''
 		self.baseLayer = ''
 		self.elevations = []
-		self.prominence = ''
-		self.prominenceLink = None
+		self.prominences = []
 		self.grade = ''
 		self.summitpostId = None
 		self.summitpostName = None
@@ -89,10 +84,8 @@ class Peak(object):
 		self.bobBurdId = None
 		self.listsOfJohnId = None
 		self.peakbaggerId = None
-		self.peteYamagataId = None
-		self.climbDate = None
-		self.climbPhotos = None
-		self.climbWith = None
+		self.sierraColumn12 = None
+		self.climbed = None
 		self.extraRow = None
 		self.dataFrom = None
 		self.nonUS = False
@@ -660,12 +653,79 @@ def printElevationStats(pl):
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
+RE_Escape = re.compile('[\\' + '\\'.join('$()*+.?[]^') + ']')
+
+def toRegExp(spec, *args):
+	return re.compile('^' + RE_Escape.sub('\\\\\\g<0>', spec[:-1]).format(*args) + '$')
+
+class SimpleColumn(object):
+	def __init__(self, id):
+		self.id = id
+
+	def __str__(self):
+		return self.prefix + self.id + self.suffix
+
+	@classmethod
+	def match(self, line):
+		prefixLen = len(self.prefix)
+		suffixLen = len(self.suffix)
+
+		if line[:prefixLen] != self.prefix:
+			badLine()
+		if line[-suffixLen:] != self.suffix:
+			badLine()
+
+		m = self.pattern.match(line[prefixLen:-suffixLen])
+		if m is None:
+			badLine()
+
+		return self(m.group())
+
+class ColumnHPS(SimpleColumn):
+	prefix = '<td><a href="http://www.hundredpeaks.org/Peaks/'
+	suffix = '.html">HPS</a></td>\n'
+	pattern = re.compile('^[0-9]{2}[A-Z]$')
+
+class ColumnPY(SimpleColumn):
+	prefix = '<td><a href="http://www.petesthousandpeaks.com/Captions/nspg/'
+	suffix = '.html">PY</a></td>\n'
+	pattern = re.compile('^[a-z]+$')
+
+class ColumnVR(object):
+	spec = '<td><a href="http://vulgarianramblers.org/peak_detail.php?peak_name={}">{}</a></td>\n'
+	pattern = toRegExp(spec, '([-%0-9A-Za-z]+)', '((?:#[1-9][0-9]{0,2})|VR)')
+
+	def __init__(self, name, rank=None):
+		self.name = name
+		self.rank = rank
+
+	def __str__(self):
+		return self.spec.format(self.name,
+			'VR' if self.rank is None else '#' + str(self.rank))
+
+	@classmethod
+	def match(self, line):
+		m = self.pattern.match(line)
+		if m is None:
+			badLine()
+
+		name, rank = m.groups()
+
+		if rank == 'VR':
+			rank = None
+		else:
+			rank = int(rank[1:])
+			if rank > 147:
+				raise FormatError("Thirteener rank expected to be between 1 and 147")
+
+		return self(name, rank)
+
 def addSection(pl, m):
 	id, sectionNumber, colspan, sectionName = m.groups()
 	if id != pl.id:
 		raise FormatError('Expected id="{}{}" for section row', pl.id, len(pl.sections) + 1)
-	if colspan != pl.colspan:
-		raise FormatError('Expected colspan="{}" for section row', pl.colspan)
+	if colspan != str(pl.numColumns):
+		raise FormatError('Expected colspan="{}" for section row', pl.numColumns)
 
 	pl.sections.append(sectionName)
 	if int(sectionNumber) != len(pl.sections):
@@ -675,7 +735,7 @@ def addSection(pl, m):
 class RE(object):
 	sectionRow = re.compile(
 		'^<tr class="section">'
-		'<td id="([A-Z]+)([0-9]+)" colspan="([0-9]+)">'
+		'<td id="([A-Z]+)([0-9]+)" colspan="(1[0-9])">'
 		'\\2\\. ([- &,;A-Za-z]+)</td></tr>$'
 	)
 	peakRow = re.compile(
@@ -693,12 +753,10 @@ class RE(object):
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456]\\+?)?)</td>$'
 	)
-	prominence1 = re.compile(
-		'^<td>((?:[0-9]{1,2},)?[0-9]{3})</td>$'
-	)
-	prominence2 = re.compile(
-		'^<td><a href="([^"]+)">((?:[0-9]{1,2},)?[0-9]{3})</a></td>$'
-	)
+	prominence = re.compile('^[,0-9]+')
+	prominence1 = re.compile('^[1-9][0-9]{0,2}$')
+	prominence2 = re.compile('^[1-9][0-9]?,[0-9]{3}$')
+	prominenceTooltip = re.compile('^[- "&\'\\(\\)\\+,/0-9:;<=>A-Za-z]+$')
 	summitpost = re.compile(
 		'^<td><a href="http://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
 	)
@@ -714,18 +772,222 @@ class RE(object):
 	peakbagger = re.compile(
 		'^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$'
 	)
-	peteYamagata = re.compile(
-		'^<td><a href="http://www\\.petesthousandpeaks\\.com/Captions/nspg/([a-z]+)\\.html">PY</a></td>$'
-	)
 	weather = re.compile(
 		'^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?'
 		'lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$'
 	)
-	climbed = re.compile(
-		'^<td>(?:([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})|'
-		'(?:<a href="/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">'
-		'([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})</a>))(?: (solo|(?:with .+)))</td>$'
-	)
+	climbedDate = re.compile('^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}')
+	climbedLink = re.compile('^/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">')
+	climbedWithLink = re.compile('^(https?://[-\\./0-9A-Za-z]+)">')
+	climbedWithName = re.compile('^[A-Z][a-z]+(?: [A-Z][a-z]+)*')
+
+def parseClimbedWith(line):
+	climbedWith = []
+	lastName = False
+
+	while True:
+		photoLink = None
+		if line.startswith('<a href="'):
+			line = line[9:]
+			m = RE.climbedWithLink.match(line)
+			if m is None:
+				raise FormatError("Climbed-with link doesn't match expected pattern")
+			photoLink = m.group(1)
+			line = line[m.end():]
+
+		m = RE.climbedWithName.match(line)
+		if m is None:
+			raise FormatError("Climbed-with name doesn't match expected pattern")
+		name = m.group()
+		line = line[m.end():]
+		if photoLink is None:
+			climbedWith.append(name)
+		else:
+			if not line.startswith('</a>'):
+				raise FormatError("Expected </a> after climbed-with name")
+			line = line[4:]
+			climbedWith.append((name, photoLink))
+		if lastName:
+			break
+
+		if line.startswith(' and '):
+			if len(climbedWith) != 1:
+				badLine()
+			lastName = True
+			line = line[5:]
+		elif line.startswith(', and '):
+			if len(climbedWith) == 1:
+				badLine()
+			lastName = True
+			line = line[6:]
+		elif line.startswith(', '):
+			line = line[2:]
+		elif len(climbedWith) == 1:
+			break
+		else:
+			badLine()
+
+	return line, climbedWith
+
+def parseClimbed(line, htmlFile):
+	climbed = []
+
+	if not line.startswith('<td>'):
+		badLine()
+
+	while True:
+		line = line[4:]
+
+		photoLink = None
+		if line.startswith('<a href="'):
+			line = line[9:]
+			m = RE.climbedLink.match(line)
+			if m is None:
+				raise FormatError("Climbed date link doesn't match expected pattern")
+			photoLink = m.group(1)
+			line = line[m.end():]
+
+		m = RE.climbedDate.match(line)
+		if m is None:
+			raise FormatError("Climbed date doesn't match expected pattern")
+		date = m.group()
+		line = line[m.end():]
+		if photoLink is None:
+			climbedDate = date
+		else:
+			if not line.startswith('</a>'):
+				raise FormatErorr("Expected </a> after climbed date")
+			line = line[4:]
+			climbedDate = (date, photoLink)
+
+		if line.startswith(' solo'):
+			line = line[5:]
+			climbed.append((climbedDate, []))
+		elif line.startswith(' with '):
+			line, climbedWith = parseClimbedWith(line[6:])
+			climbed.append((climbedDate, climbedWith))
+		else:
+			raise FormatError("Expected 'solo' or 'with' after climbed date")
+
+		if line == '</td>\n':
+			break
+		if line == '\n':
+			line = htmlFile.next()
+			if line.startswith('<br>'):
+				continue
+		badLine()
+
+	return climbed
+
+def climbed2Html(climbed):
+	lines = []
+
+	for date, climbedWith in climbed:
+		line = []
+
+		if isinstance(date, str):
+			line.append(date)
+		else:
+			line.append('<a href="/photos/{1}">{0}</a>'.format(*date))
+
+		if climbedWith:
+			line.append('with')
+
+			names = []
+			for name in climbedWith:
+				if isinstance(name, str):
+					names.append(name)
+				else:
+					names.append('<a href="{1}">{0}</a>'.format(*name))
+			if len(names) > 2:
+				names = ', and '.join([', '.join(names[:-1]), names[-1]])
+			else:
+				names = ' and '.join(names)
+
+			line.append(names)
+		else:
+			line.append('solo')
+
+		lines.append(' '.join(line))
+
+	return '\n<br>'.join(lines)
+
+def parseProminence(line):
+	if not line.startswith('<td>'):
+		badLine()
+
+	prominences = []
+
+	while True:
+		line = line[4:]
+		tooltip = False
+		if line.startswith('<span>'):
+			line = line[6:]
+			tooltip = True
+
+		m = RE.prominence.match(line)
+		if m is None:
+			badLine()
+		prom = m.group()
+		line = line[m.end():]
+
+		if len(prom) < 4:
+			m = RE.prominence1.match(prom)
+			if m is None:
+				badLine()
+			prom = int(prom)
+		else:
+			m = RE.prominence2.match(prom)
+			if m is None:
+				badLine()
+			prom = int(prom[:-4]) * 1000 + int(prom[-3:])
+
+		if tooltip:
+			if not line.startswith('<div class="tooltip">'):
+				raise FormatError('Expected <div class="tooltip">')
+			line = line[21:]
+
+			i = line.find('</div>')
+			if i < 0:
+				badLine()
+
+			m = RE.prominenceTooltip.match(line[:i])
+			if m is None:
+				badLine()
+			tooltip = m.group()
+			line = line[m.end():]
+
+			if not line.startswith('</div></span>'):
+				raise FormatError('Expected </div></span>')
+			line = line[13:]
+
+			prominences.append((prom, tooltip))
+		else:
+			prominences.append(prom)
+
+		if not line.startswith('<br>'):
+			break
+
+	if not line == '</td>\n':
+		badLine()
+
+	return prominences
+
+def int2str(n):
+	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
+
+def prom2html(prominences):
+	lines = []
+
+	for prom in prominences:
+		if isinstance(prom, int):
+			html = int2str(prom)
+		else:
+			prom, tooltip = prom
+			html = '<span>{}<div class="tooltip">{}</div></span>'.format(int2str(prom), tooltip)
+		lines.append(html)
+
+	return '<br>'.join(lines)
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
@@ -822,15 +1084,7 @@ def readHTML(pl):
 					raise FormatError("Summit grade 6+ doesn't make sense")
 
 			line = htmlFile.next()
-			m = RE.prominence1.match(line)
-			if m is not None:
-				peak.prominence = m.group(1)
-			else:
-				m = RE.prominence2.match(line)
-				if m is None:
-					badLine()
-				peak.prominenceLink = m.group(1)
-				peak.prominence = m.group(2)
+			peak.prominences = parseProminence(line)
 
 			line = htmlFile.next()
 			if line != emptyCell:
@@ -871,13 +1125,11 @@ def readHTML(pl):
 			else:
 				peak.peakbaggerId = m.group(1)
 
-			if pl.peteYamagata:
+			if pl.sierraPeaks:
 				line = htmlFile.next()
 				if line != emptyCell:
-					m = RE.peteYamagata.match(line)
-					if m is None:
-						badLine()
-					peak.peteYamagataId = m.group(1)
+					peak.sierraColumn12 = (ColumnHPS if sectionNumber == 1 else
+						ColumnPY if sectionNumber > 22 else ColumnVR).match(line)
 
 			line = htmlFile.next()
 			m = RE.weather.match(line)
@@ -895,14 +1147,9 @@ def readHTML(pl):
 				if peak.isClimbed:
 					badClimbed()
 			else:
-				m = RE.climbed.match(line)
-				if m is None:
-					badLine()
+				peak.climbed = parseClimbed(line, htmlFile)
 				if not peak.isClimbed:
 					badClimbed()
-				climbDate, peak.climbPhotos, peak.climbDate, peak.climbWith = m.groups()
-				if peak.climbDate is None:
-					peak.climbDate = climbDate
 
 			line = htmlFile.next()
 			if line != '</tr>\n':
@@ -946,13 +1193,12 @@ def writeHTML(pl):
 	bobBurdFormat = '<td><a href="http://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
 	listsOfJohnFormat = '<td><a href="https://listsofjohn.com/peak/{0}">LoJ</a></td>'
 	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
-	peteYamagataFormat = '<td><a href="http://www.petesthousandpeaks.com/Captions/nspg/{0}.html">PY</a></td>'
 	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon=-{0}&lat={1}">WX</a></td>'
 
 	emptyCell = '<td>&nbsp;</td>'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.numColumns - 1)
 	extraRowLastLine = '</ul></td></tr>'
-	section1Line = sectionFormat.format(pl.id, 1, pl.colspan, pl.sections[0]) + '\n'
+	section1Line = sectionFormat.format(pl.id, 1, pl.numColumns, pl.sections[0]) + '\n'
 
 	htmlFile = open(pl.htmlFilename)
 	for line in htmlFile:
@@ -965,7 +1211,7 @@ def writeHTML(pl):
 		print line,
 
 	for sectionNumber, (sectionName, peaks) in enumerate(zip(pl.sections, pl.peaks)):
-		print sectionFormat.format(pl.id, sectionNumber + 1, pl.colspan, sectionName)
+		print sectionFormat.format(pl.id, sectionNumber + 1, pl.numColumns, sectionName)
 
 		for peak in peaks:
 			suffix = ''
@@ -1012,11 +1258,7 @@ def writeHTML(pl):
 
 			print '<td>{}</td>'.format(peak.elevationHTML())
 			print '<td>Class {}</td>'.format(peak.grade)
-
-			if peak.prominenceLink is None:
-				print '<td>{}</td>'.format(peak.prominence)
-			else:
-				print '<td><a href="{}">{}</a></td>'.format(peak.prominenceLink, peak.prominence)
+			print '<td>{}</td>'.format(prom2html(peak.prominences))
 
 			if peak.summitpostId is None:
 				print emptyCell
@@ -1043,11 +1285,11 @@ def writeHTML(pl):
 			else:
 				print peakbaggerFormat.format(peak.peakbaggerId)
 
-			if pl.peteYamagata:
-				if peak.peteYamagataId is None:
+			if pl.sierraPeaks:
+				if peak.sierraColumn12 is None:
 					print emptyCell
 				else:
-					print peteYamagataFormat.format(peak.peteYamagataId)
+					print str(peak.sierraColumn12),
 
 			if peak.nonUS:
 				print emptyCell
@@ -1055,11 +1297,7 @@ def writeHTML(pl):
 				print weatherFormat.format(peak.longitude, peak.latitude)
 
 			if peak.isClimbed:
-				if peak.climbPhotos is None:
-					print '<td>{} {}</td>'.format(peak.climbDate, peak.climbWith)
-				else:
-					print '<td><a href="/photos/{}">{}</a> {}</td>'.format(
-						peak.climbPhotos, peak.climbDate, peak.climbWith)
+				print '<td>{}</td>'.format(climbed2Html(peak.climbed))
 			else:
 				print emptyCell
 
@@ -1091,7 +1329,7 @@ def writePeakJSON(f, peak):
 	if peak.otherName is not None:
 		p.append(('name2', peak.otherName))
 
-	p.append(('prom', peak.prominence))
+	p.append(('prom', prom2html(peak.prominences)))
 	p.append(('YDS', peak.grade))
 	p.append(('G4', 'z={}&t={}'.format(peak.zoom, peak.baseLayer)))
 	if peak.bobBurdId is not None:
@@ -1105,11 +1343,9 @@ def writePeakJSON(f, peak):
 	if peak.wikipediaLink is not None:
 		p.append(('W', peak.wikipediaLink))
 	if peak.isClimbed:
-		if peak.climbPhotos is None:
-			p.append(('climbed', peak.climbDate))
-		else:
-			p.append(('climbed', '<a href=\\"https://nightjuggler.com/photos/{}\\">{}</a>'.format(
-				peak.climbPhotos, peak.climbDate)))
+		p.append(('climbed', '<br>'.join([date if isinstance(date, str) else
+			'<a href=\\"https://nightjuggler.com/photos/{1}\\">{0}</a>'.format(*date)
+			for date, climbedWith in peak.climbed])))
 
 	for k, v in p:
 		f('\t\t\t"')
