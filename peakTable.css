@@ -56,8 +56,10 @@ td {
 #peakTable.landColumn td:nth-child(3) {font-size: 9pt;} /* Land Management */
 #peakTable.landColumn td:nth-child(4) {text-align: right;} /* Elevation */
 #peakTable.landColumn td:nth-child(6) {text-align: right;} /* Prominence */
+#peakTable.landColumn td:nth-child(12) {text-align: center;} /* PY/VR/HPS */
 #peakTable.noLand td:nth-child(3) {text-align: right;} /* Elevation */
 #peakTable.noLand td:nth-child(5) {text-align: right;} /* Prominence */
+#peakTable.noLand td:nth-child(11) {text-align: center;} /* PY/VR/HPS */
 /*
 	Land Management Classes
 	-----------------------
