@@ -101,10 +101,10 @@ class Peak(object):
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
 
-	def matchElevation(self, *args):
+	def matchElevation(self, *args, **kwargs):
 		results = []
 		for e in self.elevations:
-			result = e.match(*args)
+			result = e.match(*args, **kwargs)
 			if result:
 				results.append((e, result))
 		return results
@@ -467,12 +467,13 @@ class Elevation(object):
 		'^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a>'
 		'<div class="tooltip">([- &\'(),\\.:;/0-9A-Za-z]+)(?:(</div></span>)|$)')
 
-	def __init__(self, elevation):
+	def __init__(self, elevation, latlng):
 		self.isRange = elevation[-1] == '+'
 		if self.isRange:
 			elevation = elevation[:-1]
 		self.elevationFeet = int(elevation[:-4] + elevation[-3:])
 		self.source = None
+		self.latlng = latlng
 
 	def getElevation(self):
 		return '{},{:03}'.format(*divmod(self.elevationFeet, 1000)) + ('+' if self.isRange else '')
@@ -595,12 +596,14 @@ def parseElevation(pl, peak):
 
 	if line[:4] != '<td>':
 		badLine()
-	line = line[4:]
+
+	latlng = (float(peak.latitude), float(peak.longitude))
 
 	while True:
+		line = line[4:]
 		m = Elevation.pattern1.match(line)
 		if m is not None:
-			e = Elevation(m.group(1))
+			e = Elevation(m.group(1), latlng)
 			peak.elevations.append(e)
 			line = line[m.end():]
 		else:
@@ -608,7 +611,7 @@ def parseElevation(pl, peak):
 			if m is None:
 				badLine()
 
-			e = Elevation(m.group(2))
+			e = Elevation(m.group(2), latlng)
 			parseElevationTooltip(e, m.group(1), m.group(3))
 			peak.elevations.append(e)
 			if peak.dataFrom is None:
@@ -629,7 +632,6 @@ def parseElevation(pl, peak):
 			break
 		if line[:4] != '<br>':
 			badLine()
-		line = line[4:]
 
 def printElevationStats(pl):
 	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
@@ -747,16 +749,22 @@ class RE(object):
 	)
 	column2 = re.compile(
 		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
-		'll=([0-9]+\\.[0-9]+),-([0-9]+\\.[0-9]+)&z=([0-9]+)&t=(t[14])">'
+		'll=([0-9]{1,2}\\.[0-9]{1,6}),(-[0-9]{1,3}\\.[0-9]{1,6})&z=(1[0-9])&t=(t[14])">'
 		'([ #&\'()0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456]\\+?)?)</td>$'
 	)
+	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
+	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
+	numMeters = re.compile('^[1-9][0-9]{0,3}$')
 	prominence = re.compile('^[,0-9]+')
-	prominence1 = re.compile('^[1-9][0-9]{0,2}$')
-	prominence2 = re.compile('^[1-9][0-9]?,[0-9]{3}$')
-	prominenceTooltip = re.compile('^[- "&\'\\(\\)\\+,/0-9:;<=>A-Za-z]+$')
+	prominenceTooltip = re.compile(
+		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+m?))'
+		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+m?))'
+		' \\(([a-z]+)\\) \\(([A-Z][A-Za-z]+)\\)(?:<br>NHN: '
+		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
+	)
 	summitpost = re.compile(
 		'^<td><a href="http://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
 	)
@@ -774,7 +782,7 @@ class RE(object):
 	)
 	weather = re.compile(
 		'^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?'
-		'lon=-([0-9]+\\.[0-9]+)&lat=([0-9]+\\.[0-9]+)">WX</a></td>$'
+		'lon=(-[0-9]{1,3}\\.[0-9]{1,6})&lat=([0-9]{1,2}\\.[0-9]{1,6})">WX</a></td>$'
 	)
 	climbedDate = re.compile('^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}')
 	climbedLink = re.compile('^/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">')
@@ -912,6 +920,52 @@ def climbed2Html(climbed):
 
 	return '\n<br>'.join(lines)
 
+def str2int(s):
+	if len(s) < 4:
+		if RE.numLT1k.match(s) is None:
+			badLine()
+		return int(s)
+
+	if RE.numGE1k.match(s) is None:
+		badLine()
+	return int(s[:-4]) * 1000 + int(s[-3:])
+
+def elevStr2Int(e):
+	if e[-1] == 'm':
+		e = e[:-1]
+		if RE.numMeters.match(e) is None:
+			badLine()
+		return int(e), True
+
+	return str2int(e), False
+
+def promElevation(elevMin, contourInterval, elevation, subtractContourInterval=False):
+	if elevMin is None:
+		elevation, inMeters = elevStr2Int(elevation)
+		return elevation, inMeters, False
+
+	elevMin, inMeters = elevStr2Int(elevMin)
+	contourInterval, contourIntervalInMeters = elevStr2Int(contourInterval)
+
+	if inMeters != contourIntervalInMeters:
+		badLine()
+	if subtractContourInterval:
+		return elevMin - contourInterval/2, inMeters, True
+
+	return elevMin + contourInterval/2, inMeters, True
+
+def checkProminenceMath(e1a, c1a, e1, e2a, c2a, e2, promType, source):
+	e1, inMeters1, average1 = promElevation(e1a, c1a, e1)
+	e2, inMeters2, average2 = promElevation(e2a, c2a, e2, True)
+
+	if promType != ('average' if average1 or average2 else 'clean'):
+		badLine()
+
+	if inMeters1 == inMeters2:
+		return toFeet(e1 - e2, 0) if inMeters1 else e1 - e2
+
+	return toFeet(e1) - e2 if inMeters1 else e1 - toFeet(e2)
+
 def parseProminence(line):
 	if not line.startswith('<td>'):
 		badLine()
@@ -928,19 +982,8 @@ def parseProminence(line):
 		m = RE.prominence.match(line)
 		if m is None:
 			badLine()
-		prom = m.group()
+		prom = str2int(m.group())
 		line = line[m.end():]
-
-		if len(prom) < 4:
-			m = RE.prominence1.match(prom)
-			if m is None:
-				badLine()
-			prom = int(prom)
-		else:
-			m = RE.prominence2.match(prom)
-			if m is None:
-				badLine()
-			prom = int(prom[:-4]) * 1000 + int(prom[-3:])
 
 		if tooltip:
 			if not line.startswith('<div class="tooltip">'):
@@ -956,6 +999,10 @@ def parseProminence(line):
 				badLine()
 			tooltip = m.group()
 			line = line[m.end():]
+
+			checkedProm = checkProminenceMath(*m.groups())
+			if prom != checkedProm:
+				raise FormatError("Tooltip doesn't match prominence")
 
 			if not line.startswith('</div></span>'):
 				raise FormatError('Expected </div></span>')
@@ -1187,13 +1234,13 @@ def readHTML(pl):
 
 def writeHTML(pl):
 	sectionFormat = '<tr class="section"><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
-	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},-{}&z={}&t={}">{}</a>{}{}</td>'
+	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},{}&z={}&t={}">{}</a>{}{}</td>'
 	summitpostFormat = '<td><a href="http://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
 	bobBurdFormat = '<td><a href="http://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
 	listsOfJohnFormat = '<td><a href="https://listsofjohn.com/peak/{0}">LoJ</a></td>'
 	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
-	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon=-{0}&lat={1}">WX</a></td>'
+	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon={0}&lat={1}">WX</a></td>'
 
 	emptyCell = '<td>&nbsp;</td>'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.numColumns - 1)
@@ -1318,7 +1365,7 @@ def writeHTML(pl):
 def writePeakJSON(f, peak):
 	f('{\n')
 	f('\t\t"type": "Feature",\n')
-	f('\t\t"geometry": {"type": "Point", "coordinates": [-')
+	f('\t\t"geometry": {"type": "Point", "coordinates": [')
 	f(peak.longitude)
 	f(',')
 	f(peak.latitude)
