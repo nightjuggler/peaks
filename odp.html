@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Other Desert Peaks</title>
+<link rel="stylesheet" href="peakTable.css">
+<link rel="stylesheet" href="tooltip.css">
+<script src="tooltip.js"></script>
+<script src="peakTable.js"></script>
+<base href="https://nightjuggler.com/nature/">
+<link rel="icon" href="https://nightjuggler.com/logo/pilogo.ico">
+</head>
+<body>
+
+<b><a href="/">Home</a>
+| <a href="index.html">Nature</a>
+| <a href="BayArea.html">Bay Area</a>
+| <a href="Ventana.html">Big Sur</a>
+| <a href="desert.html">Desert</a>
+| <a href="index.html#Sierra">Sierra</a>
+| </b>
+<select id="peakListMenu"></select>
+
+<p><table id="peakTable" class="land landColumn">
+<tr class="section"><td id="header" colspan="13">Other Desert Peaks
+[<a href="pmap.html?o=odp">Map</a>,
+<a href="pmapgl.html?o=odp">MapGL</a>]
+<span id="legendLink" onclick="showLegend()">LEGEND</span>
+</td></tr>
+<tr><td colspan="13"><div class="div50">
+</div><div class="div50">Columns:
+<br><input type="checkbox" id="toggleLandColumn" checked /> Land Management
+<br><input type="checkbox" id="toggleClimbedColumn" checked /> Climbed
+<span id="climbedCountSpan"></span>
+<br>Colors:
+<br><select id="colorMenu">
+<option value="land">Land Management</option>
+<option value="classic">Classic</option>
+<option value="nocolor">None</option>
+</select></div></td></tr>
+<tr class="section"><td id="ODP1" colspan="13">1. Trans-Sierra &mdash; Mono and Inyo Counties</td></tr>
+<tr class="section"><td id="ODP2" colspan="13">2. Death Valley &mdash; Inyo County</td></tr>
+<tr class="section"><td id="ODP3" colspan="13">3. San Bernardino County</td></tr>
+<tr class="climbed landNPS">
+<td>3.1</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=35.10482,-115.72468&z=15&t=t4">Kelso Peak</a></td>
+<td><a href="https://www.nps.gov/moja/index.htm">Mojave National Preserve</a></td>
+<td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=FS1405">4,767</a><div class="tooltip">1453.0m (NAVD 88) NGS Data Sheet &quot;Kelso VABM 4746&quot; (FS1405)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_Kelso_101506_1983_24000.jpg">4,746</a><div class="tooltip">1446.6m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Kelso, CA&quot; (1983)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_Kelso_101506_1983_24000.jpg">4,757+</a><div class="tooltip">1450-1459m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Kelso, CA&quot; (1983)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_Kelso_297877_1955_62500.jpg">4,764</a><div class="tooltip">4764' (MSL) USGS 15' Quad (1:62,500) &quot;Kelso, CA&quot; (1955)</div></span></td>
+<td>Class 2</td>
+<td>1,054</td>
+<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Kelso_Mountains">W</a></td>
+<td><a href="http://www.snwburd.com/dayhikes/peak/2944">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/61501">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=3782">Pb</a></td>
+<td><a href="http://forecast.weather.gov/MapClick.php?lon=-115.72468&lat=35.10482">WX</a></td>
+<td>3/26/2017 solo</td>
+</tr>
+<tr class="section"><td id="ODP4" colspan="13">4. Riverside County</td></tr>
+<tr class="section"><td id="ODP5" colspan="13">5. San Diego and Imperial Counties</td></tr>
+<tr class="section"><td id="ODP6" colspan="13">6. Nevada</td></tr>
+<tr class="section"><td id="ODP7" colspan="13">7. Utah</td></tr>
+<tr class="section"><td id="ODP8" colspan="13">8. Arizona</td></tr>
+</table>
+
+<div id="legend" class="land">
+<div class="wide section">Colors</div>
+<div class="lcb landBLM"></div> Bureau of Land Management (BLM)<br>
+<div class="lcb landBLMW"></div> BLM Wilderness<br>
+<div class="lcb landDOD"></div> Department of Defense<br>
+<div class="lcb landFS"></div> U.S. Forest Service (National Forest)<br>
+<div class="lcb landFSW"></div> Forest Service Wilderness<br>
+<div class="lcb landFWS"></div> U.S. Fish &amp; Wildlife Service<br>
+<div class="lcb landNPS"></div> National Park Service<br>
+<div class="lcb landRez"></div> Indian Reservation<br>
+<div class="lcb landSP"></div> State Park<br>
+<div class="lcb emblem"></div> Emblem Peak<br>
+<div class="lcb climbed"></div> Climbed Peak
+<div class="wide section">Abbreviations</div>
+<div class="lab">BB</div> Bob Burd<br>
+<div class="lab">HP</div> High Point<br>
+<div class="lab">LoJ</div> Lists of John (.com)<br>
+<div class="lab">NCA</div> National Conservation Area<br>
+<div class="lab">NM</div> National Monument<br>
+<div class="lab">NRA</div> National Recreation Area<br>
+<div class="lab">Pb</div> Peakbagger (.com)<br>
+<div class="lab">SP</div> Summit Post (.org)<br>
+<div class="lab">SRA</div> State Recreation Area<br>
+<div class="lab">W</div> Wikipedia (.org)<br>
+<div class="lab">WX</div> Weather (.gov)
+<div class="wide section"><div id="closeLegend" onclick="hideLegend()">CLOSE</div></div>
+</div>
+
+</body>
+</html>
