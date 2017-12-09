@@ -39,9 +39,14 @@ peakListParams = {
 		'numPeaks': 19,
 		'numSections': 6,
 	},
+	'odp': {
+		'geojsonTitle': 'Other Desert Peaks',
+		'numPeaks': 1,
+		'numSections': 8,
+	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 20,
+		'numPeaks': 27,
 		'numSections': 24,
 	},
 }
@@ -338,7 +343,7 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [0-9]+)?)&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
+		'&quot;([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: VABM)?(?: [0-9]+)?)&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, id):
 		self.id = id
@@ -762,7 +767,7 @@ class RE(object):
 	prominenceTooltip = re.compile(
 		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+m?))'
 		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+m?))'
-		' \\(([a-z]+)\\) \\(([A-Z][A-Za-z]+)\\)(?:<br>NHN: '
+		' \\(([a-z]+)\\) \\(([A-Z][A-Za-z]+)\\)(?:<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
 	summitpost = re.compile(
@@ -960,11 +965,17 @@ def checkProminenceMath(e1a, c1a, e1, e2a, c2a, e2, promType, source):
 
 	if promType != ('average' if average1 or average2 else 'clean'):
 		badLine()
+	if source == 'LoJ':
+		if promType != 'average':
+			raise FormatError("Expected average prominence from LoJ")
+	elif source != 'Pb':
+		raise FormatError("Prominence source must be LoJ or Pb")
 
-	if inMeters1 == inMeters2:
-		return toFeet(e1 - e2, 0) if inMeters1 else e1 - e2
-
-	return toFeet(e1) - e2 if inMeters1 else e1 - toFeet(e2)
+	if inMeters1:
+		e1 = toFeet(e1)
+	if inMeters2:
+		e2 = toFeet(e2)
+	return e1 - e2
 
 def parseProminence(line):
 	if not line.startswith('<td>'):
