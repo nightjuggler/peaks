@@ -191,6 +191,11 @@ function initPeakListMenu()
 		isSierraPeak: returnTrue,
 	},
 	{
+		id: 'odp',
+		name: 'Other Desert Peaks',
+		isCAPeak: function(peakId) { return Number(peakId.split('.')[0]) < 6; },
+	},
+	{
 		id: 'osp',
 		name: 'Other Sierra Peaks',
 		isCAPeak: returnTrue,
@@ -199,13 +204,6 @@ function initPeakListMenu()
 	];
 
 	var menu = document.getElementById('peakListMenu');
-	if (menu)
-		menu.addEventListener('change', function() {
-			var path = menu.options[menu.selectedIndex].value + '.html';
-			var href = window.location.href;
-
-			window.location = href.substr(0, href.lastIndexOf('/') + 1) + path;
-		}, false);
 
 	for (var pl of peakLists)
 	{
@@ -223,6 +221,19 @@ function initPeakListMenu()
 
 			globalPeakInfo.peakList = pl;
 		}
+	}
+
+	if (menu)
+	{
+		var selectedIndex = menu.selectedIndex;
+
+		menu.addEventListener('change', function() {
+			var path = menu.options[menu.selectedIndex].value + '.html';
+			var href = window.location.href;
+
+			menu.selectedIndex = selectedIndex;
+			window.location = href.substr(0, href.lastIndexOf('/') + 1) + path;
+		}, false);
 	}
 }
 function nextNode(node, nodeName)
