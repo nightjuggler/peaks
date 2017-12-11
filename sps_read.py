@@ -541,7 +541,15 @@ class Elevation(object):
 			return True
 
 		if self.source is None:
-			if not (self.isRange and isRange is None):
+			if self.isRange:
+				if isRange is not None:
+					return False
+			else:
+				if not isRange:
+					if feet == toFeet(round(self.elevationFeet * 0.3048)):
+						return "round(round({}*0.3048))".format(self.elevationFeet)
+					if feet == toFeet(round(self.elevationFeet * 0.3048), 0):
+						return "roundDown(round({}*0.3048))".format(self.elevationFeet)
 				return False
 
 			result = "Range average{2} if contour interval is {0} {1}"
@@ -594,6 +602,9 @@ class Elevation(object):
 			else:
 				if feet == toFeet(meters, 0):
 					return "roundDown({}/0.3048)".format(meters)
+		else:
+			if feet == toFeet(round(self.elevationFeet * 0.3048)):
+				return "round(round({}*0.3048))".format(self.elevationFeet)
 		return False
 
 def parseElevation(pl, peak):
@@ -1449,8 +1460,8 @@ def writeJSON(pl):
 	f('}\n')
 
 def checkData(pl):
-	import sps_check
-	getattr(sps_check, 'check' + pl.id)(pl)
+	import sps_create
+	getattr(sps_create, 'check' + pl.id)(pl)
 
 def main():
 	outputFunction = {
