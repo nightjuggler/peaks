@@ -41,10 +41,24 @@ def feetStr2Int(feetStr, description, peakName):
 	return feet
 
 class PeakLoJ(object):
+	columnNames = (
+		'# in list',
+		'Name',
+		'Elevation',
+		'Saddle',
+		'Prominence',
+		'Line Parent',
+		'Isolation',
+		'Proximate Parent',
+		'State',
+		'Counties',
+		'Quadrangle',
+		'Section',
+	)
 	peakNamePattern = ('('
-		'(?:[- A-Za-z]+(?:, [A-Z][a-z]+)?)|'
-		'(?:"[- A-Za-z]+")|'
-		'(?:[1-9][0-9]+))'
+		'(?:[A-Z][- 0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
+		'(?:"[A-Z][- 0-9A-Za-z]+")|'
+		'(?:[1-9][0-9]+(?:-[A-Z][ A-Za-z]+)?))'
 	)
 	re_peakName = re.compile('^' + peakNamePattern + '$')
 	re_columns = (
@@ -63,7 +77,7 @@ class PeakLoJ(object):
 		(re.compile('^([A-Z]{2})$'), ('state',)),
 		(re.compile('^([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: &amp; [A-Z][a-z]+(?: [A-Z][a-z]+)*)*)$'),
 			('counties',)),
-		(re.compile('^<a href="/quad\\?q=([0-9]+)" target="_blank">([A-Z][a-z]+(?: [A-Z][a-z]+)*)</a>'
+		(re.compile('^<a href="/quad\\?q=([0-9]+)" target="_blank">([A-Za-z]+(?: [A-Za-z]+)*)</a>'
 			' - <a href="/qmap\\?Q=\\1" target="_blank">Map</a>$'),
 			('quadId', 'quadName')),
 		(re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z][a-z]+)+)$'),
@@ -94,8 +108,14 @@ class PeakLoJ(object):
 		if name[0] == '"':
 			assert name[-1] == '"'
 			name = name[1:-1]
-		if name.endswith(', Mount'):
-			name = 'Mount ' + name[:-7]
+		elif name[0] in '123456789':
+			name = 'Peak ' + name
+		i = name.find(', Mount')
+		if i > 0:
+			if i + 7 == len(name):
+				name = 'Mount ' + name[:-7]
+			elif name[i + 7] in ' -':
+				name = 'Mount ' + name[:i] + name[i + 7:]
 		elif name.endswith(', The'):
 			name = 'The ' + name[:-5]
 		mappedName = self.nameMap.get((name, elevation))
@@ -143,7 +163,6 @@ class PeakLoJ(object):
 		self.prominence = feetStr2Int(self.prominence, 'Prominence', self.name)
 
 		self.isolation = float(self.isolation)
-		self.sectionNumber = int(self.sectionNumber)
 
 		self.name = self.normalizeName(self.name, self.elevation)
 		self.lineParent = self.normalizeName(self.lineParent)
@@ -153,8 +172,8 @@ class PeakLoJ(object):
 		if mappedElevation is not None:
 			self.elevation = mappedElevation
 
-def extractColumns(peak, row, rowNum):
-	for colNum, (regexp, attributes) in enumerate(peak.re_columns):
+def extractColumns(peak, row, rowNum, numCols):
+	for colNum, (regexp, attributes) in enumerate(peak.re_columns[:numCols]):
 		m = RE.td.match(row)
 		if m is None:
 			err("Beginning of row {}, column {} doesn't match expected pattern", rowNum, colNum + 1)
@@ -175,9 +194,9 @@ def extractColumns(peak, row, rowNum):
 			for attr, value in zip(attributes, values):
 				setattr(peak, attr, value)
 	if row != '':
-		err("End of row expected after column {}", colNum + 1)
+		err("End of row {} expected after column {}", rowNum, colNum + 1)
 
-def loadListLoJ(listId):
+def loadListLoJ(listId, numPeaks):
 	f = open("extract/data/{}/loj.html".format(listId))
 
 	row, bytes = readUntil(f, '', '<tr>')
@@ -186,6 +205,27 @@ def loadListLoJ(listId):
 	row, bytes = readUntil(f, bytes, '</tr>')
 	if bytes is None:
 		err("Can't find </tr> for header row")
+
+	numCols = 1
+	maxCols = len(PeakLoJ.columnNames)
+
+	while True:
+		i = row.find('<td class="one">')
+		if i < 0:
+			err("Can't find <td> for header row, column {}", numCols)
+		assert row[:i].strip() == ''
+		row = row[i + 16:]
+		i = row.find('</td>')
+		if i < 0:
+			err("Missing </td> for header row, column {}", numCols)
+		col = row[:i]
+		row = row[i + 5:]
+		assert col == PeakLoJ.columnNames[numCols - 1]
+		if row == '':
+			break
+		if numCols == maxCols:
+			err("End of header row expected after column {}", maxCols)
+		numCols += 1
 
 	rowNum = 0
 	peaks = []
@@ -200,12 +240,12 @@ def loadListLoJ(listId):
 			err("Can't find </tr> for row {}", rowNum)
 
 		peak = PeakLoJ()
-		extractColumns(peak, row, rowNum)
+		extractColumns(peak, row, rowNum, numCols)
 		peak.postProcess()
 		peaks.append(peak)
 
 	f.close()
-	assert len(peaks) == 246
+	assert len(peaks) == numPeaks
 	return peaks
 
 def matchElevation(peak, *args):
@@ -247,9 +287,15 @@ def spsMap(pl):
 				name2peak[peak.name] = peak
 	return name2peak
 
+def checkDPS(pl):
+	peaksLoJ = loadListLoJ('dps', 95)
+
+	for peakLoJ in peaksLoJ:
+		print peakLoJ.name, peakLoJ.elevation, peakLoJ.counties, peakLoJ.state
+
 def checkSPS(pl):
 	name2peak = spsMap(pl)
-	peaksLoJ = loadListLoJ('sps')
+	peaksLoJ = loadListLoJ('sps', 246)
 
 	for peakLoJ in peaksLoJ:
 		peak = name2peak[peakLoJ.name]
@@ -258,3 +304,16 @@ def checkSPS(pl):
 
 #	checkElevation(pl,5,4, 13553,False) # Pb
 #	checkElevation(pl,18,8, 12276,True) # W
+
+def checkNPC(pl):
+	peaksLoJ = loadListLoJ('npc', 73)
+
+	for peakLoJ in peaksLoJ:
+		assert peakLoJ.state == 'NV'
+		print peakLoJ.name, peakLoJ.elevation
+
+def checkGBP(pl):
+	peaksLoJ = loadListLoJ('gbp', 115)
+
+	for peakLoJ in peaksLoJ:
+		print peakLoJ.name, peakLoJ.elevation, peakLoJ.counties, peakLoJ.state
