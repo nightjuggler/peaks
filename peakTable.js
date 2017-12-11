@@ -266,6 +266,12 @@ function createMapLinkBox(latCommaLong, peakId)
 
 	var listNode = document.createElement('UL');
 
+	addMapLink(listNode, 'Andrew Kirmse P300 Peaks',
+		'https://fusiontables.googleusercontent.com/embedviz?' +
+		'q=select+col0+from+1oAUIuqAirzAY_wkouZLdM4nRYyZ1p4TAg3p6aD2T' +
+		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
+		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG')
+
 	if (globalPeakInfo.peakList.isCAPeak(peakId))
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
 			'http://www.calands.org/map?simple=true&base=topo&y=' + latLong[0] + '&x=' +
