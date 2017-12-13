@@ -83,6 +83,21 @@ class PeakLoJ(object):
 		(re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z][a-z]+)+)$'),
 			('sectionNumber', 'sectionName')),
 	)
+	numPeaks = {
+		'DPS':   95, # The four Mexican peaks are missing from the LoJ DPS list.
+		'GBP':  115,
+		'NPC':   73,
+		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
+	}
+	@classmethod
+	def getPeaks(self, id):
+		return loadListLoJ(id, self.numPeaks[id])
+
+	def check(self, peak, peakListId):
+		assert self.id == peak.listsOfJohnId
+		if peakListId == 'NPC':
+			assert self.state == 'NV'
+
 	# Errata for the LoJ SPS list (https://listsofjohn.com/customlists?lid=60):
 	#
 	# - Mount Morgan (13,001') (known as Mount Morgan (North) on the SPS list) is listed in
@@ -92,7 +107,31 @@ class PeakLoJ(object):
 	#   It should be in section 16 (Humphreys Basin and West).
 	#
 	nameMap = {
+	# Desert Peaks Section:
+		('Avawatz Mountains HP', 6154):                 'Avawatz Peak',
+		('Canyon Benchmark', 5890):                     'Canyon Point',
+		('Eagle Benchmark', 5350):                      'Eagle Mountains HP',
+		('Glass Mountain HP', 11180):                   'Glass Mountain',
+		('Granite Benchmark', 4353):                    'Granite Mountains HP',
+		('Granite Peak', 6761):                         'Granite Mountains HP',
+		('Jacumba Benchmark', 4512):                    'Jacumba Mountain',
+		('Mitchell Benchmark', 7047):                   'Mitchell Point',
+		('Mopah Peaks, East', 3530):                    'Mopah Point',
+		('New York Two Benchmark', 7532):               'New York Mountains HP',
+		('Nopah Benchmark', 6394):                      'Nopah Range HP',
+		('Pahrump Benchmark', 5740):                    'Pahrump Point',
+		('Red Top Benchmark', 3848):                    'Palen Mountains HP',
+		('Resting Spring Range HP', 5264):              'Stewart Point',
+		('Rosa Benchmark', 5020):                       'Rosa Point',
+		('Sandy Benchmark', 7062):                      'Sandy Point',
+		('Spectre Benchmark', 4483):                    'Spectre Point',
+		('Superstition Peak', 5057):                    'Superstition Mountain',
+	# Nevada Peaks Club:
+		('Mount Jefferson-South Summit', 11941):        'Mount Jefferson',
+		('Muddy Mountains HP', 5431):                   'Muddy Benchmark',
+	# Sierra Peaks Section:
 		('Coyote Peaks, East', 10892):  'Coyote Peaks',
+		('Devils Crags', 12420):        'Devil\'s Crag #1',
 		('Mount Morgan', 13748):        'Mount Morgan (South)',
 		('Mount Morgan', 13001):        'Mount Morgan (North)',
 		('Mount Stanford', 13973):      'Mount Stanford (South)',
@@ -118,10 +157,9 @@ class PeakLoJ(object):
 				name = 'Mount ' + name[:i] + name[i + 7:]
 		elif name.endswith(', The'):
 			name = 'The ' + name[:-5]
-		mappedName = self.nameMap.get((name, elevation))
-		if mappedName is not None:
-			name = mappedName
-		return name
+		if name.endswith(' (HP)'):
+			name = name[:-4] + 'HP'
+		return self.nameMap.get((name, elevation), name)
 
 	# LoJ SPS Elevation Adjustments:
 	#
@@ -155,7 +193,43 @@ class PeakLoJ(object):
 		('Mount Agassiz', 13892): 13893,
 		('Basin Mountain', 13190): 13181,
 		('Mount Baxter', 13140): 13136,
-		('Mount Morrison', 12296): 12277,
+		('Mount Morrison', 12296): 12276,
+		('Seven Gables', 13074): 13075,
+
+	# LoJ DPS Elevation Adjustments:
+	#
+	# - Boundary Peak
+	#   The 7.5' and 15' topos show a spot elevation of 13,140'.
+	#   The 1:250,000 topos show either a spot elevation of 13,145' or no spot elevation.
+	#   The 1:100,000 topos show a spot elevation of 4005m (13,140').
+	#   So how does LoJ get 13,143'?
+	#
+	# - Stepladder Mountains HP
+	#   "This location is higher than contour with spot elevation 892m. Elevation is interpolation of
+	#    spot elevation and next higher contour." (892m + 900m) / 2 / 0.3048 m/ft = 2939.6 ft
+	#   [https://listsofjohn.com/peak/65349]
+	#
+		('Boundary Peak', 13143): 13140,
+		('East Ord Mountain', 6169): 6168,
+		('Needle Peak', 5802): 5803,
+		('Old Woman Mountains HP', 5325): 5324,
+		('Spectre Point', 4483): 4482,
+		('Stepladder Mountains HP', 2939): 2936,
+
+	# LoJ GBP Elevation Adjustments:
+	#
+	# - Eagle Peak
+	#   All the 7.5' topos on topoView show a spot elevation of 9,892'.
+	#   There aren't any 15' topos available on topoView for that area.
+	#   The 1:250,000 topos show a spot elevation of either 9,892' or 9,883'.
+	#   The 1:100,000 topo doesn't show a spot elevation. It doesn't even name the peak.
+	#   The highest contour is at 3000m, and the interval is 50m.
+	#   So the average is 3025m which is 9,924' rounded down.
+	#   I'm guessing there's a 7.5' topo that doesn't show a spot elevation?
+	#   In that case the highest contour is at 9880', and the interval is 40'.
+	#   So the average would be 9900'.
+	#
+		('Eagle Peak', 9900): 9892,
 	}
 	def postProcess(self):
 		self.elevation = feetStr2Int(self.elevation, 'Elevation', self.name)
@@ -197,7 +271,7 @@ def extractColumns(peak, row, rowNum, numCols):
 		err("End of row {} expected after column {}", rowNum, colNum + 1)
 
 def loadListLoJ(listId, numPeaks):
-	f = open("extract/data/{}/loj.html".format(listId))
+	f = open("extract/data/{}/loj.html".format(listId.lower()))
 
 	row, bytes = readUntil(f, '', '<tr>')
 	if bytes is None:
@@ -248,72 +322,88 @@ def loadListLoJ(listId, numPeaks):
 	assert len(peaks) == numPeaks
 	return peaks
 
-def matchElevation(peak, *args):
+def matchElevation(peak, feet, isRange=None):
+	line = '{:5} {:24} {:7} {{:7}} {{}}'.format(peak.id, peak.name,
+		'{},{:03}'.format(*divmod(feet, 1000)) + ('+' if isRange else ' '))
 
-	def formatElevation(feet, isRange=False):
-		feet1, feet2 = divmod(feet, 1000)
-		return '{:2},{:03}{}'.format(feet1, feet2, '+' if isRange else ' ')
+	exactMatches, otherMatches = peak.matchElevation(feet, isRange)
 
-	def printNoMatch(feet1, isRange1, feet2, isRange2=False):
-		print line.format(formatElevation(feet1, isRange1), 'No match'),
-		print '({}){}'.format(feet2 - feet1, '' if isRange1 == isRange2 else ' and range mismatch')
-
-	line = '{:5} {:24} {:7} {{:7}} {{}}'.format(peak.id, peak.name, formatElevation(*args))
-
-	results = peak.matchElevation(*args)
-
-	if not results:
-		for e in peak.elevations:
-			printNoMatch(e.elevationFeet, e.isRange, *args)
+	if exactMatches:
 		return
+	if otherMatches:
+		for e, result in otherMatches:
+			print line.format(e.getElevation(), result)
+	else:
+		for e in peak.elevations:
+			print line.format(e.getElevation(), 'No match'),
+			print '({}){}'.format(feet - e.elevationFeet,
+				'' if isRange is None or isRange == e.isRange else ' and range mismatch')
 
-	for e, result in results:
-		elevation = formatElevation(e.elevationFeet, e.isRange)
-		if result is True:
-			result = 'Exact match'
-		print line.format(elevation, result)
+#	matchElevation(pl.peaks[5-1][4-1], 13553,False) # Pb
+#	matchElevation(pl.peaks[18-1][8-1], 12276,True) # W
 
-def checkElevation(pl, sectionNumber, peakNumber, *args):
-	peak = pl.peaks[sectionNumber - 1][peakNumber - 1]
-	matchElevation(peak, *args)
+class MatchByName(object):
+	def __init__(self, pl):
+		name2peak = {}
+		duplicates = []
 
-def spsMap(pl):
-	name2peak = {}
-	for peaks in pl.peaks:
-		for peak in peaks:
-			if peak.name == "Devil's Crag #1":
-				name2peak["Devils Crags"] = peak
-			else:
-				name2peak[peak.name] = peak
-	return name2peak
+		for peaks in pl.peaks:
+			for peak in peaks:
+				name = peak.name
+				if peak.isHighPoint:
+					name += ' HP'
+				if name in name2peak:
+					item = name2peak[name]
+					if isinstance(item, list):
+						item.append(peak)
+					else:
+						name2peak[name] = [item, peak]
+						duplicates.append(name)
+				else:
+					name2peak[name] = peak
+
+		for name in duplicates:
+			for peak in name2peak[name]:
+				log("Duplicate name '{}' ({})", name,
+					' / '.join([e.getElevation() for e in peak.elevations]))
+
+		self.name2peak = name2peak
+
+	def get(self, peak2):
+		peak = self.name2peak.get(peak2.name)
+		if peak is not None:
+			if not isinstance(peak, list):
+				return peak
+			peakList = peak
+			for peak in peakList:
+				if peak.matchElevation(peak2.elevation)[0]:
+					return peak
+		return None
+
+def checkElevation(peakList, peak2Class):
+	peakMap = MatchByName(peakList)
+	peakList2 = peak2Class.getPeaks(peakList.id)
+
+	matchedPeaks = []
+	for peak2 in peakList2:
+		peak = peakMap.get(peak2)
+		if peak is None:
+			log("Cannot map '{}' ({})", peak2.name, peak2.elevation)
+		else:
+			matchedPeaks.append((peak, peak2))
+
+	for peak, peak2 in matchedPeaks:
+		peak2.check(peak, peakList.id)
+		matchElevation(peak, peak2.elevation)
 
 def checkDPS(pl):
-	peaksLoJ = loadListLoJ('dps', 95)
-
-	for peakLoJ in peaksLoJ:
-		print peakLoJ.name, peakLoJ.elevation, peakLoJ.counties, peakLoJ.state
+	checkElevation(pl, PeakLoJ)
 
 def checkSPS(pl):
-	name2peak = spsMap(pl)
-	peaksLoJ = loadListLoJ('sps', 246)
-
-	for peakLoJ in peaksLoJ:
-		peak = name2peak[peakLoJ.name]
-		assert peak.listsOfJohnId == peakLoJ.id
-		matchElevation(peak, peakLoJ.elevation)
-
-#	checkElevation(pl,5,4, 13553,False) # Pb
-#	checkElevation(pl,18,8, 12276,True) # W
+	checkElevation(pl, PeakLoJ)
 
 def checkNPC(pl):
-	peaksLoJ = loadListLoJ('npc', 73)
-
-	for peakLoJ in peaksLoJ:
-		assert peakLoJ.state == 'NV'
-		print peakLoJ.name, peakLoJ.elevation
+	checkElevation(pl, PeakLoJ)
 
 def checkGBP(pl):
-	peaksLoJ = loadListLoJ('gbp', 115)
-
-	for peakLoJ in peaksLoJ:
-		print peakLoJ.name, peakLoJ.elevation, peakLoJ.counties, peakLoJ.state
+	checkElevation(pl, PeakLoJ)

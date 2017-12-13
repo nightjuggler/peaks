@@ -36,7 +36,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 19,
+		'numPeaks': 20,
 		'numSections': 6,
 	},
 	'odp': {
@@ -107,12 +107,17 @@ class Peak(object):
 		return '<br>'.join([e.html() for e in self.elevations])
 
 	def matchElevation(self, *args, **kwargs):
-		results = []
+		exactMatches = []
+		otherMatches = []
+
 		for e in self.elevations:
 			result = e.match(*args, **kwargs)
-			if result:
-				results.append((e, result))
-		return results
+			if result is True:
+				exactMatches.append(e)
+			elif result:
+				otherMatches.append((e, result))
+
+		return exactMatches, otherMatches
 
 	def copyFrom(self, other):
 		doNotCopy = ('id', 'dataFrom', 'hasHtmlId', 'isEmblem', 'isMtneer', 'suspended')
@@ -373,15 +378,15 @@ class USGSTopo(object):
 	toFeetDelta = 0.5
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
-		'^([A-Z]{2})/\\1_([A-Z][a-z]+(?:%20[A-Z][a-z]+)*)_'
-		'([0-9]{6})_([0-9]{4})_(24000|62500|250000)\\.jpg$')
+		'^[A-Z]{2}/[A-Z]{2}_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
+		'([0-9]{6})_[0-9]{4}_(?:24000|62500|250000)\\.jpg$')
 	tooltipPattern = re.compile(
-		'^((?:[0-9]{4}(?:(?:\\.[0-9])|(?:-[0-9]{4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
+		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
 		'(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|60)\' Quad \\(1:(24,000|62,500|250,000)\\) '
 		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
 
 	quadScale = {'7.5': '24,000', '15': '62,500', '60': '250,000'}
-	quadVDatum = {'7.5': ('NGVD 29',), '15': ('MSL', 'NGVD 29'), '60': (None,)}
+	quadVDatum = {'7.5': ('MSL', 'NGVD 29'), '15': ('MSL', 'NGVD 29'), '60': ('MSL', None)}
 
 	def __init__(self, vdatum, series, scale, name, state, year):
 		self.vdatum = vdatum
@@ -405,10 +410,17 @@ class USGSTopo(object):
 		m = self.linkPattern.match(linkSuffix)
 		if m is None:
 			raise FormatError("Elevation link suffix doesn't match expected pattern")
-		self.id = m.group(3)
+		self.id = m.group(1)
 
-		self.linkSuffix = "{0}/{0}_{1}_{2}_{3}_{4}{5}.jpg".format(
+		state2 = self.state
+		# Special case for the 1962 15' (1:62,500) Benton, NV-CA quad:
+		# The JPG filename prefix is NV, but it's in the CA directory.
+		if self.id == '320710':
+			state2 = 'NV'
+
+		self.linkSuffix = "{0}/{1}_{2}_{3}_{4}_{5}{6}.jpg".format(
 			self.state,
+			state2,
 			self.name.replace('.', '').replace(' ', '%20'),
 			self.id,
 			self.year[:4],
@@ -460,8 +472,7 @@ def parseElevationTooltip(e, link, tooltip):
 				e.source.setLinkSuffix(linkSuffix)
 			if linkSuffix != e.source.linkSuffix:
 				raise FormatError("Elevation link suffix doesn't match")
-			if not e.checkTooltipElevation(m.group(1)):
-				raise FormatError("Elevation in tooltip doesn't match")
+			e.checkTooltipElevation(m.group(1))
 			return
 
 	raise FormatError("Unrecognized elevation link")
@@ -529,9 +540,46 @@ class Elevation(object):
 		else:
 			elevation = int(elevation)
 
-		return elevation == self.elevationFeet and isRange == self.isRange
+		if isRange != self.isRange:
+			raise FormatError("Elevation range doesn't match tooltip")
+		if elevation != self.elevationFeet:
+			raise FormatError("Elevation doesn't match tooltip")
+
+	def matchLoJ(self, feet):
+		if self.source is None:
+			if not self.isRange:
+				return feet == self.elevationFeet
+
+			result = "Range average if contour interval is {0} {1}"
+			for contour in (40, 20):
+				if self.elevationFeet % contour == 0:
+					if feet == self.elevationFeet + contour/2:
+						return result.format(contour, "feet")
+
+			meters = round(self.elevationFeet * 0.3048)
+			for contour in (20, 10):
+				if meters % contour == 0:
+					if feet == toFeet(meters + contour/2, 0):
+						return result.format(contour, "meters")
+			return False
+
+		if not isinstance(self.source, USGSTopo):
+			return False
+
+		if self.isRange:
+			if self.source.inMeters:
+				return feet == toFeet(self.elevationMeters + self.source.contourInterval/2, 0)
+
+			return feet == self.elevationFeet + self.source.contourInterval/2
+
+		if self.source.inMeters:
+			return feet == toFeet(self.elevationMeters, 0)
+
+		return feet == self.elevationFeet
 
 	def match(self, feet, isRange=None):
+		return self.matchLoJ(feet)
+
 		if feet == self.elevationFeet:
 			if self.isRange:
 				if not isRange:
@@ -547,9 +595,9 @@ class Elevation(object):
 			else:
 				if not isRange:
 					if feet == toFeet(round(self.elevationFeet * 0.3048)):
-						return "round(round({}*0.3048))".format(self.elevationFeet)
+						return "round(round({}*0.3048)/0.3048)".format(self.elevationFeet)
 					if feet == toFeet(round(self.elevationFeet * 0.3048), 0):
-						return "roundDown(round({}*0.3048))".format(self.elevationFeet)
+						return "roundDown(round({}*0.3048)/0.3048)".format(self.elevationFeet)
 				return False
 
 			result = "Range average{2} if contour interval is {0} {1}"
@@ -604,7 +652,9 @@ class Elevation(object):
 					return "roundDown({}/0.3048)".format(meters)
 		else:
 			if feet == toFeet(round(self.elevationFeet * 0.3048)):
-				return "round(round({}*0.3048))".format(self.elevationFeet)
+				return "round(round({}*0.3048)/0.3048)".format(self.elevationFeet)
+			if feet == toFeet(round(self.elevationFeet * 0.3048), 0):
+				return "roundDown(round({}*0.3048)/0.3048)".format(self.elevationFeet)
 		return False
 
 def parseElevation(pl, peak):
