@@ -1511,7 +1511,7 @@ def writeJSON(pl):
 
 def checkData(pl):
 	import sps_create
-	getattr(sps_create, 'check' + pl.id)(pl)
+	sps_create.checkData(pl)
 
 def main():
 	outputFunction = {

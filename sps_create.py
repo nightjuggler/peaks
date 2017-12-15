@@ -112,15 +112,12 @@ class PeakLoJ(object):
 		('Canyon Benchmark', 5890):                     'Canyon Point',
 		('Eagle Benchmark', 5350):                      'Eagle Mountains HP',
 		('Glass Mountain HP', 11180):                   'Glass Mountain',
-		('Granite Benchmark', 4353):                    'Granite Mountains HP',
-		('Granite Peak', 6761):                         'Granite Mountains HP',
 		('Jacumba Benchmark', 4512):                    'Jacumba Mountain',
 		('Mitchell Benchmark', 7047):                   'Mitchell Point',
 		('Mopah Peaks, East', 3530):                    'Mopah Point',
 		('New York Two Benchmark', 7532):               'New York Mountains HP',
 		('Nopah Benchmark', 6394):                      'Nopah Range HP',
 		('Pahrump Benchmark', 5740):                    'Pahrump Point',
-		('Red Top Benchmark', 3848):                    'Palen Mountains HP',
 		('Resting Spring Range HP', 5264):              'Stewart Point',
 		('Rosa Benchmark', 5020):                       'Rosa Point',
 		('Sandy Benchmark', 7062):                      'Sandy Point',
@@ -335,37 +332,31 @@ def matchElevation(peak, feet, isRange=None):
 			print line.format(e.getElevation(), result)
 	else:
 		for e in peak.elevations:
-			print line.format(e.getElevation(), 'No match'),
-			print '({}){}'.format(feet - e.elevationFeet,
-				'' if isRange is None or isRange == e.isRange else ' and range mismatch')
-
-#	matchElevation(pl.peaks[5-1][4-1], 13553,False) # Pb
-#	matchElevation(pl.peaks[18-1][8-1], 12276,True) # W
+			print line.format(e.getElevation(), 'No match ({}){}'.format(feet - e.elevationFeet,
+				'' if isRange is None or isRange == e.isRange else ' and range mismatch'))
 
 class MatchByName(object):
 	def __init__(self, pl):
 		name2peak = {}
-		duplicates = []
+
+		def put(name, peak):
+			if name in name2peak:
+				item = name2peak[name]
+				if isinstance(item, list):
+					item.append(peak)
+				else:
+					name2peak[name] = [item, peak]
+			else:
+				name2peak[name] = peak
 
 		for peaks in pl.peaks:
 			for peak in peaks:
 				name = peak.name
 				if peak.isHighPoint:
 					name += ' HP'
-				if name in name2peak:
-					item = name2peak[name]
-					if isinstance(item, list):
-						item.append(peak)
-					else:
-						name2peak[name] = [item, peak]
-						duplicates.append(name)
-				else:
-					name2peak[name] = peak
-
-		for name in duplicates:
-			for peak in name2peak[name]:
-				log("Duplicate name '{}' ({})", name,
-					' / '.join([e.getElevation() for e in peak.elevations]))
+				put(name, peak)
+				if peak.otherName is not None:
+					put(peak.otherName, peak)
 
 		self.name2peak = name2peak
 
@@ -374,10 +365,7 @@ class MatchByName(object):
 		if peak is not None:
 			if not isinstance(peak, list):
 				return peak
-			peakList = peak
-			for peak in peakList:
-				if peak.matchElevation(peak2.elevation)[0]:
-					return peak
+			log("Peak name '{}' is not unique!", peak2.name)
 		return None
 
 def checkElevation(peakList, peak2Class):
@@ -396,14 +384,5 @@ def checkElevation(peakList, peak2Class):
 		peak2.check(peak, peakList.id)
 		matchElevation(peak, peak2.elevation)
 
-def checkDPS(pl):
-	checkElevation(pl, PeakLoJ)
-
-def checkSPS(pl):
-	checkElevation(pl, PeakLoJ)
-
-def checkNPC(pl):
-	checkElevation(pl, PeakLoJ)
-
-def checkGBP(pl):
+def checkData(pl):
 	checkElevation(pl, PeakLoJ)
