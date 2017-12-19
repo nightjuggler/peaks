@@ -146,7 +146,7 @@ class TableReader(object):
 class RE(object):
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
-	htmlLink = re.compile('^<a href=(?:"[^\"]*"|[^\"\\s]\S*)>([- #\\(\\)0-9A-Za-z]+)</a>$')
+	htmlLink = re.compile('^<a href=(?:"[^\"]*"|[^\"\\s\>]+)>([- #\\(\\)0-9A-Za-z]+)</a>$')
 
 def str2int(s):
 	if len(s) < 4:
@@ -212,15 +212,15 @@ class PeakPb(TablePeak):
 	tableReaderArgs = dict(tableAttributes='class="gray"')
 	columnMap = {
 		'Rank': (
-			re.compile('^[0-9]+\\.$'),
+			re.compile('^(?:[1-9][0-9]*\\.)?$'),
 			None
 		),
 		'Peak': (
-			re.compile('^<a href=peak\\.aspx\\?pid=([1-9][0-9]*)>([ A-Za-z]+)</a>$'),
+			re.compile('^<a href=peak\\.aspx\\?pid=([1-9][0-9]*)>([- A-Za-z]+)</a>$'),
 			('id', 'name')
 		),
 		'Section': (
-			re.compile('^([0-9]{2})\\. ([- A-Za-z]+)$'),
+			re.compile('^([1-9]|[0-9]{2})(?:\\.| -) ([- A-Za-z]+)$'),
 			('sectionNumber', 'sectionName')
 		),
 		'Elev-Ft': (
@@ -243,9 +243,20 @@ class PeakPb(TablePeak):
 		'SPS':  247,
 	}
 	def check(self, peak, peakListId):
-		assert self.id == peak.peakbaggerId
+		if self.id != peak.peakbaggerId:
+			err("ID ({}) doesn't match Pb ID ({}) for {}", self.id, peak.peakbaggerId, self.name)
 
 	nameMap = {
+	# Desert Peaks Section:
+		('Chuckwalla Mountains HP', 3446):      'Bunch Benchmark',
+		('Eagle Mountain', 5350):               'Eagle Mountains HP',
+		('Granite Mountain', 6762):             'Granite Peak',
+		('Granite Mountain', 4331):             'Granite Benchmark',
+		('Old Woman Mountain', 5325):           'Old Woman Mountains HP',
+		('Spectre Peak', 4482):                 'Spectre Point',
+		('Stepladder Mountains', 2940):         'Stepladder Mountains HP',
+		('Superstition Benchmark', 5057):       'Superstition Mountain',
+	# Sierra Peaks Section:
 		('Devils Crags', 12400):                'Devil\'s Crag #1',
 		('Mount Morgan', 13748):                'Mount Morgan (South)',
 		('Mount Morgan', 12992):                'Mount Morgan (North)',
@@ -264,6 +275,9 @@ class PeakPb(TablePeak):
 
 		self.elevation = str2int(self.elevation)
 		self.prominence = str2int(self.prominence)
+
+		if self.name.endswith(' High Point'):
+			self.name = self.name[:-10] + 'HP'
 		self.name = self.nameMap.get((self.name, self.elevation), self.name)
 
 class PeakLoJ(TablePeak):
@@ -345,7 +359,8 @@ class PeakLoJ(TablePeak):
 		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
 	}
 	def check(self, peak, peakListId):
-		assert self.id == peak.listsOfJohnId
+		if self.id != peak.listsOfJohnId:
+			err("ID ({}) doesn't match LoJ ID ({}) for {}", self.id, peak.listsOfJohnId, self.name)
 		if peakListId == 'NPC':
 			assert self.state == 'NV'
 
