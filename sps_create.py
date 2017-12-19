@@ -1,28 +1,152 @@
 import re
 import sys
 
-def log(message, *formatArgs):
-	print >>sys.stderr, message.format(*formatArgs)
+def log(message, *args, **kwargs):
+	print >>sys.stderr, message.format(*args, **kwargs)
 
-def err(*args):
-	log(*args)
+def err(*args, **kwargs):
+	log(*args, **kwargs)
 	sys.exit()
 
-def readUntil(f, bytes, untilStr):
-	while True:
-		i = bytes.find(untilStr)
-		if i >= 0:
-			return bytes[:i], bytes[i + len(untilStr):]
-		newbytes = f.read(200)
-		if newbytes == '':
-			return bytes, None
-		bytes += newbytes
+class TableReader(object):
+	def err(self, message, *args, **kwargs):
+		self.fileObj.close()
+
+		if self.rowNum == 0:
+			prevTag = "<{}>".format(self.TABLE)
+		elif self.colNum == 0:
+			prevTag = self.endTag_TR
+		elif self.colNum == 1:
+			prevTag = self.tag_TR
+		else:
+			prevTag = self.colEndTag
+
+		prefix = self.classId
+		if self.rowNum > 0:
+			prefix += ", row " + str(self.rowNum)
+		if self.colNum > 0:
+			prefix += ", column " + str(self.colNum)
+		prefix += ": "
+
+		err(prefix + message, prevTag=prevTag, *args, **kwargs)
+
+	def __init__(self, fileObj, upper=False, tableAttributes=None):
+		self.bytes = ""
+		self.rowNum = 0
+		self.colNum = 0
+		self.fileObj = fileObj
+
+		if upper:
+			self.TABLE, self.TR, self.TD, self.TH = ("TABLE", "TR", "TD", "TH")
+		else:
+			self.TABLE, self.TR, self.TD, self.TH = ("table", "tr", "td", "th")
+
+		self.tag_TR = "<" + self.TR + ">"
+		self.endTag_TR = "</" + self.TR + ">"
+		self.endTag_TD = "</" + self.TD + ">"
+		self.endTag_TH = "</" + self.TH + ">"
+
+		while True:
+			self.readUntil("<" + self.TABLE)
+			b = self.readUntil(">", errMsg="Can't find '>' for {prevTag}").rstrip()
+			if tableAttributes is None:
+				break
+			if len(b) == 0:
+				if tableAttributes == "":
+					break
+			elif b[0] in " \n\r\t":
+				if tableAttributes == b.lstrip():
+					break
+
+	def __iter__(self):
+		return self
+
+	def readUntil(self, untilStr, errMsg="Can't find '{untilStr}'"):
+		bytes = self.bytes
+		while True:
+			i = bytes.find(untilStr)
+			if i >= 0:
+				self.bytes = bytes[i + len(untilStr):]
+				return bytes[:i]
+			newbytes = self.fileObj.read(1000)
+			if newbytes == "":
+				self.err(errMsg, untilStr=untilStr)
+			bytes += newbytes
+
+	def next(self):
+		if self.fileObj is None:
+			raise StopIteration()
+
+		b = self.readUntil("<", errMsg="Can't find '<' for next tag after {prevTag}")
+
+		if b.strip() != "":
+			self.err("Expected only whitespace between {prevTag} and next tag")
+
+		b = self.readUntil(">", errMsg="Can't find '>' for next tag after {prevTag}")
+
+		if b == self.TR:
+			self.rowNum += 1
+		elif b == "/" + self.TABLE:
+			self.fileObj.close()
+			self.fileObj = None
+			raise StopIteration()
+		else:
+			self.err("Expected either {} or </{}> after {prevTag}", self.tag_TR, self.TABLE)
+
+		row = self.readUntil(self.endTag_TR).strip()
+
+		while row.startswith(self.tag_TR):
+			row = row[len(self.tag_TR):].lstrip()
+
+		columns = []
+
+		while row != "":
+			self.colNum += 1
+
+			i = row.find("<")
+			if i < 0:
+				self.err("Can't find '<' for next tag after {prevTag}")
+			if row[:i].strip() != "":
+				self.err("Expected only whitespace between {prevTag} and next tag")
+			row = row[i + 1:]
+			i = row.find(">")
+			if i < 0:
+				self.err("Can't find '>' for next tag after {prevTag}")
+
+			tag = row[:i]
+			row = row[i + 1:]
+			i = tag.find(" ")
+			if i >= 0:
+				tag = tag[:i]
+
+			if tag == self.TD:
+				endTag = self.endTag_TD
+			elif tag == self.TH:
+				endTag = self.endTag_TH
+			else:
+				self.err("Expected either <{}> or <{}> after {prevTag}", self.TD, self.TH)
+
+			i = row.find(endTag)
+			if i < 0:
+				self.err("Can't find {}", endTag)
+
+			self.colEndTag = endTag
+
+			col = row[:i]
+			row = row[i + 5:]
+			while col.startswith("&nbsp;"):
+				col = col[6:]
+			while col.endswith("&nbsp;"):
+				col = col[:-6]
+			columns.append(col)
+
+		self.colNum = 0
+		return columns
 
 class RE(object):
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
-
-	td = re.compile('^<td(?: align="(?:center|right)")?>')
+	htmlLink = re.compile('^<a href=(?:"[^\"]*"|[^\"\\s]\S*)>([- #\\(\\)0-9A-Za-z]+)</a>$')
 
 def str2int(s):
 	if len(s) < 4:
@@ -40,59 +164,186 @@ def feetStr2Int(feetStr, description, peakName):
 		err("{} '{}' ({}) doesn't match expected pattern", description, feetStr, peakName)
 	return feet
 
-class PeakLoJ(object):
-	columnNames = (
-		'# in list',
-		'Name',
-		'Elevation',
-		'Saddle',
-		'Prominence',
-		'Line Parent',
-		'Isolation',
-		'Proximate Parent',
-		'State',
-		'Counties',
-		'Quadrangle',
-		'Section',
-	)
+class TablePeak(object):
+	@classmethod
+	def getPeaks(self, peakListId, fileNameSuffix=""):
+		htmlFile = open("extract/data/{}/{}{}.html".format(
+			peakListId.lower(), self.classId.lower(), fileNameSuffix))
+
+		table = TableReader(htmlFile, **getattr(self, "tableReaderArgs", {}))
+		row = table.next()
+
+		columns = []
+		for colNum, colStr in enumerate(row):
+			m = RE.htmlLink.match(colStr)
+			if m is not None:
+				colStr = m.group(1)
+			col = self.columnMap.get(colStr, None)
+			if col is None:
+				err("{}, row 1, column {}: Unrecognized column name:\n{}",
+					self.classId, colNum + 1, colStr)
+			columns.append(col)
+
+		peaks = []
+		for row in table:
+			if len(row) != len(columns):
+				err("{}, row {}: Unexpected number of columns", self.classId, table.rowNum)
+			peak = self()
+			for colNum, (colStr, (regexp, attributes)) in enumerate(zip(row, columns)):
+				m = regexp.match(colStr)
+				if m is None:
+					err("{}, row {}, column {} doesn't match expected pattern:\n{}",
+						self.classId, table.rowNum, colNum + 1, colStr)
+				if attributes is None:
+					assert regexp.groups == 0
+				else:
+					values = m.groups()
+					assert len(attributes) == len(values)
+					for attr, value in zip(attributes, values):
+						setattr(peak, attr, value)
+			peak.postProcess()
+			peaks.append(peak)
+
+		assert len(peaks) == self.numPeaks[peakListId]
+		return peaks
+
+class PeakPb(TablePeak):
+	classId = 'Pb'
+	tableReaderArgs = dict(tableAttributes='class="gray"')
+	columnMap = {
+		'Rank': (
+			re.compile('^[0-9]+\\.$'),
+			None
+		),
+		'Peak': (
+			re.compile('^<a href=peak\\.aspx\\?pid=([1-9][0-9]*)>([ A-Za-z]+)</a>$'),
+			('id', 'name')
+		),
+		'Section': (
+			re.compile('^([0-9]{2})\\. ([- A-Za-z]+)$'),
+			('sectionNumber', 'sectionName')
+		),
+		'Elev-Ft': (
+			re.compile('^((?:[1-9][0-9],[0-9]{3})|(?:[1-9][0-9]{3}))$'),
+			('elevation',)
+		),
+		'Range (Level 5)': (
+			re.compile('^<a href=range\\.aspx\\?rid=([1-9][0-9]*)>([- A-Za-z]+)</a>$'),
+			('rangeId', 'rangeName')
+		),
+		'Prom-Ft': (
+			re.compile('^((?:[1-9][0-9],[0-9]{3})|(?:[1-9][0-9]{1,3}))$'),
+			('prominence',)
+		),
+	}
+	numPeaks = {
+		'DPS':   99,
+		'GBP':  115,
+		'NPC':   73,
+		'SPS':  247,
+	}
+	def check(self, peak, peakListId):
+		assert self.id == peak.peakbaggerId
+
+	nameMap = {
+		('Devils Crags', 12400):                'Devil\'s Crag #1',
+		('Mount Morgan', 13748):                'Mount Morgan (South)',
+		('Mount Morgan', 12992):                'Mount Morgan (North)',
+		('Mount Stanford', 13973):              'Mount Stanford (South)',
+		('Mount Stanford', 12838):              'Mount Stanford (North)',
+		('Pilot Knob', 12245):                  'Pilot Knob (North)',
+		('Pyramid Peak', 12779):                'Pyramid Peak (South)',
+		('Pyramid Peak', 9983):                 'Pyramid Peak (North)',
+		('Sawtooth Peak', 8000):                'Sawtooth Peak (South)',
+		('Sawtooth Peak', 12343):               'Sawtooth Peak (North)',
+		('Sierra Buttes Lookout', 8590):        'Sierra Buttes',
+	}
+	def postProcess(self):
+		def str2int(s):
+			return int(s) if len(s) <= 4 else int(s[:-4]) * 1000 + int(s[-3:])
+
+		self.elevation = str2int(self.elevation)
+		self.prominence = str2int(self.prominence)
+		self.name = self.nameMap.get((self.name, self.elevation), self.name)
+
+class PeakLoJ(TablePeak):
+	classId = 'LoJ'
 	peakNamePattern = ('('
 		'(?:[A-Z][- 0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
 		'(?:"[A-Z][- 0-9A-Za-z]+")|'
 		'(?:[1-9][0-9]+(?:-[A-Z][ A-Za-z]+)?))'
 	)
-	re_peakName = re.compile('^' + peakNamePattern + '$')
-	re_columns = (
-		(re.compile('^[1-9][0-9]*$'), None),
-		(re.compile('^<b><a href="/peak/([1-9][0-9]*)" target="_blank">' + peakNamePattern + '</a></b>$'),
-			('id', 'name')),
-		(re.compile('^([,0-9]+)\'&nbsp;$'), ('elevation',)),
-		(re.compile('^<b><a href="/qmap\\?'
-			'lat=(-?[0-9]{1,2}\\.[0-9]{4})&amp;'
-			'lon=(-?[0-9]{1,3}\\.[0-9]{4})&amp;z=15" target="_blank">([,0-9]+)\'</a>&nbsp;</b>$'),
-			('saddleLat', 'saddleLng', 'saddleElev')),
-		(re.compile('^([,0-9]+)\'&nbsp;$'), ('prominence',)),
-		(re_peakName, ('lineParent',)),
-		(re.compile('^([0-9]+\\.[0-9]{2})&nbsp;$'), ('isolation',)),
-		(re_peakName, ('proximateParent',)),
-		(re.compile('^([A-Z]{2})$'), ('state',)),
-		(re.compile('^([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: &amp; [A-Z][a-z]+(?: [A-Z][a-z]+)*)*)$'),
-			('counties',)),
-		(re.compile('^<a href="/quad\\?q=([0-9]+)" target="_blank">([A-Za-z]+(?: [A-Za-z]+)*)</a>'
-			' - <a href="/qmap\\?Q=\\1" target="_blank">Map</a>$'),
-			('quadId', 'quadName')),
-		(re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z][a-z]+)+)$'),
-			('sectionNumber', 'sectionName')),
-	)
+	peakNameRegExp = re.compile('^' + peakNamePattern + '$')
+	columnMap = {
+		'# in list': (
+			re.compile('^[1-9][0-9]*$'),
+			None
+		),
+		'Name': (
+			re.compile(
+				'^<b><a href="/peak/([1-9][0-9]*)" target="_blank">' +
+				peakNamePattern + '</a></b>$'
+			),
+			('id', 'name')
+		),
+		'Elevation': (
+			re.compile('^([,0-9]+)\'$'),
+			('elevation',)
+		),
+		'Saddle': (
+			re.compile(
+				'^<b><a href="/qmap\\?'
+				'lat=(-?[0-9]{1,2}\\.[0-9]{4})&amp;'
+				'lon=(-?[0-9]{1,3}\\.[0-9]{4})&amp;z=15" '
+				'target="_blank">([,0-9]+)\'</a>&nbsp;</b>$'
+			),
+			('saddleLat', 'saddleLng', 'saddleElev')
+		),
+		'Prominence': (
+			re.compile('^([,0-9]+)\'$'),
+			('prominence',)
+		),
+		'Line Parent': (
+			peakNameRegExp,
+			('lineParent',)
+		),
+		'Isolation': (
+			re.compile('^([0-9]+\\.[0-9]{2})$'),
+			('isolation',)
+		),
+		'Proximate Parent': (
+			peakNameRegExp,
+			('proximateParent',)
+		),
+		'State': (
+			re.compile('^([A-Z]{2})$'),
+			('state',)
+		),
+		'Counties': (
+			re.compile(
+				'^([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: &amp;'
+				' [A-Z][a-z]+(?: [A-Z][a-z]+)*)*)$'
+			),
+			('counties',)
+		),
+		'Quadrangle': (
+			re.compile(
+				'^<a href="/quad\\?q=([0-9]+)" target="_blank">([A-Za-z]+(?: [A-Za-z]+)*)</a>'
+				' - <a href="/qmap\\?Q=\\1" target="_blank">Map</a>$'
+			),
+			('quadId', 'quadName')
+		),
+		'Section': (
+			re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z][a-z]+)+)$'),
+			('sectionNumber', 'sectionName')
+		),
+	}
 	numPeaks = {
 		'DPS':   95, # The four Mexican peaks are missing from the LoJ DPS list.
 		'GBP':  115,
 		'NPC':   73,
 		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
 	}
-	@classmethod
-	def getPeaks(self, id):
-		return loadListLoJ(id, self.numPeaks[id])
-
 	def check(self, peak, peakListId):
 		assert self.id == peak.listsOfJohnId
 		if peakListId == 'NPC':
@@ -243,82 +494,6 @@ class PeakLoJ(object):
 		if mappedElevation is not None:
 			self.elevation = mappedElevation
 
-def extractColumns(peak, row, rowNum, numCols):
-	for colNum, (regexp, attributes) in enumerate(peak.re_columns[:numCols]):
-		m = RE.td.match(row)
-		if m is None:
-			err("Beginning of row {}, column {} doesn't match expected pattern", rowNum, colNum + 1)
-		row = row[m.end():]
-		i = row.find('</td>')
-		if i < 0:
-			err("Missing </td> for row {}, column {}", rowNum, colNum + 1)
-		col = row[:i]
-		row = row[i + 5:]
-		m = regexp.match(col)
-		if m is None:
-			err("Row {}, column {} doesn't match expected pattern:\n{}", rowNum, colNum + 1, col)
-		if attributes is None:
-			assert regexp.groups == 0
-		else:
-			values = m.groups()
-			assert len(attributes) == len(values)
-			for attr, value in zip(attributes, values):
-				setattr(peak, attr, value)
-	if row != '':
-		err("End of row {} expected after column {}", rowNum, colNum + 1)
-
-def loadListLoJ(listId, numPeaks):
-	f = open("extract/data/{}/loj.html".format(listId.lower()))
-
-	row, bytes = readUntil(f, '', '<tr>')
-	if bytes is None:
-		err("Can't find <tr> for header row")
-	row, bytes = readUntil(f, bytes, '</tr>')
-	if bytes is None:
-		err("Can't find </tr> for header row")
-
-	numCols = 1
-	maxCols = len(PeakLoJ.columnNames)
-
-	while True:
-		i = row.find('<td class="one">')
-		if i < 0:
-			err("Can't find <td> for header row, column {}", numCols)
-		assert row[:i].strip() == ''
-		row = row[i + 16:]
-		i = row.find('</td>')
-		if i < 0:
-			err("Missing </td> for header row, column {}", numCols)
-		col = row[:i]
-		row = row[i + 5:]
-		assert col == PeakLoJ.columnNames[numCols - 1]
-		if row == '':
-			break
-		if numCols == maxCols:
-			err("End of header row expected after column {}", maxCols)
-		numCols += 1
-
-	rowNum = 0
-	peaks = []
-
-	while True:
-		row, bytes = readUntil(f, bytes, '<tr>')
-		if bytes is None:
-			break
-		rowNum += 1
-		row, bytes = readUntil(f, bytes, '</tr>')
-		if bytes is None:
-			err("Can't find </tr> for row {}", rowNum)
-
-		peak = PeakLoJ()
-		extractColumns(peak, row, rowNum, numCols)
-		peak.postProcess()
-		peaks.append(peak)
-
-	f.close()
-	assert len(peaks) == numPeaks
-	return peaks
-
 def matchElevation(peak, feet, isRange=None):
 	line = '{:5} {:24} {:7} {{:7}} {{}}'.format(peak.id, peak.name,
 		'{},{:03}'.format(*divmod(feet, 1000)) + ('+' if isRange else ' '))
@@ -385,4 +560,12 @@ def checkElevation(peakList, peak2Class):
 		matchElevation(peak, peak2.elevation)
 
 def checkData(pl):
+	print "+--------------------------------------+"
+	print "| Lists of John                        |"
+	print "+--------------------------------------+"
 	checkElevation(pl, PeakLoJ)
+
+	print "+--------------------------------------+"
+	print "| Peakbagger                           |"
+	print "+--------------------------------------+"
+	checkElevation(pl, PeakPb)
