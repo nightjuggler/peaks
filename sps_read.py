@@ -106,12 +106,13 @@ class Peak(object):
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
 
-	def matchElevation(self, *args, **kwargs):
+	def matchElevation(self, elevation):
 		exactMatches = []
 		otherMatches = []
+		matchMethod = 'match' + elevation.classId
 
 		for e in self.elevations:
-			result = e.match(*args, **kwargs)
+			result = getattr(e, matchMethod)(elevation)
 			if result is True:
 				exactMatches.append(e)
 			elif result:
@@ -545,7 +546,9 @@ class Elevation(object):
 		if elevation != self.elevationFeet:
 			raise FormatError("Elevation doesn't match tooltip")
 
-	def matchLoJ(self, feet):
+	def matchLoJ(self, elevation):
+		feet = elevation.feet
+
 		if self.source is None:
 			if not self.isRange:
 				return feet == self.elevationFeet
@@ -577,84 +580,50 @@ class Elevation(object):
 
 		return feet == self.elevationFeet
 
-	def match(self, feet, isRange=None):
-		return self.matchLoJ(feet)
-
-		if feet == self.elevationFeet:
-			if self.isRange:
-				if not isRange:
-					return "Range minimum (but not a range)"
-			elif isRange:
-				return "Range minimum (but not a range on my list)"
-			return True
+	def matchPb(self, elevation):
+		feet = elevation.feet
+		isRange = elevation.isRange
 
 		if self.source is None:
-			if self.isRange:
-				if isRange is not None:
-					return False
-			else:
+			if feet == self.elevationFeet:
+				if isRange == self.isRange:
+					return True
+				return "Range mismatch"
+
+			if not isRange:
+				meters = int(round(self.elevationFeet * 0.3048))
+				if feet == toFeet(meters):
+					return "Would match if spot elevation is {}m".format(meters)
+			return False
+
+		if self.isRange:
+			# Source must be USGSTopo
+			if feet == self.elevationFeet:
+				if isRange:
+					return True
+				return "Range mismatch"
+			return False
+
+		if self.source.vdatum == "NAVD 88":
+			assert self.source.inMeters
+
+			if feet == toFeet(self.elevationMeters - vertcon.getShift(*self.latlng)):
 				if not isRange:
-					if feet == toFeet(round(self.elevationFeet * 0.3048)):
-						return "round(round({}*0.3048)/0.3048)".format(self.elevationFeet)
-					if feet == toFeet(round(self.elevationFeet * 0.3048), 0):
-						return "roundDown(round({}*0.3048)/0.3048)".format(self.elevationFeet)
-				return False
-
-			result = "Range average{2} if contour interval is {0} {1}"
-			for contour in (40, 20):
-				if feet == self.elevationFeet + contour/2:
-					return result.format(contour, "feet", "")
-
-			meters = round(self.elevationFeet * 0.3048)
-			for contour in (20, 10):
-				average = meters + contour/2
-				if feet == toFeet(average):
-					return result.format(contour, "meters", "")
-				if feet == toFeet(average, 0):
-					return result.format(contour, "meters", " rounded down")
-		elif self.isRange:
-			if isRange is not None:
-				return False
-
-			if self.source.inMeters:
-				average = self.elevationMeters + self.source.contourInterval/2
-				if feet == toFeet(average):
 					return True
-				if feet == toFeet(average, 0):
-					return "Range average rounded down"
-			else:
-				if feet == self.elevationFeet + self.source.contourInterval/2:
+				return "Range mismatch"
+			return False
+
+		if self.source.inMeters:
+			if feet == toFeet(round(self.elevationMeters)):
+				if not isRange:
 					return True
-		elif self.source.inMeters:
-			if isRange:
-				return False
+				return "Range mismatch"
+			return False
 
-			meters = self.elevationMeters
-			if isinstance(meters, float):
-				m = "{:.2f}".format(meters)
-				if m[-1] == '0' and m[-2] != '.':
-					m = m[:-1]
-
-				if feet == toFeet(round(meters)):
-					return "round(round({})/0.3048)".format(m)
-				if feet == toFeet(round(meters), 0):
-					return "roundDown(round({})/0.3048)".format(m)
-
-				if feet == toFeet(meters, 0):
-					return "roundDown({}/0.3048)".format(m)
-
-				if feet == toFeet(int(meters)):
-					return "round(roundDown({})/0.3048)".format(m)
-				if feet == toFeet(int(meters), 0):
-					return "roundDown(roundDown({})/0.3048)".format(m)
-			else:
-				if feet == toFeet(meters, 0):
-					return "roundDown({}/0.3048)".format(meters)
-		else:
-			if feet == toFeet(round(self.elevationFeet * 0.3048)):
-				return "round(round({}*0.3048)/0.3048)".format(self.elevationFeet)
-			if feet == toFeet(round(self.elevationFeet * 0.3048), 0):
-				return "roundDown(round({}*0.3048)/0.3048)".format(self.elevationFeet)
+		if feet == self.elevationFeet:
+			if not isRange:
+				return True
+			return "Range mismatch"
 		return False
 
 def parseElevation(pl, peak):

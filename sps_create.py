@@ -21,7 +21,10 @@ class TableReader(object):
 		else:
 			prevTag = self.colEndTag
 
-		prefix = self.classId
+		prefix = self.fileObj.name
+		i = prefix.rfind("/")
+		if i >= 0:
+			prefix = prefix[i + 1:]
 		if self.rowNum > 0:
 			prefix += ", row " + str(self.rowNum)
 		if self.colNum > 0:
@@ -146,7 +149,7 @@ class TableReader(object):
 class RE(object):
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
-	htmlLink = re.compile('^<a href=(?:"[^\"]*"|[^\"\\s\>]+)>([- #\\(\\)0-9A-Za-z]+)</a>$')
+	htmlTag = re.compile('<[^>]*>')
 
 def str2int(s):
 	if len(s) < 4:
@@ -164,6 +167,64 @@ def feetStr2Int(feetStr, description, peakName):
 		err("{} '{}' ({}) doesn't match expected pattern", description, feetStr, peakName)
 	return feet
 
+class ObjectDiff(object):
+	def __init__(self, a, b, allowNotEq=()):
+		a = vars(a)
+		b = vars(b)
+
+		self.notEq = []
+		self.onlyA = []
+		self.onlyB = [k for k in b.iterkeys() if k not in a]
+
+		for k, v in a.iteritems():
+			if k in b:
+				if v != b[k] and k not in allowNotEq:
+					self.notEq.append(k)
+			else:
+				self.onlyA.append(k)
+
+	def __nonzero__(self):
+		return bool(self.notEq or self.onlyA or self.onlyB)
+
+	def message(self, nameA, nameB, suffix=""):
+		if not self:
+			return "Objects {} and {} are the same{}".format(nameA, nameB, suffix)
+
+		lines = ["Objects {} and {} are different{}".format(nameA, nameB, suffix)]
+		if self.onlyA:
+			lines.append("Only {} has these attributes: {}".format(nameA, ", ".join(self.onlyA)))
+		if self.onlyB:
+			lines.append("Only {} has these attributes: {}".format(nameB, ", ".join(self.onlyB)))
+		if self.notEq:
+			lines.append("These attributes have different values: " + ", ".join(self.notEq))
+		return "\n".join(lines)
+
+class ElevationPb(object):
+	classId = "Pb"
+
+	def __init__(self, minFeet, maxFeet):
+		self.feet = minFeet
+		self.isRange = minFeet < maxFeet
+
+	def __str__(self):
+		return "{},{:03}".format(*divmod(self.feet, 1000)) + ("+" if self.isRange else "")
+
+	def diff(self, e):
+		return "({}){}".format(self.feet - e.elevationFeet,
+			"" if self.isRange == e.isRange else " and range mismatch")
+
+class ElevationLoJ(object):
+	classId = "LoJ"
+
+	def __init__(self, feet):
+		self.feet = feet
+
+	def __str__(self):
+		return "{},{:03}".format(*divmod(self.feet, 1000))
+
+	def diff(self, e):
+		return "({})".format(self.feet - e.elevationFeet)
+
 class TablePeak(object):
 	@classmethod
 	def getPeaks(self, peakListId, fileNameSuffix=""):
@@ -175,25 +236,23 @@ class TablePeak(object):
 
 		columns = []
 		for colNum, colStr in enumerate(row):
-			m = RE.htmlLink.match(colStr)
-			if m is not None:
-				colStr = m.group(1)
+			colStr = RE.htmlTag.sub("", colStr)
 			col = self.columnMap.get(colStr, None)
 			if col is None:
-				err("{}, row 1, column {}: Unrecognized column name:\n{}",
-					self.classId, colNum + 1, colStr)
+				table.colNum = colNum + 1
+				table.err("Unrecognized column name:\n{}", colStr)
 			columns.append(col)
 
 		peaks = []
 		for row in table:
 			if len(row) != len(columns):
-				err("{}, row {}: Unexpected number of columns", self.classId, table.rowNum)
+				table.err("Unexpected number of columns")
 			peak = self()
 			for colNum, (colStr, (regexp, attributes)) in enumerate(zip(row, columns)):
 				m = regexp.match(colStr)
 				if m is None:
-					err("{}, row {}, column {} doesn't match expected pattern:\n{}",
-						self.classId, table.rowNum, colNum + 1, colStr)
+					table.colNum = colNum + 1
+					table.err("Doesn't match expected pattern:\n{}", colStr)
 				if attributes is None:
 					assert regexp.groups == 0
 				else:
@@ -236,6 +295,8 @@ class PeakPb(TablePeak):
 			('prominence',)
 		),
 	}
+	columnMap['Elev-Ft(Opt)'] = columnMap['Elev-Ft']
+	columnMap['Prom-Ft(Opt)'] = columnMap['Prom-Ft']
 	numPeaks = {
 		'DPS':   99,
 		'GBP':  115,
@@ -269,6 +330,12 @@ class PeakPb(TablePeak):
 		('Sawtooth Peak', 12343):               'Sawtooth Peak (North)',
 		('Sierra Buttes Lookout', 8590):        'Sierra Buttes',
 	}
+	@classmethod
+	def normalizeName(self, name, elevation=None):
+		if name.endswith(' High Point'):
+			name = name[:-10] + 'HP'
+		return self.nameMap.get((name, elevation), name)
+
 	def postProcess(self):
 		def str2int(s):
 			return int(s) if len(s) <= 4 else int(s[:-4]) * 1000 + int(s[-3:])
@@ -276,9 +343,33 @@ class PeakPb(TablePeak):
 		self.elevation = str2int(self.elevation)
 		self.prominence = str2int(self.prominence)
 
-		if self.name.endswith(' High Point'):
-			self.name = self.name[:-10] + 'HP'
-		self.name = self.nameMap.get((self.name, self.elevation), self.name)
+	@classmethod
+	def getPeaks(self, peakListId):
+		super_getPeaks = super(PeakPb, self).getPeaks
+		minPeaks = super_getPeaks(peakListId)
+		maxPeaks = super_getPeaks(peakListId, fileNameSuffix='-max')
+		maxPeaks = {p.id: p for p in maxPeaks}
+
+		for peak in minPeaks:
+			maxPeak = maxPeaks[peak.id]
+
+			diff = ObjectDiff(peak, maxPeak, allowNotEq=("elevation", "prominence"))
+			if diff:
+				err(diff.message("minPeak", "maxPeak",
+					" for Pb ID {} ({})".format(peak.id, peak.name)))
+
+			peak.name = peak.normalizeName(peak.name, peak.elevation)
+
+			if peak.elevation > maxPeak.elevation:
+				err("Pb: Max elevation ({}) must be >= min elevation ({}) for {}",
+					maxPeak.elevation, peak.elevation, peak.name)
+			if peak.prominence > maxPeak.prominence:
+				err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
+					maxPeak.prominence, peak.prominence, peak.name)
+
+			peak.elevation = ElevationPb(peak.elevation, maxPeak.elevation)
+
+		return minPeaks
 
 class PeakLoJ(TablePeak):
 	classId = 'LoJ'
@@ -406,6 +497,7 @@ class PeakLoJ(TablePeak):
 		('Sierra Buttes, North', 8591): 'Sierra Buttes',
 		('Three Sisters, East', 10612): 'Three Sisters',
 	}
+	@classmethod
 	def normalizeName(self, name, elevation=None):
 		if name[0] == '"':
 			assert name[-1] == '"'
@@ -505,25 +597,22 @@ class PeakLoJ(TablePeak):
 		self.lineParent = self.normalizeName(self.lineParent)
 		self.proximateParent = self.normalizeName(self.proximateParent)
 
-		mappedElevation = self.elevationMap.get((self.name, self.elevation))
-		if mappedElevation is not None:
-			self.elevation = mappedElevation
+		self.elevation = ElevationLoJ(self.elevationMap.get(
+			(self.name, self.elevation), self.elevation))
 
-def matchElevation(peak, feet, isRange=None):
-	line = '{:5} {:24} {:7} {{:7}} {{}}'.format(peak.id, peak.name,
-		'{},{:03}'.format(*divmod(feet, 1000)) + ('+' if isRange else ' '))
+def matchElevation(peak, elevation):
+	line = "{:5} {:24} {:7} {{:7}}".format(peak.id, peak.name, elevation)
 
-	exactMatches, otherMatches = peak.matchElevation(feet, isRange)
+	exactMatches, otherMatches = peak.matchElevation(elevation)
 
 	if exactMatches:
 		return
 	if otherMatches:
 		for e, result in otherMatches:
-			print line.format(e.getElevation(), result)
+			print line.format(e.getElevation()), result
 	else:
 		for e in peak.elevations:
-			print line.format(e.getElevation(), 'No match ({}){}'.format(feet - e.elevationFeet,
-				'' if isRange is None or isRange == e.isRange else ' and range mismatch'))
+			print line.format(e.getElevation()), "No match", elevation.diff(e)
 
 class MatchByName(object):
 	def __init__(self, pl):
