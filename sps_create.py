@@ -336,6 +336,30 @@ class PeakPb(TablePeak):
 			name = name[:-10] + 'HP'
 		return self.nameMap.get((name, elevation), name)
 
+	elevationMap = {
+	# Pb DPS Elevation Adjustments:
+	#
+	# - Bridge Mountain
+	#   Pb lists this peak with an elevation of 6955+ feet (2120-2130m), but the highest
+	#   contour is pretty clearly at 2130m, thus implying an elevation of 6988+ feet.
+	#
+	# - Needle Peak
+	#   See LoJ DPS Elevation Adjustments, except that a possible reason for Pb's 5,801'
+	#   is that the 1768.8m spot elevation from the 7.5' topo was rounded down to 1768m.
+	#   1768m = 5800.525' which is 5,801' when rounded to the nearest foot.
+	#
+	# - Stepladder Mountains HP
+	#   See LoJ DPS Elevation Adjustments. Pb seems to have done the same as LoJ, except
+	#   that instead of rounding down (2939.6' => 2939'), Pb rounded to the nearest foot
+	#   (2939.6' => 2940')
+	#
+		('Bridge Mountain', 6955, 'min'): 6988, # 2130m
+		('Bridge Mountain', 6988, 'max'): 7021, # 2140m
+		('Needle Peak', 5801, 'min'): 5804, # 1769m
+		('Needle Peak', 5801, 'max'): 5804, # 1769m
+		('Stepladder Mountains HP', 2940, 'min'): 2920, # 890m
+		('Stepladder Mountains HP', 2940, 'max'): 2953, # 900m
+	}
 	def postProcess(self):
 		def str2int(s):
 			return int(s) if len(s) <= 4 else int(s[:-4]) * 1000 + int(s[-3:])
@@ -360,14 +384,19 @@ class PeakPb(TablePeak):
 
 			peak.name = peak.normalizeName(peak.name, peak.elevation)
 
-			if peak.elevation > maxPeak.elevation:
+			elevMin = peak.elevation
+			elevMin = self.elevationMap.get((peak.name, elevMin, 'min'), elevMin)
+			elevMax = maxPeak.elevation
+			elevMax = self.elevationMap.get((peak.name, elevMax, 'max'), elevMax)
+
+			if elevMin > elevMax:
 				err("Pb: Max elevation ({}) must be >= min elevation ({}) for {}",
-					maxPeak.elevation, peak.elevation, peak.name)
+					elevMax, elevMin, peak.name)
 			if peak.prominence > maxPeak.prominence:
 				err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
 					maxPeak.prominence, peak.prominence, peak.name)
 
-			peak.elevation = ElevationPb(peak.elevation, maxPeak.elevation)
+			peak.elevation = ElevationPb(elevMin, elevMax)
 
 		return minPeaks
 
@@ -558,6 +587,16 @@ class PeakLoJ(TablePeak):
 	#   The 1:250,000 topos show either a spot elevation of 13,145' or no spot elevation.
 	#   The 1:100,000 topos show a spot elevation of 4005m (13,140').
 	#   So how does LoJ get 13,143'?
+	#
+	# - Needle Peak
+	#   The 7.5' topo shows a spot elevation of 1768.8m = 5803.15'
+	#   The 15' topos show a spot elevation of 5,805'
+	#   The 1:100,000 topos show a spot elevation of 1769m = 5803.8'
+	#   The 1:250,000 topos show spot elevations of either 5,782' or 5,805'
+	#   How does LoJ get 5,802'?
+	#   On the 7.5' topo, the top of the second 8 of the spot elevation is partially cut off by the
+	#   old Death Valley National Monument boundary line. Perhaps it was misread as a 6?
+	#   1768.6m does round down to 5,802'
 	#
 	# - Stepladder Mountains HP
 	#   "This location is higher than contour with spot elevation 892m. Elevation is interpolation of
