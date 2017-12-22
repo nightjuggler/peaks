@@ -410,6 +410,18 @@ class PeakPb(TablePeak):
 	#   The 1948-1960 Fresno 1:250,000 maps show a spot elevation of 14,384'
 	#   The 1962 Fresno 1:250,000 maps show a spot elevation of 14,375'
 	#
+	# - Sierra Buttes
+	#   The Sierra City 7.5' topos show a spot elevation of 8,591'
+	#   The Sierra City 15' topos show a spot elevation of 8,587'
+	#   The 1979/1990 Portola 1:100,000 topo doesn't show a spot elevation.
+	#   The highest contour is at 2550m, and the interval is 50m.
+	#   The 1891-1897 Downieville 1:125,000 maps show a spot elevation of 8,615'
+	#   The 1958 Chico 1:250,000 maps show a spot elevation of 8,587'
+	#   So perhaps Pb got 8,590' from NGS Data Sheet "Sierra" (KS1520). However, that's the
+	#   NAVD 88 elevation which "was computed by applying the VERTCON shift value to the
+	#   NGVD 29 height" which is given as 8,587'. Since the vertical datum for primary
+	#   elevations on Pb is NGVD 29, it seems that either 8,591' or 8,587' should be used.
+	#
 		('Basin Mountain', 13200, 'max'): 13181,
 		('Highland Peak', 10936, 'min'): 10935,
 		('Highland Peak', 10936, 'max'): 10935,
@@ -420,6 +432,8 @@ class PeakPb(TablePeak):
 		('Mount Carillon', 13553, 'max'): 13552,
 		('Mount Williamson', 14373, 'min'): 14375,
 		('Mount Williamson', 14373, 'max'): 14375,
+		('Sierra Buttes', 8590, 'min'): 8591,
+		('Sierra Buttes', 8590, 'max'): 8591,
 	}
 	def postProcess(self):
 		def str2int(s):
@@ -632,6 +646,18 @@ class PeakLoJ(TablePeak):
 	#   and then 20 feet (half of a typical 40-foot contour interval) were added because the more
 	#   recent 1994 topo doesn't show the spot elevation (even though the contour interval is 20
 	#   meters, not 40 feet, and, of course, the highest contour is 3740m, not 3742m).
+	#
+	# - Seven Gables (13,074) vs 13,075 (15' topo)
+	#   "13,080+40' contour on map is erroneous. NW summit is highest and shown as 3,985m on 1:100k map."
+	#   [https://listsofjohn.com/peak/32383]
+	#   The 1978/1988 Bishop 1:100,000 topo does indeed show a spot elevation of 3985m for Seven Gables,
+	#   and 3985m = 13,074'. However, this topo says that it was "Compiled from USGS 1:62 500-scale
+	#   topographic maps dated 1949-1962" and "Elevations shown to the nearest meter". So it seems likely
+	#   that the elevation for Seven Gables was taken from the 15' topo which shows a spot elevation of
+	#   13,075', converted to meters (3985.26m), and rounded to the nearest meter. Converting this
+	#   rounded value back to feet and rounding down to the nearest foot gives the elevation used by LoJ
+	#   which is one foot less than that on the 15' topo. Thus, the elevation shown on the 15' topo
+	#   seems a sliver more accurate to me.
 	#
 	elevationMap = {
 		('Adams Peak', 8199): 8197,
