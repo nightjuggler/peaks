@@ -677,16 +677,40 @@ def parseElevation(pl, peak):
 			badLine()
 
 def printElevationStats(pl):
+	numAllSourced = 0
+	numSomeSourced = 0
+	for section in pl.peaks:
+		for peak in section:
+			numSources = 0
+			for e in peak.elevations:
+				if e.source is not None:
+					numSources += 1
+			if numSources == len(peak.elevations):
+				numAllSourced += 1
+			elif numSources > 0:
+				numSomeSourced += 1
+
+	print "Number of peaks with all elevations sourced: {}/{}".format(numAllSourced, pl.numPeaks)
+	print "Number of peaks with some elevations sourced: {}/{}".format(numSomeSourced, pl.numPeaks)
+
 	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
 
 	for id, src in sorted(NGSDataSheet.sources.iteritems()):
 		peak = src.peak
-		name = peak.name
+		print id, "({})".format(src.name), peak.name,
 		if peak.isHighPoint:
-			name += ' HP'
+			print "HP",
 		if peak.otherName is not None:
-			name += ' ({})'.format(peak.otherName)
-		print '{} ({}) {}'.format(id, src.name, name)
+			print "({})".format(peak.otherName),
+		for e in peak.elevations:
+			if isinstance(e.source, NGSDataSheet) and e.source.id == id:
+				if e.elevationFeet != toFeet(e.elevationMeters):
+					print "({}m = {}' rounded down to {}')".format(
+						e.elevationMeters,
+						round(e.elevationMeters / 0.3048, 4),
+						e.elevationFeet),
+				break
+		print
 
 	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
 
