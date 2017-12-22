@@ -359,6 +359,67 @@ class PeakPb(TablePeak):
 		('Needle Peak', 5801, 'max'): 5804, # 1769m
 		('Stepladder Mountains HP', 2940, 'min'): 2920, # 890m
 		('Stepladder Mountains HP', 2940, 'max'): 2953, # 900m
+
+	# Pb SPS Elevation Adjustments:
+	#
+	# - Basin Mountain
+	#   See LoJ SPS Elevation Adjustments. Pb did the same.
+	#
+	# - Highland Peak
+	#   All of the Ebbetts Pass 7.5' topos show a spot elevation of 10,935'
+	#   All of the Markleeville 15' topos show a spot elevation of 10,934'
+	#   The 1985 Smith Valley 1:100,000 topo doesn't show a spot elevation.
+	#   The 1889, 1891, and 1893 Markleeville 1:125,000 maps show a spot elevation of 10,955'
+	#   All of the Walker Lake 1:250,000 maps show spot elevations of either 10,935' or 10,955'
+	#   How does Pb get 10,936'
+	#
+	# - Kearsarge Peak
+	#   The 1994 Kearsarge Peak 7.5' topo doesn't show a spot elevation.
+	#   The highest contour is at 3840m, and the contour interval is 20m.
+	#   The 1985 and 1992 Kearsarge Peak 7.5' topos show a spot elevation of 3846m = 12,618'
+	#   The Mt. Pinchot 15' topos show a spot elevation of 12,598'
+	#   The 1978 Mount Whitney 1:100,000 topo shows a spot elevation of 3840m = 12,598'
+	#   The 1937 Mt. Whitney 1:125,000 topos show a spot elevation of 12,650'
+	#   The 1:250,000 topos show a spot elevation of 12,650'
+	#   How does Pb get 12,615'?
+	#
+	# - Kern Peak
+	#   None of the maps on topoView (1:24,000, 1:62,500, 1:100k, 1:125k, and 1:250k) show a
+	#   spot elevation of 11,480'. It's likely that Pb just didn't set the optimistic elevation.
+	#   The highest contour on the 7.5' topos is at 11,480', and the contour interval is 40'.
+	#
+	# - Mount Carillon
+	#   Pb's elevation of 13,553' implies that there's a map showing a spot elevation of either
+	#   13,553' or 4131m, but none of the maps currently on topoView show this.
+	#   The 1985, 1993, and 1994 editions of the Mount Whitney 7.5' topo don't show a spot elevation
+	#   for Mount Carillon. The highest contour is at 4120m, and the interval is 20m.
+	#   All of the Mount Whitney 15' topos (3x 1956, 2x 1967) show a spot elevation of 13,552'
+	#   The 1978/1990 Mount Whitney 1:100,000 topo doesn't show a spot elevation.
+	#   The highest contour is at 4100m, and the contour interval is 50m.
+	#   The 1907, 1919, and 1937 Mt. Whitney 1:125,000 topos show a spot elevation of 13,571'
+	#   None of the Fresno 1:250,000 maps show a spot elevation, nor do they label Mount Carillon.
+	#
+	# - Mount Williamson
+	#   Pb's elevation of 14,373' implies that there's a map showing a spot elevation of either
+	#   14,373' or 4381m, but none of the maps currently on topoView show this.
+	#   The 1984, 1993, and 1994 Mt. Williamson 7.5' topos don't show a spot elevation.
+	#   The highest contour is at 4380m, and the interval is 20m.
+	#   All of the Mount Whitney 15' topos (3x 1956, 2x 1967) show a spot elevation of 14,375'
+	#   The 1978/1990 Mount Whitney 1:100,000 topo shows a spot elevation of 4382m = 14376.6'
+	#   The 1907, 1919, and 1937 Mt. Whitney 1:125,000 topos show a spot elevation of 14,384'
+	#   The 1948-1960 Fresno 1:250,000 maps show a spot elevation of 14,384'
+	#   The 1962 Fresno 1:250,000 maps show a spot elevation of 14,375'
+	#
+		('Basin Mountain', 13200, 'max'): 13181,
+		('Highland Peak', 10936, 'min'): 10935,
+		('Highland Peak', 10936, 'max'): 10935,
+		('Kearsarge Peak', 12615, 'min'): 12618,
+		('Kearsarge Peak', 12615, 'max'): 12618,
+		('Kern Peak', 11480, 'max'): 11520,
+		('Mount Carillon', 13553, 'min'): 13552,
+		('Mount Carillon', 13553, 'max'): 13552,
+		('Mount Williamson', 14373, 'min'): 14375,
+		('Mount Williamson', 14373, 'max'): 14375,
 	}
 	def postProcess(self):
 		def str2int(s):
