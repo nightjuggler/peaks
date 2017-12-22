@@ -376,6 +376,14 @@ class NGSDataSheet(object):
 
 class USGSTopo(object):
 	sources = {}
+
+	# Mount Stirling (DPS 6.6) almost made me change toFeetDelta to 0.496. It seemed generous
+	# to round the spot elevation of 2505m = 8218.5039' up to 8219', especially considering
+	# that NGS datasheets seem to round down when the fractional part is less than 0.512 feet.
+	# SP, BB, LoJ, and the official DPS list all use 8218'. Only Pb uses 8219'. But for now
+	# I've decided to go with 8219', not make an exception, keep it simple, and maybe one day
+	# unravel the mystery of why NGS datasheets don't round up starting at exactly 0.5.
+
 	toFeetDelta = 0.5
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
