@@ -399,6 +399,17 @@ class PeakPb(TablePeak):
 	#   The 1907, 1919, and 1937 Mt. Whitney 1:125,000 topos show a spot elevation of 13,571'
 	#   None of the Fresno 1:250,000 maps show a spot elevation, nor do they label Mount Carillon.
 	#
+	# - Mount Jordan
+	#   Very similar to Mount Carillon:
+	#   Pb's elevation of 13,343' implies that there's a map showing a spot elevation of either
+	#   13,343' or 4067m, but none of the maps currently on topoView show this.
+	#   The Mt. Brewer 7.5' quads don't show a spot elevation.
+	#   The highest contour is at 4060m, and the interval is 20m.
+	#   The Mount Whitney 15' quads show a spot elevation of 13,344'
+	#   The 1978/1990 Mount Whitney 1:100,000 topo doesn't show a spot elevation.
+	#   The 1907, 1919, and 1937 Mt. Whitney 1:125,000 maps show a spot elevation of 13,316'
+	#   None of the Fresno 1:250,000 maps show a spot elevation, nor do they label Mount Jordan.
+	#
 	# - Mount Williamson
 	#   Pb's elevation of 14,373' implies that there's a map showing a spot elevation of either
 	#   14,373' or 4381m, but none of the maps currently on topoView show this.
@@ -430,6 +441,8 @@ class PeakPb(TablePeak):
 		('Kern Peak', 11480, 'max'): 11520,
 		('Mount Carillon', 13553, 'min'): 13552,
 		('Mount Carillon', 13553, 'max'): 13552,
+		('Mount Jordan', 13343, 'min'): 13344,
+		('Mount Jordan', 13343, 'max'): 13344,
 		('Mount Williamson', 14373, 'min'): 14375,
 		('Mount Williamson', 14373, 'max'): 14375,
 		('Sierra Buttes', 8590, 'min'): 8591,
