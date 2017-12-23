@@ -340,12 +340,17 @@ def printLandManagementAreas(pl):
 			area.highPoint.name if area.highPoint else '-',
 			area.url if area.url else '-')
 
+def toSurveyFeet(meters, delta=0.5):
+	return int(meters * 39.37/12 + delta)
+
 def toFeet(meters, delta=0.5):
 	return int(meters / 0.3048 + delta)
 
+def toMeters(feet, delta=0.5):
+	return int(feet * 12/39.37 + delta)
+
 class NGSDataSheet(object):
 	sources = {}
-	toFeetDelta = 0.488
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
@@ -376,15 +381,6 @@ class NGSDataSheet(object):
 
 class USGSTopo(object):
 	sources = {}
-
-	# Mount Stirling (DPS 6.6) almost made me change toFeetDelta to 0.496. It seemed generous
-	# to round the spot elevation of 2505m = 8218.5039' up to 8219', especially considering
-	# that NGS datasheets seem to round down when the fractional part is less than 0.512 feet.
-	# SP, BB, LoJ, and the official DPS list all use 8218'. Only Pb uses 8219'. But for now
-	# I've decided to go with 8219', not make an exception, keep it simple, and maybe one day
-	# unravel the mystery of why NGS datasheets don't round up starting at exactly 0.5.
-
-	toFeetDelta = 0.5
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
 		'^[A-Z]{2}/[A-Z]{2}_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
@@ -545,7 +541,7 @@ class Elevation(object):
 			self.source.setContourInterval(interval)
 		if inMeters:
 			self.elevationMeters = float(elevation) if '.' in elevation else int(elevation)
-			elevation = toFeet(self.elevationMeters, self.source.toFeetDelta)
+			elevation = toSurveyFeet(self.elevationMeters)
 		else:
 			elevation = int(elevation)
 
@@ -567,7 +563,7 @@ class Elevation(object):
 					if feet == self.elevationFeet + contour/2:
 						return result.format(contour, "feet")
 
-			meters = round(self.elevationFeet * 0.3048)
+			meters = toMeters(self.elevationFeet)
 			for contour in (20, 10):
 				if meters % contour == 0:
 					if feet == toFeet(meters + contour/2, 0):
@@ -599,14 +595,18 @@ class Elevation(object):
 				return "Range mismatch"
 
 			if not isRange:
-				meters = int(round(self.elevationFeet * 0.3048))
+				meters = toMeters(self.elevationFeet)
 				if feet == toFeet(meters):
 					return "Would match if spot elevation is {}m".format(meters)
 			return False
 
 		if self.isRange:
 			# Source must be USGSTopo
-			if feet == self.elevationFeet:
+			if self.source.inMeters:
+				elevationFeet = toFeet(self.elevationMeters)
+			else:
+				elevationFeet = self.elevationFeet
+			if feet == elevationFeet:
 				if isRange:
 					return True
 				return "Range mismatch"
@@ -702,14 +702,6 @@ def printElevationStats(pl):
 			print "HP",
 		if peak.otherName is not None:
 			print "({})".format(peak.otherName),
-		for e in peak.elevations:
-			if isinstance(e.source, NGSDataSheet) and e.source.id == id:
-				if e.elevationFeet != toFeet(e.elevationMeters):
-					print "({}m = {}' rounded down to {}')".format(
-						e.elevationMeters,
-						round(e.elevationMeters / 0.3048, 4),
-						e.elevationFeet),
-				break
 		print
 
 	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
@@ -1027,16 +1019,18 @@ def checkProminenceMath(e1a, c1a, e1, e2a, c2a, e2, promType, source):
 
 	if promType != ('average' if average1 or average2 else 'clean'):
 		badLine()
+	toFeetDelta = 0.5
 	if source == 'LoJ':
+		toFeetDelta = 0
 		if promType != 'average':
 			raise FormatError("Expected average prominence from LoJ")
 	elif source != 'Pb':
 		raise FormatError("Prominence source must be LoJ or Pb")
 
 	if inMeters1:
-		e1 = toFeet(e1)
+		e1 = toFeet(e1, toFeetDelta)
 	if inMeters2:
-		e2 = toFeet(e2)
+		e2 = toFeet(e2, toFeetDelta)
 	return e1 - e2
 
 def parseProminence(line):
