@@ -672,6 +672,16 @@ class PeakLoJ(TablePeak):
 	#   which is one foot less than that on the 15' topo. Thus, the elevation shown on the 15' topo
 	#   seems a sliver more accurate to me.
 	#
+	# - South Guard
+	#   The Mt. Brewer 7.5' topos all show a spot elevation of 4033m = 13231.6' which, by LoJ's standard
+	#   of rounding down, should be listed as 13,231', but LoJ uses 13,232'.
+	#   The Mount Whitney 15' topos all show a spot elevation of 13,224'.
+	#   The 1978/1990 Mount Whitney 1:100,000 topo doesn't show a spot elevation.
+	#   The Fresno 1:250,000 maps also don't show a spot elevation.
+	#   However, the 1907-1937 Mount Whitney 30' (1:125,000) quads show a spot elevation of 13,232' for
+	#   the peak directly east of South Guard Lake! Did LoJ get the elevation from one of these maps?
+	#   I added support for 30' quads so I don't have to make an adjustment for this peak.
+	#
 	elevationMap = {
 		('Adams Peak', 8199): 8197,
 		('Mount Agassiz', 13892): 13893,

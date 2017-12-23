@@ -388,14 +388,14 @@ class USGSTopo(object):
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
 		'^[A-Z]{2}/[A-Z]{2}_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
-		'([0-9]{6})_[0-9]{4}_(?:24000|62500|250000)\\.jpg$')
+		'([0-9]{6})_[0-9]{4}_(?:24000|62500|125000|250000)\\.jpg$')
 	tooltipPattern = re.compile(
 		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
-		'(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|60)\' Quad \\(1:(24,000|62,500|250,000)\\) '
+		'(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|30|60)\' Quad \\(1:(24,000|62,500|125,000|250,000)\\) '
 		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
 
-	quadScale = {'7.5': '24,000', '15': '62,500', '60': '250,000'}
-	quadVDatum = {'7.5': ('MSL', 'NGVD 29'), '15': ('MSL', 'NGVD 29'), '60': ('MSL', None)}
+	quadScale = {'7.5': '24,000', '15': '62,500', '30': '125,000', '60': '250,000'}
+	quadVDatum = {'7.5': ('MSL', 'NGVD 29'), '15': ('MSL', 'NGVD 29'), '30': ('MSL',), '60': ('MSL', None)}
 
 	def __init__(self, vdatum, series, scale, name, state, year):
 		self.vdatum = vdatum
