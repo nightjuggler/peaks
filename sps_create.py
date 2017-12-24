@@ -261,7 +261,7 @@ class TablePeak(object):
 					assert len(attributes) == len(values)
 					for attr, value in zip(attributes, values):
 						setattr(peak, attr, value)
-			peak.postProcess()
+			peak.postProcess(peakListId)
 			peaks.append(peak)
 
 		assert len(peaks) == self.numPeaks[peakListId]
@@ -269,6 +269,10 @@ class TablePeak(object):
 
 class PeakPb(TablePeak):
 	classId = 'Pb'
+	classTitle = 'Peakbagger'
+	classAttrId = 'peakbaggerId'
+	classAttrPeak = 'peakbaggerPeak'
+
 	tableReaderArgs = dict(tableAttributes='class="gray"')
 	columnMap = {
 		'Rank': (
@@ -304,10 +308,6 @@ class PeakPb(TablePeak):
 		'NPC':   73,
 		'SPS':  247,
 	}
-	def check(self, peak, peakListId):
-		if self.id != peak.peakbaggerId:
-			err("ID ({}) doesn't match Pb ID ({}) for {}", self.id, peak.peakbaggerId, self.name)
-
 	nameMap = {
 	# Desert Peaks Section:
 		('Chuckwalla Mountains HP', 3446):      'Bunch Benchmark',
@@ -449,7 +449,7 @@ class PeakPb(TablePeak):
 		('Sierra Buttes', 8590, 'min'): 8591,
 		('Sierra Buttes', 8590, 'max'): 8591,
 	}
-	def postProcess(self):
+	def postProcess(self, peakListId):
 		def str2int(s):
 			return int(s) if len(s) <= 4 else int(s[:-4]) * 1000 + int(s[-3:])
 
@@ -491,6 +491,10 @@ class PeakPb(TablePeak):
 
 class PeakLoJ(TablePeak):
 	classId = 'LoJ'
+	classTitle = 'Lists of John'
+	classAttrId = 'listsOfJohnId'
+	classAttrPeak = 'listsOfJohnPeak'
+
 	peakNamePattern = ('('
 		'(?:[A-Z][- 0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
 		'(?:"[A-Z][- 0-9A-Za-z]+")|'
@@ -567,12 +571,6 @@ class PeakLoJ(TablePeak):
 		'NPC':   73,
 		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
 	}
-	def check(self, peak, peakListId):
-		if self.id != peak.listsOfJohnId:
-			err("ID ({}) doesn't match LoJ ID ({}) for {}", self.id, peak.listsOfJohnId, self.name)
-		if peakListId == 'NPC':
-			assert self.state == 'NV'
-
 	# Errata for the LoJ SPS list (https://listsofjohn.com/customlists?lid=60):
 	#
 	# - Mount Morgan (13,001') (known as Mount Morgan (North) on the SPS list) is listed in
@@ -745,7 +743,7 @@ class PeakLoJ(TablePeak):
 	#
 		('Eagle Peak', 9900): 9892,
 	}
-	def postProcess(self):
+	def postProcess(self, peakListId):
 		self.elevation = feetStr2Int(self.elevation, 'Elevation', self.name)
 		self.saddleElev = feetStr2Int(self.saddleElev, 'Saddle elevation', self.name)
 		self.prominence = feetStr2Int(self.prominence, 'Prominence', self.name)
@@ -758,6 +756,9 @@ class PeakLoJ(TablePeak):
 
 		self.elevation = ElevationLoJ(self.elevationMap.get(
 			(self.name, self.elevation), self.elevation))
+
+		if peakListId == 'NPC':
+			assert self.state == 'NV'
 
 def matchElevation(peak, elevation):
 	line = "{:5} {:24} {:7} {{:7}}".format(peak.id, peak.name, elevation)
@@ -797,18 +798,33 @@ class MatchByName(object):
 					put(peak.otherName, peak)
 
 		self.name2peak = name2peak
+		self.id = pl.id
 
 	def get(self, peak2):
 		peak = self.name2peak.get(peak2.name)
 		if peak is not None:
 			if not isinstance(peak, list):
+				id = getattr(peak, peak2.classAttrId, None)
+				if id != peak2.id:
+					err("ID ({}) doesn't match {} ({}) for {}",
+						peak2.id, peak2.classAttrId, id, peak2.name)
+				setattr(peak, peak2.classAttrPeak, peak2)
 				return peak
 			log("Peak name '{}' is not unique!", peak2.name)
 		return None
 
-def checkElevation(peakList, peak2Class):
-	peakMap = MatchByName(peakList)
-	peakList2 = peak2Class.getPeaks(peakList.id)
+def printTitle(title):
+	width = 60
+	border = "+" + ("-" * (width - 2)) + "+"
+	title = "| " + title + (" " * (width - 4 - len(title))) + " |"
+
+	print border
+	print title
+	print border
+
+def checkElevation(peakMap, peak2Class):
+	printTitle("Elevations - " + peak2Class.classTitle)
+	peakList2 = peak2Class.getPeaks(peakMap.id)
 
 	matchedPeaks = []
 	for peak2 in peakList2:
@@ -819,16 +835,50 @@ def checkElevation(peakList, peak2Class):
 			matchedPeaks.append((peak, peak2))
 
 	for peak, peak2 in matchedPeaks:
-		peak2.check(peak, peakList.id)
 		matchElevation(peak, peak2.elevation)
 
-def checkData(pl):
-	print "+--------------------------------------+"
-	print "| Lists of John                        |"
-	print "+--------------------------------------+"
-	checkElevation(pl, PeakLoJ)
+def checkProminences(pl):
+	printTitle("Prominences")
 
-	print "+--------------------------------------+"
-	print "| Peakbagger                           |"
-	print "+--------------------------------------+"
-	checkElevation(pl, PeakPb)
+	numMatchPb = 0
+	numMatchLoJ = 0
+	numMatchBoth = 0
+	numMatchNone = 0
+
+	for section in pl.peaks:
+		for peak in section:
+			for prom in peak.prominences:
+				if isinstance(prom, tuple):
+					prom, tooltip = prom
+
+				matched = []
+				for peak2Class in (PeakLoJ, PeakPb):
+					peak2 = getattr(peak, peak2Class.classAttrPeak, None)
+					matched.append(peak2 is not None and peak2.prominence == prom)
+
+				matchedLoJ, matchedPb = matched
+				if matchedLoJ:
+					if matchedPb:
+						numMatchBoth += 1
+					else:
+						numMatchLoJ += 1
+				elif matchedPb:
+					numMatchPb += 1
+				else:
+					numMatchNone += 1
+					line = "{:5} {:24} {:6} ".format(peak.id, peak.name, prom)
+					print line, "Matches neither LoJ nor Pb"
+
+	print
+	print "Matched none =", numMatchNone
+	print "Matched both =", numMatchBoth
+	print "Matched LoJ =", numMatchLoJ
+	print "Matched Pb =", numMatchPb
+
+def checkData(pl):
+	peakMap = MatchByName(pl)
+
+	for peak2Class in (PeakLoJ, PeakPb):
+		checkElevation(peakMap, peak2Class)
+
+	checkProminences(pl)
