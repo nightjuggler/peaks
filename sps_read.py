@@ -604,12 +604,16 @@ class Elevation(object):
 			# Source must be USGSTopo
 			if self.source.inMeters:
 				elevationFeet = toFeet(self.elevationMeters)
+				maxElevation = toFeet(self.elevationMeters + self.source.contourInterval)
 			else:
 				elevationFeet = self.elevationFeet
+				maxElevation = elevationFeet + self.source.contourInterval
 			if feet == elevationFeet:
-				if isRange:
+				if not isRange:
+					return "Range mismatch"
+				if elevation.maxFeet == maxElevation:
 					return True
-				return "Range mismatch"
+				return "Max elevation mismatch"
 			return False
 
 		if self.source.vdatum == "NAVD 88":
