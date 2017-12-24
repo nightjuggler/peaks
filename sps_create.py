@@ -204,6 +204,7 @@ class ElevationPb(object):
 
 	def __init__(self, minFeet, maxFeet):
 		self.feet = minFeet
+		self.maxFeet = maxFeet
 		self.isRange = minFeet < maxFeet
 
 	def __str__(self):
@@ -639,6 +640,14 @@ class PeakLoJ(TablePeak):
 	#   "East Summit determined higher than west by 2 feet using photo pixel analysis."
 	#   [https://listsofjohn.com/peak/17460]
 	#
+	# - Deerhorn Mountain
+	#   It seems like LoJ didn't round down.
+	#   The Mt. Brewer 7.5' topos show a spot elevation of 4048m = 13280.8'
+	#   The 15' topos show a spot elevation of 13,265'
+	#   The 1:100:000 map shows a spot elevation of 4043m (13,265' rounded to the nearest meter)
+	#   The 1:125,000 maps show a spot elevation of 13,275'
+	#   The 1:250,000 maps don't show a spot elevation, nor do they label Deerhorn Mountain.
+	#
 	# - Mount Agassiz (13,892) vs 13,893 (7.5' topo) or 13,891 (15' topo)
 	#   Perhaps the average between the 7.5' and 15' topo spot elevations was taken?
 	#
@@ -684,6 +693,7 @@ class PeakLoJ(TablePeak):
 	#
 	elevationMap = {
 		('Adams Peak', 8199): 8197,
+		('Deerhorn Mountain', 13281): 13280,
 		('Mount Agassiz', 13892): 13893,
 		('Basin Mountain', 13190): 13181,
 		('Mount Baxter', 13140): 13136,
