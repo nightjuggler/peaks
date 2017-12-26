@@ -499,6 +499,17 @@ class Elevation(object):
 	def getElevation(self):
 		return '{},{:03}'.format(*divmod(self.elevationFeet, 1000)) + ('+' if self.isRange else '')
 
+	def sortkey(self):
+		src = self.source
+		if src is None:
+			return (80, not self.isRange, self.elevationFeet)
+		if isinstance(src, NGSDataSheet):
+			return (90, self.elevationFeet, src.id)
+		if isinstance(src, USGSTopo):
+			scale = int(src.scale[-3:]) + int(src.scale[:-4]) * 1000
+			return (60, -scale, not self.isRange, src.year, src.id)
+		return (0,)
+
 	def getTooltip(self):
 		src = self.source
 
@@ -680,6 +691,15 @@ def parseElevation(pl, peak):
 		if line[:4] != '<br>':
 			badLine()
 
+	e1 = peak.elevations[0]
+	k1 = e1.sortkey()
+	for e2 in peak.elevations[1:]:
+		k2 = e2.sortkey()
+		if k2 > k1:
+			raise FormatError("Elevations are not in the expected order")
+		e1 = e2
+		k1 = k2
+
 def printElevationStats(pl):
 	numAllSourced = 0
 	numSomeSourced = 0
@@ -825,7 +845,7 @@ class RE(object):
 	prominenceTooltip = re.compile(
 		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+m?))'
 		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+m?))'
-		' \\(([a-z]+)\\) \\(([A-Z][A-Za-z]+)\\)(?:<br>Line Parent: '
+		' \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\)(<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
 	summitpost = re.compile(
@@ -1002,40 +1022,79 @@ def elevStr2Int(e):
 
 	return str2int(e), False
 
-def promElevation(elevMin, contourInterval, elevation, subtractContourInterval=False):
-	if elevMin is None:
-		elevation, inMeters = elevStr2Int(elevation)
-		return elevation, inMeters, False
+class SimpleElevation(object):
+	def __init__(self, minElev, maxElev, inMeters):
+		self.minElev = minElev
+		self.maxElev = maxElev
+		self.inMeters = inMeters
 
-	elevMin, inMeters = elevStr2Int(elevMin)
+	def avgFeet(self, delta=0.5):
+		avgElev = (self.minElev + self.maxElev) / 2
+		return toFeet(avgElev, delta) if self.inMeters else avgElev
+
+	def avgStr(self, saddle=False):
+		if self.minElev == self.maxElev:
+			if self.inMeters:
+				return str(self.minElev) + "m"
+			return int2str(self.minElev)
+
+		contour = self.maxElev - self.minElev
+		if saddle:
+			elev = self.maxElev
+			sign = "-"
+		else:
+			elev = self.minElev
+			sign = "+"
+
+		if self.inMeters:
+			return "({}m {} {}m/2)".format(elev, sign, contour)
+
+		return "({} {} {}/2)".format(int2str(elev), sign, contour)
+
+class Prominence(object):
+	def __init__(self, peakElev, saddleElev, source, extraInfo=None):
+		self.peakElev = peakElev
+		self.saddleElev = saddleElev
+		self.source = source
+		self.extraInfo = "" if extraInfo is None else extraInfo
+
+	def avgFeet(self, delta=0.5):
+		return self.peakElev.avgFeet(delta) - self.saddleElev.avgFeet(delta)
+
+	def avgStr(self):
+		return int2str(self.avgFeet())
+
+	def html(self):
+		return '<span>{}<div class="tooltip">{} - {} ({}){}</div></span>'.format(
+			self.avgStr(),
+			self.peakElev.avgStr(),
+			self.saddleElev.avgStr(True),
+			self.source,
+			self.extraInfo)
+
+def promElevation(baseElevation, contourInterval, elevation, subtractContourInterval=False):
+	if baseElevation is None:
+		elevation, inMeters = elevStr2Int(elevation)
+		return SimpleElevation(elevation, elevation, inMeters)
+
+	baseElevation, inMeters = elevStr2Int(baseElevation)
 	contourInterval, contourIntervalInMeters = elevStr2Int(contourInterval)
 
 	if inMeters != contourIntervalInMeters:
 		badLine()
 	if subtractContourInterval:
-		return elevMin - contourInterval/2, inMeters, True
+		return SimpleElevation(baseElevation - contourInterval, baseElevation, inMeters)
 
-	return elevMin + contourInterval/2, inMeters, True
+	return SimpleElevation(baseElevation, baseElevation + contourInterval, inMeters)
 
-def checkProminenceMath(e1a, c1a, e1, e2a, c2a, e2, promType, source):
-	e1, inMeters1, average1 = promElevation(e1a, c1a, e1)
-	e2, inMeters2, average2 = promElevation(e2a, c2a, e2, True)
+def getProminence(e1a, c1a, e1, e2a, c2a, e2, source, extraInfo):
+	e1 = promElevation(e1a, c1a, e1)
+	e2 = promElevation(e2a, c2a, e2, True)
 
-	if promType != ('average' if average1 or average2 else 'clean'):
-		badLine()
-	toFeetDelta = 0.5
-	if source == 'LoJ':
-		toFeetDelta = 0
-		if promType != 'average':
-			raise FormatError("Expected average prominence from LoJ")
-	elif source != 'Pb':
-		raise FormatError("Prominence source must be LoJ or Pb")
+	if source not in ("LoJ", "Pb", "LoJ/Pb"):
+		raise FormatError("Prominence source must be LoJ, Pb, or LoJ/Pb")
 
-	if inMeters1:
-		e1 = toFeet(e1, toFeetDelta)
-	if inMeters2:
-		e2 = toFeet(e2, toFeetDelta)
-	return e1 - e2
+	return Prominence(e1, e2, source, extraInfo)
 
 def parseProminence(line):
 	if not line.startswith('<td>'):
@@ -1068,18 +1127,17 @@ def parseProminence(line):
 			m = RE.prominenceTooltip.match(line[:i])
 			if m is None:
 				badLine()
-			tooltip = m.group()
 			line = line[m.end():]
 
-			checkedProm = checkProminenceMath(*m.groups())
-			if prom != checkedProm:
+			promObj = getProminence(*m.groups())
+			if prom != promObj.avgFeet():
 				raise FormatError("Tooltip doesn't match prominence")
 
 			if not line.startswith('</div></span>'):
 				raise FormatError('Expected </div></span>')
 			line = line[13:]
 
-			prominences.append((prom, tooltip))
+			prominences.append(promObj)
 		else:
 			prominences.append(prom)
 
@@ -1095,17 +1153,7 @@ def int2str(n):
 	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
 
 def prom2html(prominences):
-	lines = []
-
-	for prom in prominences:
-		if isinstance(prom, int):
-			html = int2str(prom)
-		else:
-			prom, tooltip = prom
-			html = '<span>{}<div class="tooltip">{}</div></span>'.format(int2str(prom), tooltip)
-		lines.append(html)
-
-	return '<br>'.join(lines)
+	return '<br>'.join([int2str(prom) if isinstance(prom, int) else prom.html() for prom in prominences])
 
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 

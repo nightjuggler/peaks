@@ -151,6 +151,9 @@ class RE(object):
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
 	htmlTag = re.compile('<[^>]*>')
 
+def toFeet(meters, delta=0.5):
+	return int(meters / 0.3048 + delta)
+
 def str2int(s):
 	if len(s) < 4:
 		if RE.numLT1k.match(s) is None:
@@ -266,6 +269,13 @@ class TablePeak(object):
 
 		assert len(peaks) == self.numPeaks[peakListId]
 		return peaks
+
+	@classmethod
+	def getProminence(self, peak):
+		peak2 = getattr(peak, self.classAttrPeak, None)
+		if peak2 is None:
+			return None
+		return peak2.prominence
 
 class PeakPb(TablePeak):
 	classId = 'Pb'
@@ -485,7 +495,11 @@ class PeakPb(TablePeak):
 				err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
 					maxPeak.prominence, peak.prominence, peak.name)
 
+			peak.prominence += elevMin - peak.elevation
+			maxPeak.prominence += elevMax - maxPeak.elevation
+
 			peak.elevation = ElevationPb(elevMin, elevMax)
+			peak.prominence = (peak.prominence + maxPeak.prominence) // 2
 
 		return minPeaks
 
@@ -691,11 +705,11 @@ class PeakLoJ(TablePeak):
 	#
 	elevationMap = {
 		('Adams Peak', 8199): 8197,
-		('Deerhorn Mountain', 13281): 13280,
+		('Deerhorn Mountain', 13281): 4048.0,
 		('Mount Agassiz', 13892): 13893,
 		('Basin Mountain', 13190): 13181,
-		('Mount Baxter', 13140): 13136,
-		('Mount Morrison', 12296): 12276,
+		('Mount Baxter', 13140): 4004.0,
+		('Mount Morrison', 12296): 3742.0,
 		('Seven Gables', 13074): 13075,
 
 	# LoJ DPS Elevation Adjustments:
@@ -723,10 +737,10 @@ class PeakLoJ(TablePeak):
 	#
 		('Boundary Peak', 13143): 13140,
 		('East Ord Mountain', 6169): 6168,
-		('Needle Peak', 5802): 5803,
-		('Old Woman Mountains HP', 5325): 5324,
+		('Needle Peak', 5802): 1768.8,
+		('Old Woman Mountains HP', 5325): 1623.0,
 		('Spectre Point', 4483): 4482,
-		('Stepladder Mountains HP', 2939): 2936,
+		('Stepladder Mountains HP', 2939): 895.0,
 
 	# LoJ GBP Elevation Adjustments:
 	#
@@ -748,14 +762,25 @@ class PeakLoJ(TablePeak):
 		self.saddleElev = feetStr2Int(self.saddleElev, 'Saddle elevation', self.name)
 		self.prominence = feetStr2Int(self.prominence, 'Prominence', self.name)
 
+		assert self.prominence == self.elevation - self.saddleElev
+
 		self.isolation = float(self.isolation)
 
 		self.name = self.normalizeName(self.name, self.elevation)
 		self.lineParent = self.normalizeName(self.lineParent)
 		self.proximateParent = self.normalizeName(self.proximateParent)
 
-		self.elevation = ElevationLoJ(self.elevationMap.get(
-			(self.name, self.elevation), self.elevation))
+		adjElev = self.elevationMap.get((self.name, self.elevation))
+		if adjElev is not None:
+			if isinstance(adjElev, float):
+				adjElev = toFeet(adjElev, 0)
+
+			elevDiff = adjElev - self.elevation
+			assert elevDiff != 0
+			self.elevation = adjElev
+			self.prominence += elevDiff
+
+		self.elevation = ElevationLoJ(self.elevation)
 
 		if peakListId == 'NPC':
 			assert self.state == 'NV'
@@ -848,26 +873,23 @@ def checkProminences(pl):
 	for section in pl.peaks:
 		for peak in section:
 			for prom in peak.prominences:
-				if isinstance(prom, tuple):
-					prom, tooltip = prom
+				if not isinstance(prom, int):
+					prom = prom.avgFeet(0)
 
-				matched = []
-				for peak2Class in (PeakLoJ, PeakPb):
-					peak2 = getattr(peak, peak2Class.classAttrPeak, None)
-					matched.append(peak2 is not None and peak2.prominence == prom)
+				promLoJ = PeakLoJ.getProminence(peak)
+				promPb = PeakPb.getProminence(peak)
 
-				matchedLoJ, matchedPb = matched
-				if matchedLoJ:
-					if matchedPb:
+				if prom == promLoJ:
+					if prom == promPb:
 						numMatchBoth += 1
 					else:
 						numMatchLoJ += 1
-				elif matchedPb:
+				elif prom == promPb:
 					numMatchPb += 1
 				else:
 					numMatchNone += 1
-					line = "{:5} {:24} {:6} ".format(peak.id, peak.name, prom)
-					print line, "Matches neither LoJ nor Pb"
+					print "{:5} {:24} {:6}  Matches neither LoJ ({}) nor Pb ({})".format(
+						peak.id, peak.name, prom, promLoJ, promPb)
 
 	print
 	print "Matched none =", numMatchNone
