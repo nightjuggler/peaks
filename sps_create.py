@@ -499,7 +499,7 @@ class PeakPb(TablePeak):
 			maxPeak.prominence += elevMax - maxPeak.elevation
 
 			peak.elevation = ElevationPb(elevMin, elevMax)
-			peak.prominence = (peak.prominence + maxPeak.prominence) // 2
+			peak.prominence = (peak.prominence, maxPeak.prominence)
 
 		return minPeaks
 
@@ -870,26 +870,66 @@ def checkProminences(pl):
 	numMatchBoth = 0
 	numMatchNone = 0
 
+	def getMatchLoJ(prom, promLoJ):
+		if promLoJ is None:
+			return "not listed"
+		if not isinstance(prom, int):
+			prom = prom.avgFeet(0)
+		if prom == promLoJ:
+			return True
+		return "{} != {}".format(prom, promLoJ)
+
+	def getMatchPb(prom, promPb):
+		if promPb is None:
+			return "not listed"
+		if isinstance(prom, int):
+			minPb, maxPb = promPb
+			if prom == (minPb + maxPb) / 2:
+				return True
+			return "{} != ({} + {})/2".format(prom, minPb, maxPb)
+
+		prom = prom.minMaxPb()
+		if prom == promPb:
+			return True
+		return "{} != {}".format(prom, promPb)
+
 	for section in pl.peaks:
 		for peak in section:
+			promLoJ = PeakLoJ.getProminence(peak)
+			promPb = PeakPb.getProminence(peak)
+
 			for prom in peak.prominences:
+				matchLoJ = getMatchLoJ(prom, promLoJ)
+				matchPb = getMatchPb(prom, promPb)
+
+				source = None
+				promObj = None
 				if not isinstance(prom, int):
-					prom = prom.avgFeet(0)
+					promObj = prom
+					prom = promObj.avgFeet()
 
-				promLoJ = PeakLoJ.getProminence(peak)
-				promPb = PeakPb.getProminence(peak)
-
-				if prom == promLoJ:
-					if prom == promPb:
+				if matchLoJ is True:
+					if matchPb is True:
 						numMatchBoth += 1
+						source = "LoJ/Pb"
 					else:
 						numMatchLoJ += 1
-				elif prom == promPb:
+						source = "LoJ"
+				elif matchPb is True:
 					numMatchPb += 1
+					source = "Pb"
+
+					if promObj is None:
+						print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+						print "Matches Pb but not LoJ [{}]".format(matchLoJ)
 				else:
 					numMatchNone += 1
-					print "{:5} {:24} {:6}  Matches neither LoJ ({}) nor Pb ({})".format(
-						peak.id, peak.name, prom, promLoJ, promPb)
+					print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+					print "Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb)
+
+				if promObj is not None and source != promObj.source:
+					print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+					print "Source should be {} instead of {}".format(source, promObj.source)
 
 	print
 	print "Matched none =", numMatchNone

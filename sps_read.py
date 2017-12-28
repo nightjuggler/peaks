@@ -840,11 +840,11 @@ class RE(object):
 	)
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
-	numMeters = re.compile('^[1-9][0-9]{0,3}$')
+	numMeters = re.compile('^[1-9][0-9]{0,3}(?:\\.[0-9])?$')
 	prominence = re.compile('^[,0-9]+')
 	prominenceTooltip = re.compile(
-		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+m?))'
-		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+m?))'
+		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
+		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
 		' \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\)(<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
@@ -1018,6 +1018,8 @@ def elevStr2Int(e):
 		e = e[:-1]
 		if RE.numMeters.match(e) is None:
 			badLine()
+		if len(e) > 2 and e[-2] == '.':
+			return float(e), True
 		return int(e), True
 
 	return str2int(e), False
@@ -1027,6 +1029,11 @@ class SimpleElevation(object):
 		self.minElev = minElev
 		self.maxElev = maxElev
 		self.inMeters = inMeters
+
+	def getFeet(self):
+		if self.inMeters:
+			return (toFeet(self.minElev), toFeet(self.maxElev))
+		return (self.minElev, self.maxElev)
 
 	def avgFeet(self, delta=0.5):
 		avgElev = (self.minElev + self.maxElev) / 2
@@ -1057,6 +1064,17 @@ class Prominence(object):
 		self.saddleElev = saddleElev
 		self.source = source
 		self.extraInfo = "" if extraInfo is None else extraInfo
+
+	def minMaxPb(self):
+		if self.peakElev.inMeters and self.saddleElev.inMeters:
+			minProm = toFeet(self.peakElev.minElev - self.saddleElev.maxElev)
+			maxProm = toFeet(self.peakElev.maxElev - self.saddleElev.minElev)
+			return (minProm, maxProm)
+
+		peakMin, peakMax = self.peakElev.getFeet()
+		saddleMin, saddleMax = self.saddleElev.getFeet()
+
+		return (peakMin - saddleMax, peakMax - saddleMin)
 
 	def avgFeet(self, delta=0.5):
 		return self.peakElev.avgFeet(delta) - self.saddleElev.avgFeet(delta)
