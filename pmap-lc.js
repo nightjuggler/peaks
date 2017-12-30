@@ -491,11 +491,11 @@ function popupHtml(ll, p, htmlFilename)
 
 	links = links.length === 0 ? '' : '<br>' + links.join(', ');
 
-	var climbed = p.climbed ? '<br>Climbed ' + p.climbed : '';
+	var climbed = p.climbed ? '<br>Climbed <div class="elevDiv">' + p.climbed + '</div>' : '';
 
 	return '<div class="popupDiv"><b>' + name + '</b>'
 		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
-		+ '<br>Prominence: ' + p.prom
+		+ '<br>Prominence: <div class="elevDiv">' + p.prom + '</div>'
 		+ '<br>Class ' + p.YDS
 		+ links + climbed + '</div>';
 }

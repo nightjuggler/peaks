@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox-gl-js/v0.42.2/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v0.42.2/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <style>
@@ -216,11 +216,11 @@ function popupHtml(ll, p, htmlFilename)
 
 	links = links.length === 0 ? '' : '<br>' + links.join(', ');
 
-	var climbed = p.climbed ? '<br>Climbed ' + p.climbed : '';
+	var climbed = p.climbed ? '<br>Climbed <div class="elevDiv">' + p.climbed + '</div>' : '';
 
 	return '<div class="popupDiv"><b>' + name + '</b>'
 		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
-		+ '<br>Prominence: ' + p.prom
+		+ '<br>Prominence: <div class="elevDiv">' + p.prom + '</div>'
 		+ '<br>Class ' + p.YDS
 		+ links + climbed + '</div>';
 }
