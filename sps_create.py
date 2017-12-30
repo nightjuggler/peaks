@@ -151,8 +151,8 @@ class RE(object):
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
 	htmlTag = re.compile('<[^>]*>')
 
-def toFeet(meters, delta=0.5):
-	return int(meters / 0.3048 + delta)
+def toFeetRoundDown(meters):
+	return int(meters / 0.3048)
 
 def str2int(s):
 	if len(s) < 4:
@@ -459,6 +459,23 @@ class PeakPb(TablePeak):
 		('Sierra Buttes', 8590, 'min'): 8591,
 		('Sierra Buttes', 8590, 'max'): 8591,
 	}
+	prominenceMap = {
+	# Pb DPS Prominence Adjustments
+	#
+	# - East Ord Mountain
+	#   The contour interval at the saddle is 40', not 20'. So the saddle range is 4680'-4640', not
+	#   4680'-4660'. Thus the maximum prominence is raised by 20'. LoJ also uses 4660' for the saddle.
+	#
+	# - Signal Peak
+	#   The minimum saddle elevation can be raised from 1380' to 1390', thus reducing the maximum
+	#   prominence by 10' to 3487'. The main contour interval on the 7.5' quad (Lone Mountain, AZ)
+	#   is 20 feet, giving a saddle range of 1380'-1400', but there's a supplementary contour on
+	#   both downward-sloping sides (east and west) of the saddle at 1390'. LoJ also uses 1395' for
+	#   the average saddle elevation.
+	#
+		('East Ord Mountain', 1508, 'max'): 1528,
+		('Signal Peak', 3497, 'max'): 3487,
+	}
 	def postProcess(self, peakListId):
 		def str2int(s):
 			return int(s) if len(s) <= 4 else int(s[:-4]) * 1000 + int(s[-3:])
@@ -488,18 +505,23 @@ class PeakPb(TablePeak):
 			elevMax = maxPeak.elevation
 			elevMax = self.elevationMap.get((peak.name, elevMax, 'max'), elevMax)
 
+			promMin = peak.prominence
+			promMin = self.prominenceMap.get((peak.name, promMin, 'min'), promMin)
+			promMax = maxPeak.prominence
+			promMax = self.prominenceMap.get((peak.name, promMax, 'max'), promMax)
+
 			if elevMin > elevMax:
 				err("Pb: Max elevation ({}) must be >= min elevation ({}) for {}",
 					elevMax, elevMin, peak.name)
-			if peak.prominence > maxPeak.prominence:
+			if promMin > promMax:
 				err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
-					maxPeak.prominence, peak.prominence, peak.name)
+					promMax, promMin, peak.name)
 
-			peak.prominence += elevMin - peak.elevation
-			maxPeak.prominence += elevMax - maxPeak.elevation
+			promMin += elevMin - peak.elevation
+			promMax += elevMax - maxPeak.elevation
 
 			peak.elevation = ElevationPb(elevMin, elevMax)
-			peak.prominence = (peak.prominence, maxPeak.prominence)
+			peak.prominence = (promMin, promMax)
 
 		return minPeaks
 
@@ -757,6 +779,10 @@ class PeakLoJ(TablePeak):
 	#
 		('Eagle Peak', 9900): 9892,
 	}
+	saddleElevationMap = {
+		('Humphreys Peak', 6580): 6590, # LoJ seems to have used 6600'-40'/2, but the interval is only 20'
+		('Kingston Peak', 3582): 1092.1, # LoJ seems to have used 1092m
+	}
 	def postProcess(self, peakListId):
 		self.elevation = feetStr2Int(self.elevation, 'Elevation', self.name)
 		self.saddleElev = feetStr2Int(self.saddleElev, 'Saddle elevation', self.name)
@@ -773,7 +799,7 @@ class PeakLoJ(TablePeak):
 		adjElev = self.elevationMap.get((self.name, self.elevation))
 		if adjElev is not None:
 			if isinstance(adjElev, float):
-				adjElev = toFeet(adjElev, 0)
+				adjElev = toFeetRoundDown(adjElev)
 
 			elevDiff = adjElev - self.elevation
 			assert elevDiff != 0
@@ -781,6 +807,16 @@ class PeakLoJ(TablePeak):
 			self.prominence += elevDiff
 
 		self.elevation = ElevationLoJ(self.elevation)
+
+		adjElev = self.saddleElevationMap.get((self.name, self.saddleElev))
+		if adjElev is not None:
+			if isinstance(adjElev, float):
+				adjElev = toFeetRoundDown(adjElev)
+
+			elevDiff = adjElev - self.saddleElev
+			assert elevDiff != 0
+			self.saddleElev = adjElev
+			self.prominence -= elevDiff
 
 		if peakListId == 'NPC':
 			assert self.state == 'NV'
@@ -862,7 +898,7 @@ def checkElevation(peakMap, peak2Class):
 	for peak, peak2 in matchedPeaks:
 		matchElevation(peak, peak2.elevation)
 
-def checkProminences(pl):
+def checkProminences(pl, setProm=False):
 	printTitle("Prominences")
 
 	numMatchPb = 0
@@ -874,7 +910,7 @@ def checkProminences(pl):
 		if promLoJ is None:
 			return "not listed"
 		if not isinstance(prom, int):
-			prom = prom.avgFeet(0)
+			prom = prom.avgFeet(toFeet=toFeetRoundDown)
 		if prom == promLoJ:
 			return True
 		return "{} != {}".format(prom, promLoJ)
@@ -895,6 +931,7 @@ def checkProminences(pl):
 
 	for section in pl.peaks:
 		for peak in section:
+			newProm = None
 			promLoJ = PeakLoJ.getProminence(peak)
 			promPb = PeakPb.getProminence(peak)
 
@@ -925,11 +962,31 @@ def checkProminences(pl):
 				else:
 					numMatchNone += 1
 					print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+
+					if promObj is None and promLoJ is not None and promPb is not None:
+						minPb, maxPb = promPb
+						avgPb = (minPb + maxPb) / 2
+						if avgPb == promLoJ and len(peak.prominences) == 1:
+							if prom == minPb:
+								newProm = (avgPb, "min")
+								break
+							if prom == maxPb:
+								newProm = (avgPb, "max")
+								break
+
 					print "Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb)
 
 				if promObj is not None and source != promObj.source:
 					print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
 					print "Source should be {} instead of {}".format(source, promObj.source)
+
+			if newProm is not None:
+				newProm, promType = newProm
+				if setProm:
+					print "Setting to {} [LoJ={}, Pb={}]".format(newProm, promLoJ, promPb)
+					peak.prominences = [newProm]
+				else:
+					print "Matches {}Pb and avgPb == LoJ".format(promType)
 
 	print
 	print "Matched none =", numMatchNone
@@ -937,10 +994,10 @@ def checkProminences(pl):
 	print "Matched LoJ =", numMatchLoJ
 	print "Matched Pb =", numMatchPb
 
-def checkData(pl):
+def checkData(pl, setProm=False):
 	peakMap = MatchByName(pl)
 
 	for peak2Class in (PeakLoJ, PeakPb):
 		checkElevation(peakMap, peak2Class)
 
-	checkProminences(pl)
+	checkProminences(pl, setProm)

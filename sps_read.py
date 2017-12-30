@@ -354,7 +354,8 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: VABM)?(?: [0-9]+)?)&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
+		'&quot;((?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: VABM)?(?: [0-9]+)?)&quot; '
+		'\\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, id):
 		self.id = id
@@ -383,7 +384,7 @@ class USGSTopo(object):
 	sources = {}
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
-		'^[A-Z]{2}/[A-Z]{2}_[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
+		'^[A-Z]{2}/[A-Z]{2}_(?:Mc)?[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
 		'([0-9]{6})_[0-9]{4}_(?:24000|62500|125000|250000)\\.jpg$')
 	tooltipPattern = re.compile(
 		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
@@ -1025,28 +1026,40 @@ def elevStr2Int(e):
 	return str2int(e), False
 
 class SimpleElevation(object):
-	def __init__(self, minElev, maxElev, inMeters):
-		self.minElev = minElev
-		self.maxElev = maxElev
-		self.inMeters = inMeters
+	def __init__(self, baseElevation, contourInterval=0, inMeters=False, saddle=False):
+		assert contourInterval in (0, 10, 20, 40)
+		assert contourInterval == 0 and inMeters or isinstance(baseElevation, int)
 
-	def getFeet(self):
+		if saddle:
+			self.minElev = baseElevation - contourInterval
+			self.maxElev = baseElevation
+		else:
+			self.minElev = baseElevation
+			self.maxElev = baseElevation + contourInterval
+
+		self.inMeters = inMeters
+		self.saddle = saddle
+
+	def getFeetPb(self):
 		if self.inMeters:
+			if self.minElev == self.maxElev:
+				feet = toFeet(round(self.minElev))
+				return (feet, feet)
 			return (toFeet(self.minElev), toFeet(self.maxElev))
 		return (self.minElev, self.maxElev)
 
-	def avgFeet(self, delta=0.5):
+	def avgFeet(self, toFeet=toSurveyFeet):
 		avgElev = (self.minElev + self.maxElev) / 2
-		return toFeet(avgElev, delta) if self.inMeters else avgElev
+		return toFeet(avgElev) if self.inMeters else avgElev
 
-	def avgStr(self, saddle=False):
+	def __str__(self):
 		if self.minElev == self.maxElev:
 			if self.inMeters:
 				return str(self.minElev) + "m"
 			return int2str(self.minElev)
 
 		contour = self.maxElev - self.minElev
-		if saddle:
+		if self.saddle:
 			elev = self.maxElev
 			sign = "-"
 		else:
@@ -1067,17 +1080,17 @@ class Prominence(object):
 
 	def minMaxPb(self):
 		if self.peakElev.inMeters and self.saddleElev.inMeters:
-			minProm = toFeet(self.peakElev.minElev - self.saddleElev.maxElev)
-			maxProm = toFeet(self.peakElev.maxElev - self.saddleElev.minElev)
+			minProm = toFeet(round(self.peakElev.minElev) - round(self.saddleElev.maxElev))
+			maxProm = toFeet(round(self.peakElev.maxElev) - round(self.saddleElev.minElev))
 			return (minProm, maxProm)
 
-		peakMin, peakMax = self.peakElev.getFeet()
-		saddleMin, saddleMax = self.saddleElev.getFeet()
+		peakMin, peakMax = self.peakElev.getFeetPb()
+		saddleMin, saddleMax = self.saddleElev.getFeetPb()
 
 		return (peakMin - saddleMax, peakMax - saddleMin)
 
-	def avgFeet(self, delta=0.5):
-		return self.peakElev.avgFeet(delta) - self.saddleElev.avgFeet(delta)
+	def avgFeet(self, **kwargs):
+		return self.peakElev.avgFeet(**kwargs) - self.saddleElev.avgFeet(**kwargs)
 
 	def avgStr(self):
 		return int2str(self.avgFeet())
@@ -1085,25 +1098,23 @@ class Prominence(object):
 	def html(self):
 		return '<span>{}<div class="tooltip">{} - {} ({}){}</div></span>'.format(
 			self.avgStr(),
-			self.peakElev.avgStr(),
-			self.saddleElev.avgStr(True),
+			self.peakElev,
+			self.saddleElev,
 			self.source,
 			self.extraInfo)
 
-def promElevation(baseElevation, contourInterval, elevation, subtractContourInterval=False):
+def promElevation(baseElevation, contourInterval, elevation, saddle=False):
 	if baseElevation is None:
 		elevation, inMeters = elevStr2Int(elevation)
-		return SimpleElevation(elevation, elevation, inMeters)
+		return SimpleElevation(elevation, 0, inMeters, saddle)
 
 	baseElevation, inMeters = elevStr2Int(baseElevation)
 	contourInterval, contourIntervalInMeters = elevStr2Int(contourInterval)
 
 	if inMeters != contourIntervalInMeters:
 		badLine()
-	if subtractContourInterval:
-		return SimpleElevation(baseElevation - contourInterval, baseElevation, inMeters)
 
-	return SimpleElevation(baseElevation, baseElevation + contourInterval, inMeters)
+	return SimpleElevation(baseElevation, contourInterval, inMeters, saddle)
 
 def getProminence(e1a, c1a, e1, e2a, c2a, e2, source, extraInfo):
 	e1 = promElevation(e1a, c1a, e1)
@@ -1578,6 +1589,11 @@ def checkData(pl):
 	import sps_create
 	sps_create.checkData(pl)
 
+def setProminences(pl):
+	import sps_create
+	sps_create.checkData(pl, setProm=True)
+	writeHTML(pl)
+
 def main():
 	outputFunction = {
 		'check': checkData,
@@ -1585,6 +1601,7 @@ def main():
 		'html': writeHTML,
 		'json': writeJSON,
 		'land': printLandManagementAreas,
+		'setprom': setProminences,
 	}
 	import argparse
 	parser = argparse.ArgumentParser()
