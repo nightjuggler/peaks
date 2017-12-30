@@ -17,6 +17,9 @@ class InputFile(file):
 		self.lineNumber += 1
 		return line
 
+def int2str(n):
+	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
+
 peakLists = {}
 peakListParams = {
 	'sps': {
@@ -105,6 +108,10 @@ class Peak(object):
 
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
+
+	def prominenceHTML(self):
+		return '<br>'.join([int2str(prom) if isinstance(prom, int) else prom.html()
+			for prom in self.prominences])
 
 	def matchElevation(self, elevation):
 		exactMatches = []
@@ -1178,12 +1185,6 @@ def parseProminence(line):
 
 	return prominences
 
-def int2str(n):
-	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
-
-def prom2html(prominences):
-	return '<br>'.join([int2str(prom) if isinstance(prom, int) else prom.html() for prom in prominences])
-
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
 def readHTML(pl):
@@ -1453,7 +1454,7 @@ def writeHTML(pl):
 
 			print '<td>{}</td>'.format(peak.elevationHTML())
 			print '<td>Class {}</td>'.format(peak.grade)
-			print '<td>{}</td>'.format(prom2html(peak.prominences))
+			print '<td>{}</td>'.format(peak.prominenceHTML())
 
 			if peak.summitpostId is None:
 				print emptyCell
@@ -1524,7 +1525,7 @@ def writePeakJSON(f, peak):
 	if peak.otherName is not None:
 		p.append(('name2', peak.otherName))
 
-	p.append(('prom', prom2html(peak.prominences)))
+	p.append(('prom', peak.prominenceHTML().replace('"', '\\"')))
 	p.append(('YDS', peak.grade))
 	p.append(('G4', 'z={}&t={}'.format(peak.zoom, peak.baseLayer)))
 	if peak.bobBurdId is not None:
