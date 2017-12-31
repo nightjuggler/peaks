@@ -64,7 +64,6 @@ class PeakList(object):
 		self.numColumns = 14 if self.sierraPeaks else 13
 		self.peaks = []
 		self.sections = []
-		self.landMgmtAreas = {}
 
 		peakLists[self.id] = self
 
@@ -113,6 +112,9 @@ class Peak(object):
 		return '<br>'.join([int2str(prom) if isinstance(prom, int) else prom.html()
 			for prom in self.prominences])
 
+	def landManagementHTML(self):
+		return '<br>'.join([land.html(self) for land in self.landManagement])
+
 	def matchElevation(self, elevation):
 		exactMatches = []
 		otherMatches = []
@@ -136,6 +138,8 @@ class Peak(object):
 		for k, v in vars(other).iteritems():
 			if not (k[0] == '_' or k in doNotCopy):
 				setattr(self, k, v)
+
+		self.dataFromPeak = other
 
 def badLine():
 	raise FormatError("Line doesn't match expected pattern")
@@ -184,24 +188,50 @@ def parseClasses(peak, classNames):
 	return False
 
 class LandMgmtArea(object):
-	def __init__(self, peak, url, highPoint):
-		self.count = 1
-		self.url = url
-		self.highPoint = peak if highPoint else None
-		self.highestPoint = peak
+	name2area = {}
 
-	def add(self, peak, url, highPoint):
-		self.count += 1
-		if url != self.url:
-			if self.url is None:
-				self.url = url
-			elif url is not None:
-				return "URL doesn't match previous URL"
-		if highPoint:
-			if self.highPoint is not None:
-				return "Duplicate high point"
-			self.highPoint = peak
-		return None
+	def __init__(self, name, link):
+		self.count = 0
+		self.name = name
+		self.link = link
+		self.highPoint = None
+		self.highestPoint = None
+
+	def err(self, message):
+		raise FormatError("{} for {}", message, self.name)
+
+	def html(self, peak):
+		if peak.dataFrom is not None:
+			peak = peak.dataFromPeak
+
+		highPoint = " HP" if self.highPoint == peak else ""
+
+		if self.link is None:
+			return self.name + highPoint
+
+		return "<a href=\"{}\">{}</a>{}".format(self.link, self.name, highPoint)
+
+	@classmethod
+	def add(self, peak, name, link, isHighPoint):
+		area = self.name2area.get(name)
+		if area is None:
+			self.name2area[name] = area = self(name, link)
+
+		if peak.dataFrom is not None:
+			return area
+
+		area.count += 1
+		if link != area.link:
+			if area.link is None:
+				area.link = link
+			elif link is not None:
+				area.err("URL doesn't match previous URL")
+		if isHighPoint:
+			if area.highPoint is not None:
+				area.err("Duplicate high point")
+			area.highPoint = peak
+
+		return area
 
 landNameLookup = {
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
@@ -314,19 +344,11 @@ def parseLandManagement(pl, peak):
 				elif landOrder[landClass] < landOrder[currentClass]:
 					raise FormatError("Unexpected order of land management areas")
 
-			elif not (landList and currentClass == landList[-1][1]):
+			elif not (landList and currentClass == landList[-1].name):
 				raise FormatError('"{}" must follow "{}"', landName, currentClass)
 
-		if landName in pl.landMgmtAreas:
-			errorMsg = pl.landMgmtAreas[landName].add(peak, landLink, landHP is not None)
-			if errorMsg:
-				raise FormatError("{} for {}", errorMsg, landName)
-		else:
-			pl.landMgmtAreas[landName] = LandMgmtArea(peak, landLink, landHP is not None)
+		landList.append(LandMgmtArea.add(peak, landName, landLink, landHP is not None))
 
-		if landHP is None:
-			landHP = ''
-		landList.append((landLink, landName, landHP))
 		if line == '':
 			break
 		if line[:4] != '<br>':
@@ -335,17 +357,15 @@ def parseLandManagement(pl, peak):
 
 	if peak.landClass != landClass:
 		raise FormatError("Land management column doesn't match class")
-	peak.landManagement = '<br>'.join([
-		'<a href="{}">{}</a>{}'.format(landLink, landName, landHP) if landLink
-		else landName + landHP
-		for (landLink, landName, landHP) in landList])
+
+	peak.landManagement = landList
 
 def printLandManagementAreas(pl):
-	for name, area in sorted(pl.landMgmtAreas.iteritems()):
-		print '{:35}{: 3}  {:22} {}'.format(name,
+	for name, area in sorted(LandMgmtArea.name2area.iteritems()):
+		print '{:35}{:4}  {:22} {}'.format(name,
 			area.count,
 			area.highPoint.name if area.highPoint else '-',
-			area.url if area.url else '-')
+			area.link if area.link else '-')
 
 def toSurveyFeet(meters, delta=0.5):
 	return int(meters * 39.37/12 + delta)
@@ -1447,10 +1467,10 @@ def writeHTML(pl):
 			print column2Format.format(peak.latitude, peak.longitude, peak.zoom, peak.baseLayer,
 				peak.name, suffix, otherName)
 
-			if peak.landManagement is None:
-				print emptyCell
+			if peak.landManagement:
+				print '<td>{}</td>'.format(peak.landManagementHTML())
 			else:
-				print '<td>{}</td>'.format(peak.landManagement)
+				print emptyCell
 
 			print '<td>{}</td>'.format(peak.elevationHTML())
 			print '<td>Class {}</td>'.format(peak.grade)
