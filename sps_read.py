@@ -65,6 +65,7 @@ class PeakList(object):
 		self.peaks = []
 		self.sections = []
 
+		peakLists[id] = self
 		peakLists[self.id] = self
 
 	def readHTML(self):
@@ -361,6 +362,8 @@ def parseLandManagement(pl, peak):
 	peak.landManagement = landList
 
 def printLandManagementAreas(pl):
+	readAllHTML()
+
 	for name, area in sorted(LandMgmtArea.name2area.iteritems()):
 		print '{:35}{:4}  {:22} {}'.format(name,
 			area.count,
@@ -729,6 +732,8 @@ def parseElevation(pl, peak):
 		k1 = k2
 
 def printElevationStats(pl):
+	readAllHTML()
+
 	numAllSourced = 0
 	numSomeSourced = 0
 	for section in pl.peaks:
@@ -1615,9 +1620,19 @@ def setProminences(pl):
 	sps_create.checkData(pl, setProm=True)
 	writeHTML(pl)
 
+def create(pl):
+	import sps_create
+	sps_create.loadData(pl)
+
+def readAllHTML():
+	for id in peakListParams:
+		if id not in peakLists:
+			PeakList(id).readHTML()
+
 def main():
 	outputFunction = {
 		'check': checkData,
+		'create': create,
 		'elev': printElevationStats,
 		'html': writeHTML,
 		'json': writeJSON,

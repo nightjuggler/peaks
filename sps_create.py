@@ -1,3 +1,4 @@
+import os.path
 import re
 import sys
 
@@ -50,7 +51,7 @@ class TableReader(object):
 		self.endTag_TH = "</" + self.TH + ">"
 
 		while True:
-			self.readUntil("<" + self.TABLE)
+			self.readUntil("<" + self.TABLE, discard=True)
 			b = self.readUntil(">", errMsg="Can't find '>' for {prevTag}").rstrip()
 			if tableAttributes is None:
 				break
@@ -64,17 +65,30 @@ class TableReader(object):
 	def __iter__(self):
 		return self
 
-	def readUntil(self, untilStr, errMsg="Can't find '{untilStr}'"):
+	def readUntil(self, untilStr, errMsg="Can't find '{untilStr}'", bufSize=1000, discard=False):
 		bytes = self.bytes
+		bytesLen = len(bytes)
+		untilLen = len(untilStr)
+		start = 0
+
 		while True:
-			i = bytes.find(untilStr)
+			i = bytes.find(untilStr, start)
 			if i >= 0:
-				self.bytes = bytes[i + len(untilStr):]
-				return bytes[:i]
-			newbytes = self.fileObj.read(1000)
+				self.bytes = bytes[i + untilLen:]
+				return None if discard else bytes[:i]
+			newbytes = self.fileObj.read(bufSize)
 			if newbytes == "":
 				self.err(errMsg, untilStr=untilStr)
-			bytes += newbytes
+			start = bytesLen - untilLen + 1
+			if start < 0:
+				start = 0
+			if discard:
+				bytes = bytes[start:] + newbytes
+				bytesLen += bufSize - start
+				start = 0
+			else:
+				bytes += newbytes
+				bytesLen += bufSize
 
 	def next(self):
 		if self.fileObj is None:
@@ -87,7 +101,7 @@ class TableReader(object):
 
 		b = self.readUntil(">", errMsg="Can't find '>' for next tag after {prevTag}")
 
-		if b == self.TR:
+		if len(b) >= 2 and b[:2] == self.TR and (len(b) == 2 or b[2] == " "):
 			self.rowNum += 1
 		elif b == "/" + self.TABLE:
 			self.fileObj.close()
@@ -150,6 +164,8 @@ class RE(object):
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
 	htmlTag = re.compile('<[^>]*>')
+	whitespace = re.compile('\\s{2,}')
+	nonAlphaNum = re.compile('[^0-9A-Za-z]')
 
 def toFeetRoundDown(meters):
 	return int(meters / 0.3048)
@@ -229,11 +245,66 @@ class ElevationLoJ(object):
 	def diff(self, e):
 		return "({})".format(self.feet - e.elevationFeet)
 
+# Doesn't work with https URLs on my system:
+# import urllib
+# filename, headers = urllib.urlretrieve(url, filename)
+
+def loadURLs(loadLists):
+	import random
+	import time
+
+	random.seed()
+	for loadList in loadLists:
+		random.shuffle(loadList)
+
+	for loadList in map(lambda *a: filter(None, a), *loadLists):
+		for url, filename in loadList:
+			command = "/usr/bin/curl -o '{}' '{}'".format(filename, url)
+			log(command)
+			os.system(command)
+
+		sleepTime = int(random.random() * 7 + 7.5)
+		log("Sleeping for {} seconds", sleepTime)
+		time.sleep(sleepTime)
+
+def getLoadLists(pl):
+	loadLists = []
+
+	for peakClass in (PeakLoJ, PeakPb):
+		loadList = []
+		loadLists.append(loadList)
+
+		for peak in peakClass.getPeaks(pl.id):
+			filename = peak.getPeakFileName(peak.id)
+			if not os.path.exists(filename):
+				loadList.append((peak.getPeakURL(peak.id), filename))
+	return loadLists
+
+def getLoadListsFromTable(pl):
+	loadLists = []
+
+	for peakClass in (PeakLoJ, PeakPb):
+		loadList = []
+		loadLists.append(loadList)
+
+		for section in pl.peaks:
+			for peak in section:
+				id = getattr(peak, peakClass.classAttrId, None)
+				if id is not None:
+					filename = peakClass.getPeakFileName(id)
+					if not os.path.exists(filename):
+						loadList.append((peakClass.getPeakURL(id), filename))
+	return loadLists
+
 class TablePeak(object):
 	@classmethod
 	def getPeaks(self, peakListId, fileNameSuffix=""):
-		htmlFile = open("extract/data/{}/{}{}.html".format(
-			peakListId.lower(), self.classId.lower(), fileNameSuffix))
+		try:
+			htmlFile = open("extract/data/{}/{}{}.html".format(
+				peakListId.lower(), self.classId.lower(), fileNameSuffix))
+		except IOError as e:
+			log(str(e))
+			return []
 
 		table = TableReader(htmlFile, **getattr(self, "tableReaderArgs", {}))
 		row = table.next()
@@ -271,17 +342,24 @@ class TablePeak(object):
 		return peaks
 
 	@classmethod
-	def getProminence(self, peak):
+	def getAttr(self, attr, peak):
 		peak2 = getattr(peak, self.classAttrPeak, None)
 		if peak2 is None:
 			return None
-		return peak2.prominence
+		return getattr(peak2, attr, None)
 
 class PeakPb(TablePeak):
 	classId = 'Pb'
 	classTitle = 'Peakbagger'
 	classAttrId = 'peakbaggerId'
 	classAttrPeak = 'peakbaggerPeak'
+
+	@classmethod
+	def getPeakFileName(self, id):
+		return "extract/data/pb/{}/p{}.html".format(id[0], id)
+	@classmethod
+	def getPeakURL(self, id):
+		return "http://peakbagger.com/peak.aspx?pid={}".format(id)
 
 	tableReaderArgs = dict(tableAttributes='class="gray"')
 	columnMap = {
@@ -530,6 +608,13 @@ class PeakLoJ(TablePeak):
 	classTitle = 'Lists of John'
 	classAttrId = 'listsOfJohnId'
 	classAttrPeak = 'listsOfJohnPeak'
+
+	@classmethod
+	def getPeakFileName(self, id):
+		return "extract/data/loj/{}/p{}.html".format(id[0], id)
+	@classmethod
+	def getPeakURL(self, id):
+		return "https://listsofjohn.com/peak/{}".format(id)
 
 	peakNamePattern = ('('
 		'(?:[A-Z][- 0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
@@ -821,8 +906,123 @@ class PeakLoJ(TablePeak):
 		if peakListId == 'NPC':
 			assert self.state == 'NV'
 
+class PeakVR(object):
+	classId = "VR"
+	classTitle = "Vulgarian Ramblers"
+	classAttrId = "vulgarianRamblersId"
+	classAttrPeak = "vulgarianRamblersPeak"
+
+	columnMap = {
+		"Rank": (
+			re.compile("^([1-9][0-9]*)?$"),
+			("rank",)
+		),
+		"Peak Name": (
+			re.compile(
+				"<a id='peak_UID_[1-9][0-9]*' href='\\./peak_detail\\.php\\?peak_name="
+				"([A-Z][%0-9A-Za-z]+)'>(?:&ldquo;)?([A-Z][ '\\(\\)\\.0-9A-Za-z]+)(?:&rdquo;)?</a> "
+			),
+			("linkName", "name")
+		),
+		"Elevation": (
+			re.compile(
+				"^<a +href='[^']+'>(1[234],[0-9]{3})' or ([34][0-9]{3})m"
+				"(?:<span [^>]+>([ ',0-9a-z]+)</span>)?</a>$"
+			),
+			("elevationFeet", "elevationMeters", "elevationTooltip")
+		),
+		"Prominence": (
+			re.compile(
+				"^([1-9][0-9]{2}')|(?:<a [^>]+>((?:300m\\+)|(?:[1-9][0-9]{2}'))"
+				"<span [^>]+>([ '0-9A-Za-z]+)</span></a>)$"
+			),
+			("prominence", "promWithTooltip", "promTooltip")
+		),
+	}
+	nameMap = {
+		"UTM888455": "Rosco Peak",
+	}
+	def postProcess(self):
+		self.id = None
+
+		name = self.name
+		if name.startswith("Mt. "):
+			name = name[4:]
+			self.name = "Mount " + name
+
+		name = RE.nonAlphaNum.sub(lambda m: "%{:02x}".format(ord(m.group())), name)
+
+		if name != self.linkName:
+			err("Unexpected link name '{}' for '{}'", self.linkName, self.name)
+
+		feet = self.elevationFeet
+		feet = int(feet[:-4]) * 1000 + int(feet[-3:])
+
+		if int(feet * 0.3048 + 0.5) != int(self.elevationMeters):
+			err("Elevation in feet ({}) != elevation in meters ({}) for '{}'",
+				self.elevationFeet, self.elevationMeters, self.name)
+
+		self.elevation = feet
+
+		if self.prominence is None:
+			self.prominence = self.promWithTooltip
+
+		print "{:4} {:24} {:8} {}".format(self.rank, self.name, self.elevationFeet, self.prominence)
+
+	@classmethod
+	def readTable(self, filename, numPeaks):
+		htmlFile = open(filename)
+
+		table = TableReader(htmlFile,
+			tableAttributes="id='peak_list_ID' class=\"peak_list\" align=\"center\"")
+
+		row = table.next()
+		if len(row) == 1:
+			row = table.next()
+
+		columns = []
+		for colNum, colStr in enumerate(row):
+			colStr = RE.htmlTag.sub("", colStr)
+			colStr = RE.whitespace.sub("\n", colStr)
+			colStr = colStr[:colStr.find("\n")]
+			col = self.columnMap.get(colStr, None)
+			if col is None:
+				table.colNum = colNum + 1
+				table.err("Unrecognized column name:\n{}", colStr)
+			columns.append(col)
+
+		peaks = []
+		for row in table:
+			if len(row) != len(columns):
+				table.err("Unexpected number of columns")
+			peak = self()
+			for colNum, (colStr, (regexp, attributes)) in enumerate(zip(row, columns)):
+				m = regexp.match(colStr)
+				if m is None:
+					table.colNum = colNum + 1
+					table.err("Doesn't match expected pattern:\n{}", colStr)
+				if attributes is None:
+					assert regexp.groups == 0
+				else:
+					values = m.groups()
+					assert len(attributes) == len(values)
+					for attr, value in zip(attributes, values):
+						setattr(peak, attr, value)
+			peak.postProcess()
+			peaks.append(peak)
+			if len(peaks) == numPeaks:
+				break
+
+		return peaks
+
+	@classmethod
+	def getPeaks(self, peakListId=None):
+		peaks1 = self.readTable("extract/data/vr/ca_13ers.html", 147)
+		peaks2 = self.readTable("extract/data/vr/non_13ers.html", 19)
+		return peaks1 + peaks2
+
 def matchElevation(peak, elevation):
-	line = "{:5} {:24} {:7} {{:7}}".format(peak.id, peak.name, elevation)
+	line = "{:5} {:24} {:7} {{:7}}".format(peak.id, peak.matchName, elevation)
 
 	exactMatches, otherMatches = peak.matchElevation(elevation)
 
@@ -853,7 +1053,11 @@ class MatchByName(object):
 			for peak in peaks:
 				name = peak.name
 				if peak.isHighPoint:
-					name += ' HP'
+					name += " HP"
+				elif name.startswith("&quot;"):
+					assert name.endswith("&quot;")
+					name = name[6:-6]
+				peak.matchName = name
 				put(name, peak)
 				if peak.otherName is not None:
 					put(peak.otherName, peak)
@@ -883,22 +1087,16 @@ def printTitle(title):
 	print title
 	print border
 
-def checkElevation(peakMap, peak2Class):
-	printTitle("Elevations - " + peak2Class.classTitle)
-	peakList2 = peak2Class.getPeaks(peakMap.id)
+def checkElevation(pl, peakClass):
+	printTitle("Elevations - " + peakClass.classTitle)
 
-	matchedPeaks = []
-	for peak2 in peakList2:
-		peak = peakMap.get(peak2)
-		if peak is None:
-			log("Cannot map '{}' ({})", peak2.name, peak2.elevation)
-		else:
-			matchedPeaks.append((peak, peak2))
+	for section in pl.peaks:
+		for peak in section:
+			elevation = peakClass.getAttr("elevation", peak)
+			if elevation is not None:
+				matchElevation(peak, elevation)
 
-	for peak, peak2 in matchedPeaks:
-		matchElevation(peak, peak2.elevation)
-
-def checkProminences(pl, setProm=False):
+def checkProminence(pl, setProm=False):
 	printTitle("Prominences")
 
 	numMatchPb = 0
@@ -932,8 +1130,8 @@ def checkProminences(pl, setProm=False):
 	for section in pl.peaks:
 		for peak in section:
 			newProm = None
-			promLoJ = PeakLoJ.getProminence(peak)
-			promPb = PeakPb.getProminence(peak)
+			promLoJ = PeakLoJ.getAttr("prominence", peak)
+			promPb = PeakPb.getAttr("prominence", peak)
 
 			for prom in peak.prominences:
 				matchLoJ = getMatchLoJ(prom, promLoJ)
@@ -957,11 +1155,11 @@ def checkProminences(pl, setProm=False):
 					source = "Pb"
 
 					if promObj is None:
-						print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+						print "{:5} {:24} {:6} ".format(peak.id, peak.matchName, prom),
 						print "Matches Pb but not LoJ [{}]".format(matchLoJ)
 				else:
 					numMatchNone += 1
-					print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+					print "{:5} {:24} {:6} ".format(peak.id, peak.matchName, prom),
 
 					if promObj is None and promLoJ is not None and promPb is not None:
 						minPb, maxPb = promPb
@@ -977,7 +1175,7 @@ def checkProminences(pl, setProm=False):
 					print "Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb)
 
 				if promObj is not None and source != promObj.source:
-					print "{:5} {:24} {:6} ".format(peak.id, peak.name, prom),
+					print "{:5} {:24} {:6} ".format(peak.id, peak.matchName, prom),
 					print "Source should be {} instead of {}".format(source, promObj.source)
 
 			if newProm is not None:
@@ -988,16 +1186,28 @@ def checkProminences(pl, setProm=False):
 				else:
 					print "Matches {}Pb and avgPb == LoJ".format(promType)
 
-	print
-	print "Matched none =", numMatchNone
-	print "Matched both =", numMatchBoth
-	print "Matched LoJ =", numMatchLoJ
-	print "Matched Pb =", numMatchPb
+	printTitle("Prominences: LoJ/Pb={}, LoJ={}, Pb={}, None={}".format(
+		numMatchBoth, numMatchLoJ, numMatchPb, numMatchNone))
 
 def checkData(pl, setProm=False):
+	peakClasses = [PeakLoJ, PeakPb]
+	if pl.sierraPeaks:
+		peakClasses.append(PeakVR)
+
 	peakMap = MatchByName(pl)
 
-	for peak2Class in (PeakLoJ, PeakPb):
-		checkElevation(peakMap, peak2Class)
+	for peakClass in peakClasses:
+		printTitle("Getting Peaks - " + peakClass.classTitle)
+		peaks = peakClass.getPeaks(pl.id)
+		for peak in peaks:
+			if peakMap.get(peak) is None:
+				log("Cannot map '{}' ({})", peak.name, peak.elevation)
 
-	checkProminences(pl, setProm)
+	for peakClass in (PeakLoJ, PeakPb):
+		checkElevation(pl, peakClass)
+
+	checkProminence(pl, setProm)
+
+def loadData(pl):
+	loadURLs(getLoadListsFromTable(pl))
+	loadURLs(getLoadLists(pl))
