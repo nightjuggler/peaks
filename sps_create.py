@@ -165,7 +165,7 @@ class RE(object):
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
 	htmlTag = re.compile('<[^>]*>')
 	whitespace = re.compile('\\s{2,}')
-	nonAlphaNum = re.compile('[^0-9A-Za-z]')
+	nonAlphaNum = re.compile('[^-0-9A-Za-z]')
 
 def toFeetRoundDown(meters):
 	return int(meters / 0.3048)
@@ -920,7 +920,7 @@ class PeakVR(object):
 		"Peak Name": (
 			re.compile(
 				"<a id='peak_UID_[1-9][0-9]*' href='\\./peak_detail\\.php\\?peak_name="
-				"([A-Z][%0-9A-Za-z]+)'>(?:&ldquo;)?([A-Z][ '\\(\\)\\.0-9A-Za-z]+)(?:&rdquo;)?</a> "
+				"([A-Z][-%0-9A-Za-z]+)'>([- &\\(\\)\\.0-9;A-Za-z]+)</a> "
 			),
 			("linkName", "name")
 		),
@@ -933,7 +933,7 @@ class PeakVR(object):
 		),
 		"Prominence": (
 			re.compile(
-				"^([1-9][0-9]{2}')|(?:<a [^>]+>((?:300m\\+)|(?:[1-9][0-9]{2}'))"
+				"^([1-9][0-9]{1,2}')|(?:<a [^>]+>((?:300m\\+)|(?:[1-9][0-9]{1,2}'))"
 				"<span [^>]+>([ '0-9A-Za-z]+)</span></a>)$"
 			),
 			("prominence", "promWithTooltip", "promTooltip")
@@ -946,6 +946,12 @@ class PeakVR(object):
 		self.id = None
 
 		name = self.name
+		if name.startswith("&ldquo;"):
+			assert name.endswith("&rdquo;")
+			name = name[7:-7]
+
+		self.name = name = name.replace("&rsquo;", "'")
+
 		if name.startswith("Mt. "):
 			name = name[4:]
 			self.name = "Mount " + name
@@ -970,15 +976,16 @@ class PeakVR(object):
 		print "{:4} {:24} {:8} {}".format(self.rank, self.name, self.elevationFeet, self.prominence)
 
 	@classmethod
-	def readTable(self, filename, numPeaks):
+	def readTable(self, filename, numPeaks, searchStr=None):
 		htmlFile = open(filename)
 
 		table = TableReader(htmlFile,
 			tableAttributes="id='peak_list_ID' class=\"peak_list\" align=\"center\"")
 
+		if searchStr is not None:
+			table.readUntil(searchStr, discard=True)
+			table.readUntil("</tr>", discard=True)
 		row = table.next()
-		if len(row) == 1:
-			row = table.next()
 
 		columns = []
 		for colNum, colStr in enumerate(row):
@@ -1018,8 +1025,9 @@ class PeakVR(object):
 	@classmethod
 	def getPeaks(self, peakListId=None):
 		peaks1 = self.readTable("extract/data/vr/ca_13ers.html", 147)
-		peaks2 = self.readTable("extract/data/vr/non_13ers.html", 19)
-		return peaks1 + peaks2
+		peaks2 = self.readTable("extract/data/vr/non_13ers.html", 19, "Marginal Failing Peaks")
+		peaks3 = self.readTable("extract/data/vr/non_13ers.html", 58, "Clearly Failing Peaks")
+		return peaks1 + peaks2 + peaks3
 
 def matchElevation(peak, elevation):
 	line = "{:5} {:24} {:7} {{:7}}".format(peak.id, peak.matchName, elevation)
