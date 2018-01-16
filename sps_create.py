@@ -170,6 +170,9 @@ class RE(object):
 def toFeetRoundDown(meters):
 	return int(meters / 0.3048)
 
+def toMeters(feet):
+	return int(feet * 0.3048 + 0.5)
+
 def str2int(s):
 	if len(s) < 4:
 		if RE.numLT1k.match(s) is None:
@@ -233,9 +236,7 @@ class ElevationPb(object):
 		return "({}){}".format(self.feet - e.elevationFeet,
 			"" if self.isRange == e.isRange else " and range mismatch")
 
-class ElevationLoJ(object):
-	classId = "LoJ"
-
+class SimpleElevation(object):
 	def __init__(self, feet):
 		self.feet = feet
 
@@ -244,6 +245,12 @@ class ElevationLoJ(object):
 
 	def diff(self, e):
 		return "({})".format(self.feet - e.elevationFeet)
+
+class ElevationLoJ(SimpleElevation):
+	classId = "LoJ"
+
+class ElevationVR(SimpleElevation):
+	classId = "VR"
 
 # Doesn't work with https URLs on my system:
 # import urllib
@@ -299,13 +306,13 @@ def getLoadListsFromTable(pl):
 class TablePeak(object):
 	@classmethod
 	def getPeaks(self, peakListId, fileNameSuffix=""):
-		try:
-			htmlFile = open("extract/data/{}/{}{}.html".format(
-				peakListId.lower(), self.classId.lower(), fileNameSuffix))
-		except IOError as e:
-			log(str(e))
+		fileName = "extract/data/{}/{}{}.html".format(
+			peakListId.lower(), self.classId.lower(), fileNameSuffix)
+
+		if not os.path.exists(fileName):
 			return []
 
+		htmlFile = open(fileName)
 		table = TableReader(htmlFile, **getattr(self, "tableReaderArgs", {}))
 		row = table.next()
 
@@ -759,14 +766,6 @@ class PeakLoJ(TablePeak):
 	#   "East Summit determined higher than west by 2 feet using photo pixel analysis."
 	#   [https://listsofjohn.com/peak/17460]
 	#
-	# - Deerhorn Mountain
-	#   It seems like LoJ didn't round down.
-	#   The Mt. Brewer 7.5' topos show a spot elevation of 4048m = 13280.8'
-	#   The 15' topos show a spot elevation of 13,265'
-	#   The 1:100:000 map shows a spot elevation of 4043m (13,265' rounded to the nearest meter)
-	#   The 1:125,000 maps show a spot elevation of 13,275'
-	#   The 1:250,000 maps don't show a spot elevation, nor do they label Deerhorn Mountain.
-	#
 	# - Mount Agassiz (13,892) vs 13,893 (7.5' topo) or 13,891 (15' topo)
 	#   Perhaps the average between the 7.5' and 15' topo spot elevations was taken?
 	#
@@ -779,6 +778,22 @@ class PeakLoJ(TablePeak):
 	#    photographs. Elevation is estimated."
 	#   [https://listsofjohn.com/peak/32376]
 	#
+	# - Deerhorn Mountain
+	#   It seems like LoJ didn't round down.
+	#   The Mt. Brewer 7.5' topos show a spot elevation of 4048m = 13280.8'
+	#   The 15' topos show a spot elevation of 13,265'
+	#   The 1:100:000 map shows a spot elevation of 4043m (13,265' rounded to the nearest meter)
+	#   The 1:125,000 maps show a spot elevation of 13,275'
+	#   The 1:250,000 maps don't show a spot elevation, nor do they label Deerhorn Mountain.
+	#
+	# - Mount Hitchcock
+	#   It seems that LoJ didn't round down.
+	#   The 1993 Mount Whitney 7.5' quad shows a spot elevation of 4019m = 13185.7'
+	#
+	# - Joe Devel Peak
+	#   It seems that LoJ didn't round down.
+	#   The 1993 Mount Whitney 7.5' quad shows a spot elevation of 4062m = 13326.8'
+	#
 	# - Mount Morrison (12,296) vs 12,277 (3742m) (topo):
 	#   Perhaps the 3742m spot elevation was misread as 3748m? The 3600m contour passes through
 	#   the 2 in such a way that it may look like an 8 at first glance.
@@ -787,6 +802,10 @@ class PeakLoJ(TablePeak):
 	#   and then 20 feet (half of a typical 40-foot contour interval) were added because the more
 	#   recent 1994 topo doesn't show the spot elevation (even though the contour interval is 20
 	#   meters, not 40 feet, and, of course, the highest contour is 3740m, not 3742m).
+	#
+	# - Mount Newcomb
+	#   It seems that LoJ didn't round down.
+	#   The 1993 Mount Whitney 7.5' quad shows a spot elevation of 4091m = 13421.9'
 	#
 	# - Seven Gables (13,074) vs 13,075 (15' topo)
 	#   "13,080+40' contour on map is erroneous. NW summit is highest and shown as 3,985m on 1:100k map."
@@ -812,11 +831,14 @@ class PeakLoJ(TablePeak):
 	#
 	elevationMap = {
 		('Adams Peak', 8199): 8197,
-		('Deerhorn Mountain', 13281): 4048.0,
 		('Mount Agassiz', 13892): 13893,
 		('Basin Mountain', 13190): 13181,
 		('Mount Baxter', 13140): 4004.0,
+		('Deerhorn Mountain', 13281): 4048.0,
+		('Mount Hitchcock', 13186): 4019.0,
+		('Joe Devel Peak', 13327): 4062.0,
 		('Mount Morrison', 12296): 3742.0,
+		('Mount Newcomb', 13422): 4091.0,
 		('Seven Gables', 13074): 13075,
 
 	# LoJ DPS Elevation Adjustments:
@@ -940,6 +962,9 @@ class PeakVR(object):
 		),
 	}
 	nameMap = {
+		"Black Mountain (South)": "Black Mountain",
+		"CalTech Peak": "Caltech Peak",
+		"Twin Peaks": "Peak 3981m",
 		"UTM888455": "Rosco Peak",
 	}
 	def postProcess(self):
@@ -964,16 +989,23 @@ class PeakVR(object):
 		feet = self.elevationFeet
 		feet = int(feet[:-4]) * 1000 + int(feet[-3:])
 
-		if int(feet * 0.3048 + 0.5) != int(self.elevationMeters):
+		if toMeters(feet) != int(self.elevationMeters):
 			err("Elevation in feet ({}) != elevation in meters ({}) for '{}'",
 				self.elevationFeet, self.elevationMeters, self.name)
 
-		self.elevation = feet
+		self.elevation = ElevationVR(feet)
 
 		if self.prominence is None:
 			self.prominence = self.promWithTooltip
 
-		print "{:4} {:24} {:8} {}".format(self.rank, self.name, self.elevationFeet, self.prominence)
+		self.name = self.nameMap.get(self.name, self.name)
+
+		if self.rank is not None:
+			self.rank = int(self.rank)
+
+	def __str__(self):
+		return '<td><a href="http://vulgarianramblers.org/peak_detail.php?peak_name={}">{}</a></td>\n'.format(
+			self.linkName, "VR" if self.rank is None else "#" + str(self.rank))
 
 	@classmethod
 	def readTable(self, filename, numPeaks, searchStr=None):
@@ -1029,8 +1061,15 @@ class PeakVR(object):
 		peaks3 = self.readTable("extract/data/vr/non_13ers.html", 58, "Clearly Failing Peaks")
 		return peaks1 + peaks2 + peaks3
 
+	@classmethod
+	def getAttr(self, attr, peak):
+		peak2 = getattr(peak, self.classAttrPeak, None)
+		if peak2 is None:
+			return None
+		return getattr(peak2, attr, None)
+
 def matchElevation(peak, elevation):
-	line = "{:5} {:24} {:7} {{:7}}".format(peak.id, peak.matchName, elevation)
+	line = "{} {:7} {{:7}}".format(peak.matchName, elevation)
 
 	exactMatches, otherMatches = peak.matchElevation(elevation)
 
@@ -1065,7 +1104,7 @@ class MatchByName(object):
 				elif name.startswith("&quot;"):
 					assert name.endswith("&quot;")
 					name = name[6:-6]
-				peak.matchName = name
+				peak.matchName = "{:5} {:24}".format(peak.id, name)
 				put(name, peak)
 				if peak.otherName is not None:
 					put(peak.otherName, peak)
@@ -1163,11 +1202,11 @@ def checkProminence(pl, setProm=False):
 					source = "Pb"
 
 					if promObj is None:
-						print "{:5} {:24} {:6} ".format(peak.id, peak.matchName, prom),
+						print peak.matchName, "{:6} ".format(prom),
 						print "Matches Pb but not LoJ [{}]".format(matchLoJ)
 				else:
 					numMatchNone += 1
-					print "{:5} {:24} {:6} ".format(peak.id, peak.matchName, prom),
+					print peak.matchName, "{:6} ".format(prom),
 
 					if promObj is None and promLoJ is not None and promPb is not None:
 						minPb, maxPb = promPb
@@ -1183,7 +1222,7 @@ def checkProminence(pl, setProm=False):
 					print "Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb)
 
 				if promObj is not None and source != promObj.source:
-					print "{:5} {:24} {:6} ".format(peak.id, peak.matchName, prom),
+					print peak.matchName, "{:6} ".format(prom),
 					print "Source should be {} instead of {}".format(source, promObj.source)
 
 			if newProm is not None:
@@ -1197,7 +1236,33 @@ def checkProminence(pl, setProm=False):
 	printTitle("Prominences: LoJ/Pb={}, LoJ={}, Pb={}, None={}".format(
 		numMatchBoth, numMatchLoJ, numMatchPb, numMatchNone))
 
-def checkData(pl, setProm=False):
+def checkThirteeners(pl, setVR=False):
+	printTitle("Thirteeners")
+
+	for section in pl.peaks:
+		for peak in section:
+			thirteener = False
+			for e in peak.elevations:
+				if e.elevationFeet >= 13000:
+					thirteener = True
+					break
+			vr = getattr(peak, PeakVR.classAttrPeak, None)
+			if vr is None:
+				if thirteener:
+					print peak.matchName, "Missing VR link"
+			else:
+				if not thirteener:
+					print peak.matchName, "Unexpected VR link"
+				colVR = peak.sierraColumn12
+				if colVR is None:
+					if setVR:
+						peak.sierraColumn12 = vr
+				else:
+					if vr.rank != colVR.rank or vr.linkName != colVR.name:
+						print "{} VR rank/link {}/{} doesn't match {}/{}".format(
+							peak.matchName, colVR.rank, colVR.name, vr.rank, vr.linkName)
+
+def checkData(pl, setProm=False, setVR=False, verbose=False):
 	peakClasses = [PeakLoJ, PeakPb]
 	if pl.sierraPeaks:
 		peakClasses.append(PeakVR)
@@ -1206,15 +1271,23 @@ def checkData(pl, setProm=False):
 
 	for peakClass in peakClasses:
 		printTitle("Getting Peaks - " + peakClass.classTitle)
+		numMapped = 0
 		peaks = peakClass.getPeaks(pl.id)
 		for peak in peaks:
 			if peakMap.get(peak) is None:
-				log("Cannot map '{}' ({})", peak.name, peak.elevation)
+				if verbose:
+					log("Cannot map '{}' ({})", peak.name, peak.elevation)
+			else:
+				numMapped += 1
+		print "Mapped {}/{} peaks".format(numMapped, len(peaks))
 
-	for peakClass in (PeakLoJ, PeakPb):
+	for peakClass in peakClasses:
 		checkElevation(pl, peakClass)
 
 	checkProminence(pl, setProm)
+
+	if pl.sierraPeaks:
+		checkThirteeners(pl, setVR)
 
 def loadData(pl):
 	loadURLs(getLoadListsFromTable(pl))

@@ -680,6 +680,21 @@ class Elevation(object):
 			return "Range mismatch"
 		return False
 
+	def matchVR(self, elevation):
+		feet = elevation.feet
+
+		if not self.isRange:
+			return feet == self.elevationFeet
+
+		assert self.source is not None
+
+		if self.source.inMeters:
+			maxFeet = toFeet(self.elevationMeters + self.source.contourInterval)
+		else:
+			maxFeet = self.elevationFeet + self.source.contourInterval
+
+		return self.elevationFeet <= feet < maxFeet
+
 def parseElevation(pl, peak):
 	line = pl.htmlFile.next()
 
@@ -1615,9 +1630,14 @@ def checkData(pl):
 	import sps_create
 	sps_create.checkData(pl)
 
-def setProminences(pl):
+def setProm(pl):
 	import sps_create
 	sps_create.checkData(pl, setProm=True)
+	writeHTML(pl)
+
+def setVR(pl):
+	import sps_create
+	sps_create.checkData(pl, setVR=True)
 	writeHTML(pl)
 
 def create(pl):
@@ -1637,7 +1657,8 @@ def main():
 		'html': writeHTML,
 		'json': writeJSON,
 		'land': printLandManagementAreas,
-		'setprom': setProminences,
+		'setprom': setProm,
+		'setvr': setVR,
 	}
 	import argparse
 	parser = argparse.ArgumentParser()
