@@ -201,11 +201,14 @@ class LandMgmtArea(object):
 	def err(self, message):
 		raise FormatError("{} for {}", message, self.name)
 
-	def html(self, peak):
+	def isHighPoint(self, peak):
 		if peak.dataFrom is not None:
 			peak = peak.dataFromPeak
 
-		highPoint = " HP" if self.highPoint == peak else ""
+		return self.highPoint == peak
+
+	def html(self, peak):
+		highPoint = " HP" if self.isHighPoint(peak) else ""
 
 		if self.link is None:
 			return self.name + highPoint
