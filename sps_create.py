@@ -748,7 +748,7 @@ class PeakPb(TablePeak):
 		fileName = self.getPeakFileName(self.id)
 
 		if not os.path.exists(fileName):
-			return
+			return False
 
 		htmlFile = open(fileName)
 		table = TableParser(htmlFile, attributes={"class": "gray", "align": "left", "width": "49%"})
@@ -768,6 +768,7 @@ class PeakPb(TablePeak):
 		for row in table.tableRows:
 			if row[0] == "Ownership":
 				land = row[1].replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
+				land = land.replace("Palen/McCoy", "Palen-McCoy")
 				m = self.landPattern.match(land)
 				if m is None:
 					err("Land doesn't match pattern:\n{}", row[1])
@@ -794,8 +795,7 @@ class PeakPb(TablePeak):
 						if highPoint:
 							area += " HP"
 						self.landManagement.append(area)
-
-		print "{:24} {}".format(self.name, "/".join(self.landManagement))
+		return True
 
 class PeakLoJ(TablePeak):
 	classId = 'LoJ'
@@ -1256,7 +1256,7 @@ class PeakVR(object):
 		return getattr(peak2, attr, None)
 
 def matchElevation(peak, elevation):
-	line = "{} {:7} {{:7}}".format(peak.matchName, elevation)
+	line = "{} {:7} {{:7}}".format(peak.fmtIdName, elevation)
 
 	exactMatches, otherMatches = peak.matchElevation(elevation)
 
@@ -1291,7 +1291,8 @@ class MatchByName(object):
 				elif name.startswith("&quot;"):
 					assert name.endswith("&quot;")
 					name = name[6:-6]
-				peak.matchName = "{:5} {:24}".format(peak.id, name)
+				peak.matchName = name
+				peak.fmtIdName = "{:5} {:24}".format(peak.id, name)
 				put(name, peak)
 				if peak.otherName is not None:
 					put(peak.otherName, peak)
@@ -1389,11 +1390,11 @@ def checkProminence(pl, setProm=False):
 					source = "Pb"
 
 					if promObj is None:
-						print peak.matchName, "{:6} ".format(prom),
+						print peak.fmtIdName, "{:6} ".format(prom),
 						print "Matches Pb but not LoJ [{}]".format(matchLoJ)
 				else:
 					numMatchNone += 1
-					print peak.matchName, "{:6} ".format(prom),
+					print peak.fmtIdName, "{:6} ".format(prom),
 
 					if promObj is None and promLoJ is not None and promPb is not None:
 						minPb, maxPb = promPb
@@ -1409,7 +1410,7 @@ def checkProminence(pl, setProm=False):
 					print "Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb)
 
 				if promObj is not None and source != promObj.source:
-					print peak.matchName, "{:6} ".format(prom),
+					print peak.fmtIdName, "{:6} ".format(prom),
 					print "Source should be {} instead of {}".format(source, promObj.source)
 
 			if newProm is not None:
@@ -1436,10 +1437,10 @@ def checkThirteeners(pl, setVR=False):
 			vr = getattr(peak, PeakVR.classAttrPeak, None)
 			if vr is None:
 				if thirteener:
-					print peak.matchName, "Missing VR link"
+					print peak.fmtIdName, "Missing VR link"
 			else:
 				if not thirteener:
-					print peak.matchName, "Unexpected VR link"
+					print peak.fmtIdName, "Unexpected VR link"
 				colVR = peak.sierraColumn12
 				if colVR is None:
 					if setVR:
@@ -1447,7 +1448,45 @@ def checkThirteeners(pl, setVR=False):
 				else:
 					if vr.rank != colVR.rank or vr.linkName != colVR.name:
 						print "{} VR rank/link {}/{} doesn't match {}/{}".format(
-							peak.matchName, colVR.rank, colVR.name, vr.rank, vr.linkName)
+							peak.fmtIdName, colVR.rank, colVR.name, vr.rank, vr.linkName)
+
+landMap = {
+	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
+	"Lake Mead National Recreation Area":           "Lake Mead NRA",
+	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
+	"Mono Basin NSA":                               "Mono Basin Scenic Area",
+	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",
+	"Red Rock Canyon National Conservation Area":   "Red Rock Canyon NCA",
+	"Tohono O'odham Nation":                        "Tohono O'odham Indian Reservation",
+}
+def checkLandManagement(peak, peak2):
+	land2 = {}
+	for land in peak2.landManagement:
+		hp = land.endswith(" HP")
+		if hp:
+			land = land[:-3]
+		land2[landMap.get(land, land)] = hp
+
+	if peak.landManagement is None:
+		peak.landManagement = []
+
+	elif len(peak2.landManagement) == 0 and len(peak.landManagement) == 1:
+		land = peak.landManagement[0].name
+		if land.startswith(("BLM ", "NAWS ")):
+			return
+
+	for land in peak.landManagement:
+		hp = land2.get(land.name)
+		if hp is None:
+			print "{} '{}' not on Peakbagger".format(peak.fmtIdName, land.name)
+			continue
+		del land2[land.name]
+		if hp != land.isHighPoint(peak):
+			print "{} High Point mismatch ({})".format(peak.fmtIdName, land.name)
+
+	for land in land2:
+		print "{} '{}' not in '{}'".format(peak.fmtIdName, land,
+			"/".join([area.name for area in peak.landManagement]))
 
 def checkData(pl, setProm=False, setVR=False, verbose=False):
 	peakClasses = [PeakLoJ, PeakPb]
@@ -1476,6 +1515,7 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 	if pl.sierraPeaks:
 		checkThirteeners(pl, setVR)
 
+	printTitle("Land Management")
 	peakClass = PeakPb
 	for section in pl.peaks:
 		for peak in section:
@@ -1487,7 +1527,8 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 				peak2 = peakClass()
 				peak2.id = id
 				peak2.name = peak.matchName
-			peak2.readPeakFile()
+			if peak2.readPeakFile():
+				checkLandManagement(peak, peak2)
 
 def loadData(pl):
 	loadURLs(getLoadListsFromTable(pl))
