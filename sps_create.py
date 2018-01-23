@@ -1,6 +1,9 @@
+import os
 import os.path
 import re
+import stat
 import sys
+import HTMLParser
 
 def log(message, *args, **kwargs):
 	print >>sys.stderr, message.format(*args, **kwargs)
@@ -8,6 +11,103 @@ def log(message, *args, **kwargs):
 def err(*args, **kwargs):
 	log(*args, **kwargs)
 	sys.exit()
+
+class TableParserError(Exception):
+	def __init__(self, message, *args, **kwargs):
+		self.message = message.format(*args, **kwargs)
+
+	def __str__(self):
+		return self.message
+
+class TableParser(HTMLParser.HTMLParser):
+	def handle_starttag(self, tag, attributes):
+		if self.tableDepth == 0:
+			if tag == "table" and (self.attributes is None or self.attributes == dict(attributes)):
+				self.tableDepth = 1
+				self.tableRows = []
+				self.currentRow = None
+				self.currentCol = None
+
+		elif self.tableDepth > 0:
+			if tag == "td":
+				if self.tableDepth == 1:
+					if self.currentCol is not None:
+						self.currentRow.append(self.currentCol)
+					self.currentCol = ""
+					return
+			elif tag == "tr":
+				if self.tableDepth == 1:
+					if self.currentCol is not None:
+						self.currentRow.append(self.currentCol)
+						self.currentCol = None
+					if self.currentRow:
+						self.tableRows.append(self.currentRow)
+					self.currentRow = []
+					return
+			elif tag == "table":
+				self.tableDepth += 1
+
+			if self.currentCol is not None:
+				self.currentCol += "<{}{}>".format(tag,
+					"".join([" {}=\"{}\"".format(k, v) for k, v in attributes]))
+
+	def handle_endtag(self, tag):
+		if self.tableDepth <= 0:
+			return
+		if tag == "td":
+			if self.tableDepth == 1:
+				if self.currentCol is not None:
+					self.currentRow.append(self.currentCol)
+					self.currentCol = None
+				return
+		elif tag == "tr":
+			if self.tableDepth == 1:
+				if self.currentCol is not None:
+					self.currentRow.append(self.currentCol)
+					self.currentCol = None
+				if self.currentRow:
+					self.tableRows.append(self.currentRow)
+				self.currentRow = None
+				return
+		elif tag == "table":
+			self.tableDepth -= 1
+			if self.tableDepth == 0:
+				self.tableDepth = -1
+				if self.currentCol is not None:
+					self.currentRow.append(self.currentCol)
+					self.currentCol = None
+				if self.currentRow:
+					self.tableRows.append(self.currentRow)
+				self.currentRow = None
+				return
+
+		if self.currentCol is not None:
+			self.currentCol += "</{}>\n".format(tag)
+
+	def handle_startendtag(self, tag, attributes):
+		if self.tableDepth > 0:
+			if self.currentCol is not None:
+				self.currentCol += "<{}{}/>".format(tag,
+					"".join([" {}=\"{}\"".format(k, v) for k, v in attributes]))
+
+	def handle_data(self, data):
+		if self.tableDepth > 0:
+			if self.currentCol is not None:
+				self.currentCol += data
+
+	def __init__(self, fileObj, attributes=None):
+		self.reset()
+
+		self.attributes = attributes
+		self.tableDepth = 0
+
+		while self.tableDepth >= 0:
+			bytes = fileObj.read(1000)
+			if bytes == "":
+				raise TableParserError("Can't find table")
+			self.feed(bytes)
+
+		fileObj.close()
 
 class TableReader(object):
 	def err(self, message, *args, **kwargs):
@@ -264,14 +364,17 @@ def loadURLs(loadLists):
 	for loadList in loadLists:
 		random.shuffle(loadList)
 
-	for loadList in map(lambda *a: filter(None, a), *loadLists):
+	listLengths = "/".join([str(len(loadList)) for loadList in loadLists])
+
+	for i, loadList in enumerate(map(lambda *a: filter(None, a), *loadLists), start=1):
 		for url, filename in loadList:
 			command = "/usr/bin/curl -o '{}' '{}'".format(filename, url)
 			log(command)
 			os.system(command)
+			os.chmod(filename, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
 		sleepTime = int(random.random() * 7 + 7.5)
-		log("Sleeping for {} seconds", sleepTime)
+		log("{}/{} Sleeping for {} seconds", i, listLengths, sleepTime)
 		time.sleep(sleepTime)
 
 def getLoadLists(pl):
@@ -609,6 +712,90 @@ class PeakPb(TablePeak):
 			peak.prominence = (promMin, promMax)
 
 		return minPeaks
+
+	landPattern = re.compile(
+		"^(?:Land: ([- '\\(\\)/A-Za-z]+))?(?:<br/>)?"
+		"(?:Wilderness/Special Area: ([- \\(\\)/A-Za-z]+))?$"
+	)
+	npsWilderness = {
+		"Death Valley":         "National Park",
+		"Joshua Tree":          "National Park",
+		"Mojave":               "National Preserve",
+		"Organ Pipe Cactus":    "National Monument",
+		"Sequoia-Kings Canyon": ("Kings Canyon National Park", "Sequoia National Park"),
+		"Yosemite":             "National Park",
+		"Zion":                 "National Park",
+	}
+	def checkNPSWilderness(self, name):
+		park = self.npsWilderness.get(name)
+		if park is None:
+			return False
+		if isinstance(park, str):
+			park = name + " " + park
+			if park in self.landManagement or (park + " HP") in self.landManagement:
+				return True
+			log("{:24} * Inserting {} for {} Wilderness", self.name, park, name)
+			self.landManagement.insert(0, park)
+			return True
+		for np in park:
+			if np in self.landManagement:
+				return True
+		else:
+			err("{:24} * Expected one of {} for {} Wilderness", self.name, park, name)
+		return False
+
+	def readPeakFile(self):
+		fileName = self.getPeakFileName(self.id)
+
+		if not os.path.exists(fileName):
+			return
+
+		htmlFile = open(fileName)
+		table = TableParser(htmlFile, attributes={"class": "gray", "align": "left", "width": "49%"})
+
+		for row in table.tableRows:
+			if row[0] == "Latitude/Longitude (WGS84)":
+				latlng = row[1].split("<br/>")[1]
+				assert latlng.endswith(" (Dec Deg)")
+				latlng = latlng[:-10].split(", ")
+				latlng = map(lambda d: str(round(float(d), 5)), latlng)
+				self.latitude, self.longitude = latlng
+
+		htmlFile = open(fileName)
+		table = TableParser(htmlFile, attributes={"class": "gray", "align": "right", "width": "50%"})
+
+		self.landManagement = []
+		for row in table.tableRows:
+			if row[0] == "Ownership":
+				land = row[1].replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
+				m = self.landPattern.match(land)
+				if m is None:
+					err("Land doesn't match pattern:\n{}", row[1])
+				land, wilderness = m.groups()
+				if land is not None:
+					for area in land.split("/"):
+						highPoint = False
+						if area.endswith(" (Highest Point)"):
+							highPoint = True
+							area = area[:-16]
+						if highPoint:
+							area += " HP"
+						self.landManagement.append(area)
+				if wilderness is not None:
+					for area in wilderness.split("/"):
+						highPoint = False
+						if area.endswith(" (Highest Point)"):
+							highPoint = True
+							area = area[:-16]
+						if area.endswith(" Wilderness Area"):
+							area = area[:-5]
+							if self.checkNPSWilderness(area[:-11]):
+								continue
+						if highPoint:
+							area += " HP"
+						self.landManagement.append(area)
+
+		print "{:24} {}".format(self.name, "/".join(self.landManagement))
 
 class PeakLoJ(TablePeak):
 	classId = 'LoJ'
@@ -1288,6 +1475,19 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 
 	if pl.sierraPeaks:
 		checkThirteeners(pl, setVR)
+
+	peakClass = PeakPb
+	for section in pl.peaks:
+		for peak in section:
+			peak2 = getattr(peak, peakClass.classAttrPeak, None)
+			if peak2 is None:
+				id = getattr(peak, peakClass.classAttrId, None)
+				if id is None:
+					continue
+				peak2 = peakClass()
+				peak2.id = id
+				peak2.name = peak.matchName
+			peak2.readPeakFile()
 
 def loadData(pl):
 	loadURLs(getLoadListsFromTable(pl))
