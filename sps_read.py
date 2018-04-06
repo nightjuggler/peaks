@@ -44,7 +44,7 @@ peakListParams = {
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
-		'numPeaks': 1,
+		'numPeaks': 3,
 		'numSections': 8,
 	},
 	'osp': {
@@ -900,7 +900,7 @@ class RE(object):
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
 	summitpost = re.compile(
-		'^<td><a href="http://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
+		'^<td><a href="https://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
 	)
 	wikipedia = re.compile(
 		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()%0-9A-Za-z]+)">W</a></td>$'
@@ -915,7 +915,7 @@ class RE(object):
 		'^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$'
 	)
 	weather = re.compile(
-		'^<td><a href="http://forecast\\.weather\\.gov/MapClick\\.php\\?'
+		'^<td><a href="https://forecast\\.weather\\.gov/MapClick\\.php\\?'
 		'lon=(-[0-9]{1,3}\\.[0-9]{1,6})&lat=([0-9]{1,2}\\.[0-9]{1,6})">WX</a></td>$'
 	)
 	climbedDate = re.compile('^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}')
@@ -1427,12 +1427,12 @@ def readHTML(pl):
 def writeHTML(pl):
 	sectionFormat = '<tr class="section"><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
 	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},{}&z={}&t={}">{}</a>{}{}</td>'
-	summitpostFormat = '<td><a href="http://www.summitpost.org/{0}/{1}">SP</a></td>'
+	summitpostFormat = '<td><a href="https://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
 	bobBurdFormat = '<td><a href="http://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
 	listsOfJohnFormat = '<td><a href="https://listsofjohn.com/peak/{0}">LoJ</a></td>'
 	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
-	weatherFormat = '<td><a href="http://forecast.weather.gov/MapClick.php?lon={0}&lat={1}">WX</a></td>'
+	weatherFormat = '<td><a href="https://forecast.weather.gov/MapClick.php?lon={0}&lat={1}">WX</a></td>'
 
 	emptyCell = '<td>&nbsp;</td>'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.numColumns - 1)

@@ -85,7 +85,7 @@ function weatherLink(layer)
 	function setWxLink()
 	{
 		var ll = layer.getPopup().getLatLng();
-		a.href = 'http://forecast.weather.gov/MapClick.php'
+		a.href = 'https://forecast.weather.gov/MapClick.php'
 			+ '?lon=' + ll.lng.toFixed(6)
 			+ '&lat=' + ll.lat.toFixed(6);
 	}
@@ -481,12 +481,12 @@ function popupHtml(ll, p, htmlFilename)
 		+ makeLink(g4URL, p.name) + suffix + otherName;
 
 	var links = [];
-	if (p.SP) links.push(makeLink('http://www.summitpost.org/' + p.SP, 'SP'));
+	if (p.SP) links.push(makeLink('https://www.summitpost.org/' + p.SP, 'SP'));
 	if (p.W) links.push(makeLink(Wikipedia_Prefix + p.W, 'W'));
 	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
 	if (p.LoJ) links.push(makeLink('https://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
 	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
-	if (!p.noWX) links.push(makeLink('http://forecast.weather.gov/MapClick.php?lon='
+	if (!p.noWX) links.push(makeLink('https://forecast.weather.gov/MapClick.php?lon='
 		+ ll.lng + '&lat=' + ll.lat, 'WX'));
 
 	links = links.length === 0 ? '' : '<br>' + links.join(', ');
