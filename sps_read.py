@@ -37,6 +37,11 @@ peakListParams = {
 		'numPeaks': 15,
 		'numSections': 12,
 	},
+	'hps': {
+		'geojsonTitle': 'Hundred Peaks Section',
+		'numPeaks': 14,
+		'numSections': 32,
+	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
 		'numPeaks': 20,
@@ -49,7 +54,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 27,
+		'numPeaks': 25,
 		'numSections': 24,
 	},
 }
@@ -60,8 +65,8 @@ class PeakList(object):
 
 		self.id = id.upper()
 		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
-		self.sierraPeaks = id in ('osp', 'sps')
-		self.numColumns = 14 if self.sierraPeaks else 13
+		self.column12 = id in ('hps', 'osp', 'sps')
+		self.numColumns = 14 if self.column12 else 13
 		self.peaks = []
 		self.sections = []
 
@@ -92,7 +97,7 @@ class Peak(object):
 		self.bobBurdId = None
 		self.listsOfJohnId = None
 		self.peakbaggerId = None
-		self.sierraColumn12 = None
+		self.column12 = None
 		self.climbed = None
 		self.extraRow = None
 		self.dataFrom = None
@@ -238,6 +243,7 @@ class LandMgmtArea(object):
 		return area
 
 landNameLookup = {
+	"Carrizo Plain National Monument":      'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Lake Mead NRA":                        'landNPS',
@@ -818,9 +824,9 @@ class SimpleColumn(object):
 		return self(m.group())
 
 class ColumnHPS(SimpleColumn):
-	prefix = '<td><a href="http://www.hundredpeaks.org/Peaks/'
-	suffix = '.html">HPS</a></td>\n'
-	pattern = re.compile('^[0-9]{2}[A-Z]$')
+	prefix = '<td><a href="http://www.hundredpeaks.org/guides/'
+	suffix = '.htm">HPS</a></td>\n'
+	pattern = re.compile('^[0-9]{2}[a-z]$')
 
 class ColumnPY(SimpleColumn):
 	prefix = '<td><a href="http://www.petesthousandpeaks.com/Captions/nspg/'
@@ -872,7 +878,7 @@ class RE(object):
 	sectionRow = re.compile(
 		'^<tr class="section">'
 		'<td id="([A-Z]+)([0-9]+)" colspan="(1[0-9])">'
-		'\\2\\. ([- &,;A-Za-z]+)</td></tr>$'
+		'\\2\\. ([- &,;0-9A-Za-z]+)</td></tr>$'
 	)
 	peakRow = re.compile(
 		'^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?'
@@ -1288,12 +1294,8 @@ def readHTML(pl):
 			suffix = m.group(6)
 			peak.otherName = m.group(7)
 
-			if peak.nonUS:
-				if peak.baseLayer != 't1':
-					badLine()
-			else:
-				if peak.baseLayer != 't4':
-					badLine()
+			if peak.baseLayer != ('t1' if peak.nonUS else 't4'):
+				badLine()
 
 			if suffix is None:
 				if peak.isEmblem or peak.isMtneer:
@@ -1364,10 +1366,12 @@ def readHTML(pl):
 			else:
 				peak.peakbaggerId = m.group(1)
 
-			if pl.sierraPeaks:
+			if pl.column12:
 				line = htmlFile.next()
-				if line != emptyCell:
-					peak.sierraColumn12 = (ColumnHPS if sectionNumber == 1 else
+				if pl.id == 'HPS':
+					peak.column12 = ColumnHPS.match(line)
+				elif line != emptyCell:
+					peak.column12 = (ColumnHPS if sectionNumber == 1 else
 						ColumnPY if sectionNumber > 22 else ColumnVR).match(line)
 
 			line = htmlFile.next()
@@ -1524,11 +1528,11 @@ def writeHTML(pl):
 			else:
 				print peakbaggerFormat.format(peak.peakbaggerId)
 
-			if pl.sierraPeaks:
-				if peak.sierraColumn12 is None:
+			if pl.column12:
+				if peak.column12 is None:
 					print emptyCell
 				else:
-					print str(peak.sierraColumn12),
+					print str(peak.column12),
 
 			if peak.nonUS:
 				print emptyCell

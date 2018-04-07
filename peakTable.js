@@ -180,6 +180,12 @@ function initPeakListMenu()
 		isCAPeak: function(peakId) { return peakId.substr(0, 2) === '1.'; },
 	},
 	{
+		id: 'hps',
+		name: 'Hundred Peaks Section',
+		isCAPeak: returnTrue,
+		isSierraPeak: function(peakId) { return Number(peakId.split('.')[0]) < 3; },
+	},
+	{
 		id: 'npc',
 		name: 'Nevada Peaks Club',
 		// isSierraPeak: Don't bother excepting Mount Rose (3.1)
@@ -270,7 +276,7 @@ function createMapLinkBox(latCommaLong, peakId)
 		'https://fusiontables.googleusercontent.com/embedviz?' +
 		'q=select+col0+from+1oAUIuqAirzAY_wkouZLdM4nRYyZ1p4TAg3p6aD2T' +
 		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
-		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG')
+		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG');
 
 	if (globalPeakInfo.peakList.isCAPeak(peakId))
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
@@ -321,6 +327,9 @@ function createMapLinkBox(latCommaLong, peakId)
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
 		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong);
+
+	addMapLink(listNode, 'SkyVector',
+		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');
 
 	addMapLink(listNode, 'USGS Elevation Point Query',
 		'https://nationalmap.gov/epqs/pqs.php'
