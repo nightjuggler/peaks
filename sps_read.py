@@ -273,7 +273,7 @@ fsLinkPattern = re.compile('^https://www\\.fs\\.usda\\.gov/[a-z]+$')
 fwsLinkPattern = re.compile('^https://www\\.fws\\.gov/refuge/[a-z]+/$')
 npsLinkPattern = re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$')
 stateParkPattern = re.compile('^https://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$')
-wildernessPattern = re.compile('^http://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$')
+wildernessPattern = re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$')
 landLinkPattern = {
 	'landFS':       fsLinkPattern,
 	'landFWS':      fwsLinkPattern,
