@@ -144,12 +144,16 @@ var mapLinkHash = {};
 var extraRow = {};
 var landColumnArray = [];
 var climbedColumnArray = [];
-var suspendedPeaks = [];
 var globalPeakInfo = {
 	numPeaks: 0,
 	numClimbed: 0,
+	numDelisted: 0,
+	numDelistedClimbed: 0,
 	numSuspended: 0,
 	numSuspendedClimbed: 0,
+
+	delistedPeaks: [],
+	suspendedPeaks: [],
 };
 function getPeakListId()
 {
@@ -425,9 +429,17 @@ function clickFirstColumn(event)
 	}
 	return false;
 }
+function hiddenRows(rows)
+{
+	return rows.length > 0 && rows[0][0].parentNode === null;
+}
+function delistedHidden()
+{
+	return hiddenRows(globalPeakInfo.delistedPeaks);
+}
 function suspendedHidden()
 {
-	return suspendedPeaks.length > 0 && suspendedPeaks[0][0].parentNode === null;
+	return hiddenRows(globalPeakInfo.suspendedPeaks);
 }
 function peakTableFirstRow()
 {
@@ -447,12 +459,15 @@ function decorateTable()
 
 		var peakId = firstColumn.firstChild.nodeValue;
 		var climbed = row.className.substr(0, 7) === 'climbed';
+		var delisted = row.className.substr(-8) === 'delisted';
 		var suspended = row.className.substr(-9) === 'suspended';
 
 		g.numPeaks += 1;
 		if (climbed) {
 			g.numClimbed += 1;
-			if (suspended)
+			if (delisted)
+				g.numDelistedClimbed += 1;
+			else if (suspended)
 				g.numSuspendedClimbed += 1;
 		}
 		if (firstColumn.rowSpan === 2)
@@ -484,15 +499,21 @@ function decorateTable()
 			mapLinkHash[secondColumn.id] = mapLinkSpan;
 			mapLinkSpan.addEventListener('click', showMapLinkBox, false);
 		}
-		if (suspended) {
+		if (delisted) {
+			g.numDelisted += 1;
+			g.delistedPeaks.unshift([row, row.nextSibling]);
+		}
+		else if (suspended) {
 			g.numSuspended += 1;
-			suspendedPeaks.unshift([row, row.nextSibling]);
+			g.suspendedPeaks.unshift([row, row.nextSibling]);
 		}
 	}
 
-	removeSuspended();
+	removeRows(g.delistedPeaks);
+	removeRows(g.suspendedPeaks);
 	updateClimbedCount();
-	updateSuspendedCount();
+	setCount('delistedCountSpan', g.numDelisted);
+	setCount('suspendedCountSpan', g.numSuspended);
 	addClickHandlers();
 
 	if (window.location.hash)
@@ -518,8 +539,13 @@ function insertClimbedColumn(row)
 }
 function addRemoveColumn(addRemoveFunction, colDiff)
 {
-	var addRemoveSuspended = suspendedHidden();
-	if (addRemoveSuspended) addSuspended();
+	var delistedPeaks = globalPeakInfo.delistedPeaks;
+	var addRemoveDelisted = hiddenRows(delistedPeaks);
+	if (addRemoveDelisted) addRows(delistedPeaks);
+
+	var suspendedPeaks = globalPeakInfo.suspendedPeaks;
+	var addRemoveSuspended = hiddenRows(suspendedPeaks);
+	if (addRemoveSuspended) addRows(suspendedPeaks);
 
 	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
@@ -533,7 +559,8 @@ function addRemoveColumn(addRemoveFunction, colDiff)
 			firstColumn.colSpan += colDiff;
 	}
 
-	if (addRemoveSuspended) removeSuspended();
+	if (addRemoveDelisted) removeRows(delistedPeaks);
+	if (addRemoveSuspended) removeRows(suspendedPeaks);
 }
 function getPeakTableClass(i)
 {
@@ -572,6 +599,10 @@ function updateClimbedCount()
 	var numClimbed = globalPeakInfo.numClimbed;
 	var numPeaks = globalPeakInfo.numPeaks;
 
+	if (delistedHidden()) {
+		numClimbed -= globalPeakInfo.numDelistedClimbed;
+		numPeaks -= globalPeakInfo.numDelisted;
+	}
 	if (suspendedHidden()) {
 		numClimbed -= globalPeakInfo.numSuspendedClimbed;
 		numPeaks -= globalPeakInfo.numSuspended;
@@ -583,20 +614,20 @@ function updateClimbedCount()
 	else
 		span.appendChild(document.createTextNode(text));
 }
-function updateSuspendedCount()
+function setCount(spanId, count)
 {
-	var span = document.getElementById('suspendedCountSpan');
+	var span = document.getElementById(spanId);
 	if (!span) return;
 
-	var text = '(' + globalPeakInfo.numSuspended + ')';
+	var text = '(' + count + ')';
 	if (span.firstChild)
 		span.firstChild.nodeValue = text;
 	else
 		span.appendChild(document.createTextNode(text));
 }
-function addSuspended()
+function addRows(rows)
 {
-	for (var item of suspendedPeaks)
+	for (var item of rows)
 	{
 		var row = item[0];
 		var nextSibling = item[1];
@@ -610,9 +641,9 @@ function addSuspended()
 		nextSibling.parentNode.insertBefore(row, nextSibling);
 	}
 }
-function removeSuspended()
+function removeRows(rows)
 {
-	for (var item of suspendedPeaks)
+	for (var item of rows)
 	{
 		var row = item[0];
 		var firstColumn = row.children[0];
@@ -622,14 +653,22 @@ function removeSuspended()
 		row.parentNode.removeChild(row);
 	}
 }
-function toggleSuspended()
+function toggleRows(rows)
 {
-	if (suspendedHidden())
-		addSuspended();
+	if (hiddenRows(rows))
+		addRows(rows);
 	else
-		removeSuspended();
+		removeRows(rows);
 
 	updateClimbedCount();
+}
+function toggleDelisted()
+{
+	toggleRows(globalPeakInfo.delistedPeaks);
+}
+function toggleSuspended()
+{
+	toggleRows(globalPeakInfo.suspendedPeaks);
 }
 function changeColors()
 {
@@ -648,6 +687,12 @@ function addClickHandlers()
 	if (checkbox) {
 		checkbox.checked = climbedColumnArray.length === 0;
 		checkbox.addEventListener('click', toggleClimbedColumn, false);
+	}
+
+	checkbox = document.getElementById('toggleDelisted');
+	if (checkbox) {
+		checkbox.checked = !delistedHidden();
+		checkbox.addEventListener('click', toggleDelisted, false);
 	}
 
 	checkbox = document.getElementById('toggleSuspended');

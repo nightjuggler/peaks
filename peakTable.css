@@ -136,6 +136,7 @@ td {
 .lcb.climbed, .classic .climbed {
 	background-color: rgb(173,255,47);
 }
+.delisted td:first-child,
 .suspended td:first-child {
 	color: red;
 }
