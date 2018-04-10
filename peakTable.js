@@ -273,6 +273,7 @@ function createMapLinkBox(latCommaLong, peakId)
 	var latLong = latCommaLong.split(',');
 	var latitude = Number(latLong[0]);
 	var longitude = Number(latLong[1]);
+	var peakList = globalPeakInfo.peakList;
 
 	var listNode = document.createElement('UL');
 
@@ -282,7 +283,7 @@ function createMapLinkBox(latCommaLong, peakId)
 		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
 		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG');
 
-	if (globalPeakInfo.peakList.isCAPeak(peakId))
+	if (peakList.isCAPeak(peakId))
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
 			'http://www.calands.org/map?simple=true&base=topo&y=' + latLong[0] + '&x=' +
 			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
@@ -293,7 +294,7 @@ function createMapLinkBox(latCommaLong, peakId)
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
 
-	if (globalPeakInfo.peakList.isSierraPeak(peakId))
+	if (peakList.isSierraPeak(peakId))
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
 
@@ -327,10 +328,10 @@ function createMapLinkBox(latCommaLong, peakId)
 		+ '&db_debug=false');
 
 	addMapLink(listNode, 'PMap (Mapbox.js)',
-		'https://nightjuggler.com/nature/pmap.html?o=dps&o=sps&ll=' + latCommaLong);
+		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
-		'https://nightjuggler.com/nature/pmapgl.html?o=dps&o=sps&ll=' + latCommaLong);
+		'https://nightjuggler.com/nature/pmapgl.html?o=' + peakList.id + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'SkyVector',
 		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');
