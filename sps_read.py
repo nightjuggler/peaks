@@ -39,7 +39,7 @@ peakListParams = {
 	},
 	'hps': {
 		'geojsonTitle': 'Hundred Peaks Section',
-		'numPeaks': 14,
+		'numPeaks': 23,
 		'numSections': 32,
 	},
 	'npc': {
@@ -109,6 +109,7 @@ class Peak(object):
 		self.isHighPoint = False
 		self.landClass = None
 		self.landManagement = None
+		self.delisted = False
 		self.suspended = False
 
 	def elevationHTML(self):
@@ -136,7 +137,7 @@ class Peak(object):
 		return exactMatches, otherMatches
 
 	def copyFrom(self, other):
-		doNotCopy = ('id', 'dataFrom', 'hasHtmlId', 'isEmblem', 'isMtneer', 'suspended')
+		doNotCopy = ('id', 'dataFrom', 'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended')
 
 		if other.dataFrom is not None:
 			sys.exit("{} should not have the data-from attribute!".format(self.dataFrom))
@@ -186,8 +187,8 @@ def parseClasses(peak, classNames):
 			return True
 		className = classNames.pop(0)
 
-	if className == 'suspended':
-		peak.suspended = True
+	if className in ('delisted', 'suspended'):
+		setattr(peak, className, True)
 		if not classNames:
 			return True
 
@@ -1472,7 +1473,9 @@ def writeHTML(pl):
 				classNames.append('emblem')
 			if peak.landClass is not None:
 				classNames.append(peak.landClass)
-			if peak.suspended:
+			if peak.delisted:
+				classNames.append('delisted')
+			elif peak.suspended:
 				classNames.append('suspended')
 
 			attr = ''
@@ -1624,7 +1627,7 @@ def writeJSON(pl):
 	f('\t"features": [')
 	for peaks in pl.peaks:
 		for peak in peaks:
-			if not peak.suspended:
+			if not (peak.delisted or peak.suspended):
 				if firstPeak:
 					firstPeak = False
 				else:
