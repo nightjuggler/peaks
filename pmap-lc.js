@@ -9,7 +9,7 @@ var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/
 var USFS_Prefix = 'https://www.fs.usda.gov/';
 var USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
 var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
-var Wilderness_Prefix = 'http://www.wilderness.net/NWPS/wildView?WID=';
+var Wilderness_Prefix = 'https://www.wilderness.net/NWPS/wildView?WID=';
 
 var lcItemFitLink;
 var lcItemHoverColor = 'rgb(232, 232, 232)';
