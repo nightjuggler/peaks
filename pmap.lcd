@@ -619,5 +619,10 @@ NPS =nps add_NPS
 Peaks =peaks addPeakOverlay
 	Desert Peaks Section :dps^
 	Sierra Peaks Section :sps^
+	Great Basin Peaks :gbp^
+	Hundred Peaks Section :hps^
+	Nevada Peaks Club :npc^
+	Other Desert Peaks :odp^
+	Other Sierra Peaks :osp^
 UC Reserves =uc add_UC_Reserve
 	Sweeney Granite Mountains :granites
