@@ -23,12 +23,12 @@ def int2str(n):
 peakLists = {}
 peakListParams = {
 	'sps': {
-		'geojsonTitle': 'Sierra Peaks',
+		'geojsonTitle': 'Sierra Peaks Section',
 		'numPeaks': 248,
 		'numSections': 24,
 	},
 	'dps': {
-		'geojsonTitle': 'Desert Peaks',
+		'geojsonTitle': 'Desert Peaks Section',
 		'numPeaks': 99,
 		'numSections': 9,
 	},
