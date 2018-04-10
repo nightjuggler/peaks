@@ -1441,10 +1441,10 @@ def checkThirteeners(pl, setVR=False):
 			else:
 				if not thirteener:
 					print peak.fmtIdName, "Unexpected VR link"
-				colVR = peak.sierraColumn12
+				colVR = peak.column12
 				if colVR is None:
 					if setVR:
-						peak.sierraColumn12 = vr
+						peak.column12 = vr
 				else:
 					if vr.rank != colVR.rank or vr.linkName != colVR.name:
 						print "{} VR rank/link {}/{} doesn't match {}/{}".format(
@@ -1490,7 +1490,7 @@ def checkLandManagement(peak, peak2):
 
 def checkData(pl, setProm=False, setVR=False, verbose=False):
 	peakClasses = [PeakLoJ, PeakPb]
-	if pl.sierraPeaks:
+	if pl.column12:
 		peakClasses.append(PeakVR)
 
 	peakMap = MatchByName(pl)
@@ -1512,7 +1512,7 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 
 	checkProminence(pl, setProm)
 
-	if pl.sierraPeaks:
+	if pl.column12:
 		checkThirteeners(pl, setVR)
 
 	printTitle("Land Management")
