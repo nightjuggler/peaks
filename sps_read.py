@@ -47,6 +47,11 @@ peakListParams = {
 		'numPeaks': 20,
 		'numSections': 6,
 	},
+	'ogul': {
+		'geojsonTitle': 'Tahoe Ogul Peaks',
+		'numPeaks': 2,
+		'numSections': 15,
+	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
 		'numPeaks': 3,
@@ -65,7 +70,7 @@ class PeakList(object):
 
 		self.id = id.upper()
 		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
-		self.column12 = id in ('hps', 'osp', 'sps')
+		self.column12 = id in ('hps', 'ogul', 'osp', 'sps')
 		self.numColumns = 14 if self.column12 else 13
 		self.peaks = []
 		self.sections = []
@@ -1371,6 +1376,8 @@ def readHTML(pl):
 				line = htmlFile.next()
 				if pl.id == 'HPS':
 					peak.column12 = ColumnHPS.match(line)
+				elif pl.id == 'OGUL':
+					peak.column12 = ColumnPY.match(line)
 				elif line != emptyCell:
 					peak.column12 = (ColumnHPS if sectionNumber == 1 else
 						ColumnPY if sectionNumber > 22 else ColumnVR).match(line)

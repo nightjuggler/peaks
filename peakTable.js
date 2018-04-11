@@ -5,21 +5,6 @@ var radiansPerDegree = Math.PI / 180.0; // 0.017453292519943295
 var degreesPerRadian = 180.0 / Math.PI;
 var earthRadius = 6378137.0; // WGS 84 equatorial radius in meters
 
-function haversineDistance(lat1, long1, lat2, long2)
-{
-	lat1 *= radiansPerDegree;
-	lat2 *= radiansPerDegree;
-	long1 *= radiansPerDegree;
-	long2 *= radiansPerDegree;
-
-	// See https://en.wikipedia.org/wiki/Haversine_formula
-
-	var sinLat = Math.sin((lat2 - lat1) / 2.0);
-	var sinLong = Math.sin((long2 - long1) / 2.0);
-	var cosLat = Math.cos(lat1) * Math.cos(lat2);
-
-	return 2.0 * earthRadius * Math.asin(Math.sqrt(sinLat * sinLat + cosLat * sinLong * sinLong));
-}
 function deltaLatForDistanceNorth(distance)
 {
 	// Derived from solving the Haversine formula for lat2 when long1 == long2
@@ -201,6 +186,22 @@ function initPeakListMenu()
 		isSierraPeak: returnTrue,
 	},
 	{
+		id: 'ogul',
+		name: 'Tahoe Ogul Peaks List',
+		// Don't bother excepting the following (all in Nevada):
+		// 11.1 Mount Rose
+		// 12.1 Snow Valley Peak
+		// 12.2 Duane Bliss Peak
+		// 12.3 Genoa Peak
+		// 14.1 Mount Siegel
+		// 15.1 Desert Creek Peak
+		// 15.2 East Sister
+		isCAPeak: returnTrue,
+		// Don't bother excepting sections 14 (Pine Nut Mtns) and 15 (Sweetwater Mtns)
+		// isSierraPeak: function(peakId) { return Number(peakId.split('.')[0]) < 14; },
+		isSierraPeak: returnTrue,
+	},
+	{
 		id: 'odp',
 		name: 'Other Desert Peaks',
 		isCAPeak: function(peakId) { return Number(peakId.split('.')[0]) < 6; },
@@ -311,8 +312,8 @@ function createMapLinkBox(latCommaLong, peakId)
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
 
 	addMapLink(listNode, 'Interagency Elevation Inventory',
-		'https://coast.noaa.gov/inventory/index.html?layers=1&zoom=14&center='
-		+ latLong[1] + ',' + latLong[0] + '&basemap=esristreet');
+		'https://coast.noaa.gov/inventory/index.html?layers=1&zoom=14&center=' +
+		latLong[1] + ',' + latLong[0] + '&basemap=esristreet');
 
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
 		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl'
@@ -353,8 +354,8 @@ function createMapLinkBox(latCommaLong, peakId)
 
 	addMapLink(listNode, 'USGS National Map (Terria)',
 		'https://viewer.nationalmap.gov/advanced/terriajs-usgs/#start='
-			+ encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude)))
-			+ '&hideExplorerPanel=1&activeTabId=DataCatalogue');
+		+ encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude)))
+		+ '&hideExplorerPanel=1&activeTabId=DataCatalogue');
 
 	addMapLink(listNode, 'USGS TopoView',
 		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
@@ -712,6 +713,14 @@ function addClickHandlers()
 			}
 		colorMenu.addEventListener('change', changeColors, false);
 	}
+
+	var legendLink = document.getElementById('legendLink');
+	if (legendLink)
+		legendLink.addEventListener('click', showLegend, false);
+
+	var closeLegend = document.getElementById('closeLegend');
+	if (closeLegend)
+		closeLegend.addEventListener('click', hideLegend, false);
 }
 function showLegend()
 {
