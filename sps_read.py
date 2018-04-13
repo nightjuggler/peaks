@@ -49,7 +49,7 @@ peakListParams = {
 	},
 	'ogul': {
 		'geojsonTitle': 'Tahoe Ogul Peaks',
-		'numPeaks': 26,
+		'numPeaks': 27,
 		'numSections': 15,
 	},
 	'odp': {
