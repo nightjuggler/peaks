@@ -49,7 +49,7 @@ peakListParams = {
 	},
 	'ogul': {
 		'geojsonTitle': 'Tahoe Ogul Peaks',
-		'numPeaks': 2,
+		'numPeaks': 26,
 		'numSections': 15,
 	},
 	'odp': {
@@ -59,7 +59,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 25,
+		'numPeaks': 24,
 		'numSections': 24,
 	},
 }
@@ -142,7 +142,8 @@ class Peak(object):
 		return exactMatches, otherMatches
 
 	def copyFrom(self, other):
-		doNotCopy = ('id', 'dataFrom', 'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended')
+		doNotCopy = ('id', 'column12', 'dataFrom', 'hasHtmlId',
+			'isEmblem', 'isMtneer', 'delisted', 'suspended')
 
 		if other.dataFrom is not None:
 			sys.exit("{} should not have the data-from attribute!".format(self.dataFrom))
@@ -150,6 +151,9 @@ class Peak(object):
 		for k, v in vars(other).iteritems():
 			if not (k[0] == '_' or k in doNotCopy):
 				setattr(self, k, v)
+
+		if other.column12 is not None:
+			self.column12 = other.column12
 
 		self.dataFromPeak = other
 
