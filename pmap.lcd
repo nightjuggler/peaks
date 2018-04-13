@@ -622,6 +622,7 @@ Peaks =peaks addPeakOverlay
 	Great Basin Peaks :gbp^
 	Hundred Peaks Section :hps^
 	Nevada Peaks Club :npc^
+	Tahoe Ogul Peaks :ogul^
 	Other Desert Peaks :odp^
 	Other Sierra Peaks :osp^
 UC Reserves =uc add_UC_Reserve
