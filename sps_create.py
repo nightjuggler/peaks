@@ -504,6 +504,7 @@ class PeakPb(TablePeak):
 		'DPS':   99,
 		'GBP':  115,
 		'NPC':   73,
+		'OGUL':  63,
 		'SPS':  247,
 	}
 	nameMap = {
@@ -528,6 +529,9 @@ class PeakPb(TablePeak):
 		('Sawtooth Peak', 8000):                'Sawtooth Peak (South)',
 		('Sawtooth Peak', 12343):               'Sawtooth Peak (North)',
 		('Sierra Buttes Lookout', 8590):        'Sierra Buttes',
+	# Tahoe Ogul Peaks:
+		('Silver Peak', 8930):                  'Silver Peak (North)',
+		('Silver Peak-Southwest Summit', 10772):'Silver Peak (South)',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
@@ -570,7 +574,7 @@ class PeakPb(TablePeak):
 	#   The 1985 Smith Valley 1:100,000 topo doesn't show a spot elevation.
 	#   The 1889, 1891, and 1893 Markleeville 1:125,000 maps show a spot elevation of 10,955'
 	#   All of the Walker Lake 1:250,000 maps show spot elevations of either 10,935' or 10,955'
-	#   How does Pb get 10,936'
+	#   How does Pb get 10,936'?
 	#
 	# - Kearsarge Peak
 	#   The 1994 Kearsarge Peak 7.5' topo doesn't show a spot elevation.
@@ -884,6 +888,7 @@ class PeakLoJ(TablePeak):
 		'DPS':   95, # The four Mexican peaks are missing from the LoJ DPS list.
 		'GBP':  115,
 		'NPC':   73,
+		'OGUL':  63,
 		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
 	}
 	# Errata for the LoJ SPS list (https://listsofjohn.com/customlists?lid=60):
@@ -927,6 +932,10 @@ class PeakLoJ(TablePeak):
 		('Sawtooth Peak', 12343):       'Sawtooth Peak (North)',
 		('Sierra Buttes, North', 8591): 'Sierra Buttes',
 		('Three Sisters, East', 10612): 'Three Sisters',
+	# Tahoe Ogul Peaks:
+		('Silver Peak', 8930):                          'Silver Peak (North)',
+		('Silver Peak', 10772):                         'Silver Peak (South)',
+		('Twin Peaks, East', 8878):                     'Twin Peaks',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
@@ -1490,7 +1499,7 @@ def checkLandManagement(peak, peak2):
 
 def checkData(pl, setProm=False, setVR=False, verbose=False):
 	peakClasses = [PeakLoJ, PeakPb]
-	if pl.column12:
+	if pl.id in ('SPS', 'OSP'):
 		peakClasses.append(PeakVR)
 
 	peakMap = MatchByName(pl)
@@ -1512,7 +1521,7 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 
 	checkProminence(pl, setProm)
 
-	if pl.column12:
+	if PeakVR in peakClasses:
 		checkThirteeners(pl, setVR)
 
 	printTitle("Land Management")

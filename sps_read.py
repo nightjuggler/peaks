@@ -49,7 +49,7 @@ peakListParams = {
 	},
 	'ogul': {
 		'geojsonTitle': 'Tahoe Ogul Peaks',
-		'numPeaks': 27,
+		'numPeaks': 63,
 		'numSections': 15,
 	},
 	'odp': {
@@ -59,7 +59,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 24,
+		'numPeaks': 25,
 		'numSections': 24,
 	},
 }
@@ -70,8 +70,8 @@ class PeakList(object):
 
 		self.id = id.upper()
 		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
-		self.column12 = id in ('hps', 'ogul', 'osp', 'sps')
-		self.numColumns = 14 if self.column12 else 13
+		self.column12 = globals().get('column12_' + self.id)
+		self.numColumns = 13 if self.column12 is None else 14
 		self.peaks = []
 		self.sections = []
 
@@ -403,7 +403,7 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;((?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: VABM)?(?: [0-9]+)?)&quot; '
+		'&quot;((?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: 2)?(?: VABM)?(?: [1-9][0-9]{3})?)&quot; '
 		'\\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, id):
@@ -871,6 +871,26 @@ class ColumnVR(object):
 				raise FormatError("Thirteener rank expected to be between 1 and 147")
 
 		return self(name, rank)
+
+def column12_HPS(sectionNumber, peakNumber):
+	return ColumnHPS, False
+
+def column12_OGUL(sectionNumber, peakNumber):
+	return ColumnPY, (sectionNumber, peakNumber) == (4, 2)
+
+def column12_OSP(sectionNumber, peakNumber):
+	if sectionNumber == 1:
+		return ColumnHPS, True
+	if sectionNumber >= 23:
+		return ColumnPY, True
+	return ColumnVR, True
+
+def column12_SPS(sectionNumber, peakNumber):
+	if sectionNumber == 1:
+		return ColumnHPS, True
+	if sectionNumber >= 23:
+		return ColumnPY, False
+	return ColumnVR, True
 
 def addSection(pl, m):
 	id, sectionNumber, colspan, sectionName = m.groups()
@@ -1376,15 +1396,14 @@ def readHTML(pl):
 			else:
 				peak.peakbaggerId = m.group(1)
 
-			if pl.column12:
+			if pl.column12 is not None:
 				line = htmlFile.next()
-				if pl.id == 'HPS':
-					peak.column12 = ColumnHPS.match(line)
-				elif pl.id == 'OGUL':
-					peak.column12 = ColumnPY.match(line)
-				elif line != emptyCell:
-					peak.column12 = (ColumnHPS if sectionNumber == 1 else
-						ColumnPY if sectionNumber > 22 else ColumnVR).match(line)
+				columnClass, allowEmpty = pl.column12(sectionNumber, peakNumber)
+				if line == emptyCell:
+					if not allowEmpty:
+						badLine()
+				else:
+					peak.column12 = columnClass.match(line)
 
 			line = htmlFile.next()
 			m = RE.weather.match(line)
@@ -1542,7 +1561,7 @@ def writeHTML(pl):
 			else:
 				print peakbaggerFormat.format(peak.peakbaggerId)
 
-			if pl.column12:
+			if pl.column12 is not None:
 				if peak.column12 is None:
 					print emptyCell
 				else:
