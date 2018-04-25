@@ -22,13 +22,17 @@ class TableParserError(Exception):
 class TableParser(HTMLParser.HTMLParser):
 	def handle_starttag(self, tag, attributes):
 		if self.tableDepth == 0:
-			if tag == "table" and (self.attributes is None or self.attributes == dict(attributes)):
+			if tag == self.startTag and (
+				self.startTagAttributes is None or
+				self.startTagAttributes == dict(attributes)):
+				self.startTag = None
+
+			if tag == "table" and self.startTag is None:
 				self.tableDepth = 1
 				self.tableRows = []
 				self.currentRow = None
 				self.currentCol = None
-
-		elif self.tableDepth > 0:
+		else:
 			if tag == "td":
 				if self.tableDepth == 1:
 					if self.currentCol is not None:
@@ -48,11 +52,16 @@ class TableParser(HTMLParser.HTMLParser):
 				self.tableDepth += 1
 
 			if self.currentCol is not None:
+				if tag == "a":
+					attributes = [(k, v) for k, v in attributes
+						if k == "href" and "/glossary" not in v]
+				else:
+					attributes = []
 				self.currentCol += "<{}{}>".format(tag,
 					"".join([" {}=\"{}\"".format(k, v) for k, v in attributes]))
 
 	def handle_endtag(self, tag):
-		if self.tableDepth <= 0:
+		if self.tableDepth == 0:
 			return
 		if tag == "td":
 			if self.tableDepth == 1:
@@ -72,13 +81,14 @@ class TableParser(HTMLParser.HTMLParser):
 		elif tag == "table":
 			self.tableDepth -= 1
 			if self.tableDepth == 0:
-				self.tableDepth = -1
 				if self.currentCol is not None:
 					self.currentRow.append(self.currentCol)
 					self.currentCol = None
 				if self.currentRow:
 					self.tableRows.append(self.currentRow)
 				self.currentRow = None
+				self.tables.append(self.tableRows)
+				self.numTables -= 1
 				return
 
 		if self.currentCol is not None:
@@ -87,6 +97,7 @@ class TableParser(HTMLParser.HTMLParser):
 	def handle_startendtag(self, tag, attributes):
 		if self.tableDepth > 0:
 			if self.currentCol is not None:
+				attributes = []
 				self.currentCol += "<{}{}/>".format(tag,
 					"".join([" {}=\"{}\"".format(k, v) for k, v in attributes]))
 
@@ -95,16 +106,21 @@ class TableParser(HTMLParser.HTMLParser):
 			if self.currentCol is not None:
 				self.currentCol += data
 
-	def __init__(self, fileObj, attributes=None):
+	def __init__(self, fileName, numTables=1, startTag="table", startTagAttributes=None):
 		self.reset()
 
-		self.attributes = attributes
+		self.numTables = numTables
+		self.startTag = startTag
+		self.startTagAttributes = startTagAttributes
 		self.tableDepth = 0
+		self.tables = []
 
-		while self.tableDepth >= 0:
+		fileObj = open(fileName)
+
+		while self.numTables > 0:
 			bytes = fileObj.read(1000)
 			if bytes == "":
-				raise TableParserError("Can't find table")
+				break
 			self.feed(bytes)
 
 		fileObj.close()
@@ -134,11 +150,11 @@ class TableReader(object):
 
 		err(prefix + message, prevTag=prevTag, *args, **kwargs)
 
-	def __init__(self, fileObj, upper=False, tableAttributes=None):
+	def __init__(self, fileName, upper=False, tableAttributes=None):
 		self.bytes = ""
 		self.rowNum = 0
 		self.colNum = 0
-		self.fileObj = fileObj
+		self.fileObj = open(fileName)
 
 		if upper:
 			self.TABLE, self.TR, self.TD, self.TH = ("TABLE", "TR", "TD", "TH")
@@ -263,9 +279,14 @@ class TableReader(object):
 class RE(object):
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
+	numLT10k = re.compile('^[1-9][0-9]{0,3}$')
+	numGE10k = re.compile('^[1-9][0-9],[0-9]{3}$')
 	htmlTag = re.compile('<[^>]*>')
 	whitespace = re.compile('\\s{2,}')
 	nonAlphaNum = re.compile('[^-0-9A-Za-z]')
+
+def toFeet(meters):
+	return int(meters / 0.3048 + 0.5)
 
 def toFeetRoundDown(meters):
 	return int(meters / 0.3048)
@@ -273,21 +294,21 @@ def toFeetRoundDown(meters):
 def toMeters(feet):
 	return int(feet * 0.3048 + 0.5)
 
-def str2int(s):
-	if len(s) < 4:
-		if RE.numLT1k.match(s) is None:
-			return None
+def str2IntLoJ(s, description, peakName):
+	if RE.numLT1k.match(s):
 		return int(s)
+	if RE.numGE1k.match(s):
+		return int(s[:-4]) * 1000 + int(s[-3:])
 
-	if RE.numGE1k.match(s) is None:
-		return None
-	return int(s[:-4]) * 1000 + int(s[-3:])
+	err("{} '{}' ({}) doesn't match expected pattern", description, s, peakName)
 
-def feetStr2Int(feetStr, description, peakName):
-	feet = str2int(feetStr)
-	if feet is None:
-		err("{} '{}' ({}) doesn't match expected pattern", description, feetStr, peakName)
-	return feet
+def str2IntPb(s, description, peakName):
+	if RE.numLT10k.match(s):
+		return int(s)
+	if RE.numGE10k.match(s):
+		return int(s[:-4]) * 1000 + int(s[-3:])
+
+	err("{} '{}' ({}) doesn't match expected pattern", description, s, peakName)
 
 class ObjectDiff(object):
 	def __init__(self, a, b, allowNotEq=()):
@@ -415,8 +436,7 @@ class TablePeak(object):
 		if not os.path.exists(fileName):
 			return []
 
-		htmlFile = open(fileName)
-		table = TableReader(htmlFile, **getattr(self, "tableReaderArgs", {}))
+		table = TableReader(fileName, **getattr(self, "tableReaderArgs", {}))
 		row = table.next()
 
 		columns = []
@@ -667,6 +687,11 @@ class PeakPb(TablePeak):
 	#
 		('East Ord Mountain', 1508, 'max'): 1528,
 		('Signal Peak', 3497, 'max'): 3487,
+
+	# Pb SPS Prominence Adjustments
+	#
+		('Pilot Knob (South)', 720, 'min'): 680,
+		('Pilot Knob (South)', 800, 'max'): 760,
 	}
 	def postProcess(self, peakListId):
 		def str2int(s):
@@ -738,15 +763,70 @@ class PeakPb(TablePeak):
 			park = name + " " + park
 			if park in self.landManagement or (park + " HP") in self.landManagement:
 				return True
-			log("{:24} * Inserting {} for {} Wilderness", self.name, park, name)
-			self.landManagement.insert(0, park)
-			return True
-		for np in park:
-			if np in self.landManagement:
-				return True
 		else:
-			err("{:24} * Expected one of {} for {} Wilderness", self.name, park, name)
-		return False
+			for np in park:
+				if np in self.landManagement or (np + " HP") in self.landManagement:
+					return True
+			park = park[0]
+		print "{} Inserting {} for {} Wilderness".format(self.fmtIdName, park, name)
+		self.landManagement.insert(0, park)
+		return True
+
+	elevationPattern1 = re.compile(
+		"^<h2>Elevation: ([1-9][0-9](?:,[0-9])?[0-9]{2})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
+	)
+	elevationPattern2 = re.compile(
+		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9](?:,[0-9])?[0-9]{2})\\2 feet</h2>$"
+	)
+	elevationRangePattern = re.compile(
+		"^Elevation range:([,0-9]+) - ([,0-9]+) (ft|m)<br/>"
+	)
+	prominencePattern = re.compile(
+		"^<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
+		"\\(Detailed prominence information\\)<br/><a>Clean Prominence</a>\n"
+		": ([,0-9]+) (ft|m)/([,0-9]+) (ft|m)<br/><a>Optimistic Prominence</a>\n"
+		": ([,0-9]+) \\3/([,0-9]+) \\5<br/><a>(?:Line Parent</a>\n"
+		": <a href=\"peak\\.aspx\\?pid=([1-9][0-9]*)\">([- 0-9A-Za-z]+)</a>\n<br/><a>)?Key Col</a>\n"
+		": ([A-Z][a-z]+(?:[- /][A-Za-z]+)*(?:, [A-Z]{2})?)?([,0-9]+) \\3/([,0-9]+) \\5$"
+	)
+	def readProminence(self, html):
+		m = self.prominencePattern.match(html)
+		if m is None:
+			err("{} Prominence doesn't match pattern:\n{}", self.fmtIdName, html)
+		(
+		keyColId,
+		minProm1, unit1,
+		minProm2, unit2,
+		maxProm1,
+		maxProm2,
+		lineParentId,
+		lineParentName,
+		keyColName,
+		keyCol1,
+		keyCol2,
+		) = m.groups()
+
+		minProm1 = str2IntPb(minProm1, "Clean prominence ({})".format(unit1), self.name)
+		minProm2 = str2IntPb(minProm2, "Clean prominence ({})".format(unit2), self.name)
+		maxProm1 = str2IntPb(maxProm1, "Optimistic prominence ({})".format(unit1), self.name)
+		maxProm2 = str2IntPb(maxProm2, "Optimistic prominence ({})".format(unit2), self.name)
+
+		if unit1 == "ft":
+			assert unit2 == "m"
+		else:
+			assert unit2 == "ft"
+			minProm1, minProm2 = minProm2, minProm1
+			maxProm1, maxProm2 = maxProm2, maxProm1
+			keyCol1, keyCol2 = keyCol2, keyCol1
+
+		assert abs(toMeters(minProm1) - minProm2) in (0, 1)
+		assert abs(toMeters(maxProm1) - maxProm2) in (0, 1)
+
+		minProm1 = self.prominenceMap.get((self.name, minProm1, "min"), minProm1)
+		maxProm1 = self.prominenceMap.get((self.name, maxProm1, "max"), maxProm1)
+
+		if self.prominence is None:
+			self.prominence = (minProm1, maxProm1)
 
 	def readPeakFile(self):
 		fileName = self.getPeakFileName(self.id)
@@ -754,10 +834,44 @@ class PeakPb(TablePeak):
 		if not os.path.exists(fileName):
 			return False
 
-		htmlFile = open(fileName)
-		table = TableParser(htmlFile, attributes={"class": "gray", "align": "left", "width": "49%"})
+		tableParser = TableParser(fileName, numTables=3, startTag="h1")
 
-		for row in table.tableRows:
+		column = tableParser.tables[0][0][1] # First table, first row, second column
+		m = self.elevationPattern1.match(column)
+		if m is None:
+			m = self.elevationPattern2.match(column)
+			if m is None:
+				err("Elevation doesn't match pattern:\n{}", column)
+			meters, isRange, feet = m.groups()
+		else:
+			feet, isRange, meters = m.groups()
+		isRange = (isRange == "+")
+		feet = str2IntPb(feet, "Elevation in feet", self.name)
+		meters = str2IntPb(meters, "Elevation in meters", self.name)
+		if toMeters(feet) != meters:
+			err("Elevation in feet ({}) != {} meters", feet, meters)
+		minElev = feet
+		maxElev = feet if not isRange else None
+
+		for row in tableParser.tables[1]:
+			if row[0] == "Elevation Info:":
+				if not isRange:
+					continue
+				m = self.elevationRangePattern.match(row[1])
+				if m is None:
+					err("Elevation Info doesn't match pattern:\n{}", row[1])
+				minElev, maxElev, elevUnit = m.groups()
+				minElev = str2IntPb(minElev, "Minimum elevation", self.name)
+				maxElev = str2IntPb(maxElev, "Maximum elevation", self.name)
+				assert minElev < maxElev
+				if elevUnit == "m":
+					assert minElev == meters
+					minElev = toFeet(minElev)
+					maxElev = toFeet(maxElev)
+				else:
+					assert minElev == feet
+				continue
+
 			if row[0] == "Latitude/Longitude (WGS84)":
 				latlng = row[1].split("<br/>")[1]
 				assert latlng.endswith(" (Dec Deg)")
@@ -765,11 +879,12 @@ class PeakPb(TablePeak):
 				latlng = map(lambda d: str(round(float(d), 5)), latlng)
 				self.latitude, self.longitude = latlng
 
-		htmlFile = open(fileName)
-		table = TableParser(htmlFile, attributes={"class": "gray", "align": "right", "width": "50%"})
-
 		self.landManagement = []
-		for row in table.tableRows:
+		for row in tableParser.tables[2]:
+			if row[0] == "<a>Prominence</a>\n":
+				self.readProminence(row[1])
+				continue
+
 			if row[0] == "Ownership":
 				land = row[1].replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
 				land = land.replace("Palen/McCoy", "Palen-McCoy")
@@ -799,6 +914,16 @@ class PeakPb(TablePeak):
 						if highPoint:
 							area += " HP"
 						self.landManagement.append(area)
+
+		assert maxElev is not None
+		minElev = self.elevationMap.get((self.name, minElev, "min"), minElev)
+		maxElev = self.elevationMap.get((self.name, maxElev, "max"), maxElev)
+
+		if self.elevation is None:
+			self.elevation = ElevationPb(minElev, maxElev)
+		else:
+			assert (minElev, maxElev) == (self.elevation.feet, self.elevation.maxFeet)
+
 		return True
 
 class PeakLoJ(TablePeak):
@@ -1083,13 +1208,15 @@ class PeakLoJ(TablePeak):
 		('Eagle Peak', 9900): 9892,
 	}
 	saddleElevationMap = {
+		('Mount Hitchcock', 12697): 3870.0, # LoJ didn't round down
 		('Humphreys Peak', 6580): 6590, # LoJ seems to have used 6600'-40'/2, but the interval is only 20'
+		('Joe Devel Peak', 12894): 3930.0, # LoJ didn't round down
 		('Kingston Peak', 3582): 1092.1, # LoJ seems to have used 1092m
 	}
 	def postProcess(self, peakListId):
-		self.elevation = feetStr2Int(self.elevation, 'Elevation', self.name)
-		self.saddleElev = feetStr2Int(self.saddleElev, 'Saddle elevation', self.name)
-		self.prominence = feetStr2Int(self.prominence, 'Prominence', self.name)
+		self.elevation = str2IntLoJ(self.elevation, 'Elevation', self.name)
+		self.saddleElev = str2IntLoJ(self.saddleElev, 'Saddle elevation', self.name)
+		self.prominence = str2IntLoJ(self.prominence, 'Prominence', self.name)
 
 		assert self.prominence == self.elevation - self.saddleElev
 
@@ -1123,6 +1250,52 @@ class PeakLoJ(TablePeak):
 
 		if peakListId == 'NPC':
 			assert self.state == 'NV'
+
+	def readPeakFileElevation(self, elevStr):
+		assert elevStr[0] == " " and elevStr[-1] == "'"
+		elevation = str2IntLoJ(elevStr[1:-1], "Elevation", self.name)
+		if self.elevation is None:
+			self.elevation = ElevationLoJ(elevation)
+
+	def readPeakFileRise(self, riseStr):
+		assert riseStr[-1] == "'"
+		prominence = str2IntLoJ(riseStr[:-1], "Prominence", self.name)
+		if self.prominence is None:
+			self.prominence = prominence
+
+	saddlePattern = re.compile(
+		"^<a href=\"/qmap\\?"
+		"lat=(-?[0-9]{1,2}\\.[0-9]{1,4})&"
+		"lon=(-?[0-9]{1,3}\\.[0-9]{1,4})&z=15\">([,0-9]+)'</a>$")
+
+	def readPeakFileSaddle(self, saddleStr):
+		m = self.saddlePattern.match(saddleStr)
+		if m is None:
+			err("{} Saddle doesn't match pattern: {}", self.fmtIdName, saddleStr)
+		saddleLat, saddleLng, saddleElev = m.groups()
+		saddleElev = str2IntLoJ(saddleElev, "Saddle elevation", self.name)
+
+	def readPeakFile(self):
+		fileName = self.getPeakFileName(self.id)
+
+		if not os.path.exists(fileName):
+			return False
+
+		column = TableParser(fileName).tables[0][0][0] # First table, first row, first column
+
+		column = (column.translate(None, "\r\n").
+				replace(" <a><img></a>", "").
+				replace("<small>", "").replace("</small>", "").
+				replace("<font>", "").replace("</font>", "").
+				replace("<div>", "").replace("</div>", ""))
+
+		for row in column.split("<br>"):
+			if ":" in row:
+				label, value = row.split(":", 1)
+				label = label.rstrip()
+				if label in ("Elevation", "Rise", "Saddle"):
+					getattr(self, "readPeakFile" + label)(value)
+		return True
 
 class PeakVR(object):
 	classId = "VR"
@@ -1204,10 +1377,8 @@ class PeakVR(object):
 			self.linkName, "VR" if self.rank is None else "#" + str(self.rank))
 
 	@classmethod
-	def readTable(self, filename, numPeaks, searchStr=None):
-		htmlFile = open(filename)
-
-		table = TableReader(htmlFile,
+	def readTable(self, fileName, numPeaks, searchStr=None):
+		table = TableReader(fileName,
 			tableAttributes="id='peak_list_ID' class=\"peak_list\" align=\"center\"")
 
 		if searchStr is not None:
@@ -1461,6 +1632,7 @@ def checkThirteeners(pl, setVR=False):
 
 landMap = {
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
+	"Giant Sequoia NM":                             "Giant Sequoia National Monument",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
 	"Mono Basin NSA":                               "Mono Basin Scenic Area",
@@ -1494,8 +1666,9 @@ def checkLandManagement(peak, peak2):
 			print "{} High Point mismatch ({})".format(peak.fmtIdName, land.name)
 
 	for land in land2:
-		print "{} '{}' not in '{}'".format(peak.fmtIdName, land,
-			"/".join([area.name for area in peak.landManagement]))
+		tableLand = "'" + "/".join([area.name for area in peak.landManagement]) + "'"
+		tableLand = "table"
+		print "{} '{}' not in {}".format(peak.fmtIdName, land, tableLand)
 
 def checkData(pl, setProm=False, setVR=False, verbose=False):
 	peakClasses = [PeakLoJ, PeakPb]
@@ -1516,6 +1689,29 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 				numMapped += 1
 		print "Mapped {}/{} peaks".format(numMapped, len(peaks))
 
+	for peakClass in (PeakLoJ, PeakPb):
+		printTitle("Reading Peak Files - " + peakClass.classTitle)
+		for section in pl.peaks:
+			for peak in section:
+				peak2 = getattr(peak, peakClass.classAttrPeak, None)
+				if peak2 is None:
+					id = getattr(peak, peakClass.classAttrId, None)
+					if id is None:
+						continue
+					peak2 = peakClass()
+					peak2.id = id
+					peak2.name = peak.matchName
+					peak2.elevation = None
+					peak2.prominence = None
+					setattr(peak, peak2.classAttrPeak, peak2)
+
+				peak2.fmtIdName = peak.fmtIdName
+				peak2.landManagement = None
+				peak2.readPeakFile()
+
+				if peak2.landManagement is not None:
+					checkLandManagement(peak, peak2)
+
 	for peakClass in peakClasses:
 		checkElevation(pl, peakClass)
 
@@ -1523,21 +1719,6 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 
 	if PeakVR in peakClasses:
 		checkThirteeners(pl, setVR)
-
-	printTitle("Land Management")
-	peakClass = PeakPb
-	for section in pl.peaks:
-		for peak in section:
-			peak2 = getattr(peak, peakClass.classAttrPeak, None)
-			if peak2 is None:
-				id = getattr(peak, peakClass.classAttrId, None)
-				if id is None:
-					continue
-				peak2 = peakClass()
-				peak2.id = id
-				peak2.name = peak.matchName
-			if peak2.readPeakFile():
-				checkLandManagement(peak, peak2)
 
 def loadData(pl):
 	loadURLs(getLoadListsFromTable(pl))
