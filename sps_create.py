@@ -271,7 +271,7 @@ class TableReader(object):
 				col = col[6:]
 			while col.endswith("&nbsp;"):
 				col = col[:-6]
-			columns.append(col)
+			columns.append(col.replace("&#039;", ""))
 
 		self.colNum = 0
 		return columns
@@ -502,7 +502,7 @@ class PeakPb(TablePeak):
 			('id', 'name')
 		),
 		'Section': (
-			re.compile('^([1-9]|[0-9]{2})(?:\\.| -) ([- A-Za-z]+)$'),
+			re.compile('^([1-9]|[0-9]{2})(?:\\.| -) ([- A-Za-z]+(?:\\.? [1-9][0-9]*)?)$'),
 			('sectionNumber', 'sectionName')
 		),
 		'Elev-Ft': (
@@ -514,7 +514,7 @@ class PeakPb(TablePeak):
 			('rangeId', 'rangeName')
 		),
 		'Prom-Ft': (
-			re.compile('^((?:[1-9][0-9],[0-9]{3})|(?:[1-9][0-9]{1,3}))$'),
+			re.compile('^((?:[1-9][0-9],[0-9]{3})|(?:[1-9][0-9]{0,3})|0|)$'),
 			('prominence',)
 		),
 	}
@@ -523,6 +523,7 @@ class PeakPb(TablePeak):
 	numPeaks = {
 		'DPS':   99,
 		'GBP':  115,
+		'HPS':  281,
 		'NPC':   73,
 		'OGUL':  63,
 		'SPS':  247,
@@ -537,6 +538,8 @@ class PeakPb(TablePeak):
 		('Spectre Peak', 4482):                 'Spectre Point',
 		('Stepladder Mountains', 2940):         'Stepladder Mountains HP',
 		('Superstition Benchmark', 5057):       'Superstition Mountain',
+	# Hundred Peaks Section:
+		('Black Mountain', 7438):               'Black Mountain #5',
 	# Sierra Peaks Section:
 		('Devils Crags', 12400):                'Devil\'s Crag #1',
 		('Mount Morgan', 13748):                'Mount Morgan (South)',
@@ -670,6 +673,22 @@ class PeakPb(TablePeak):
 		('Mount Williamson', 14373, 'max'): 14375,
 		('Sierra Buttes', 8590, 'min'): 8591,
 		('Sierra Buttes', 8590, 'max'): 8591,
+
+	# Pb Elevation Adjustments for Other Desert Peaks:
+	#
+		('Kelso Peak', 4777, 'min'): 4757, # 1450m
+		('Kelso Peak', 4777, 'max'): 4790, # 1460m
+
+	# Pb Elevation Adjustments for Other Sierra Peaks:
+	#
+	# - Mount Starr
+	#   "Field observations by climbers have shown that the highest point on Mount Starr is south
+	#    of the point marked 12,835' on the topographic map. A point on the ridge to the south is
+	#    approximately five feet higher and thus the summit of this peak."
+	#   [http://peakbagger.com/peak.aspx?pid=2660]
+	#
+		('Mount Starr', 12840, 'min'): 12835,
+		('Mount Starr', 12840, 'max'): 12835,
 	}
 	prominenceMap = {
 	# Pb DPS Prominence Adjustments
@@ -688,17 +707,37 @@ class PeakPb(TablePeak):
 		('East Ord Mountain', 1508, 'max'): 1528,
 		('Signal Peak', 3497, 'max'): 3487,
 
+	# Pb HPS Prominence Adjustments
+	#
+	# - Mount Williamson
+	#   Pb should list http://peakbagger.com/peak.aspx?pid=47494 (Peak 8248)
+	#   instead of http://peakbagger.com/peak.aspx?pid=1309
+	#
+		('Mount Williamson', None, 'min'): 1568, # 8,248' - 6,680'
+		('Mount Williamson', None, 'max'): 1608, # 8,248' - 6,640'
+
 	# Pb SPS Prominence Adjustments
 	#
 		('Pilot Knob (South)', 720, 'min'): 680,
 		('Pilot Knob (South)', 800, 'max'): 760,
+
+	# Pb Prominence Adjustments for Other Desert Peaks
+	#
+		('Peak 5196', 376, 'min'): 356,
+		('Peak 5196', 376, 'max'): 396,
+
+	# Pb Prominence Adjustments for Other Sierra Peaks
+	#
+		('Gamblers Special Peak', 263, 'min'): 262, # 80m
+		('Gamblers Special Peak', 393, 'max'): 394, # 120m
+		('Two Teats', 132, 'min'): 131, # 40m
 	}
 	def postProcess(self, peakListId):
 		def str2int(s):
 			return int(s) if len(s) <= 4 else int(s[:-4]) * 1000 + int(s[-3:])
 
 		self.elevation = str2int(self.elevation)
-		self.prominence = str2int(self.prominence)
+		self.prominence = str2int(self.prominence) if len(self.prominence) > 0 else None
 
 	@classmethod
 	def getPeaks(self, peakListId):
@@ -939,7 +978,7 @@ class PeakLoJ(TablePeak):
 	def getPeakURL(self, id):
 		return "https://listsofjohn.com/peak/{}".format(id)
 
-	peakNamePattern = ('('
+	peakNamePattern = (' *('
 		'(?:[A-Z][- 0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
 		'(?:"[A-Z][- 0-9A-Za-z]+")|'
 		'(?:[1-9][0-9]+(?:-[A-Z][ A-Za-z]+)?))'
@@ -1005,13 +1044,14 @@ class PeakLoJ(TablePeak):
 			('quadId', 'quadName')
 		),
 		'Section': (
-			re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z][a-z]+)+)$'),
+			re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z]?[a-z]+)+(?: [1-9][0-9]*)?)$'),
 			('sectionNumber', 'sectionName')
 		),
 	}
 	numPeaks = {
 		'DPS':   95, # The four Mexican peaks are missing from the LoJ DPS list.
 		'GBP':  115,
+		'HPS':  281,
 		'NPC':   73,
 		'OGUL':  63,
 		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
@@ -1041,6 +1081,11 @@ class PeakLoJ(TablePeak):
 		('Sandy Benchmark', 7062):                      'Sandy Point',
 		('Spectre Benchmark', 4483):                    'Spectre Point',
 		('Superstition Peak', 5057):                    'Superstition Mountain',
+	# Hundred Peaks Section:
+		('Black Mountain', 7438):                       'Black Mountain #5',
+		('Inspiration Benchmark', 5580):                'Mount Inspiration',
+		('Little Berdoo Benchmark', 5460):              'Little Berdoo Peak',
+		('Warren Benchmark', 5103):                     'Warren Point',
 	# Nevada Peaks Club:
 		('Mount Jefferson-South Summit', 11941):        'Mount Jefferson',
 		('Muddy Mountains HP', 5431):                   'Muddy Benchmark',
