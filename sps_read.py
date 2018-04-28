@@ -44,7 +44,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 20,
+		'numPeaks': 24,
 		'numSections': 6,
 	},
 	'ogul': {
@@ -54,7 +54,7 @@ peakListParams = {
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
-		'numPeaks': 3,
+		'numPeaks': 4,
 		'numSections': 8,
 	},
 	'osp': {
@@ -255,6 +255,7 @@ class LandMgmtArea(object):
 landNameLookup = {
 	"Carrizo Plain National Monument":      'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
+	"Gold Butte National Monument":         'landBLM',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
@@ -266,7 +267,6 @@ landNameLookup = {
 	"Red Rock Canyon NCA":                  'landBLM',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
 	"Tohono O'odham Indian Reservation":    'landRez',
-	"Virgin Peak Instant Study Area":       'landBLM',
 }
 landNameSuffixes = [
 	(' National Forest',            'landFS'),
@@ -1375,7 +1375,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.bobBurd.match(line)
 			if m is None:
-				if line != emptyCell or pl.id in ('DPS', 'SPS'):
+				if line != emptyCell or pl.id not in ('OSP',):
 					badLine()
 			else:
 				peak.bobBurdId = m.group(1)
