@@ -302,13 +302,13 @@ def str2IntLoJ(s, description, peakName):
 
 	err("{} '{}' ({}) doesn't match expected pattern", description, s, peakName)
 
-def str2IntPb(s, description, peakName):
+def str2IntPb(s, description, peak):
 	if RE.numLT10k.match(s):
 		return int(s)
 	if RE.numGE10k.match(s):
 		return int(s[:-4]) * 1000 + int(s[-3:])
 
-	err("{} '{}' ({}) doesn't match expected pattern", description, s, peakName)
+	err("{} {} doesn't match expected pattern: {}", peak.fmtIdName, description, s)
 
 class ObjectDiff(object):
 	def __init__(self, a, b, allowNotEq=()):
@@ -723,6 +723,8 @@ class PeakPb(TablePeak):
 
 	# Pb Prominence Adjustments for Other Desert Peaks
 	#
+		('Billy Goat Peak', 896, 'min'): 879, # 1748m - 1480m
+		('Billy Goat Peak', 896, 'max'): 912, # 1748m - 1470m
 		('Peak 5196', 376, 'min'): 356,
 		('Peak 5196', 376, 'max'): 396,
 
@@ -739,6 +741,32 @@ class PeakPb(TablePeak):
 		self.elevation = str2int(self.elevation)
 		self.prominence = str2int(self.prominence) if len(self.prominence) > 0 else None
 
+	def postProcess2(self, maxPeak):
+		self.name = self.normalizeName(self.name, self.elevation)
+
+		elevMin = self.elevation
+		elevMin = self.elevationMap.get((self.name, elevMin, 'min'), elevMin)
+		elevMax = maxPeak.elevation
+		elevMax = self.elevationMap.get((self.name, elevMax, 'max'), elevMax)
+
+		promMin = self.prominence
+		promMin = self.prominenceMap.get((self.name, promMin, 'min'), promMin)
+		promMax = maxPeak.prominence
+		promMax = self.prominenceMap.get((self.name, promMax, 'max'), promMax)
+
+		if elevMin > elevMax:
+			err("Pb: Max elevation ({}) must be >= min elevation ({}) for {}",
+				elevMax, elevMin, self.name)
+		if promMin > promMax:
+			err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
+				promMax, promMin, self.name)
+
+		promMin += elevMin - self.elevation
+		promMax += elevMax - maxPeak.elevation
+
+		self.elevation = ElevationPb(elevMin, elevMax)
+		self.prominence = (promMin, promMax)
+
 	@classmethod
 	def getPeaks(self, peakListId):
 		super_getPeaks = super(PeakPb, self).getPeaks
@@ -754,37 +782,10 @@ class PeakPb(TablePeak):
 				err(diff.message("minPeak", "maxPeak",
 					" for Pb ID {} ({})".format(peak.id, peak.name)))
 
-			peak.name = peak.normalizeName(peak.name, peak.elevation)
-
-			elevMin = peak.elevation
-			elevMin = self.elevationMap.get((peak.name, elevMin, 'min'), elevMin)
-			elevMax = maxPeak.elevation
-			elevMax = self.elevationMap.get((peak.name, elevMax, 'max'), elevMax)
-
-			promMin = peak.prominence
-			promMin = self.prominenceMap.get((peak.name, promMin, 'min'), promMin)
-			promMax = maxPeak.prominence
-			promMax = self.prominenceMap.get((peak.name, promMax, 'max'), promMax)
-
-			if elevMin > elevMax:
-				err("Pb: Max elevation ({}) must be >= min elevation ({}) for {}",
-					elevMax, elevMin, peak.name)
-			if promMin > promMax:
-				err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
-					promMax, promMin, peak.name)
-
-			promMin += elevMin - peak.elevation
-			promMax += elevMax - maxPeak.elevation
-
-			peak.elevation = ElevationPb(elevMin, elevMax)
-			peak.prominence = (promMin, promMax)
+			peak.postProcess2(maxPeak)
 
 		return minPeaks
 
-	landPattern = re.compile(
-		"^(?:Land: ([- '\\(\\)/A-Za-z]+))?(?:<br/>)?"
-		"(?:Wilderness/Special Area: ([- \\(\\)/A-Za-z]+))?$"
-	)
 	npsWilderness = {
 		"Death Valley":         "National Park",
 		"Joshua Tree":          "National Park",
@@ -811,15 +812,79 @@ class PeakPb(TablePeak):
 		self.landManagement.insert(0, park)
 		return True
 
+	landPattern = re.compile(
+		"^(?:Land: ([- '\\(\\)/A-Za-z]+))?(?:<br/>)?"
+		"(?:Wilderness/Special Area: ([- \\(\\)/A-Za-z]+))?$"
+	)
+	def readLandManagement(self, land):
+		land = land.replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
+		land = land.replace("Palen/McCoy", "Palen-McCoy")
+		m = self.landPattern.match(land)
+		if m is None:
+			err("{} Land doesn't match pattern:\n{}", self.fmtIdName, land)
+		land, wilderness = m.groups()
+		if land is not None:
+			for area in land.split("/"):
+				if area.endswith(" (Highest Point)"):
+					area = area[:-16] + " HP"
+				self.landManagement.append(area)
+		if wilderness is not None:
+			for area in wilderness.split("/"):
+				highPoint = False
+				if area.endswith(" (Highest Point)"):
+					highPoint = True
+					area = area[:-16]
+				if area.endswith(" Wilderness Area"):
+					area = area[:-5]
+					if self.checkNPSWilderness(area[:-11]):
+						continue
+				if highPoint:
+					area += " HP"
+				self.landManagement.append(area)
+
 	elevationPattern1 = re.compile(
 		"^<h2>Elevation: ([1-9][0-9](?:,[0-9])?[0-9]{2})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
 	)
 	elevationPattern2 = re.compile(
 		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9](?:,[0-9])?[0-9]{2})\\2 feet</h2>$"
 	)
+	def readElevation(self, maxPeak, html):
+		m = self.elevationPattern1.match(html)
+		if m is None:
+			m = self.elevationPattern2.match(html)
+			if m is None:
+				err("{} Elevation doesn't match pattern:\n{}", self.fmtIdName, html)
+			meters, isRange, feet = m.groups()
+		else:
+			feet, isRange, meters = m.groups()
+
+		isRange = (isRange == "+")
+		feet = str2IntPb(feet, "Elevation in feet", self)
+		meters = str2IntPb(meters, "Elevation in meters", self)
+		if toMeters(feet) != meters:
+			err("{} Elevation in feet ({}) != {} meters", self.fmtIdName, feet, meters)
+
+		self.elevation = feet
+		maxPeak.elevation = None if isRange else feet
+
 	elevationRangePattern = re.compile(
 		"^Elevation range:([,0-9]+) - ([,0-9]+) (ft|m)<br/>"
 	)
+	def readElevationInfo(self, maxPeak, html):
+		m = self.elevationRangePattern.match(html)
+		if m is None:
+			err("{} Elevation Info doesn't match pattern:\n{}", self.fmtIdName, html)
+
+		minElev, maxElev, elevUnit = m.groups()
+		minElev = str2IntPb(minElev, "Minimum elevation", self)
+		maxElev = str2IntPb(maxElev, "Maximum elevation", self)
+		if elevUnit == "m":
+			minElev = toFeet(minElev)
+			maxElev = toFeet(maxElev)
+
+		assert minElev == self.elevation
+		maxPeak.elevation = maxElev
+
 	prominencePattern = re.compile(
 		"^<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
 		"\\(Detailed prominence information\\)<br/><a>Clean Prominence</a>\n"
@@ -828,7 +893,7 @@ class PeakPb(TablePeak):
 		": <a href=\"peak\\.aspx\\?pid=([1-9][0-9]*)\">([- 0-9A-Za-z]+)</a>\n<br/><a>)?Key Col</a>\n"
 		": ([A-Z][a-z]+(?:[- /][A-Za-z]+)*(?:, [A-Z]{2})?)?([,0-9]+) \\3/([,0-9]+) \\5$"
 	)
-	def readProminence(self, html):
+	def readProminence(self, maxPeak, html):
 		m = self.prominencePattern.match(html)
 		if m is None:
 			err("{} Prominence doesn't match pattern:\n{}", self.fmtIdName, html)
@@ -845,10 +910,10 @@ class PeakPb(TablePeak):
 		keyCol2,
 		) = m.groups()
 
-		minProm1 = str2IntPb(minProm1, "Clean prominence ({})".format(unit1), self.name)
-		minProm2 = str2IntPb(minProm2, "Clean prominence ({})".format(unit2), self.name)
-		maxProm1 = str2IntPb(maxProm1, "Optimistic prominence ({})".format(unit1), self.name)
-		maxProm2 = str2IntPb(maxProm2, "Optimistic prominence ({})".format(unit2), self.name)
+		minProm1 = str2IntPb(minProm1, "Clean prominence ({})".format(unit1), self)
+		minProm2 = str2IntPb(minProm2, "Clean prominence ({})".format(unit2), self)
+		maxProm1 = str2IntPb(maxProm1, "Optimistic prominence ({})".format(unit1), self)
+		maxProm2 = str2IntPb(maxProm2, "Optimistic prominence ({})".format(unit2), self)
 
 		if unit1 == "ft":
 			assert unit2 == "m"
@@ -858,112 +923,40 @@ class PeakPb(TablePeak):
 			maxProm1, maxProm2 = maxProm2, maxProm1
 			keyCol1, keyCol2 = keyCol2, keyCol1
 
-		assert abs(toMeters(minProm1) - minProm2) in (0, 1)
-		assert abs(toMeters(maxProm1) - maxProm2) in (0, 1)
+		self.prominence = minProm1
+		maxPeak.prominence = maxProm1
 
-		minProm1 = self.prominenceMap.get((self.name, minProm1, "min"), minProm1)
-		maxProm1 = self.prominenceMap.get((self.name, maxProm1, "max"), maxProm1)
+	def readLatLng(self, html):
+		latlng = html.split("<br/>")[1]
+		assert latlng.endswith(" (Dec Deg)")
+		latlng = latlng[:-10].split(", ")
+		latlng = map(lambda d: str(round(float(d), 5)), latlng)
+		self.latitude, self.longitude = latlng
 
-		if self.prominence is None:
-			self.prominence = (minProm1, maxProm1)
+	def readPeakFile(self, fileName, peakListId):
+		tables = TableParser(fileName, numTables=3, startTag="h1").tables
 
-	def readPeakFile(self):
-		fileName = self.getPeakFileName(self.id)
+		maxPeak = PeakPb()
 
-		if not os.path.exists(fileName):
-			return False
+		self.readElevation(maxPeak, tables[0][0][1]) # First table, first row, second column
 
-		tableParser = TableParser(fileName, numTables=3, startTag="h1")
-
-		column = tableParser.tables[0][0][1] # First table, first row, second column
-		m = self.elevationPattern1.match(column)
-		if m is None:
-			m = self.elevationPattern2.match(column)
-			if m is None:
-				err("Elevation doesn't match pattern:\n{}", column)
-			meters, isRange, feet = m.groups()
-		else:
-			feet, isRange, meters = m.groups()
-		isRange = (isRange == "+")
-		feet = str2IntPb(feet, "Elevation in feet", self.name)
-		meters = str2IntPb(meters, "Elevation in meters", self.name)
-		if toMeters(feet) != meters:
-			err("Elevation in feet ({}) != {} meters", feet, meters)
-		minElev = feet
-		maxElev = feet if not isRange else None
-
-		for row in tableParser.tables[1]:
+		for row in tables[1]:
 			if row[0] == "Elevation Info:":
-				if not isRange:
-					continue
-				m = self.elevationRangePattern.match(row[1])
-				if m is None:
-					err("Elevation Info doesn't match pattern:\n{}", row[1])
-				minElev, maxElev, elevUnit = m.groups()
-				minElev = str2IntPb(minElev, "Minimum elevation", self.name)
-				maxElev = str2IntPb(maxElev, "Maximum elevation", self.name)
-				assert minElev < maxElev
-				if elevUnit == "m":
-					assert minElev == meters
-					minElev = toFeet(minElev)
-					maxElev = toFeet(maxElev)
-				else:
-					assert minElev == feet
-				continue
+				if maxPeak.elevation is None:
+					self.readElevationInfo(maxPeak, row[1])
 
-			if row[0] == "Latitude/Longitude (WGS84)":
-				latlng = row[1].split("<br/>")[1]
-				assert latlng.endswith(" (Dec Deg)")
-				latlng = latlng[:-10].split(", ")
-				latlng = map(lambda d: str(round(float(d), 5)), latlng)
-				self.latitude, self.longitude = latlng
+			elif row[0] == "Latitude/Longitude (WGS84)":
+				self.readLatLng(row[1])
 
 		self.landManagement = []
-		for row in tableParser.tables[2]:
+		for row in tables[2]:
 			if row[0] == "<a>Prominence</a>\n":
-				self.readProminence(row[1])
-				continue
+				self.readProminence(maxPeak, row[1])
 
-			if row[0] == "Ownership":
-				land = row[1].replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
-				land = land.replace("Palen/McCoy", "Palen-McCoy")
-				m = self.landPattern.match(land)
-				if m is None:
-					err("Land doesn't match pattern:\n{}", row[1])
-				land, wilderness = m.groups()
-				if land is not None:
-					for area in land.split("/"):
-						highPoint = False
-						if area.endswith(" (Highest Point)"):
-							highPoint = True
-							area = area[:-16]
-						if highPoint:
-							area += " HP"
-						self.landManagement.append(area)
-				if wilderness is not None:
-					for area in wilderness.split("/"):
-						highPoint = False
-						if area.endswith(" (Highest Point)"):
-							highPoint = True
-							area = area[:-16]
-						if area.endswith(" Wilderness Area"):
-							area = area[:-5]
-							if self.checkNPSWilderness(area[:-11]):
-								continue
-						if highPoint:
-							area += " HP"
-						self.landManagement.append(area)
+			elif row[0] == "Ownership":
+				self.readLandManagement(row[1])
 
-		assert maxElev is not None
-		minElev = self.elevationMap.get((self.name, minElev, "min"), minElev)
-		maxElev = self.elevationMap.get((self.name, maxElev, "max"), maxElev)
-
-		if self.elevation is None:
-			self.elevation = ElevationPb(minElev, maxElev)
-		else:
-			assert (minElev, maxElev) == (self.elevation.feet, self.elevation.maxFeet)
-
-		return True
+		self.postProcess2(maxPeak)
 
 class PeakLoJ(TablePeak):
 	classId = 'LoJ'
@@ -1251,6 +1244,10 @@ class PeakLoJ(TablePeak):
 	#   So the average would be 9900'.
 	#
 		('Eagle Peak', 9900): 9892,
+
+	# LoJ Elevation Adjustments for Other Desert Peaks:
+	#
+		('Billy Goat Peak', 5735): 1748.0, # LoJ didn't round down
 	}
 	saddleElevationMap = {
 		('Mount Hitchcock', 12697): 3870.0, # LoJ didn't round down
@@ -1296,51 +1293,105 @@ class PeakLoJ(TablePeak):
 		if peakListId == 'NPC':
 			assert self.state == 'NV'
 
-	def readPeakFileElevation(self, elevStr):
-		assert elevStr[0] == " " and elevStr[-1] == "'"
-		elevation = str2IntLoJ(elevStr[1:-1], "Elevation", self.name)
-		if self.elevation is None:
-			self.elevation = ElevationLoJ(elevation)
+	parentPeakPattern = re.compile(
+		'^<a href="/peak/([1-9][0-9]*)">' + peakNamePattern + '</a>$'
+	)
+	peakFilePatterns = {
+		"Coords": (
+			re.compile("^([0-9]{1,2}\\.[0-9]{1,4})N, ([0-9]{1,3}\\.[0-9]{1,4})W"),
+			("latitude", "longitude")
+		),
+		"County": (
+			re.compile('^<a href="/county/[1-9][0-9]*">([A-Z][a-z]+(?: [A-Z][a-z]+)*)</a>$'),
+			("counties",)
+		),
+		"Elevation": (
+			re.compile("^ ([1-9][0-9]?(?:,[0-9]{3}|[0-9]?))'$"),
+			("elevation",)
+		),
+		"Isolation": (
+			re.compile("^([0-9]+\\.[0-9]{2}) miles$"),
+			("isolation",)
+		),
+		"LineParent": (
+			parentPeakPattern,
+			("lineParentId", "lineParent")
+		),
+		"ProximateParent": (
+			parentPeakPattern,
+			("proximateParentId", "proximateParent")
+		),
+		"Quad": (
+			re.compile(
+				'^<a href="/quad\\?q=([1-9][0-9]*)">((?:Mc)?[A-Z][a-z]+(?: [A-Z]?[a-z]+)*'
+				'(?: [A-Z]{2})?)</a>$'
+			),
+			("quadId", "quadName")
+		),
+		"Rise": (
+			re.compile("^([1-9][0-9]?(?:,[0-9]{3}|[0-9]?))'$"),
+			("prominence",)
+		),
+		"Saddle": (
+			re.compile(
+				"^<a href=\"/qmap\\?"
+				"lat=(-?[0-9]{1,2}\\.[0-9]{1,4})&"
+				"lon=(-?[0-9]{1,3}\\.[0-9]{1,4})&z=15\">([,0-9]+)'</a>$"
+			),
+			("saddleLat", "saddleLng", "saddleElev")
+		),
+		"YDSClass": (
+			re.compile(
+				'^ ((?:[1-4]\\+?)|(?:5\\.[0-9](?: A1)?))'
+				' <a href="/class\\?Id=([1-9][0-9]*)">Discussion</a>'
+			),
+			("ydsClass", "id")
+		),
+	}
+	peakFileLine1Pattern = re.compile("^<b>" + peakNamePattern + "</b> <b>([A-Z]{2})</b>")
+	peakFileLabelPattern = re.compile("^[A-Z][A-Za-z]+$")
 
-	def readPeakFileRise(self, riseStr):
-		assert riseStr[-1] == "'"
-		prominence = str2IntLoJ(riseStr[:-1], "Prominence", self.name)
-		if self.prominence is None:
-			self.prominence = prominence
+	def readPeakFile(self, fileName, peakListId):
+		lines = (TableParser(fileName).tables[0][0][0] # First table, first row, first column
+				.translate(None, "\r\n")
+				.replace(" <a><img></a>", "")
+				.replace("<small>", "").replace("</small>", "")
+				.replace("<font>", "").replace("</font>", "")
+				.replace("<div>", "").replace("</div>", "")
+				.split("<br>"))
 
-	saddlePattern = re.compile(
-		"^<a href=\"/qmap\\?"
-		"lat=(-?[0-9]{1,2}\\.[0-9]{1,4})&"
-		"lon=(-?[0-9]{1,3}\\.[0-9]{1,4})&z=15\">([,0-9]+)'</a>$")
-
-	def readPeakFileSaddle(self, saddleStr):
-		m = self.saddlePattern.match(saddleStr)
+		line = lines.pop(0)
+		m = self.peakFileLine1Pattern.match(line)
 		if m is None:
-			err("{} Saddle doesn't match pattern: {}", self.fmtIdName, saddleStr)
-		saddleLat, saddleLng, saddleElev = m.groups()
-		saddleElev = str2IntLoJ(saddleElev, "Saddle elevation", self.name)
+			err("{} Line 1 doesn't match pattern: {}", self.fmtIdName, line)
+		self.name, self.state = m.groups()
 
-	def readPeakFile(self):
-		fileName = self.getPeakFileName(self.id)
+		for line in lines:
+			if ":" not in line:
+				continue
+			label, value = line.split(":", 1)
+			label = label.replace(" ", "")
+			m = self.peakFileLabelPattern.match(label)
+			if m is None:
+				continue
+			pattern = self.peakFilePatterns.get(label)
+			if pattern is None:
+				continue
+			pattern, attributes = pattern
+			m = pattern.match(value)
+			if m is None:
+				if label in ("LineParent", "ProximateParent"):
+					pattern, attributes = self.columnMap[label[:-6] + " Parent"]
+					m = pattern.match(value)
+				if m is None:
+					log("{} {} doesn't match pattern: {}", self.fmtIdName, label, value)
+					continue
+			values = m.groups()
+			assert len(attributes) == len(values)
+			for attr, value in zip(attributes, values):
+				setattr(self, attr, value)
 
-		if not os.path.exists(fileName):
-			return False
-
-		column = TableParser(fileName).tables[0][0][0] # First table, first row, first column
-
-		column = (column.translate(None, "\r\n").
-				replace(" <a><img></a>", "").
-				replace("<small>", "").replace("</small>", "").
-				replace("<font>", "").replace("</font>", "").
-				replace("<div>", "").replace("</div>", ""))
-
-		for row in column.split("<br>"):
-			if ":" in row:
-				label, value = row.split(":", 1)
-				label = label.rstrip()
-				if label in ("Elevation", "Rise", "Saddle"):
-					getattr(self, "readPeakFile" + label)(value)
-		return True
+		self.postProcess(peakListId)
 
 class PeakVR(object):
 	classId = "VR"
@@ -1738,21 +1789,24 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 		printTitle("Reading Peak Files - " + peakClass.classTitle)
 		for section in pl.peaks:
 			for peak in section:
-				peak2 = getattr(peak, peakClass.classAttrPeak, None)
-				if peak2 is None:
-					id = getattr(peak, peakClass.classAttrId, None)
-					if id is None:
-						continue
-					peak2 = peakClass()
-					peak2.id = id
-					peak2.name = peak.matchName
-					peak2.elevation = None
-					peak2.prominence = None
-					setattr(peak, peak2.classAttrPeak, peak2)
+				id = getattr(peak, peakClass.classAttrId, None)
+				if id is None:
+					continue
 
+				fileName = peakClass.getPeakFileName(id)
+				if not os.path.exists(fileName):
+					continue
+
+				peak2 = peakClass()
+				peak2.id = id
+				peak2.name = peak.matchName
 				peak2.fmtIdName = peak.fmtIdName
 				peak2.landManagement = None
-				peak2.readPeakFile()
+				peak2.readPeakFile(fileName, pl.id)
+
+				peak3 = getattr(peak, peakClass.classAttrPeak, None)
+				if peak3 is None:
+					setattr(peak, peakClass.classAttrPeak, peak2)
 
 				if peak2.landManagement is not None:
 					checkLandManagement(peak, peak2)
