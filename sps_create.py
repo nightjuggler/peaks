@@ -353,6 +353,12 @@ class ElevationPb(object):
 	def __str__(self):
 		return "{},{:03}".format(*divmod(self.feet, 1000)) + ("+" if self.isRange else "")
 
+	def __eq__(self, other):
+		return self.feet == other.feet and self.maxFeet == other.maxFeet
+
+	def __ne__(self, other):
+		return self.feet != other.feet or self.maxFeet != other.maxFeet
+
 	def diff(self, e):
 		return "({}){}".format(self.feet - e.elevationFeet,
 			"" if self.isRange == e.isRange else " and range mismatch")
@@ -363,6 +369,12 @@ class SimpleElevation(object):
 
 	def __str__(self):
 		return "{},{:03}".format(*divmod(self.feet, 1000))
+
+	def __eq__(self, other):
+		return self.feet == other.feet
+
+	def __ne__(self, other):
+		return self.feet != other.feet
 
 	def diff(self, e):
 		return "({})".format(self.feet - e.elevationFeet)
@@ -546,6 +558,7 @@ class PeakPb(TablePeak):
 		('Mount Morgan', 12992):                'Mount Morgan (North)',
 		('Mount Stanford', 13973):              'Mount Stanford (South)',
 		('Mount Stanford', 12838):              'Mount Stanford (North)',
+		('Pilot Knob', 6200):                   'Pilot Knob (South)',
 		('Pilot Knob', 12245):                  'Pilot Knob (North)',
 		('Pyramid Peak', 12779):                'Pyramid Peak (South)',
 		('Pyramid Peak', 9983):                 'Pyramid Peak (North)',
@@ -555,6 +568,8 @@ class PeakPb(TablePeak):
 	# Tahoe Ogul Peaks:
 		('Silver Peak', 8930):                  'Silver Peak (North)',
 		('Silver Peak-Southwest Summit', 10772):'Silver Peak (South)',
+	# Other Sierra Peaks:
+		("Gambler's Special", 12927):           'Gamblers Special Peak',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
@@ -898,7 +913,7 @@ class PeakPb(TablePeak):
 		if m is None:
 			err("{} Prominence doesn't match pattern:\n{}", self.fmtIdName, html)
 		(
-		keyColId,
+		peakId,
 		minProm1, unit1,
 		minProm2, unit2,
 		maxProm1,
@@ -906,14 +921,16 @@ class PeakPb(TablePeak):
 		lineParentId,
 		lineParentName,
 		keyColName,
-		keyCol1,
-		keyCol2,
+		maxSaddleElev1,
+		maxSaddleElev2,
 		) = m.groups()
 
 		minProm1 = str2IntPb(minProm1, "Clean prominence ({})".format(unit1), self)
 		minProm2 = str2IntPb(minProm2, "Clean prominence ({})".format(unit2), self)
 		maxProm1 = str2IntPb(maxProm1, "Optimistic prominence ({})".format(unit1), self)
 		maxProm2 = str2IntPb(maxProm2, "Optimistic prominence ({})".format(unit2), self)
+		maxSaddleElev1 = str2IntPb(maxSaddleElev1, "Max saddle elevation ({})".format(unit1), self)
+		maxSaddleElev2 = str2IntPb(maxSaddleElev2, "Max saddle elevation ({})".format(unit2), self)
 
 		if unit1 == "ft":
 			assert unit2 == "m"
@@ -921,8 +938,9 @@ class PeakPb(TablePeak):
 			assert unit2 == "ft"
 			minProm1, minProm2 = minProm2, minProm1
 			maxProm1, maxProm2 = maxProm2, maxProm1
-			keyCol1, keyCol2 = keyCol2, keyCol1
+			maxSaddleElev1, maxSaddleElev2 = maxSaddleElev2, maxSaddleElev1
 
+		self.id = peakId
 		self.prominence = minProm1
 		maxPeak.prominence = maxProm1
 
@@ -932,6 +950,16 @@ class PeakPb(TablePeak):
 		latlng = latlng[:-10].split(", ")
 		latlng = map(lambda d: str(round(float(d), 5)), latlng)
 		self.latitude, self.longitude = latlng
+
+	def readName(self, html):
+		if html[:34] != "\n<br/><iframe></iframe>\n<br/><img>":
+			err("{} Maps HTML doesn't match pattern:\n{}", self.fmtIdName, html)
+		i = html.find("<img>", 34)
+		if i < 0:
+			err("{} Maps HTML doesn't match pattern:\n{}", self.fmtIdName, html)
+		self.name = html[34:i]
+		if self.name[-5:] == "<br/>":
+			self.name = self.name[:-5]
 
 	def readPeakFile(self, fileName, peakListId):
 		tables = TableParser(fileName, numTables=3, startTag="h1").tables
@@ -956,7 +984,24 @@ class PeakPb(TablePeak):
 			elif row[0] == "Ownership":
 				self.readLandManagement(row[1])
 
+			elif row[0].startswith("<b>Google Maps Dynamic Map</b>"):
+				self.readName(row[0][30:])
+
 		self.postProcess2(maxPeak)
+
+	def compare(self, other):
+		for attr in ("id", "name", "elevation"):
+			v1 = getattr(self, attr)
+			v2 = getattr(other, attr)
+			if v1 != v2:
+				print "{} {} doesn't match: {} != {}".format(self.fmtIdName, attr, v1, v2)
+
+		min1, max1 = self.prominence
+		min2, max2 = other.prominence
+
+		if not (abs(min2-min1) in (0,1,2) and abs(max2-max1) in (0,1,2)):
+			print "{} Prominence doesn't match: {} != {}".format(self.fmtIdName,
+				self.prominence, other.prominence)
 
 class PeakLoJ(TablePeak):
 	classId = 'LoJ'
@@ -1393,6 +1438,14 @@ class PeakLoJ(TablePeak):
 
 		self.postProcess(peakListId)
 
+	def compare(self, other):
+		for attr in ("id", "name", "elevation", "prominence", "saddleElev",
+			"lineParent", "proximateParent", "isolation"):
+			v1 = getattr(self, attr)
+			v2 = getattr(other, attr)
+			if v1 != v2:
+				print "{} {} doesn't match: {} != {}".format(self.fmtIdName, attr, v1, v2)
+
 class PeakVR(object):
 	classId = "VR"
 	classTitle = "Vulgarian Ramblers"
@@ -1799,7 +1852,6 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 
 				peak2 = peakClass()
 				peak2.id = id
-				peak2.name = peak.matchName
 				peak2.fmtIdName = peak.fmtIdName
 				peak2.landManagement = None
 				peak2.readPeakFile(fileName, pl.id)
@@ -1807,6 +1859,8 @@ def checkData(pl, setProm=False, setVR=False, verbose=False):
 				peak3 = getattr(peak, peakClass.classAttrPeak, None)
 				if peak3 is None:
 					setattr(peak, peakClass.classAttrPeak, peak2)
+				else:
+					peak2.compare(peak3)
 
 				if peak2.landManagement is not None:
 					checkLandManagement(peak, peak2)
