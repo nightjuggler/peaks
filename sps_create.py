@@ -1393,8 +1393,20 @@ class PeakLoJ(TablePeak):
 			("ydsClass", "id")
 		),
 	}
+	peakFilePatterns["City"] = peakFilePatterns["County"]
 	peakFileLine1Pattern = re.compile("^<b>" + peakNamePattern + "</b> <b>([A-Z]{2})</b>")
 	peakFileLabelPattern = re.compile("^[A-Z][A-Za-z]+$")
+
+	def readPeakFile_Counties(self, line):
+		counties = []
+		regExp = self.peakFilePatterns["County"][0]
+		for html in line.split("  "):
+			m = regExp.match(html)
+			if m is None:
+				err("{} County doesn't match pattern: {}", self.fmtIdName, html)
+			counties.append(m.group(1))
+
+		self.counties = " &amp; ".join(counties)
 
 	def readPeakFile(self, fileName, peakListId):
 		lines = (TableParser(fileName).tables[0][0][0] # First table, first row, first column
@@ -1421,6 +1433,8 @@ class PeakLoJ(TablePeak):
 				continue
 			pattern = self.peakFilePatterns.get(label)
 			if pattern is None:
+				if label == "Counties":
+					self.readPeakFile_Counties(value)
 				continue
 			pattern, attributes = pattern
 			m = pattern.match(value)
@@ -1440,7 +1454,7 @@ class PeakLoJ(TablePeak):
 
 	def compare(self, other):
 		for attr in ("id", "name", "elevation", "prominence", "saddleElev",
-			"lineParent", "proximateParent", "isolation"):
+			"lineParent", "proximateParent", "isolation", "counties"):
 			v1 = getattr(self, attr)
 			v2 = getattr(other, attr)
 			if v1 != v2:
