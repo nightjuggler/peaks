@@ -492,7 +492,7 @@ class USGSTopo(object):
 		self.inMeters = inMeters
 
 	def setContourInterval(self, interval):
-		if self.series != '7.5':
+		if self.series not in ('7.5', '15'):
 			raise FormatError("Unexpected elevation range on {}' quad", self.series)
 		self.contourInterval = interval
 
@@ -596,7 +596,10 @@ class Elevation(object):
 			elevationMin = int(elevation)
 			elevationMax = int(elevationMax)
 			interval = elevationMax - elevationMin + 1
-			contourIntervals = (10, 20) if inMeters else (20, 40)
+			if self.source.series == '7.5':
+				contourIntervals = (10, 20) if inMeters else (20, 40)
+			else:
+				contourIntervals = (80,)
 			if interval not in contourIntervals or elevationMin % interval != 0:
 				raise FormatError("Elevation range in tooltip not valid")
 			self.source.setContourInterval(interval)
