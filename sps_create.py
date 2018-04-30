@@ -552,6 +552,8 @@ class PeakPb(TablePeak):
 		('Superstition Benchmark', 5057):       'Superstition Mountain',
 	# Hundred Peaks Section:
 		('Black Mountain', 7438):               'Black Mountain #5',
+	# Great Basin Peaks / Nevada Peaks Club:
+		('Mount Grant', 11280):                 'Mount Grant (West)',
 	# Sierra Peaks Section:
 		('Devils Crags', 12400):                'Devil\'s Crag #1',
 		('Mount Morgan', 13748):                'Mount Morgan (South)',
@@ -1109,6 +1111,7 @@ class PeakLoJ(TablePeak):
 		('Eagle Benchmark', 5350):                      'Eagle Mountains HP',
 		('Glass Mountain HP', 11180):                   'Glass Mountain',
 		('Jacumba Benchmark', 4512):                    'Jacumba Mountain',
+		('Mount Jefferson-South Summit', 11941):        'Mount Jefferson',
 		('Mitchell Benchmark', 7047):                   'Mitchell Point',
 		('Mopah Peaks, East', 3530):                    'Mopah Point',
 		('New York Two Benchmark', 7532):               'New York Mountains HP',
@@ -1124,8 +1127,8 @@ class PeakLoJ(TablePeak):
 		('Inspiration Benchmark', 5580):                'Mount Inspiration',
 		('Little Berdoo Benchmark', 5460):              'Little Berdoo Peak',
 		('Warren Benchmark', 5103):                     'Warren Point',
-	# Nevada Peaks Club:
-		('Mount Jefferson-South Summit', 11941):        'Mount Jefferson',
+	# Great Basin Peaks / Nevada Peaks Club:
+		('Mount Grant', 11300):                         'Mount Grant (West)',
 		('Muddy Mountains HP', 5431):                   'Muddy Benchmark',
 	# Sierra Peaks Section:
 		('Coyote Peaks, East', 10892):  'Coyote Peaks',
@@ -1796,6 +1799,7 @@ def checkThirteeners(pl, setVR=False):
 landMap = {
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
 	"Giant Sequoia NM":                             "Giant Sequoia National Monument",
+	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
 	"Mono Basin NSA":                               "Mono Basin Scenic Area",

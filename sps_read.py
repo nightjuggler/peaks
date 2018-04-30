@@ -44,7 +44,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 24,
+		'numPeaks': 28,
 		'numSections': 6,
 	},
 	'ogul': {
@@ -257,6 +257,7 @@ landNameLookup = {
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Gold Butte National Monument":         'landBLM',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
+	"Hawthorne Army Depot":                 'landDOD',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
 	"Mono Basin Scenic Area":               'Inyo National Forest',
@@ -265,6 +266,7 @@ landNameLookup = {
 	"Organ Pipe Cactus NM":                 'landNPS',
 	"Providence Mountains SRA":             'landSP',
 	"Red Rock Canyon NCA":                  'landBLM',
+	"Silver Peak Range WSA":                'landBLM',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
 	"Tohono O'odham Indian Reservation":    'landRez',
 }
