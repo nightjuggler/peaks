@@ -206,3 +206,9 @@ select {
 	display: inline-block;
 	font-size: 9pt;
 }
+.pll { /* Peak List Link(s) */
+	font-size: 7pt;
+}
+.pll a {
+	color: black;
+}

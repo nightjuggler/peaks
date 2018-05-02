@@ -3,6 +3,9 @@ import re
 import sys
 import vertcon
 
+def log(message, *args, **kwargs):
+	print >>sys.stderr, message.format(*args, **kwargs)
+
 class FormatError(Exception):
 	def __init__(self, message, *formatArgs):
 		self.message = message.format(*formatArgs)
@@ -64,18 +67,33 @@ peakListParams = {
 	},
 }
 
-class PeakList(object):
-	def __init__(self, id):
-		self.__dict__.update(peakListParams[id])
+def html2ListId(htmlId):
+	if htmlId[0] == 'x':
+		htmlId = htmlId[1:]
+	if htmlId[-1] == 'x':
+		htmlId = htmlId[:-1]
+	return htmlId
 
-		self.id = id.upper()
-		self.htmlFilename = getattr(self, 'baseFilename', id) + '.html'
+def listId2Html(listId):
+	if listId[0] in '0123456789':
+		listId = 'x' + listId
+	if listId[-1] in '0123456789':
+		listId += 'x'
+	return listId
+
+class PeakList(object):
+	def __init__(self, lowerCaseId):
+		self.__dict__.update(peakListParams[lowerCaseId])
+
+		self.id = lowerCaseId.upper()
+		self.htmlId = listId2Html(self.id)
+		self.htmlFilename = lowerCaseId + '.html'
 		self.column12 = globals().get('column12_' + self.id)
 		self.numColumns = 13 if self.column12 is None else 14
 		self.peaks = []
 		self.sections = []
 
-		peakLists[id] = self
+		peakLists[lowerCaseId] = self
 		peakLists[self.id] = self
 
 	def readHTML(self):
@@ -106,6 +124,7 @@ class Peak(object):
 		self.climbed = None
 		self.extraRow = None
 		self.dataFrom = None
+		self.dataAlso = []
 		self.nonUS = False
 		self.hasHtmlId = False
 		self.isClimbed = False
@@ -141,8 +160,8 @@ class Peak(object):
 
 		return exactMatches, otherMatches
 
-	def copyFrom(self, other):
-		doNotCopy = ('id', 'column12', 'dataFrom', 'hasHtmlId',
+	def copyFrom(self, other, pl, pl2):
+		doNotCopy = ('id', 'column12', 'dataFrom', 'dataAlso', 'hasHtmlId',
 			'isEmblem', 'isMtneer', 'delisted', 'suspended')
 
 		if other.dataFrom is not None:
@@ -154,6 +173,32 @@ class Peak(object):
 
 		if other.column12 is not None:
 			self.column12 = other.column12
+
+		fromId = pl2.htmlId + other.id
+		if other.delisted:
+			fromId += 'd'
+		elif other.suspended:
+			fromId += 's'
+
+		if self.dataFrom != fromId:
+			log('{}{} ({}) should have data-from="{}" instead of "{}"',
+				pl.id, self.id, self.name, fromId, self.dataFrom)
+
+		alsoId = pl.htmlId + self.id
+		if self.delisted:
+			alsoId += 'd'
+		elif self.suspended:
+			alsoId += 's'
+
+		if alsoId not in other.dataAlso:
+			log('{}{} ({}) should include {} in data-also="{}"',
+				pl2.id, other.id, other.name, alsoId, " ".join(other.dataAlso))
+		else:
+			alsoList = [x for x in other.dataAlso if x != alsoId]
+			if self.dataAlso != alsoList:
+				log('{}{} ({}) should have data-also="{}" instead of "{}"',
+					pl.id, self.id, self.name, " ".join(alsoList), " ".join(self.dataAlso))
+				self.dataAlso = alsoList
 
 		self.dataFromPeak = other
 
@@ -408,11 +453,11 @@ class NGSDataSheet(object):
 		'&quot;((?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: 2)?(?: VABM)?(?: [1-9][0-9]{3})?)&quot; '
 		'\\(([A-Z]{2}[0-9]{4})\\)$')
 
-	def __init__(self, name, id):
-		self.id = id
+	def __init__(self, name, stationID):
+		self.id = stationID
 		self.name = name
 		self.vdatum = 'NAVD 88'
-		self.linkSuffix = id
+		self.linkSuffix = stationID
 		self.inMeters = True
 
 	def __str__(self):
@@ -791,9 +836,9 @@ def printElevationStats(pl):
 
 	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
 
-	for id, src in sorted(NGSDataSheet.sources.iteritems()):
+	for stationID, src in sorted(NGSDataSheet.sources.iteritems()):
 		peak = src.peak
-		print id, "({})".format(src.name), peak.name,
+		print stationID, "({})".format(src.name), peak.name,
 		if peak.isHighPoint:
 			print "HP",
 		if peak.otherName is not None:
@@ -802,11 +847,11 @@ def printElevationStats(pl):
 
 	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
 
-	for id, src in sorted(USGSTopo.sources.iteritems()):
+	for topoID, src in sorted(USGSTopo.sources.iteritems()):
 		numRefs = len(src.peaks)
 		numPeaks = len(set(src.peaks))
 
-		print '{}  {:>3}  {:>7}  {} {:20} {:9}  {}/{}{}'.format(id,
+		print '{}  {:>3}  {:>7}  {} {:20} {:9}  {}/{}{}'.format(topoID,
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
@@ -816,8 +861,8 @@ def toRegExp(spec, *args):
 	return re.compile('^' + RE_Escape.sub('\\\\\\g<0>', spec[:-1]).format(*args) + '$')
 
 class SimpleColumn(object):
-	def __init__(self, id):
-		self.id = id
+	def __init__(self, urlPart):
+		self.id = urlPart
 
 	def __str__(self):
 		return self.prefix + self.id + self.suffix
@@ -898,8 +943,8 @@ def column12_SPS(sectionNumber, peakNumber):
 	return ColumnVR, True
 
 def addSection(pl, m):
-	id, sectionNumber, colspan, sectionName = m.groups()
-	if id != pl.id:
+	htmlListId, sectionNumber, colspan, sectionName = m.groups()
+	if htmlListId != pl.htmlId:
 		raise FormatError('Expected id="{}{}" for section row', pl.id, len(pl.sections) + 1)
 	if colspan != str(pl.numColumns):
 		raise FormatError('Expected colspan="{}" for section row', pl.numColumns)
@@ -910,17 +955,23 @@ def addSection(pl, m):
 	pl.peaks.append([])
 
 class RE(object):
+	number = '[1-9][0-9]*'
+	peakId = number + '\\.' + number
+	listId = '(?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x)'
+	fullId = listId + peakId
+
 	sectionRow = re.compile(
 		'^<tr class="section">'
-		'<td id="([A-Z]+)([0-9]+)" colspan="(1[0-9])">'
+		'<td id="(' + listId + ')(' + number + ')" colspan="(1[0-9])">'
 		'\\2\\. ([- &,;0-9A-Za-z]+)</td></tr>$'
 	)
 	peakRow = re.compile(
 		'^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?'
-		'(?: data-from="(([A-Z]+)([0-9]+)\\.([0-9]+))")?>$'
+		'(?: data-from="((' + listId + ')(' + number + ')\\.(' + number + ')[ds]?)")?'
+		'(?: data-also="(' + fullId + '[ds]?(?: ' + fullId + '[ds]?)*)")?>$'
 	)
 	column1 = re.compile(
-		'^<td(?: id="([A-Z]+)([0-9]+\\.[0-9]+)")?( rowspan="2")?>([0-9]+\\.[0-9]+)</td>$'
+		'^<td(?: id="(' + listId + ')(' + peakId + ')")?( rowspan="2")?>(' + peakId + ')</td>$'
 	)
 	column2 = re.compile(
 		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
@@ -1292,20 +1343,21 @@ def readHTML(pl):
 			peak = Peak()
 			if m.group(2) is not None:
 				peak.dataFrom = m.group(2)
-				dataFromList.append([peak, m.group(3), int(m.group(4)), int(m.group(5))])
+				dataFromList.append([peak, html2ListId(m.group(3)), int(m.group(4)), int(m.group(5))])
 			if not parseClasses(peak, m.group(1)):
 				raise FormatError("Bad class names")
+			if m.group(6) is not None:
+				peak.dataAlso = m.group(6).split(" ")
 
 			line = htmlFile.next()
 			m = RE.column1.match(line)
 			if m is None:
 				badLine()
-			htmlListId, htmlPeakId, extraRow, peakId = m.groups()
+			htmlListId, htmlPeakId, extraRow, peak.id = m.groups()
 			if extraRow is not None:
 				peak.extraRow = ''
-			peak.id = peakId
 			if htmlPeakId is not None:
-				if pl.id != htmlListId or peak.id != htmlPeakId:
+				if pl.htmlId != htmlListId or peak.id != htmlPeakId:
 					raise FormatError("HTML ID doesn't match peak ID and/or peak list ID")
 				peak.hasHtmlId = True
 
@@ -1462,7 +1514,7 @@ def readHTML(pl):
 		if pl2 is None:
 			pl2 = PeakList(pl2Id.lower())
 			pl2.readHTML()
-		peak.copyFrom(pl2.peaks[sectionNumber - 1][peakNumber - 1])
+		peak.copyFrom(pl2.peaks[sectionNumber - 1][peakNumber - 1], pl, pl2)
 
 def writeHTML(pl):
 	sectionFormat = '<tr class="section"><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
@@ -1518,6 +1570,8 @@ def writeHTML(pl):
 				attr += ' class="{}"'.format(' '.join(classNames))
 			if peak.dataFrom is not None:
 				attr += ' data-from="{}"'.format(peak.dataFrom)
+			if peak.dataAlso:
+				attr += ' data-also="{}"'.format(" ".join(peak.dataAlso))
 			print '<tr{}>'.format(attr)
 
 			attr = ''
@@ -1690,9 +1744,9 @@ def create(pl):
 	sps_create.loadData(pl)
 
 def readAllHTML():
-	for id in peakListParams:
-		if id not in peakLists:
-			PeakList(id).readHTML()
+	for plId in peakListParams:
+		if plId not in peakLists:
+			PeakList(plId).readHTML()
 
 def main():
 	outputFunction = {

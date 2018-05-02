@@ -139,7 +139,42 @@ var globalPeakInfo = {
 
 	delistedPeaks: [],
 	suspendedPeaks: [],
+
+	showDelisted: false,
+	showSuspended: false,
 };
+function isValidParam(s)
+{
+	return s.length <= 16 && s.match(/^[a-z][_0-9A-Za-z]*$/) !== null;
+}
+function parseQueryString()
+{
+	var q = window.location.search;
+
+	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
+
+	var flags = {
+		showDelisted: 'showDelisted',
+		showSuspended: 'showSuspended',
+	};
+	var handlers = {
+	};
+
+	for (var s of q.substr(1).split('&'))
+	{
+		var i = s.indexOf('=');
+		if (i < 0 && isValidParam(s) && flags[s]) {
+			globalPeakInfo[flags[s]] = true;
+			continue;
+		}
+		if (i < 1 || i === s.length - 1) continue;
+		var k = s.substr(0, i);
+		var v = s.substr(i + 1);
+
+		if (isValidParam(k) && handlers[k])
+			handlers[k](v);
+	}
+}
 function getPeakListId()
 {
 	var i, path = window.location.pathname;
@@ -443,6 +478,56 @@ function suspendedHidden()
 {
 	return hiddenRows(globalPeakInfo.suspendedPeaks);
 }
+function addListLink(row)
+{
+	var refArray = row.dataset.also ? row.dataset.also.split(' ') : [];
+
+	if (row.dataset.from)
+		refArray.unshift(row.dataset.from);
+
+	var spanElement = document.createElement('SPAN');
+	spanElement.className = 'pll';
+
+	for (var ref of refArray)
+	{
+		var m = ref.match(/^((?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x))([0-9]+)\.[0-9]+([ds]?)$/);
+		if (m === null) continue;
+
+		var htmlId = m[1];
+		var listId = htmlId;
+		var sectionNumber = m[2];
+
+		if (listId.charAt(0) === 'x')
+			listId = listId.substr(1);
+		if (listId.charAt(listId.length - 1) === 'x')
+			listId = listId.substr(0, listId.length - 1);
+
+		var linkHref = listId.toLowerCase() + '.html';
+		var linkText = listId;
+
+		if (m[3] === 'd') {
+			linkHref += '?showDelisted';
+			linkText = 'ex-' + listId;
+		}
+		else if (m[3] === 's') {
+			linkHref += '?showSuspended';
+			linkText = '(' + listId + ')';
+		}
+
+		var listLink = document.createElement('A');
+		listLink.href = linkHref + '#' + htmlId + sectionNumber;
+		listLink.appendChild(document.createTextNode(linkText));
+
+		if (spanElement.children.length !== 0)
+			spanElement.appendChild(document.createTextNode(' '));
+		spanElement.appendChild(listLink);
+	}
+
+	var firstColumn = row.children[0];
+	var secondColumn = nextNode(firstColumn.nextSibling, 'TD');
+	secondColumn.appendChild(document.createElement('BR'));
+	secondColumn.appendChild(spanElement);
+}
 function peakTableFirstRow()
 {
 	return document.getElementById('header').parentNode;
@@ -451,6 +536,7 @@ function decorateTable()
 {
 	var g = globalPeakInfo;
 
+	parseQueryString();
 	initPeakListMenu();
 	var isUSPeak = g.peakList.isUSPeak;
 
@@ -472,6 +558,8 @@ function decorateTable()
 			else if (suspended)
 				g.numSuspendedClimbed += 1;
 		}
+		if (row.dataset.from || row.dataset.also)
+			addListLink(row);
 		if (firstColumn.rowSpan === 2)
 		{
 			var spanElement = document.createElement('SPAN');
@@ -511,8 +599,10 @@ function decorateTable()
 		}
 	}
 
-	removeRows(g.delistedPeaks);
-	removeRows(g.suspendedPeaks);
+	if (!g.showDelisted)
+		removeRows(g.delistedPeaks);
+	if (!g.showSuspended)
+		removeRows(g.suspendedPeaks);
 	updateClimbedCount();
 	setCount('delistedCountSpan', g.numDelisted);
 	setCount('suspendedCountSpan', g.numSuspended);
