@@ -6,6 +6,10 @@ import vertcon
 def log(message, *args, **kwargs):
 	print >>sys.stderr, message.format(*args, **kwargs)
 
+def err(*args, **kwargs):
+	log(*args, **kwargs)
+	sys.exit()
+
 class FormatError(Exception):
 	def __init__(self, message, *formatArgs):
 		self.message = message.format(*formatArgs)
@@ -102,8 +106,8 @@ class PeakList(object):
 	def readHTML(self):
 		try:
 			readHTML(self)
-		except FormatError as err:
-			sys.exit("[{}:{}] {}!".format(self.htmlFilename, self.htmlFile.lineNumber, err.message))
+		except FormatError as e:
+			err("[{}:{}] {}!", self.htmlFilename, self.htmlFile.lineNumber, e.message)
 
 class Peak(object):
 	def __init__(self, peakList):
@@ -178,7 +182,12 @@ class Peak(object):
 			'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended')
 
 		if other.dataFrom is not None:
-			sys.exit("{} should not have the data-from attribute!".format(self.dataFrom))
+			err("{} should not have the data-from attribute!", self.dataFrom)
+
+		for p in other.dataAlsoPeaks:
+			if p.peakList is self.peakList:
+				err('{} {} ({}) and {} ({}) should not both have data-from="{}"!',
+					p.peakList.id, p.id, p.name, self.id, self.name, self.dataFrom)
 
 		for k, v in vars(other).iteritems():
 			if not (k[0] == '_' or k in doNotCopy):
@@ -194,12 +203,6 @@ class Peak(object):
 				self.peakList.id, self.id, self.name, fromId, self.dataFrom)
 
 		self.dataFromPeak = other
-
-		for p in other.dataAlsoPeaks:
-			if p.peakList is self.peakList:
-				sys.exit('{} {} ({}) and {} ({}) should not both have data-from="{}"!',
-					p.peakList.id, p.id, p.name, self.id, self.name, self.dataFrom)
-
 		other.dataAlsoPeaks.append(self)
 
 def badLine():
@@ -499,29 +502,43 @@ class USGSTopo(object):
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
 		'^[A-Z]{2}/[A-Z]{2}_(?:Mc)?[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
-		'([0-9]{6})_[0-9]{4}_(?:24000|62500|125000|250000)\\.jpg$')
+		'([0-9]{6})_[0-9]{4}_(?:[012456]{5,6})\\.jpg$')
 	tooltipPattern = re.compile(
 		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
-		'(?: \\((MSL|NGVD 29)\\))? USGS (7\\.5|15|30|60)\' Quad \\(1:(24,000|62,500|125,000|250,000)\\) '
+		'(?: \\((MSL|NGVD 29)\\))? USGS ([\\.013567x]+)\' Quad \\(1:([012456]{2,3},[05]00)\\) '
 		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
 
-	quadScale = {'7.5': '24,000', '15': '62,500', '30': '125,000', '60': '250,000'}
-	quadVDatum = {'7.5': ('MSL', 'NGVD 29'), '15': ('MSL', 'NGVD 29'), '30': ('MSL',), '60': ('MSL', None)}
+	class QuadInfo(object):
+		def __init__(self, scale, vdatum):
+			self.scale = scale
+			self.vdatum = vdatum
+
+	quadInfo = {
+		'7.5':          QuadInfo( '24,000', ('MSL', 'NGVD 29')),
+		'7.5x15':       QuadInfo( '25,000', ('NGVD 29',)),
+		'15':           QuadInfo( '62,500', ('MSL', 'NGVD 29')),
+		'30':           QuadInfo('125,000', ('MSL',)),
+		'60':           QuadInfo('250,000', ('MSL', None)),
+	}
 
 	def __init__(self, vdatum, series, scale, name, state, year):
+		info = self.quadInfo.get(series)
+
+		if info is None:
+			raise FormatError("Unexpected quad series")
+		if scale != info.scale:
+			raise FormatError("Scale doesn't match {}' quad", series)
+		if vdatum not in info.vdatum:
+			if vdatum is None:
+				raise FormatError("Missing vertical datum for {}' quad", series)
+			raise FormatError("Unexpected vertical datum ({}) for {}' quad", vdatum, series)
+
 		self.vdatum = vdatum
 		self.series = series
 		self.scale = scale
 		self.name = name
 		self.state = state
 		self.year = year
-
-		if scale != self.quadScale[series]:
-			raise FormatError("Scale doesn't match {}' quad", series)
-		if vdatum not in self.quadVDatum[series]:
-			if vdatum is None:
-				raise FormatError("Missing vertical datum for {}' quad", series)
-			raise FormatError("Unexpected vertical datum ({}) for {}' quad", vdatum, series)
 
 		self.linkSuffix = None
 		self.contourInterval = None
@@ -552,7 +569,7 @@ class USGSTopo(object):
 			self.series, self.scale, self.name, self.state, self.year)
 
 	def setUnits(self, inMeters):
-		if inMeters and self.series != '7.5':
+		if inMeters and self.series not in ('7.5', '7.5x15'):
 			raise FormatError("Unexpected elevation in meters on {}' quad", self.series)
 		self.inMeters = inMeters
 
@@ -661,7 +678,7 @@ class Elevation(object):
 			elevationMin = int(elevation)
 			elevationMax = int(elevationMax)
 			interval = elevationMax - elevationMin + 1
-			if self.source.series == '7.5':
+			if self.source.series in ('7.5', '7.5x15'):
 				contourIntervals = (10, 20) if inMeters else (20, 40)
 			else:
 				contourIntervals = (80,)
@@ -1785,8 +1802,8 @@ def createList(pl):
 
 	try:
 		sps_create.createList(pl, peakLists, Peak, setLandManagement)
-	except FormatError as err:
-		sys.exit(err.message)
+	except FormatError as e:
+		sys.exit(e.message)
 
 	writeHTML(pl)
 
