@@ -71,7 +71,8 @@ td {
 	FWS = U.S. Fish & Wildlife Service
 	NPS = National Park Service
 	Rez = Indian Reservation
-	SP = State Park
+	SP = California State Park
+	UDWR = Utah Division of Wildlife Resources
 */
 .land .landBLM  {background-color: rgb(240,248,255);}
 .land .landBLMW {background-color: rgb(224,255,255);}
@@ -82,6 +83,7 @@ td {
 .land .landNPS  {background-color: rgb(255,255,128);}
 .land .landRez  {background-color: rgb(255,222,173);}
 .land .landSP   {background-color: rgb(250,250,210);}
+.land .landUDWR {background-color: rgb(250,250,210);}
 
 .land tr.climbed > td:nth-child(5) {
 	background-image: linear-gradient(to right, rgba(173,255,47,0.0), rgba(173,255,47,0.2));

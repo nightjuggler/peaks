@@ -37,8 +37,8 @@ peakListParams = {
 	},
 	'gbp': {
 		'geojsonTitle': 'Great Basin Peaks',
-		'numPeaks': 15,
-		'numSections': 12,
+		'numPeaks': 116,
+		'numSections': 14,
 	},
 	'hps': {
 		'geojsonTitle': 'Hundred Peaks Section',
@@ -66,13 +66,17 @@ peakListParams = {
 		'numSections': 24,
 	},
 }
+def addPeakListSortKey():
+	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'gbp', 'npc', 'odp', 'osp')):
+		peakListParams[peakListId]['sortkey'] = i
+addPeakListSortKey()
 
 def html2ListId(htmlId):
 	if htmlId[0] == 'x':
 		htmlId = htmlId[1:]
 	if htmlId[-1] == 'x':
 		htmlId = htmlId[:-1]
-	return htmlId
+	return htmlId.lower()
 
 def listId2Html(listId):
 	if listId[0] in '0123456789':
@@ -94,7 +98,6 @@ class PeakList(object):
 		self.sections = []
 
 		peakLists[lowerCaseId] = self
-		peakLists[self.id] = self
 
 	def readHTML(self):
 		try:
@@ -103,17 +106,18 @@ class PeakList(object):
 			sys.exit("[{}:{}] {}!".format(self.htmlFilename, self.htmlFile.lineNumber, err.message))
 
 class Peak(object):
-	def __init__(self):
+	def __init__(self, peakList):
 		self.id = ''
 		self.name = ''
 		self.otherName = None
+		self.peakList = peakList
 		self.latitude = ''
 		self.longitude = ''
-		self.zoom = ''
-		self.baseLayer = ''
+		self.zoom = '16'
+		self.baseLayer = 't4'
 		self.elevations = []
 		self.prominences = []
-		self.grade = ''
+		self.grade = None
 		self.summitpostId = None
 		self.summitpostName = None
 		self.wikipediaLink = None
@@ -125,6 +129,7 @@ class Peak(object):
 		self.extraRow = None
 		self.dataFrom = None
 		self.dataAlso = []
+		self.dataAlsoPeaks = []
 		self.nonUS = False
 		self.hasHtmlId = False
 		self.isClimbed = False
@@ -135,6 +140,14 @@ class Peak(object):
 		self.landManagement = None
 		self.delisted = False
 		self.suspended = False
+
+	def htmlId(self):
+		html_id = self.peakList.htmlId + self.id
+		if self.delisted:
+			html_id += 'd'
+		elif self.suspended:
+			html_id += 's'
+		return html_id
 
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
@@ -160,9 +173,9 @@ class Peak(object):
 
 		return exactMatches, otherMatches
 
-	def copyFrom(self, other, pl, pl2):
-		doNotCopy = ('id', 'column12', 'dataFrom', 'dataAlso', 'hasHtmlId',
-			'isEmblem', 'isMtneer', 'delisted', 'suspended')
+	def copyFrom(self, other):
+		doNotCopy = ('id', 'peakList', 'column12', 'dataFrom', 'dataAlso',
+			'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended')
 
 		if other.dataFrom is not None:
 			sys.exit("{} should not have the data-from attribute!".format(self.dataFrom))
@@ -174,33 +187,20 @@ class Peak(object):
 		if other.column12 is not None:
 			self.column12 = other.column12
 
-		fromId = pl2.htmlId + other.id
-		if other.delisted:
-			fromId += 'd'
-		elif other.suspended:
-			fromId += 's'
+		fromId = other.htmlId()
 
 		if self.dataFrom != fromId:
-			log('{}{} ({}) should have data-from="{}" instead of "{}"',
-				pl.id, self.id, self.name, fromId, self.dataFrom)
-
-		alsoId = pl.htmlId + self.id
-		if self.delisted:
-			alsoId += 'd'
-		elif self.suspended:
-			alsoId += 's'
-
-		if alsoId not in other.dataAlso:
-			log('{}{} ({}) should include {} in data-also="{}"',
-				pl2.id, other.id, other.name, alsoId, " ".join(other.dataAlso))
-		else:
-			alsoList = [x for x in other.dataAlso if x != alsoId]
-			if self.dataAlso != alsoList:
-				log('{}{} ({}) should have data-also="{}" instead of "{}"',
-					pl.id, self.id, self.name, " ".join(alsoList), " ".join(self.dataAlso))
-				self.dataAlso = alsoList
+			log('{} {} ({}) should have data-from="{}" instead of "{}"',
+				self.peakList.id, self.id, self.name, fromId, self.dataFrom)
 
 		self.dataFromPeak = other
+
+		for p in other.dataAlsoPeaks:
+			if p.peakList is self.peakList:
+				sys.exit('{} {} ({}) and {} ({}) should not both have data-from="{}"!',
+					p.peakList.id, p.id, p.name, self.id, self.name, self.dataFrom)
+
+		other.dataAlsoPeaks.append(self)
 
 def badLine():
 	raise FormatError("Line doesn't match expected pattern")
@@ -250,11 +250,13 @@ def parseClasses(peak, classNames):
 
 class LandMgmtArea(object):
 	name2area = {}
-
+	name2link = {
+	}
 	def __init__(self, name, link):
 		self.count = 0
 		self.name = name
-		self.link = link
+		self.landClass = self.getLandClass(name)
+		self.setLink(link)
 		self.highPoint = None
 		self.highestPoint = None
 
@@ -265,7 +267,7 @@ class LandMgmtArea(object):
 		if peak.dataFrom is not None:
 			peak = peak.dataFromPeak
 
-		return self.highPoint == peak
+		return self.highPoint is peak
 
 	def html(self, peak):
 		highPoint = " HP" if self.isHighPoint(peak) else ""
@@ -273,7 +275,42 @@ class LandMgmtArea(object):
 		if self.link is None:
 			return self.name + highPoint
 
-		return "<a href=\"{}\">{}</a>{}".format(self.link, self.name, highPoint)
+		return '<a href="{}">{}</a>{}'.format(self.link, self.name, highPoint)
+
+	def getLandClass(self, name):
+		if name.endswith(" Wilderness"):
+			return "landWild"
+
+		landClass = landNameLookup.get(name)
+		if landClass is not None:
+			return landClass
+
+		for suffix, landClass in landNameSuffixes:
+			if name.endswith(suffix):
+				return landClass
+
+		if name.startswith("BLM "):
+			return "landBLM"
+
+		raise FormatError("Unrecognized land management name: {}", name)
+
+	def setLink(self, link):
+		self.link = link
+
+		linkPattern = landLinkPattern.get(self.landClass)
+		if linkPattern is None:
+			return
+
+		if link is None:
+			link = self.name2link.get(self.name)
+			if link is None:
+				log("Add URL for {}", self.name)
+			else:
+				self.link = link
+			return
+
+		if linkPattern.match(link) is None:
+			self.err("URL doesn't match expected pattern")
 
 	@classmethod
 	def add(self, peak, name, link, isHighPoint):
@@ -285,11 +322,10 @@ class LandMgmtArea(object):
 			return area
 
 		area.count += 1
-		if link != area.link:
-			if area.link is None:
-				area.link = link
-			elif link is not None:
+		if link is not None and link != area.link:
+			if area.link is not None:
 				area.err("URL doesn't match previous URL")
+			area.setLink(link)
 		if isHighPoint:
 			if area.highPoint is not None:
 				area.err("Duplicate high point")
@@ -299,20 +335,26 @@ class LandMgmtArea(object):
 
 landNameLookup = {
 	"Carrizo Plain National Monument":      'landBLM',
+	"Fandango WSA":                         'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Gold Butte National Monument":         'landBLM',
+	"Hart Mountain NAR":                    'landFWS',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Hawthorne Army Depot":                 'landDOD',
+	"Indian Peak WMA":                      'landUDWR',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
 	"Mono Basin Scenic Area":               'Inyo National Forest',
+	"Morey Peak WSA":                       'landBLM',
 	"Navajo Nation":                        'landRez',
 	"NAWS China Lake":                      'landDOD',
 	"Organ Pipe Cactus NM":                 'landNPS',
 	"Providence Mountains SRA":             'landSP',
+	"Pyramid Lake Indian Reservation":      'landRez',
 	"Red Rock Canyon NCA":                  'landBLM',
 	"Silver Peak Range WSA":                'landBLM',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
+	"Steens Mountain CMPA":                 'landBLM',
 	"Tohono O'odham Indian Reservation":    'landRez',
 }
 landNameSuffixes = [
@@ -322,20 +364,13 @@ landNameSuffixes = [
 	(' National Wildlife Refuge',   'landFWS'),
 	(' State Park',                 'landSP'),
 ]
-landNamePrefixes = [
-	('BLM ',                        'landBLM'),
-]
 landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
-fsLinkPattern = re.compile('^https://www\\.fs\\.usda\\.gov/[a-z]+$')
-fwsLinkPattern = re.compile('^https://www\\.fws\\.gov/refuge/[a-z]+/$')
-npsLinkPattern = re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$')
-stateParkPattern = re.compile('^https://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$')
-wildernessPattern = re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$')
 landLinkPattern = {
-	'landFS':       fsLinkPattern,
-	'landFWS':      fwsLinkPattern,
-	'landNPS':      npsLinkPattern,
-	'landSP':       stateParkPattern,
+	'landWild':     re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$'),
+	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/[-a-z]+$'),
+	'landFWS':      re.compile('^https://www\\.fws\\.gov/refuge/[_a-z]+/$'),
+	'landNPS':      re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$'),
+	'landSP':       re.compile('^https://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$'),
 }
 landOrder = {
 	'landDOD':      0,
@@ -345,12 +380,36 @@ landOrder = {
 	'landFS':       4,
 	'landBLMW':     5,
 	'landFSW':      6,
-	'landSP':       7,
+	'landSP':       7, # California Department of Parks and Recreation - https://www.parks.ca.gov/
+	'landUDWR':     7, # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
 	'landNPS':      8,
 }
 
-def parseLandManagement(pl, peak):
-	line = pl.htmlFile.next()
+def getLandClass(landList):
+	landClass = None
+
+	for i, area in enumerate(landList):
+		currentClass = area.landClass
+
+		if currentClass == "landWild":
+			if landClass == "landFS":
+				landClass = "landFSW"
+			elif landClass is None or landClass == "landBLM":
+				landClass = "landBLMW"
+
+		elif currentClass.startswith("land"):
+			if landClass is None:
+				landClass = currentClass
+			elif landOrder[landClass] < landOrder[currentClass]:
+				raise FormatError("Unexpected order of land management areas")
+
+		elif i == 0 or currentClass != landList[i-1].name:
+			raise FormatError('"{}" must follow "{}"', area.name, currentClass)
+
+	return landClass
+
+def parseLandManagement(htmlFile, peak):
+	line = htmlFile.next()
 
 	if line[:4] != '<td>' or line[-6:] != '</td>\n':
 		badLine()
@@ -361,8 +420,7 @@ def parseLandManagement(pl, peak):
 			return
 		badLine()
 
-	landList = []
-	landClass = None
+	peak.landManagement = landList = []
 
 	while True:
 		m = landMgmtPattern.match(line)
@@ -378,42 +436,6 @@ def parseLandManagement(pl, peak):
 				landHP = landName[-3:]
 				landName = landName[:-3]
 
-		if landName.endswith(' Wilderness'):
-			if landClass == 'landFS':
-				landClass = 'landFSW'
-			elif landClass is None or landClass == 'landBLM':
-				landClass = 'landBLMW'
-			if landLink is not None and wildernessPattern.match(landLink) is None:
-				raise FormatError("Wilderness URL doesn't match expected pattern")
-		else:
-			currentClass = landNameLookup.get(landName)
-			if currentClass is None:
-				for suffix, suffixClass in landNameSuffixes:
-					if landName.endswith(suffix):
-						currentClass = suffixClass
-						break
-				else:
-					for prefix, prefixClass in landNamePrefixes:
-						if landName.startswith(prefix):
-							currentClass = prefixClass
-							break
-					else:
-						raise FormatError("Unrecognized land management name")
-
-			if currentClass.startswith('land'):
-				linkPattern = landLinkPattern.get(currentClass)
-				if linkPattern is not None:
-					if landLink is None or linkPattern.match(landLink) is None:
-						raise FormatError("Land management URL doesn't match expected pattern")
-
-				if landClass is None:
-					landClass = currentClass
-				elif landOrder[landClass] < landOrder[currentClass]:
-					raise FormatError("Unexpected order of land management areas")
-
-			elif not (landList and currentClass == landList[-1].name):
-				raise FormatError('"{}" must follow "{}"', landName, currentClass)
-
 		landList.append(LandMgmtArea.add(peak, landName, landLink, landHP is not None))
 
 		if line == '':
@@ -422,14 +444,10 @@ def parseLandManagement(pl, peak):
 			badLine()
 		line = line[4:]
 
-	if peak.landClass != landClass:
+	if peak.landClass != getLandClass(landList):
 		raise FormatError("Land management column doesn't match class")
 
-	peak.landManagement = landList
-
 def printLandManagementAreas(pl):
-	readAllHTML()
-
 	for name, area in sorted(LandMgmtArea.name2area.iteritems()):
 		print '{:35}{:4}  {:22} {}'.format(name,
 			area.count,
@@ -764,8 +782,8 @@ class Elevation(object):
 
 		return self.elevationFeet <= feet < maxFeet
 
-def parseElevation(pl, peak):
-	line = pl.htmlFile.next()
+def parseElevation(htmlFile, peak):
+	line = htmlFile.next()
 
 	if line[:4] != '<td>':
 		badLine()
@@ -792,7 +810,7 @@ def parseElevation(pl, peak):
 
 			if m.group(4) is None:
 				e.extraLines = '\n'
-				for line in pl.htmlFile:
+				for line in htmlFile:
 					if line.startswith('</div></span>'):
 						line = line[13:]
 						break
@@ -816,8 +834,6 @@ def parseElevation(pl, peak):
 		k1 = k2
 
 def printElevationStats(pl):
-	readAllHTML()
-
 	numAllSourced = 0
 	numSomeSourced = 0
 	for section in pl.peaks:
@@ -979,7 +995,7 @@ class RE(object):
 		'([ #&\'()0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
 	)
 	grade = re.compile(
-		'^<td>Class ([123456](?:s[23456]\\+?)?)</td>$'
+		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
 	)
 	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
@@ -1340,7 +1356,7 @@ def readHTML(pl):
 	for line in htmlFile:
 		m = RE.peakRow.match(line)
 		if m is not None:
-			peak = Peak()
+			peak = Peak(pl)
 			if m.group(2) is not None:
 				peak.dataFrom = m.group(2)
 				dataFromList.append([peak, html2ListId(m.group(3)), int(m.group(4)), int(m.group(5))])
@@ -1396,20 +1412,22 @@ def readHTML(pl):
 			else:
 				peak.isHighPoint = True
 
-			parseLandManagement(pl, peak)
-			parseElevation(pl, peak)
+			parseLandManagement(htmlFile, peak)
+			parseElevation(htmlFile, peak)
 
 			line = htmlFile.next()
 			m = RE.grade.match(line)
 			if m is None:
-				badLine()
-			peak.grade = m.group(1)
-			if len(peak.grade) > 1:
-				approachGrade, summitGrade = int(peak.grade[0]), int(peak.grade[2])
-				if approachGrade >= summitGrade:
-					raise FormatError("Summit grade must be greater than approach grade")
-				if summitGrade == 6 and peak.grade[-1] == '+':
-					raise FormatError("Summit grade 6+ doesn't make sense")
+				if line != emptyCell or pl.id not in ('GBP',):
+					badLine()
+			else:
+				peak.grade = m.group(1)
+				if len(peak.grade) > 2:
+					approachGrade, summitGrade = int(peak.grade[0]), int(peak.grade[2])
+					if approachGrade >= summitGrade:
+						raise FormatError("Summit grade must be greater than approach grade")
+					if summitGrade == 6 and peak.grade[-1] == '+':
+						raise FormatError("Summit grade 6+ doesn't make sense")
 
 			line = htmlFile.next()
 			peak.prominences = parseProminence(line)
@@ -1512,9 +1530,9 @@ def readHTML(pl):
 	for peak, pl2Id, sectionNumber, peakNumber in dataFromList:
 		pl2 = peakLists.get(pl2Id)
 		if pl2 is None:
-			pl2 = PeakList(pl2Id.lower())
+			pl2 = PeakList(pl2Id)
 			pl2.readHTML()
-		peak.copyFrom(pl2.peaks[sectionNumber - 1][peakNumber - 1], pl, pl2)
+		peak.copyFrom(pl2.peaks[sectionNumber - 1][peakNumber - 1])
 
 def writeHTML(pl):
 	sectionFormat = '<tr class="section"><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
@@ -1570,8 +1588,10 @@ def writeHTML(pl):
 				attr += ' class="{}"'.format(' '.join(classNames))
 			if peak.dataFrom is not None:
 				attr += ' data-from="{}"'.format(peak.dataFrom)
-			if peak.dataAlso:
-				attr += ' data-also="{}"'.format(" ".join(peak.dataAlso))
+				peak.dataAlsoPeaks.remove(peak)
+			if peak.dataAlsoPeaks:
+				peak.dataAlsoPeaks.sort(key=lambda p: p.peakList.sortkey)
+				attr += ' data-also="{}"'.format(" ".join([p.htmlId() for p in peak.dataAlsoPeaks]))
 			print '<tr{}>'.format(attr)
 
 			attr = ''
@@ -1592,7 +1612,12 @@ def writeHTML(pl):
 				print emptyCell
 
 			print '<td>{}</td>'.format(peak.elevationHTML())
-			print '<td>Class {}</td>'.format(peak.grade)
+
+			if peak.grade is None:
+				print emptyCell
+			else:
+				print '<td>Class {}</td>'.format(peak.grade)
+
 			print '<td>{}</td>'.format(peak.prominenceHTML())
 
 			if peak.summitpostId is None:
@@ -1665,7 +1690,8 @@ def writePeakJSON(f, peak):
 		p.append(('name2', peak.otherName))
 
 	p.append(('prom', peak.prominenceHTML().replace('"', '\\"')))
-	p.append(('YDS', peak.grade))
+	if peak.grade is not None:
+		p.append(('YDS', peak.grade))
 	p.append(('G4', 'z={}&t={}'.format(peak.zoom, peak.baseLayer)))
 	if peak.bobBurdId is not None:
 		p.append(('BB', peak.bobBurdId))
@@ -1739,9 +1765,30 @@ def setVR(pl):
 	sps_create.checkData(pl, setVR=True)
 	writeHTML(pl)
 
-def create(pl):
+def loadFiles(pl):
 	import sps_create
-	sps_create.loadData(pl)
+	sps_create.loadFiles(pl)
+
+def setLandManagement(peak):
+	peakPb = peak.peakbaggerPeak
+
+	if peakPb.landManagement:
+		peak.landManagement = [LandMgmtArea.add(peak, area.name, None, peakPb is area.highPoint)
+			for area in peakPb.landManagement]
+	else:
+		peak.landManagement = [LandMgmtArea.add(peak, "BLM " + peakPb.state, None, False)]
+
+	peak.landClass = getLandClass(peak.landManagement)
+
+def createList(pl):
+	import sps_create
+
+	try:
+		sps_create.createList(pl, peakLists, Peak, setLandManagement)
+	except FormatError as err:
+		sys.exit(err.message)
+
+	writeHTML(pl)
 
 def readAllHTML():
 	for plId in peakListParams:
@@ -1751,11 +1798,12 @@ def readAllHTML():
 def main():
 	outputFunction = {
 		'check': checkData,
-		'create': create,
+		'create': createList,
 		'elev': printElevationStats,
 		'html': writeHTML,
 		'json': writeJSON,
 		'land': printLandManagementAreas,
+		'load': loadFiles,
 		'setprom': setProm,
 		'setvr': setVR,
 	}
@@ -1765,9 +1813,8 @@ def main():
 	parser.add_argument('outputMode', nargs='?', default='html', choices=sorted(outputFunction.keys()))
 	args = parser.parse_args()
 
-	pl = PeakList(args.inputMode)
-	pl.readHTML()
-	outputFunction[args.outputMode](pl)
+	readAllHTML()
+	outputFunction[args.outputMode](peakLists[args.inputMode])
 
 if __name__ == '__main__':
 	main()
