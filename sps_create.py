@@ -1394,7 +1394,16 @@ class PeakLoJ(TablePeak):
 	#   In that case the highest contour is at 9880', and the interval is 40'.
 	#   So the average would be 9900'.
 	#
+	# - Kumiva Peak
+	#   The LoJ page for Kumiva Peak has the following note: "1:250k map has spot elevation 8237,
+	#   consistent with 2511 meters on 1:100k map." [https://listsofjohn.com/peak/16838]
+	#   8237' is approximately 2510.6m and thus rounds to 2511m, and 2511m is approximately 8238.2'
+	#   and thus rounds to 8238'. However, the 1:100k map was "Compiled from USGS 1:24 000 and
+	#   1:62 500-scale topographic maps dated 1964-1981", and the 1:62,500-scale topo shows a spot
+	#   elevation of 8237'. So 8237' seems more correct than 8238'.
+	#
 		('Eagle Peak', 9900): 9892,
+		('Kumiva Peak', 8238): 8237,
 
 	# LoJ Elevation Adjustments for Other Desert Peaks:
 	#
