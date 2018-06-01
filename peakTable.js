@@ -53,18 +53,16 @@ function wildernessURL(latitude, longitude)
 	ymin = latitudeToWebMercatorY(ymin);
 	ymax = latitudeToWebMercatorY(ymax);
 
-	return "http://www.wilderness.net/map.cfm" +
-		"?xmin=" + xmin +
-		"&ymin=" + ymin +
-		"&xmax=" + xmax +
-		"&ymax=" + ymax;
+	return "https://umontana.maps.arcgis.com/apps/webappviewer/index.html" +
+		"?id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=" +
+		xmin + "," + ymin + "," + xmax + "," + ymax + ",102113";
 }
 function legendLink(mapServer)
 {
 	return encodeURIComponent('<b><a href="' + mapServer + '/legend" target="_blank">Legend</a></b>');
 }
-// See http://www.wilderness.net/NWPS/geography
-var wildernessMapServer = 'http://services.cfc.umt.edu/ArcGIS/rest/services/ProctectedAreas/Wilderness/MapServer';
+// See https://www.wilderness.net/NWPS/geography
+var wildernessMapServer = 'https://gisservices.cfc.umt.edu/arcgis/rest/services/ProtectedAreas/National_Wilderness_Preservation_System/MapServer';
 
 function wccLink(latitude, longitude)
 {
@@ -338,11 +336,9 @@ function createMapLinkBox(latCommaLong, peakId)
 
 	addMapLink(listNode, 'Gmap4 (CalTopo Hi-res Basemap)', gmap4Link);
 
-	addMapLink(listNode, 'Gmap4 with Wilderness Boundaries',
-		gmap4Link + ',Wilderness_Boundaries&markers=title=' + legendLink(wildernessMapServer)
-		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Boundaries&layers=1&transparent=true'
-		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Names&layers=0&transparent=true'
-		+ '&rest=' + wildernessMapServer + '?name=Wilderness_Areas&layers=2&transparent=true');
+	addMapLink(listNode, 'Gmap4 with Wilderness Areas',
+		gmap4Link + ',Wilderness_Areas&markers=title=' + legendLink(wildernessMapServer) +
+		'&rest=' + wildernessMapServer + '?name=Wilderness_Areas&layers=0&transparent=true');
 
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
 
