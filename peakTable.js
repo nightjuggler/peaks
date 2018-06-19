@@ -140,6 +140,12 @@ var globalPeakInfo = {
 
 	showDelisted: false,
 	showSuspended: false,
+
+	flags: {
+		country_US: true,
+		state_CA: true,
+		CC: false,
+	},
 };
 function isValidParam(s)
 {
@@ -173,6 +179,56 @@ function parseQueryString()
 			handlers[k](v);
 	}
 }
+function newPeakFlags(parentFlags)
+{
+	return {
+		country_US: parentFlags.country_US,
+		state_CA: parentFlags.state_CA,
+		CC: parentFlags.CC,
+	};
+}
+function getPeakFlag(attrValue, trueValue)
+{
+	for (var value of attrValue.split('/'))
+		if (value === trueValue)
+			return true;
+	return false;
+}
+function setPeakFlag(row, parentFlags, attrName, trueValue)
+{
+	var attrValue = row.dataset[attrName];
+	if (!attrValue) return;
+
+	var flagName = attrName + '_' + trueValue;
+	var flagValue = getPeakFlag(attrValue, trueValue);
+	if (flagValue === parentFlags[flagName]) return;
+
+	if (row.peakFlags === parentFlags)
+		row.peakFlags = newPeakFlags(parentFlags);
+	row.peakFlags[flagName] = flagValue;
+}
+function setPeakFlags(row, parentFlags, attrName, setValue)
+{
+	var attrValue = row.dataset[attrName];
+	if (!attrValue) return;
+
+	for (var flagName of attrValue.split(','))
+	{
+		var flagValue = parentFlags[flagName];
+		if (typeof flagValue !== 'boolean' || flagValue === setValue) continue;
+		if (row.peakFlags === parentFlags)
+			row.peakFlags = newPeakFlags(parentFlags);
+		row.peakFlags[flagName] = setValue;
+	}
+}
+function setRowFlags(row, parentFlags)
+{
+	row.peakFlags = parentFlags;
+	setPeakFlag(row, parentFlags, 'country', 'US');
+	setPeakFlag(row, parentFlags, 'state', 'CA');
+	setPeakFlags(row, parentFlags, 'enable', true);
+	setPeakFlags(row, parentFlags, 'disable', false);
+}
 function getPeakListId()
 {
 	var i, path = window.location.pathname;
@@ -185,66 +241,17 @@ function getPeakListId()
 function initPeakListMenu()
 {
 	var id = getPeakListId();
-	var returnTrue = function() { return true; };
-	var returnFalse = function() { return false; };
 
 	var peakLists = [
-	{
-		id: 'dps',
-		name: 'Desert Peaks Section',
-		isCAPeak: function(peakId) { return Number(peakId.split('.')[0]) < 6; },
-		// Don't bother excepting 1.3 (Boundary Peak) and 2.12 (Grapevine Peak) (both in Nevada)
-		isUSPeak: function(peakId) { return Number(peakId.split('.')[0]) < 9; },
-	},
-	{
-		id: 'gbp',
-		name: 'Great Basin Peaks List',
-		isCAPeak: function(peakId) { return peakId.substr(0, 2) === '1.'; },
-	},
-	{
-		id: 'hps',
-		name: 'Hundred Peaks Section',
-		isCAPeak: returnTrue,
-		isSierraPeak: function(peakId) { return Number(peakId.split('.')[0]) < 3; },
-	},
-	{
-		id: 'npc',
-		name: 'Nevada Peaks Club',
-		// isSierraPeak: Don't bother excepting Mount Rose (3.1)
-	},
-	{
-		id: 'sps',
-		name: 'Sierra Peaks Section',
-		isCAPeak: returnTrue, // Don't bother excepting Mount Rose (24.4)
-		isSierraPeak: returnTrue,
-	},
-	{
-		id: 'ogul',
-		name: 'Tahoe Ogul Peaks List',
-		// Don't bother excepting the following (all in Nevada):
-		// 11.1 Mount Rose
-		// 12.1 Snow Valley Peak
-		// 12.2 Duane Bliss Peak
-		// 12.3 Genoa Peak
-		// 14.1 Mount Siegel
-		// 15.1 Desert Creek Peak
-		// 15.2 East Sister
-		isCAPeak: returnTrue,
-		// Don't bother excepting sections 14 (Pine Nut Mtns) and 15 (Sweetwater Mtns)
-		// isSierraPeak: function(peakId) { return Number(peakId.split('.')[0]) < 14; },
-		isSierraPeak: returnTrue,
-	},
-	{
-		id: 'odp',
-		name: 'Other Desert Peaks',
-		isCAPeak: function(peakId) { return Number(peakId.split('.')[0]) < 6; },
-	},
-	{
-		id: 'osp',
-		name: 'Other Sierra Peaks',
-		isCAPeak: returnTrue,
-		isSierraPeak: returnTrue,
-	},
+		{id: 'dps', name: 'Desert Peaks Section'},
+		{id: 'gbp', name: 'Great Basin Peaks List'},
+		{id: 'hps', name: 'Hundred Peaks Section'},
+		{id: 'npc', name: 'Nevada Peaks Club'},
+		{id: 'sps', name: 'Sierra Peaks Section'},
+		{id: 'ogul',name: 'Tahoe Ogul Peaks List'},
+		{id: 'odp', name: 'Other Desert Peaks'},
+		{id: 'osp', name: 'Other Sierra Peaks'},
+		{id: 'ocap',name: 'Other California Peaks'},
 	];
 
 	var menu = document.getElementById('peakListMenu');
@@ -255,16 +262,7 @@ function initPeakListMenu()
 		if (menu)
 			menu.add(new Option(pl.name, pl.id, selected, selected));
 		if (selected)
-		{
-			if (!pl.isCAPeak)
-				pl.isCAPeak = returnFalse;
-			if (!pl.isSierraPeak)
-				pl.isSierraPeak = returnFalse;
-			if (!pl.isUSPeak)
-				pl.isUSPeak = returnTrue;
-
 			globalPeakInfo.peakList = pl;
-		}
 	}
 
 	if (menu)
@@ -302,7 +300,7 @@ function addMapLink(listNode, linkText, url)
 	listItem.appendChild(linkNode);
 	listNode.appendChild(listItem);
 }
-function createMapLinkBox(latCommaLong, peakId)
+function createMapLinkBox(latCommaLong, peakFlags)
 {
 	var latLong = latCommaLong.split(',');
 	var latitude = Number(latLong[0]);
@@ -317,7 +315,7 @@ function createMapLinkBox(latCommaLong, peakId)
 		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
 		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG');
 
-	if (peakList.isCAPeak(peakId))
+	if (peakFlags.state_CA)
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
 			'http://www.calands.org/map?simple=true&base=topo&y=' + latLong[0] + '&x=' +
 			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
@@ -328,7 +326,7 @@ function createMapLinkBox(latCommaLong, peakId)
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
 
-	if (peakList.isSierraPeak(peakId))
+	if (peakFlags.CC)
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
 
@@ -403,13 +401,12 @@ function createMapLinkBox(latCommaLong, peakId)
 function addMapLinkBox(mapLinkSpan)
 {
 	var secondColumn = mapLinkSpan.parentNode;
-	var firstColumn = nextNode(secondColumn.parentNode.firstChild, 'TD');
+	var peakFlags = secondColumn.parentNode.peakFlags;
 
-	var peakId = firstColumn.firstChild.nodeValue;
 	var mapLink = nextNode(secondColumn.firstChild, 'A');
 	var latCommaLong = mapLink.search.split('&')[0].split('=')[1];
 
-	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakId));
+	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakFlags));
 }
 function showMapLinkBox(event)
 {
@@ -531,17 +528,25 @@ function peakTableFirstRow()
 function decorateTable()
 {
 	var g = globalPeakInfo;
+	var sectionFlags = g.flags;
 
 	parseQueryString();
 	initPeakListMenu();
-	var isUSPeak = g.peakList.isUSPeak;
 
 	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
 		var firstColumn = row.children[0];
-		if (firstColumn.colSpan !== 1) continue;
+		if (firstColumn.colSpan !== 1) {
+			if (row.className === 'section') {
+				setRowFlags(row, g.flags);
+				sectionFlags = row.peakFlags;
+				if (firstColumn.id === 'header')
+					g.flags = sectionFlags;
+			}
+			continue;
+		}
 
-		var peakId = firstColumn.firstChild.nodeValue;
+		setRowFlags(row, sectionFlags);
 		var climbed = row.className.substr(0, 7) === 'climbed';
 		var delisted = row.className.substr(-8) === 'delisted';
 		var suspended = row.className.substr(-9) === 'suspended';
@@ -571,7 +576,7 @@ function decorateTable()
 			var nextRow = nextNode(row.nextSibling, 'TR');
 			extraRow[firstColumn.id] = nextRow.parentNode.removeChild(nextRow);
 		}
-		if (isUSPeak(peakId))
+		if (row.peakFlags.country_US)
 		{
 			var secondColumn = nextNode(firstColumn.nextSibling, 'TD');
 			var lineBreak = nextNode(secondColumn.firstChild, 'BR');

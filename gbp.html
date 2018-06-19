@@ -9,6 +9,13 @@
 <script src="peakTable.js"></script>
 <base href="https://nightjuggler.com/nature/">
 <link rel="icon" href="https://nightjuggler.com/logo/pilogo.ico">
+<style>
+.libq {
+	text-align: justify;
+	width: 800px;
+	white-space: normal;
+}
+</style>
 </head>
 <body>
 
@@ -22,7 +29,7 @@
 <select id="peakListMenu"></select>
 
 <p><table id="peakTable" class="land landColumn">
-<tr class="section"><td id="header" colspan="13">
+<tr class="section" data-state="NV"><td id="header" colspan="13">
 <a href="http://www.sierraclub.org/toiyabe/great-basin-peaks-list">Great Basin Peaks List</a>
 [<a href="https://www.facebook.com/Great-Basin-Peaks-Section-738175186257518">f</a>,
 <a href="pmap.html?o=gbp">Map</a>,
@@ -49,7 +56,7 @@
 <option value="classic">Classic</option>
 <option value="nocolor">None</option>
 </select></div></td></tr>
-<tr class="section"><td id="GBP1" colspan="13">1. Inyo Mountains and Death Valley</td></tr>
+<tr class="section" data-state="CA"><td id="GBP1" colspan="13">1. Inyo Mountains and Death Valley</td></tr>
 <tr class="landBLM">
 <td>1.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.53767,-117.78674&z=15&t=t4">Cerro Gordo Peak</a></td>
@@ -114,7 +121,7 @@
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-117.0788&lat=36.27554">WX</a></td>
 <td>6/17/2014 solo</td>
 </tr>
-<tr class="landNPS" data-from="DPS2.12" data-also="NPC5.7">
+<tr class="landNPS" data-from="DPS2.12" data-also="NPC5.7" data-state="NV">
 <td>1.5</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.9653,-117.1499&z=16&t=t4">Grapevine Peak</a></td>
 <td><a href="https://www.nps.gov/deva/index.htm">Death Valley National Park</a></td>
@@ -129,8 +136,8 @@
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-117.1499&lat=36.9653">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td id="GBP2" colspan="13">2. Mono, Mineral, and Esmeralda Counties</td></tr>
-<tr class="landDOD" data-also="NPC5.2">
+<tr class="section" data-state="CA"><td id="GBP2" colspan="13">2. Mono, Mineral, and Esmeralda Counties</td></tr>
+<tr class="landDOD" data-also="NPC5.2" data-state="NV">
 <td>2.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=38.56841,-118.79112&z=15&t=t4">Mount Grant (West)</a></td>
 <td>Hawthorne Army Depot HP</td>
@@ -236,7 +243,7 @@ aka Glass Mountain-North Peak
 <a href="https://listsofjohn.com/peak/160216">LoJ</a>,
 <a href="http://peakbagger.com/peak.aspx?pid=36718">Pb</a>]
 </ul></td></tr>
-<tr class="emblem landFSW" data-from="DPS1.3" data-also="NPC5.3">
+<tr class="emblem landFSW" data-from="DPS1.3" data-also="NPC5.3" data-state="NV">
 <td rowspan="2">2.6</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.8461,-118.35125&z=15&t=t4">Boundary Peak</a> **</td>
 <td><a href="https://www.fs.usda.gov/inyo">Inyo National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=69">Boundary Peak Wilderness</a> HP</td>
@@ -293,7 +300,7 @@ aka Glass Mountain-North Peak
 <li><a href="http://www.wmrc.edu/">White Mountain Research Center</a>
 [<a href="https://www.facebook.com/ucwmrc">f</a>]
 </ul></td></tr>
-<tr class="landBLM" data-also="NPC5.4">
+<tr class="landBLM" data-also="NPC5.4" data-state="NV">
 <td>2.9</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=37.70427,-117.90879&z=15&t=t4">Piper Peak</a></td>
 <td>Silver Peak Range WSA</td>
@@ -309,7 +316,7 @@ aka Glass Mountain-North Peak
 <td>&nbsp;</td>
 </tr>
 <tr class="section"><td id="GBP3" colspan="13">3. Carson Range and Pine Nut Mountains</td></tr>
-<tr class="landFSW">
+<tr class="landFSW" data-enable="CC">
 <td>3.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.3824,-119.93579&z=16&t=t4">Snowflower Mountain</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=396">Mount Rose Wilderness</a></td>
@@ -324,7 +331,7 @@ aka Glass Mountain-North Peak
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.93579&lat=39.3824">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landFSW">
+<tr class="landFSW" data-enable="CC">
 <td>3.2</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.35328,-119.89692&z=16&t=t4">Chocolate Peak</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=396">Mount Rose Wilderness</a></td>
@@ -339,7 +346,7 @@ aka Glass Mountain-North Peak
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.89692&lat=39.35328">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="climbed emblem landFSW" data-from="SPS24.4" data-also="OGUL11.1 NPC3.1">
+<tr class="climbed emblem landFSW" data-from="SPS24.4" data-also="OGUL11.1 NPC3.1" data-enable="CC">
 <td rowspan="2">3.3</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.34376,-119.9179&z=15&t=t4">Mount Rose</a> **</td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=396">Mount Rose Wilderness</a> HP</td>
@@ -379,7 +386,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.66353&lat=39.30829">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landFS" data-from="OGUL12.1">
+<tr class="landFS" data-from="OGUL12.1" data-enable="CC">
 <td>3.5</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.15401,-119.88319&z=15&t=t4">Snow Valley Peak</a></td>
 <td><a href="https://www.fs.usda.gov/ltbmu">Lake Tahoe Basin Management Unit</a><br><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a></td>
@@ -394,7 +401,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.88319&lat=39.15401">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landFS">
+<tr class="landFS" data-enable="CC">
 <td>3.6</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=38.94251,-119.90735&z=16&t=t4">East Peak</a></td>
 <td><a href="https://www.fs.usda.gov/ltbmu">Lake Tahoe Basin Management Unit</a></td>
@@ -409,7 +416,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.90735&lat=38.94251">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landFS" data-from="OGUL13.3">
+<tr class="landFS" data-from="OGUL13.3" data-state="CA" data-enable="CC">
 <td>3.7</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=38.85819,-119.86143&z=15&t=t4">Jobs Peak</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a></td>
@@ -490,7 +497,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.79448,-119.47424&z=15&t=t4">Pah Rah Mountain</a></td>
 <td>BLM Nevada</td>
 <td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=KR1602">8,253</a><div class="tooltip">2515.5m (NAVD 88) NGS Data Sheet &quot;Pah Rah&quot; (KR1602)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Pah%20Rah%20Mtn_319722_1985_24000.jpg">8,240+</a><div class="tooltip">8240-8279' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Pah Rah Mtn., NV&quot; (1985)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Nixon_321147_1957_62500.jpg">8,249</a><div class="tooltip">8249' (NGVD 29) USGS 15' Quad (1:62,500) &quot;Nixon, NV&quot; (1957/1983)</div></span></td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>280</td>
 <td><a href="https://www.summitpost.org/mountain/710269">SP</a></td>
 <td><a href="https://en.wikipedia.org/wiki/Pah_Rah_Range">W</a></td>
@@ -505,7 +512,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.796,-119.97618&z=16&t=t4">Petersen Mountain</a></td>
 <td>BLM Nevada</td>
 <td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Granite%20Peak_318900_1980_24000.jpg">7,841+</a><div class="tooltip">2390-2399m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Granite Peak, NV&quot; (1980)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Dogskin%20Mountain_320865_1957_62500.jpg">7,850</a><div class="tooltip">7850' (MSL) USGS 15' Quad (1:62,500) &quot;Dogskin Mountain, NV&quot; (1957/1984)</div></span></td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>2,527</td>
 <td><a href="https://www.summitpost.org/mountain/588563">SP</a></td>
 <td><a href="https://en.wikipedia.org/wiki/Petersen_Mountain">W</a></td>
@@ -520,7 +527,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.89228,-119.79055&z=15&t=t4">Dogskin Mountain</a></td>
 <td>BLM Nevada</td>
 <td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Dogskin%20Mtn_320648_1979_25000.jpg">7,487</a><div class="tooltip">2282m (NGVD 29) USGS 7.5x15' Quad (1:25,000) &quot;Dogskin Mtn., NV&quot; (1979)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Dogskin%20Mountain_320865_1957_62500.jpg">7,508</a><div class="tooltip">7508' (MSL) USGS 15' Quad (1:62,500) &quot;Dogskin Mountain, NV&quot; (1957/1984)</div></span></td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>2,057</td>
 <td><a href="https://www.summitpost.org/mountain/589858">SP</a></td>
 <td>&nbsp;</td>
@@ -535,7 +542,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.97592,-119.74421&z=15&t=t4">Tule Peak</a> **</td>
 <td>BLM Nevada</td>
 <td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=KR1879">8,726</a><div class="tooltip">2659.7m (NAVD 88) NGS Data Sheet &quot;Tule Peak&quot; (KR1879)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Tule%20Peak_320381_1980_24000.jpg">8,724</a><div class="tooltip">2659m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Tule Peak, NV&quot; (1980/1984)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Sutcliffe_321345_1957_62500.jpg">8,722</a><div class="tooltip">8722' (MSL) USGS 15' Quad (1:62,500) &quot;Sutcliffe, NV&quot; (1957/1964)</div></span></td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>3,431</td>
 <td><a href="https://www.summitpost.org/mountain/151533">SP</a></td>
 <td><a href="https://en.wikipedia.org/wiki/Virginia_Mountains">W</a></td>
@@ -550,7 +557,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.02987,-119.9794&z=16&t=t4">State Line Peak</a></td>
 <td>BLM Nevada</td>
 <td>7,990</td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>2,700</td>
 <td><a href="https://www.summitpost.org/mountain/588952">SP</a></td>
 <td>&nbsp;</td>
@@ -576,7 +583,7 @@ on the way back
 <td>&nbsp;</td>
 </tr>
 <tr class="section"><td id="GBP5" colspan="13">5. Northeastern California and Northern Washoe County</td></tr>
-<tr class="landBLM">
+<tr class="landBLM" data-state="CA">
 <td>5.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.6878,-120.5985&z=15&t=t4">Fredonyer Peak</a></td>
 <td><a href="https://www.blm.gov/contact/california">BLM Eagle Lake</a></td>
@@ -606,7 +613,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.43329&lat=40.79114">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landFSW">
+<tr class="landFSW" data-state="CA">
 <td>5.3</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.28351,-120.20074&z=15&t=t4">Eagle Peak</a></td>
 <td><a href="https://www.fs.usda.gov/modoc">Modoc National Forest</a> HP<br><a href="https://www.wilderness.net/NWPS/wildView?WID=570">South Warner Wilderness</a> HP</td>
@@ -622,26 +629,30 @@ on the way back
 <td>&nbsp;</td>
 </tr>
 <tr class="landBLM">
-<td>5.4</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.27338,-119.93407&z=16&t=t4">Hays Canyon Peak</a></td>
+<td rowspan="2">5.4</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.27338,-119.93407&z=15&t=t4">Hays Canyon Peak</a></td>
 <td>BLM Nevada</td>
-<td>7,920</td>
-<td>&nbsp;</td>
+<td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=MV0376">7,920</a><div class="tooltip">2414.02m (NAVD 88) NGS Data Sheet &quot;Hays Peak&quot; (MV0376)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Hays%20Canyon_318965_1979_24000.jpg">7,916</a><div class="tooltip">7916' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Hays Canyon, NV&quot; (1979/1980)</div></span></td>
+<td>Class 1+</td>
 <td>2,026</td>
 <td>&nbsp;</td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Hays_Canyon_Range">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/10044">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/17620">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3304">Pb</a></td>
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-119.93407&lat=41.27338">WX</a></td>
 <td>&nbsp;</td>
 </tr>
+<tr><td colspan="12"><ul>
+<li class="libq">Note from LoJ: &quot;Two 7920+ contour to the north appear to be errors or benchmark is understated as area with benchmark is the HP.&quot;
+<li class="libq">Note from Pb: &quot;Field observations show that the highest point on this flat-topped mountain is near the 7916-foot benchmark. The two tiny 7920-foot contours north of the benchmark are about 10 feet lower than the benchmark knoll. These contour are likely a map error, but the benchmark elevation might be too low, too. Here, the elevation is given as 7920 feet, assuming the benchmark is 4 feet below the high point.&quot;
+</ul></td></tr>
 <tr class="landBLM">
 <td>5.5</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.37004,-119.95687&z=16&t=t4">Little Hat Mountain</a></td>
 <td>BLM Nevada</td>
 <td>7,166</td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>226</td>
 <td>&nbsp;</td>
 <td>&nbsp;</td>
@@ -656,7 +667,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.8359,-119.62512&z=16&t=t4">Yellow Peak</a><br>(Bald Mountain)</td>
 <td><a href="https://www.fws.gov/refuge/sheldon/">Sheldon National Wildlife Refuge</a></td>
 <td>7,191</td>
-<td>&nbsp;</td>
+<td>Class 1+</td>
 <td>1,216</td>
 <td>&nbsp;</td>
 <td>&nbsp;</td>
@@ -687,9 +698,9 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.40606,-119.26322&z=15&t=t4">Kumiva Peak</a></td>
 <td>BLM Nevada</td>
 <td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=LS0665">8,241</a><div class="tooltip">2511.8m (NAVD 88) NGS Data Sheet &quot;Cowel&quot; (LS0665)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Kumiva%20Peak_319190_1990_24000.jpg">8,220+</a><div class="tooltip">8220-8239' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Kumiva Peak, NV&quot; (1990)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Kumiva%20Peak_321030_1964_62500.jpg">8,237</a><div class="tooltip">8237' (NGVD 29) USGS 15' Quad (1:62,500) &quot;Kumiva Peak, NV&quot; (1964/1975)</div></span></td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td><span>3,686<div class="tooltip">(8,220 + 20/2) - (1390m - 10m/2) (Pb)</div></span><br><span>3,693<div class="tooltip">8,237 - (1390m - 10m/2) (LoJ)</div></span></td>
-<td><a href="https://www.summitpost.org/mountain/151483">SP</a></td>
+<td><a href="https://www.summitpost.org/kumiva-peak/151483">SP</a></td>
 <td><a href="https://en.wikipedia.org/wiki/Selenite_Range">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/9071">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/16838">LoJ</a></td>
@@ -717,7 +728,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.10235,-119.32726&z=16&t=t4">Division Peak</a></td>
 <td><a href="https://www.wilderness.net/NWPS/wildView?WID=94">Calico Mountains Wilderness</a></td>
 <td>7,261</td>
-<td>&nbsp;</td>
+<td>Class 3</td>
 <td>1,321</td>
 <td>&nbsp;</td>
 <td>&nbsp;</td>
@@ -732,7 +743,7 @@ on the way back
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.09757,-119.26217&z=16&t=t4">Donnelly Peak</a></td>
 <td><a href="https://www.wilderness.net/NWPS/wildView?WID=94">Calico Mountains Wilderness</a> HP</td>
 <td>8,533</td>
-<td>&nbsp;</td>
+<td>Class 2</td>
 <td>2,793</td>
 <td><a href="https://www.summitpost.org/mountain/795373">SP</a></td>
 <td>&nbsp;</td>
@@ -757,30 +768,45 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-118.55475&lat=41.20224">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landBLM">
+<tr class="landBLMW">
 <td>6.7</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.66125,-118.73052&z=16&t=t4">Duffer Peak</a></td>
-<td>BLM Nevada</td>
-<td>9,400+</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.66204,-118.73034&z=15&t=t4">Duffer Peak</a></td>
+<td><a href="https://www.wilderness.net/NWPS/wildView?WID=762">Pine Forest Wilderness</a></td>
+<td>9,397</td>
 <td>&nbsp;</td>
-<td>17</td>
-<td>&nbsp;</td>
-<td>&nbsp;</td>
+<td><span>17<div class="tooltip">9,397 - (9,400 - 40/2) (LoJ/Pb)</div></span></td>
+<td><a href="https://www.summitpost.org/duffer-peak-nv/518638">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Duffer_Peak">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/8978">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/160309">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3321">Pb</a></td>
-<td><a href="https://forecast.weather.gov/MapClick.php?lon=-118.73052&lat=41.66125">WX</a></td>
+<td><a href="https://forecast.weather.gov/MapClick.php?lon=-118.73034&lat=41.66204">WX</a></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="landBLMW">
+<td>6.8</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.65741,-118.73215&z=15&t=t4">Duffer Peak South</a><br>(Pine Forest Range HP)</td>
+<td><a href="https://www.wilderness.net/NWPS/wildView?WID=762">Pine Forest Wilderness</a> HP</td>
+<td>9,428</td>
+<td>&nbsp;</td>
+<td><span>4,139<div class="tooltip">9,428 - 5,289 (LoJ/Pb)</div></span></td>
+<td><a href="https://www.summitpost.org/duffer-peak-nv/518638">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Duffer_Peak">W</a></td>
+<td><a href="http://www.snwburd.com/dayhikes/peak/24904">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/16781">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=3322">Pb</a></td>
+<td><a href="https://forecast.weather.gov/MapClick.php?lon=-118.73215&lat=41.65741">WX</a></td>
 <td>&nbsp;</td>
 </tr>
 <tr class="landFS">
-<td>6.8</td>
+<td>6.9</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.66808,-117.58892&z=16&t=t4">Granite Peak (Humboldt)</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a></td>
 <td>9,732</td>
 <td>Class 2+</td>
 <td>4,400</td>
 <td><a href="https://www.summitpost.org/mountain/151971">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Granite_Peak_(Humboldt_County,_Nevada)">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/10219">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/16757">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3394">Pb</a></td>
@@ -788,7 +814,7 @@ on the way back
 <td>&nbsp;</td>
 </tr>
 <tr class="landFS">
-<td>6.9</td>
+<td>6.10</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.78942,-117.55279&z=16&t=t4">Buckskin Mountain</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a></td>
 <td>8,743</td>
@@ -803,7 +829,7 @@ on the way back
 <td>&nbsp;</td>
 </tr>
 <tr class="landBLM">
-<td>6.10</td>
+<td>6.11</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.95875,-118.19504&z=16&t=t4">Disaster Peak</a></td>
 <td>BLM Nevada</td>
 <td>7,781</td>
@@ -977,7 +1003,7 @@ on the way back
 <td>Class 2</td>
 <td>3,668</td>
 <td><a href="https://www.summitpost.org/mountain/802420">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Table_Mountain_(Nye_County,_Nevada)">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/24906">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/16844">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3508">Pb</a></td>
@@ -992,7 +1018,7 @@ on the way back
 <td>Class 2</td>
 <td>1,045</td>
 <td>&nbsp;</td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Hot_Creek_Range">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/9741">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/40960">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3517">Pb</a></td>
@@ -1007,7 +1033,7 @@ on the way back
 <td>Class 3</td>
 <td>2,600</td>
 <td><a href="https://www.summitpost.org/mountain/577683">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Hot_Creek_Range">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/9133">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/17187">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3518">Pb</a></td>
@@ -1022,7 +1048,7 @@ on the way back
 <td>Class 2</td>
 <td>2,710</td>
 <td><a href="https://www.summitpost.org/mountain/887117">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Pancake_Range">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/9193">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/17134">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3519">Pb</a></td>
@@ -1077,9 +1103,9 @@ on the way back
 <tr class="section"><td id="GBP9" colspan="13">9. Northeastern Nevada - Elko County</td></tr>
 <tr class="landBLM">
 <td>9.1</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.49951,-114.29559&z=16&t=t4">Goshute Peak</a></td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.49951,-114.29559&z=15&t=t4">Goshute Peak</a></td>
 <td>BLM Nevada</td>
-<td>9,610</td>
+<td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=LQ0645">9,615</a><div class="tooltip">2930.7m (NAVD 88) NGS Data Sheet &quot;Goshute&quot; (LQ0645)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Goshute%20Peak_318894_1982_24000.jpg">9,610</a><div class="tooltip">2929m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Goshute Peak, NV&quot; (1982)</div></span></td>
 <td>Class 2</td>
 <td>3,709</td>
 <td><a href="https://www.summitpost.org/mountain/853937">SP</a></td>
@@ -1292,9 +1318,9 @@ on the way back
 </tr>
 <tr class="landFS">
 <td>10.3</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.16103,-114.61499&z=16&t=t4">Cave Mountain</a></td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=39.16103,-114.61499&z=15&t=t4">Cave Mountain</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a></td>
-<td>10,745</td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Cave%20Mountain_318373_1981_24000.jpg">10,745</a><div class="tooltip">3275m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Cave Mountain, NV&quot; (1981/1994)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Connors%20Pass_320802_1959_62500.jpg">10,742</a><div class="tooltip">10742' (MSL) USGS 15' Quad (1:62,500) &quot;Connors Pass, NV&quot; (1959/1970)</div></span></td>
 <td>Class 1</td>
 <td>984</td>
 <td>&nbsp;</td>
@@ -1474,9 +1500,9 @@ on the way back
 </tr>
 <tr class="landFSW">
 <td>11.5</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.35953,-115.74728&z=16&t=t4">Bonanza Peak</a></td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.35953,-115.74728&z=15&t=t4">Bonanza Peak</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=394">Mount Charleston Wilderness</a></td>
-<td>10,397</td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Charleston%20Peak_318385_1984_24000.jpg">10,397</a><div class="tooltip">3169m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Charleston Peak, NV&quot; (1984)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Charleston%20Peak_320784_1957_62500.jpg">10,425</a><div class="tooltip">10425' (MSL) USGS 15' Quad (1:62,500) &quot;Charleston Peak, NV&quot; (1957/1965)</div></span></td>
 <td>Class 1</td>
 <td>833</td>
 <td><a href="https://www.summitpost.org/mountain/153903">SP</a></td>
@@ -1519,13 +1545,13 @@ on the way back
 </tr>
 <tr class="landFSW">
 <td>11.8</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.24138,-115.61145&z=16&t=t4">Harris Mountain</a></td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.24138,-115.61145&z=15&t=t4">Harris Mountain</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=394">Mount Charleston Wilderness</a></td>
-<td>10,013</td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_La%20Madre%20Spring_319198_1984_24000.jpg">10,014</a><div class="tooltip">3052.3m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;La Madre Spring, NV&quot; (1984)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Mountain%20Springs_321104_1957_62500.jpg">10,018</a><div class="tooltip">10018' (MSL) USGS 15' Quad (1:62,500) &quot;Mountain Springs, NV&quot; (1957/1984)</div></span></td>
 <td>Class 2</td>
 <td>943</td>
 <td><a href="https://www.summitpost.org/mountain/153518">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Harris_Mountain_(Nevada)">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/10432">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/40920">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=30096">Pb</a></td>
@@ -1534,13 +1560,13 @@ on the way back
 </tr>
 <tr class="landFSW">
 <td>11.9</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.23243,-115.64608&z=16&t=t4">Griffith Peak</a></td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=36.23243,-115.64608&z=15&t=t4">Griffith Peak</a></td>
 <td><a href="https://www.fs.usda.gov/htnf">Humboldt-Toiyabe National Forest</a><br><a href="https://www.wilderness.net/NWPS/wildView?WID=394">Mount Charleston Wilderness</a></td>
-<td>11,060</td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Griffith%20Peak_318923_1984_24000.jpg">11,059</a><div class="tooltip">3370.8m (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Griffith Peak, NV&quot; (1984)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/NV/NV_Mountain%20Springs_321104_1957_62500.jpg">11,072</a><div class="tooltip">11072' (MSL) USGS 15' Quad (1:62,500) &quot;Mountain Springs, NV&quot; (1957/1984)</div></span></td>
 <td>Class 1</td>
 <td>446</td>
-<td><a href="https://www.summitpost.org/mountain/153436">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://www.summitpost.org/griffith-peak/153436">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Griffith_Peak">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/6477">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/32379">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3749">Pb</a></td>
@@ -1582,7 +1608,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-114.7235&lat=35.2749">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td id="GBP12" colspan="13">12. Oregon</td></tr>
+<tr class="section" data-state="OR"><td id="GBP12" colspan="13">12. Oregon</td></tr>
 <tr class="landFS">
 <td>12.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=42.40804,-121.66843&z=16&t=t4">Swan Lake Point</a></td>
@@ -1643,7 +1669,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-118.65072&lat=42.09939">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td id="GBP13" colspan="13">13. Idaho and Northern Utah</td></tr>
+<tr class="section" data-state="ID"><td id="GBP13" colspan="13">13. Idaho and Northern Utah</td></tr>
 <tr class="landBLM">
 <td>13.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=42.98029,-116.6576&z=16&t=t4">Hayden Peak</a><br>(Cinnabar Mountain)</td>
@@ -1674,23 +1700,41 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-113.66116&lat=42.18561">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="landFS">
+<tr class="landFS" data-state="UT">
 <td>13.3</td>
-<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.90996,-113.36591&z=16&t=t4">Bull Mountain</a></td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.90453,-113.389&z=15&t=t4">Dunn Benchmark</a></td>
 <td><a href="https://www.fs.usda.gov/sawtooth">Sawtooth National Forest</a></td>
-<td>9,934</td>
+<td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=MS0765">9,931</a><div class="tooltip">3027.0m (NAVD 88) NGS Data Sheet &quot;Dunn&quot; (MS0765)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/UT/UT_Standrod_252071_2001_24000.jpg">9,925</a><div class="tooltip">9925' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Standrod, UT&quot; (2001/2006)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/UT/UT_Park%20Valley_251223_1959_62500.jpg">9,925</a><div class="tooltip">9925' (NGVD 29) USGS 15' Quad (1:62,500) &quot;Park Valley, UT&quot; (1959/1986)</div></span></td>
+<td>Class 1</td>
+<td>145</td>
+<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Raft_River_Mountains">W</a></td>
+<td><a href="http://www.snwburd.com/dayhikes/peak/93245">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/20020">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=-29187">Pb</a></td>
+<td><a href="https://forecast.weather.gov/MapClick.php?lon=-113.389&lat=41.90453">WX</a></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="landFS" data-state="UT">
+<td rowspan="2">13.4</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=41.90996,-113.36591&z=15&t=t4">Bull Mountain</a></td>
+<td><a href="https://www.fs.usda.gov/sawtooth">Sawtooth National Forest</a></td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/UT/UT_Rosevere%20Point_251583_2001_24000.jpg">9,920+</a><div class="tooltip">9920-9959' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Rosevere Point, UT&quot; (2001/2006)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/UT/UT_Park%20Valley_251223_1959_62500.jpg">9,931</a><div class="tooltip">9931' (NGVD 29) USGS 15' Quad (1:62,500) &quot;Park Valley, UT&quot; (1959/1986)</div></span></td>
 <td>Class 1+</td>
 <td>3,744</td>
-<td><a href="https://www.summitpost.org/mountain/183282">SP</a></td>
-<td>&nbsp;</td>
+<td><a href="https://www.summitpost.org/bull-mtn-ut/183282">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Bull_Mountain_(Box_Elder_County,_Utah)">W</a></td>
 <td><a href="http://www.snwburd.com/dayhikes/peak/59012">BB</a></td>
 <td><a href="https://listsofjohn.com/peak/16828">LoJ</a></td>
 <td><a href="http://peakbagger.com/peak.aspx?pid=3440">Pb</a></td>
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-113.36591&lat=41.90996">WX</a></td>
 <td>&nbsp;</td>
 </tr>
+<tr><td colspan="12"><ul>
+<li class="libq">Note from Pb: &quot;Field observations by visitors to this mountain indicate that the main point shown here is about 8 or 9 feet higher than the nearby Dunn Benchmark. So the elevation of the large contour to the east of the benchmark is shown as 9934 feet. The terrain is very gentle and most peakbaggers will visit both spots anyway.&quot;
+</ul></td></tr>
 <tr class="landBLM">
-<td>13.4</td>
+<td>13.5</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=42.05921,-112.36556&z=16&t=t4">Wood Benchmark</a></td>
 <td>BLM Idaho</td>
 <td><span><a href="https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=NU1582">7,791</a><div class="tooltip">2374.7m (NAVD 88) NGS Data Sheet &quot;Wood&quot; (NU1582)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/ID/ID_Samaria_238015_1968_24000.jpg">7,760+</a><div class="tooltip">7760-7799' (MSL) USGS 7.5' Quad (1:24,000) &quot;Samaria, ID&quot; (1968/1971)</div></span></td>
@@ -1704,7 +1748,7 @@ on the way back
 <td><a href="https://forecast.weather.gov/MapClick.php?lon=-112.36556&lat=42.05921">WX</a></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="section"><td id="GBP14" colspan="13">14. Utah</td></tr>
+<tr class="section" data-state="UT"><td id="GBP14" colspan="13">14. Utah</td></tr>
 <tr class="landFSW">
 <td>14.1</td>
 <td><a href="https://mappingsupport.com/p/gmap4.php?ll=40.45949,-112.62639&z=16&t=t4">Deseret Peak</a></td>

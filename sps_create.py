@@ -389,13 +389,20 @@ class ElevationLoJ(SimpleElevation):
 class ElevationVR(SimpleElevation):
 	classId = "VR"
 
-stateMap = {
-	"AZ": "Arizona",
-	"CA": "California",
-	"ID": "Idaho",
-	"NV": "Nevada",
-	"OR": "Oregon",
-	"UT": "Utah",
+countryNameMap = {
+	"Mexico":         "MX",
+	"United States":  "US",
+}
+stateNameMap = {
+	"Baja California":      "MX-BCN",
+	"Sonora":               "MX-SON",
+
+	"Arizona":        "AZ",
+	"California":     "CA",
+	"Idaho":          "ID",
+	"Nevada":         "NV",
+	"Oregon":         "OR",
+	"Utah":           "UT",
 }
 landMap = {
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
@@ -486,8 +493,8 @@ def getLoadListsFromTable(pl):
 		loadList = []
 		loadLists.append(loadList)
 
-		for section in pl.peaks:
-			for peak in section:
+		for section in pl.sections:
+			for peak in section.peaks:
 				peakId = getattr(peak, peakClass.classAttrId, None)
 				if peakId is not None:
 					filename = peakClass.getPeakFileName(peakId)
@@ -554,6 +561,8 @@ class PeakPb(TablePeak):
 
 	@classmethod
 	def getPeakFileName(self, peakId):
+		if peakId[0] == "-":
+			peakId = peakId[1:]
 		return "extract/data/pb/{}/p{}.html".format(peakId[0], peakId)
 	@classmethod
 	def getPeakURL(self, peakId):
@@ -610,6 +619,7 @@ class PeakPb(TablePeak):
 		('Black Mountain', 7438):               'Black Mountain #5',
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Duffer Peak-North Peak', 9400):       'Duffer Peak',
+		('Duffer Peak', 9428):                  'Duffer Peak South',
 		('Granite Peak', 8980):                 'Granite Peak (Washoe)',
 		('Granite Peak', 9732):                 'Granite Peak (Humboldt)',
 		('Mount Grant', 11280):                 'Mount Grant (West)',
@@ -752,6 +762,30 @@ class PeakPb(TablePeak):
 		('Sierra Buttes', 8590, 'min'): 8591,
 		('Sierra Buttes', 8590, 'max'): 8591,
 
+	# Pb Elevation Adjustments for Great Basin Peaks / Nevada Peaks Club
+	#
+	# - Bull Mountain
+	#   "Field observations by visitors to this mountain indicate that the main point shown here is
+	#    about 8 or 9 feet higher than the nearby Dunn Benchmark. So the elevation of the large contour
+	#    to the east of the benchmark is shown as 9934 feet. The terrain is very gentle and most
+	#    peakbaggers will visit both spots anyway."
+	#   [http://peakbagger.com/peak.aspx?pid=3440]
+	#
+	# - Hays Canyon Peak
+	#   "Field observations show that the highest point on this flat-topped mountain is near the
+	#    7916-foot benchmark. The two tiny 7920-foot contours north of the benchmark are about 10 feet
+	#    lower than the benchmark knoll. These contour are likely a map error, but the benchmark
+	#    elevation might be too low, too. Here, the elevation is given as 7920 feet, assuming the
+	#    benchmark is 4 feet below the high point."
+	#   [http://peakbagger.com/peak.aspx?pid=3304]
+	#
+		('Bull Mountain', 9934, 'min'): 9920,
+		('Bull Mountain', 9934, 'max'): 9960,
+		('Duffer Peak', 9400, 'min'): 9397,
+		('Duffer Peak', 9440, 'max'): 9397,
+		('Hays Canyon Peak', 7920, 'min'): 7916,
+		('Hays Canyon Peak', 7920, 'max'): 7916,
+
 	# Pb Elevation Adjustments for Other Desert Peaks:
 	#
 		('Kelso Peak', 4777, 'min'): 4757, # 1450m
@@ -798,6 +832,11 @@ class PeakPb(TablePeak):
 	#
 		('Pilot Knob (South)', 720, 'min'): 680,
 		('Pilot Knob (South)', 800, 'max'): 760,
+
+	# Pb Prominence Adjustments for Great Basin Peaks / Nevada Peaks Club
+	#
+		('Duffer Peak', 40, 'min'): 0,
+		('Duffer Peak', 120, 'max'): 80,
 
 	# Pb Prominence Adjustments for Other Desert Peaks
 	#
@@ -867,6 +906,7 @@ class PeakPb(TablePeak):
 	npsWilderness = {
 		"Death Valley":         "National Park",
 		"Joshua Tree":          "National Park",
+		"Lassen Volcanic":      "National Park",
 		"Mojave":               "National Preserve",
 		"Organ Pipe Cactus":    "NM",
 		"Sequoia-Kings Canyon": ("Kings Canyon National Park", "Sequoia National Park"),
@@ -1021,7 +1061,7 @@ class PeakPb(TablePeak):
 
 	rangePattern = re.compile(
 		'^(Range[23456]|Continent): <a href="range\\.aspx\\?rid=([1-9][0-9]*)">'
-		'((?:Mc|Le)?[A-Z][a-z]+(?:[- ][A-Z]?[a-z]+)*)(?: \\(Highest Point\\))?</a>$'
+		'((?:Mc|Le)?[A-Z][a-z]+(?: U\\.S\\.)?(?:[- ][A-Z]?[a-z]+)*)(?: \\(Highest Point\\))?</a>$'
 	)
 	def readRanges(self, rangeLines):
 		rangeList = []
@@ -1050,6 +1090,20 @@ class PeakPb(TablePeak):
 		if self.name[-5:] == "<br/>":
 			self.name = self.name[:-5]
 
+	def readCountry(self, countries):
+		self.country = []
+		for country in countries:
+			if country.endswith(" (Highest Point)"):
+				country = country[:-16]
+			self.country.append(countryNameMap.get(country, country))
+
+	def readState(self, states):
+		self.state = []
+		for state in states:
+			if state.endswith(" (Highest Point)"):
+				state = state[:-16]
+			self.state.append(stateNameMap.get(state, state))
+
 	def readPeakFile(self, fileName):
 		tables = TableParser(fileName, numTables=3, startTag="h1").tables
 
@@ -1065,8 +1119,11 @@ class PeakPb(TablePeak):
 			elif row[0] == "Latitude/Longitude (WGS84)":
 				self.readLatLng(row[1])
 
+			elif row[0] == "Country":
+				self.readCountry(row[1].split("<br/>"))
+
 			elif row[0] == "State/Province":
-				self.state = row[1]
+				self.readState(row[1].split("<br/>"))
 
 		self.landManagement = []
 		for row in tables[2]:
@@ -1116,7 +1173,7 @@ class PeakLoJ(TablePeak):
 		return "https://listsofjohn.com/peak/{}".format(peakId)
 
 	peakNamePattern = (' *('
-		'(?:[A-Z][- 0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
+		'(?:[A-Z][- \\.0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
 		'(?:"[A-Z][- 0-9A-Za-z]+")|'
 		'(?:[1-9][0-9]+(?:-[A-Z][ A-Za-z]+)?))'
 	)
@@ -1163,7 +1220,7 @@ class PeakLoJ(TablePeak):
 			('proximateParent',)
 		),
 		'State': (
-			re.compile('^([A-Z]{2})$'),
+			re.compile('^([A-Z]{2}(?:, [A-Z]{2})*)$'),
 			('state',)
 		),
 		'Counties': (
@@ -1422,6 +1479,8 @@ class PeakLoJ(TablePeak):
 
 		assert self.prominence == self.elevation - self.saddleElev
 
+		if isinstance(self.state, basestring):
+			self.state = self.state.split(', ')
 		if isinstance(self.counties, basestring):
 			self.counties = self.counties.split(' &amp; ')
 		self.isolation = float(self.isolation)
@@ -1455,7 +1514,7 @@ class PeakLoJ(TablePeak):
 			self.prominence -= elevDiff
 
 		if peakListId == 'NPC':
-			assert self.state == 'NV'
+			assert 'NV' in self.state
 
 	parentPeakPattern = re.compile(
 		'^<a href="/peak/([1-9][0-9]*)">' + peakNamePattern + '</a>$'
@@ -1513,7 +1572,7 @@ class PeakLoJ(TablePeak):
 		),
 	}
 	peakFilePatterns["City"] = peakFilePatterns["County"]
-	peakFileLine1Pattern = re.compile("^<b>" + peakNamePattern + "</b> <b>([A-Z]{2})</b>")
+	peakFileLine1Pattern = re.compile("^<b>" + peakNamePattern + "</b> <b>([A-Z]{2}(?:, [A-Z]{2})*)</b>")
 	peakFileLabelPattern = re.compile("^[A-Z][A-Za-z]+$")
 
 	def readPeakFile_Counties(self, line):
@@ -1539,6 +1598,8 @@ class PeakLoJ(TablePeak):
 		if m is None:
 			err("{} Line 1 doesn't match pattern: {}", self.fmtIdName, line)
 		self.name, self.state = m.groups()
+		self.state = self.state.split(", ")
+		self.country = ["US"]
 		self.ydsClass = None
 
 		for line in lines:
@@ -1613,7 +1674,7 @@ class PeakBB(object):
 		"SP": ("summitpostId", "www.summitpost.org/mountain/"),
 	}
 	numPeaks = {
-		"GBP": 116,
+		"GBP": 117,
 	}
 	ListAdditions = {
 		"GBP": ((
@@ -1640,9 +1701,6 @@ class PeakBB(object):
 		),
 	}
 	ListDeletions = {
-		"GBP": (
-			"93245", # Dunn Benchmark (UT) (add Bull Mountain instead)
-		),
 	}
 	PeakMods = {
 		#
@@ -1929,8 +1987,8 @@ class MatchByName(object):
 			else:
 				name2peak[name] = peak
 
-		for peaks in pl.peaks:
-			for peak in peaks:
+		for section in pl.sections:
+			for peak in section.peaks:
 				name = peak.name
 				if peak.isHighPoint:
 					name += " HP"
@@ -1971,8 +2029,8 @@ def printTitle(title):
 def checkElevation(pl, peakClass):
 	printTitle("Elevations - " + peakClass.classTitle)
 
-	for section in pl.peaks:
-		for peak in section:
+	for section in pl.sections:
+		for peak in section.peaks:
 			elevation = peakClass.getAttr("elevation", peak)
 			if elevation is not None:
 				matchElevation(peak, elevation)
@@ -2008,8 +2066,8 @@ def checkProminence(pl, setProm=False):
 			return True
 		return "{} != {}".format(prom, promPb)
 
-	for section in pl.peaks:
-		for peak in section:
+	for section in pl.sections:
+		for peak in section.peaks:
 			newProm = None
 			promLoJ = PeakLoJ.getAttr("prominence", peak)
 			promPb = PeakPb.getAttr("prominence", peak)
@@ -2073,8 +2131,8 @@ def checkProminence(pl, setProm=False):
 def checkThirteeners(pl, setVR=False):
 	printTitle("Thirteeners")
 
-	for section in pl.peaks:
-		for peak in section:
+	for section in pl.sections:
+		for peak in section.peaks:
 			thirteener = False
 			for e in peak.elevations:
 				if e.elevationFeet >= 13000:
@@ -2142,8 +2200,8 @@ def checkData(pl, setProm=False, setVR=False):
 
 	for peakClass in (PeakLoJ, PeakPb):
 		printTitle("Reading Peak Files - " + peakClass.classTitle)
-		for section in pl.peaks:
-			for peak in section:
+		for section in pl.sections:
+			for peak in section.peaks:
 				peakId = getattr(peak, peakClass.classAttrId, None)
 				if peakId is None:
 					continue
@@ -2155,7 +2213,6 @@ def checkData(pl, setProm=False, setVR=False):
 				peak2 = peakClass()
 				peak2.id = peakId
 				peak2.fmtIdName = peak.fmtIdName
-				peak2.landManagement = None
 				peak2.readPeakFile(fileName)
 
 				peak3 = getattr(peak, peakClass.classAttrPeak, None)
@@ -2164,8 +2221,23 @@ def checkData(pl, setProm=False, setVR=False):
 				else:
 					peak2.compare(peak3)
 
-				if peak2.landManagement is not None:
+				if peakClass is PeakPb:
 					checkLandManagement(peak, peak2)
+
+					haveFlag = "CC" in peak.flags
+					wantFlag = peak2.rangeList[2] == ("126", "Sierra Nevada")
+
+					if haveFlag != wantFlag:
+						print "{} Should {}able CC flag".format(peak.fmtIdName,
+							"en" if wantFlag else "dis")
+
+				if peak.country != peak2.country:
+					print '{} data-country should be "{}" instead of "{}"'.format(
+						peak.fmtIdName, "/".join(peak2.country), "/".join(peak.country))
+
+				if peak.state != peak2.state:
+					print '{} data-state should be "{}" instead of "{}"'.format(
+						peak.fmtIdName, "/".join(peak2.state), "/".join(peak.state))
 
 	for peakClass in peakClasses:
 		checkElevation(pl, peakClass)
@@ -2247,8 +2319,8 @@ def readListFile(peakListId):
 def createBBMap(peakLists):
 	bbMap = {}
 	for pl in peakLists.itervalues():
-		for section in pl.peaks:
-			for peak in section:
+		for section in pl.sections:
+			for peak in section.peaks:
 				if peak.bobBurdId is None:
 					continue
 				if peak.dataFrom is None:
@@ -2289,18 +2361,18 @@ def setPeak(peak, peakClass, idMap):
 	setattr(peak, peakClass.classAttrPeak, peak2)
 
 def printPeaks(pl):
-	for sectionNumber, (sectionName, peaks) in enumerate(zip(pl.sections, pl.peaks), start=1):
+	for sectionNumber, section in enumerate(pl.sections, start=1):
 		if sectionNumber != 1:
 			print
-		print "{}. {}".format(sectionNumber, sectionName)
+		print "{}. {}".format(sectionNumber, section.name)
 		print
-		for peak in peaks:
+		for peak in section.peaks:
 			print "{:5} {:28} {} {:12} {}".format(peak.id, peak.name,
-				peak.listsOfJohnPeak.state,
+				peak.listsOfJohnPeak.state[0],
 				peak.listsOfJohnPeak.counties[0],
 				peak.peakbaggerPeak.rangeList[-1][1])
 
-def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
+def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbose=False):
 	sections = readListFile(pl.id)
 	peakAttributes = PeakAttributes.get(pl.id, {})
 
@@ -2310,13 +2382,11 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 	bbIdMap = createBBMap(peakLists)
 	bbNameMap = PeakBB.getPeaks(pl.id)
 
-	pl.peaks = []
 	pl.sections = []
 
 	for sectionNumber, (sectionName, sectionPeaks) in enumerate(sections, start=1):
-		peaks = []
-		pl.peaks.append(peaks)
-		pl.sections.append(sectionName)
+		section = sectionClass(pl, sectionName)
+		pl.sections.append(section)
 
 		for peakNumber, peakName in enumerate(sectionPeaks, start=1):
 			peakId = "{}.{}".format(sectionNumber, peakNumber)
@@ -2328,7 +2398,7 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 
 			existingPeak = bbIdMap.get(peakBB.id)
 			if existingPeak is None:
-				peak = peakClass(pl)
+				peak = peakClass(section)
 				peak.name = peakName
 				peak.bobBurdId = peakBB.id
 				peak.listsOfJohnId = peakBB.listsOfJohnId
@@ -2347,7 +2417,7 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 						existingPeak.peakList.id, existingPeak.id)
 
 				peak = peakClass(pl)
-				peak.dataFrom = existingPeak.htmlId()
+				peak.dataFrom = existingPeak.fromId()
 
 				for i, p in enumerate(existingPeak.dataAlsoPeaks):
 					if p.peakList is pl:
@@ -2359,7 +2429,7 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 			peak.id = peakId
 			setPeak(peak, PeakPb, mapPb)
 			setPeak(peak, PeakLoJ, mapLoJ)
-			peaks.append(peak)
+			section.peaks.append(peak)
 
 			for attr, value in peakAttributes.get(peakName, ()):
 				setattr(peak, attr, value)
@@ -2379,9 +2449,9 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 				if peakBB.prominence != peakLoJ.prominence:
 					log("{} BB prominence ({}) != LoJ prominence ({})",
 						fmtIdName, peakBB.prominence, peakLoJ.prominence)
-				if peakPb.state != stateMap[peakLoJ.state]:
-					log("{} Pb state ({}) != LoJ state ({})",
-						fmtIdName, peakPb.state, peakLoJ.state)
+				if peakPb.state != peakLoJ.state:
+					log("{} Pb state ({}) != LoJ state ({})", fmtIdName,
+						"/".join(peakPb.state), "/".join(peakLoJ.state))
 
 				if peakLoJ.ydsClass is None:
 					if verbose:
@@ -2394,7 +2464,7 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 				if peak.name != peakName:
 					log("Existing peak name ({}) doesn't match {}!", peak.name, peakName)
 
-				htmlId = peak.htmlId()
+				fromId = peak.fromId()
 
 				if peak.dataFrom is not None and pl.sortkey < existingPeak.peakList.sortkey:
 					peak.dataFrom = None
@@ -2403,16 +2473,16 @@ def createList(pl, peakLists, peakClass, setLandManagement, verbose=False):
 
 				if peak.dataFrom is None:
 					for p in peak.dataAlsoPeaks:
-						if p.dataFrom != htmlId:
+						if p.dataFrom != fromId:
 							log('{} Set {} {} data-from="{}"',
-								fmtIdName, p.peakList.id, p.id, htmlId)
+								fmtIdName, p.peakList.id, p.id, fromId)
 				else:
 					alsoList = [p for p in peak.dataAlsoPeaks if p is not peak]
 					alsoList.append(existingPeak)
 					for p in alsoList:
-						if htmlId not in p.dataAlso:
+						if fromId not in p.dataAlso:
 							log('{} Add "{}" to data-also for {} {}',
-								fmtIdName, htmlId, p.peakList.id, p.id)
+								fmtIdName, fromId, p.peakList.id, p.id)
 
 	for peak in mapPb.itervalues():
 		log("Pb peak {} ({}) not used!", peak.id, peak.name)

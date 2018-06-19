@@ -41,7 +41,7 @@ peakListParams = {
 	},
 	'gbp': {
 		'geojsonTitle': 'Great Basin Peaks',
-		'numPeaks': 116,
+		'numPeaks': 118,
 		'numSections': 14,
 	},
 	'hps': {
@@ -59,6 +59,11 @@ peakListParams = {
 		'numPeaks': 63,
 		'numSections': 15,
 	},
+	'ocap': {
+		'geojsonTitle': 'Other California Peaks',
+		'numPeaks': 4,
+		'numSections': 3,
+	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
 		'numPeaks': 4,
@@ -66,12 +71,12 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 25,
+		'numPeaks': 26,
 		'numSections': 24,
 	},
 }
 def addPeakListSortKey():
-	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'gbp', 'npc', 'odp', 'osp')):
+	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'gbp', 'npc', 'odp', 'osp', 'ocap')):
 		peakListParams[peakListId]['sortkey'] = i
 addPeakListSortKey()
 
@@ -98,8 +103,10 @@ class PeakList(object):
 		self.htmlFilename = lowerCaseId + '.html'
 		self.column12 = globals().get('column12_' + self.id)
 		self.numColumns = 13 if self.column12 is None else 14
-		self.peaks = []
 		self.sections = []
+		self.country = ['US']
+		self.state = ['CA']
+		self.flags = set()
 
 		peakLists[lowerCaseId] = self
 
@@ -109,12 +116,21 @@ class PeakList(object):
 		except FormatError as e:
 			err("[{}:{}] {}!", self.htmlFilename, self.htmlFile.lineNumber, e.message)
 
+class Section(object):
+	def __init__(self, peakList, name):
+		self.name = name
+		self.peaks = []
+		self.peakList = peakList
+		self.country = peakList.country
+		self.state = peakList.state
+		self.flags = peakList.flags
+
 class Peak(object):
-	def __init__(self, peakList):
+	def __init__(self, section):
 		self.id = ''
 		self.name = ''
 		self.otherName = None
-		self.peakList = peakList
+		self.peakList = section.peakList
 		self.latitude = ''
 		self.longitude = ''
 		self.zoom = '16'
@@ -134,6 +150,9 @@ class Peak(object):
 		self.dataFrom = None
 		self.dataAlso = []
 		self.dataAlsoPeaks = []
+		self.country = section.country
+		self.state = section.state
+		self.flags = section.flags
 		self.nonUS = False
 		self.hasHtmlId = False
 		self.isClimbed = False
@@ -145,13 +164,13 @@ class Peak(object):
 		self.delisted = False
 		self.suspended = False
 
-	def htmlId(self):
-		html_id = self.peakList.htmlId + self.id
+	def fromId(self):
+		from_id = self.peakList.htmlId + self.id
 		if self.delisted:
-			html_id += 'd'
+			from_id += 'd'
 		elif self.suspended:
-			html_id += 's'
-		return html_id
+			from_id += 's'
+		return from_id
 
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
@@ -178,8 +197,8 @@ class Peak(object):
 		return exactMatches, otherMatches
 
 	def copyFrom(self, other):
-		doNotCopy = ('id', 'peakList', 'column12', 'dataFrom', 'dataAlso',
-			'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended')
+		doNotCopy = {'id', 'peakList', 'column12', 'dataFrom', 'dataAlso',
+			'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended'}
 
 		if other.dataFrom is not None:
 			err("{} should not have the data-from attribute!", self.dataFrom)
@@ -196,7 +215,7 @@ class Peak(object):
 		if other.column12 is not None:
 			self.column12 = other.column12
 
-		fromId = other.htmlId()
+		fromId = other.fromId()
 
 		if self.dataFrom != fromId:
 			log('{} {} ({}) should have data-from="{}" instead of "{}"',
@@ -853,8 +872,8 @@ def parseElevation(htmlFile, peak):
 def printElevationStats(pl):
 	numAllSourced = 0
 	numSomeSourced = 0
-	for section in pl.peaks:
-		for peak in section:
+	for section in pl.sections:
+		for peak in section.peaks:
 			numSources = 0
 			for e in peak.elevations:
 				if e.source is not None:
@@ -976,32 +995,47 @@ def column12_SPS(sectionNumber, peakNumber):
 	return ColumnVR, True
 
 def addSection(pl, m):
-	htmlListId, sectionNumber, colspan, sectionName = m.groups()
+	expectedNumber = len(pl.sections) + 1
+	dataAttributes, htmlListId, sectionNumber, colspan, sectionName = m.groups()
+
+	if int(sectionNumber) != expectedNumber:
+		raise FormatError("Expected section number {}", expectedNumber)
 	if htmlListId != pl.htmlId:
-		raise FormatError('Expected id="{}{}" for section row', pl.id, len(pl.sections) + 1)
-	if colspan != str(pl.numColumns):
+		raise FormatError('Expected id="{}{}" for section row', pl.htmlId, expectedNumber)
+	if int(colspan) != pl.numColumns:
 		raise FormatError('Expected colspan="{}" for section row', pl.numColumns)
 
-	pl.sections.append(sectionName)
-	if int(sectionNumber) != len(pl.sections):
-		raise FormatError("Unexpected section number")
-	pl.peaks.append([])
+	section = Section(pl, sectionName)
+	pl.sections.append(section)
+	parseDataAttributes(section, dataAttributes)
+	return section
 
 class RE(object):
 	number = '[1-9][0-9]*'
-	peakId = number + '\\.' + number
+	peakId = number + '\\.' + number + '[ab]?'
 	listId = '(?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x)'
-	fullId = listId + peakId
+	fromId = listId + peakId + '[ds]?'
 
+	dataValue = '[- ,\\./0-9A-Za-z]+'
+	dataAttribute = re.compile('^ data-([a-z]+)="(' + dataValue + ')"')
+	dataAttributes = '((?: data-[a-z]+="' + dataValue + '")*)'
+
+	dataCountry = re.compile('^[A-Z]{2}(?:/[A-Z]{2})*$')
+	dataState = re.compile('^[A-Z]{2}(?:-[A-Z]{2,3})?(?:/[A-Z]{2}(?:-[A-Z]{2,3})?)*$')
+	dataFlags = re.compile('^[A-Z]+(?:,[A-Z]+)*$')
+	dataFrom = re.compile('(' + listId + ')(' + number + ')\\.(' + number + ')[ab]?[ds]?')
+	dataAlso = re.compile(fromId + '(?: ' + fromId + ')*')
+
+	firstRow = re.compile(
+		'^<tr class="section"' + dataAttributes + '><td id="header" colspan="1[0-9]">'
+	)
 	sectionRow = re.compile(
-		'^<tr class="section">'
+		'^<tr class="section"' + dataAttributes + '>'
 		'<td id="(' + listId + ')(' + number + ')" colspan="(1[0-9])">'
-		'\\2\\. ([- &,;0-9A-Za-z]+)</td></tr>$'
+		'\\3\\. ([- &,;0-9A-Za-z]+)</td></tr>$'
 	)
 	peakRow = re.compile(
-		'^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?'
-		'(?: data-from="((' + listId + ')(' + number + ')\\.(' + number + ')[ds]?)")?'
-		'(?: data-also="(' + fullId + '[ds]?(?: ' + fullId + '[ds]?)*)")?>$'
+		'^<tr(?: class="([A-Za-z]+(?: [A-Za-z]+)*)")?' + dataAttributes + '>$'
 	)
 	column1 = re.compile(
 		'^<td(?: id="(' + listId + ')(' + peakId + ')")?( rowspan="2")?>(' + peakId + ')</td>$'
@@ -1009,7 +1043,7 @@ class RE(object):
 	column2 = re.compile(
 		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
 		'll=([0-9]{1,2}\\.[0-9]{1,6}),(-[0-9]{1,3}\\.[0-9]{1,6})&z=(1[0-9])&t=(t[14])">'
-		'([ #&\'()0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
+		'([ #&\'()\\.0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
@@ -1037,7 +1071,7 @@ class RE(object):
 		'^<td><a href="https://listsofjohn\\.com/peak/([0-9]+)">LoJ</a></td>$'
 	)
 	peakbagger = re.compile(
-		'^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=([0-9]+)">Pb</a></td>$'
+		'^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=(-?[1-9][0-9]*)">Pb</a></td>$'
 	)
 	weather = re.compile(
 		'^<td><a href="https://forecast\\.weather\\.gov/MapClick\\.php\\?'
@@ -1353,6 +1387,103 @@ def parseProminence(line):
 
 	return prominences
 
+def parseDataCountry(row, value):
+	m = RE.dataCountry.match(value)
+	if m is None:
+		raise FormatError("Invalid data-country attribute")
+	row.country = value.split("/")
+
+def parseDataState(row, value):
+	m = RE.dataState.match(value)
+	if m is None:
+		raise FormatError("Invalid data-state attribute")
+	row.state = value.split("/")
+
+def parseDataEnable(row, value):
+	m = RE.dataFlags.match(value)
+	if m is None:
+		raise FormatError("Invalid data-enable attribute")
+	newFlags = row.flags.union(value.split(","))
+	if newFlags != row.flags:
+		row.flags = newFlags
+
+def parseDataDisable(row, value):
+	m = RE.dataFlags.match(value)
+	if m is None:
+		raise FormatError("Invalid data-disable attribute")
+	newFlags = row.flags.difference(value.split(","))
+	if newFlags != row.flags:
+		row.flags = newFlags
+
+def parseDataFrom(peak, fromValue):
+	if not isinstance(peak, Peak):
+		raise FormatError("Unexpected data-from attribute")
+	m = RE.dataFrom.match(fromValue)
+	if m is None:
+		raise FormatError("Invalid data-from attribute")
+	peak.dataFrom = fromValue
+	peak.dataFromInfo = [html2ListId(m.group(1)), int(m.group(2)), int(m.group(3))]
+
+def parseDataAlso(peak, alsoValue):
+	if not isinstance(peak, Peak):
+		raise FormatError("Unexpected data-also attribute")
+	m = RE.dataAlso.match(alsoValue)
+	if m is None:
+		raise FormatError("Invalid data-also attribute")
+	peak.dataAlso = alsoValue.split(" ")
+
+parseDataMap = {
+	'country':      parseDataCountry,
+	'state':        parseDataState,
+	'enable':       parseDataEnable,
+	'disable':      parseDataDisable,
+	'from':         parseDataFrom,
+	'also':         parseDataAlso,
+}
+def parseDataAttributes(row, data):
+	if data is None:
+		return
+
+	seen = set()
+	while data != "":
+		m = RE.dataAttribute.match(data)
+		if m is None:
+			badLine()
+		name, value = m.groups()
+		data = data[m.end():]
+		parseFunction = parseDataMap.get(name)
+		if parseFunction is None:
+			raise FormatError("Unrecognized data-{} attribute", name)
+		if name in seen:
+			raise FormatError("Duplicate data-{} attribute", name)
+		seen.add(name)
+		parseFunction(row, value)
+
+def getCommonDataAttributes(row, parent):
+	attr = ""
+
+	if row.country != parent.country:
+		attr += ' data-country="{}"'.format("/".join(row.country))
+	if row.state != parent.state:
+		attr += ' data-state="{}"'.format("/".join(row.state))
+
+	dataEnable = []
+	dataDisable = []
+
+	for flag in ("CC",):
+		if flag in row.flags:
+			if flag not in parent.flags:
+				dataEnable.append(flag)
+		elif flag in parent.flags:
+			dataDisable.append(flag)
+
+	if dataEnable:
+		attr += ' data-enable="{}"'.format(",".join(dataEnable))
+	if dataDisable:
+		attr += ' data-disable="{}"'.format(",".join(dataDisable))
+
+	return attr
+
 tableLine = '<p><table id="peakTable" class="land landColumn">\n'
 
 def readHTML(pl):
@@ -1365,22 +1496,32 @@ def readHTML(pl):
 	for line in htmlFile:
 		if line == tableLine:
 			break
+	else:
+		raise FormatError("Cannot find start of peak table")
+
+	line = htmlFile.next()
+	m = RE.firstRow.match(line)
+	if m is None:
+		raise FormatError("First row of peak table doesn't match expected pattern")
+	parseDataAttributes(pl, m.group(1))
+
 	for line in htmlFile:
 		m = RE.sectionRow.match(line)
 		if m is not None:
-			addSection(pl, m)
+			section = addSection(pl, m)
 			break
+	else:
+		raise FormatError("Cannot find first section row")
+
 	for line in htmlFile:
 		m = RE.peakRow.match(line)
 		if m is not None:
-			peak = Peak(pl)
-			if m.group(2) is not None:
-				peak.dataFrom = m.group(2)
-				dataFromList.append([peak, html2ListId(m.group(3)), int(m.group(4)), int(m.group(5))])
+			peak = Peak(section)
 			if not parseClasses(peak, m.group(1)):
 				raise FormatError("Bad class names")
-			if m.group(6) is not None:
-				peak.dataAlso = m.group(6).split(" ")
+			parseDataAttributes(peak, m.group(2))
+			if peak.dataFrom is not None:
+				dataFromList.append(peak)
 
 			line = htmlFile.next()
 			m = RE.column1.match(line)
@@ -1397,7 +1538,7 @@ def readHTML(pl):
 			sectionNumber, peakNumber = map(int, peak.id.split('.'))
 			if sectionNumber != len(pl.sections):
 				raise FormatError("Peak ID doesn't match section number")
-			if peakNumber != len(pl.peaks[-1]) + 1:
+			if peakNumber != len(section.peaks) + 1:
 				raise FormatError("Peak ID doesn't match peak number")
 			if pl.id == 'DPS' and sectionNumber == 9:
 				peak.nonUS = True
@@ -1529,30 +1670,31 @@ def readHTML(pl):
 						break
 					peak.extraRow += line
 
-			pl.peaks[-1].append(peak)
+			section.peaks.append(peak)
 		else:
 			m = RE.sectionRow.match(line)
 			if m is not None:
-				addSection(pl, m)
+				section = addSection(pl, m)
 			elif line == '</table>\n':
 				break
 			else:
 				badLine()
 	htmlFile.close()
-	if sum([len(peaks) for peaks in pl.peaks]) != pl.numPeaks:
+	if sum([len(section.peaks) for section in pl.sections]) != pl.numPeaks:
 		raise FormatError("Number of peaks is not {}", pl.numPeaks)
 	if len(pl.sections) != pl.numSections:
 		raise FormatError("Number of sections is not {}", pl.numSections)
 
-	for peak, pl2Id, sectionNumber, peakNumber in dataFromList:
+	for peak in dataFromList:
+		pl2Id, sectionNumber, peakNumber = peak.dataFromInfo
 		pl2 = peakLists.get(pl2Id)
 		if pl2 is None:
 			pl2 = PeakList(pl2Id)
 			pl2.readHTML()
-		peak.copyFrom(pl2.peaks[sectionNumber - 1][peakNumber - 1])
+		peak.copyFrom(pl2.sections[sectionNumber - 1].peaks[peakNumber - 1])
 
 def writeHTML(pl):
-	sectionFormat = '<tr class="section"><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
+	sectionFormat = '<tr class="section"{4}><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
 	column2Format = '<td><a href="https://mappingsupport.com/p/gmap4.php?ll={},{}&z={}&t={}">{}</a>{}{}</td>'
 	summitpostFormat = '<td><a href="https://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
@@ -1564,7 +1706,6 @@ def writeHTML(pl):
 	emptyCell = '<td>&nbsp;</td>'
 	extraRowFirstLine = '<tr><td colspan="{}"><ul>'.format(pl.numColumns - 1)
 	extraRowLastLine = '</ul></td></tr>'
-	section1Line = sectionFormat.format(pl.id, 1, pl.numColumns, pl.sections[0]) + '\n'
 
 	htmlFile = open(pl.htmlFilename)
 	for line in htmlFile:
@@ -1572,14 +1713,16 @@ def writeHTML(pl):
 		if line == tableLine:
 			break
 	for line in htmlFile:
-		if line == section1Line:
+		m = RE.sectionRow.match(line)
+		if m is not None:
 			break
 		print line,
 
-	for sectionNumber, (sectionName, peaks) in enumerate(zip(pl.sections, pl.peaks)):
-		print sectionFormat.format(pl.id, sectionNumber + 1, pl.numColumns, sectionName)
+	for sectionNumber, section in enumerate(pl.sections, start=1):
+		print sectionFormat.format(pl.htmlId, sectionNumber, pl.numColumns, section.name,
+			getCommonDataAttributes(section, pl))
 
-		for peak in peaks:
+		for peak in section.peaks:
 			suffix = ''
 			classNames = []
 
@@ -1608,8 +1751,8 @@ def writeHTML(pl):
 				peak.dataAlsoPeaks.remove(peak)
 			if peak.dataAlsoPeaks:
 				peak.dataAlsoPeaks.sort(key=lambda p: p.peakList.sortkey)
-				attr += ' data-also="{}"'.format(" ".join([p.htmlId() for p in peak.dataAlsoPeaks]))
-			print '<tr{}>'.format(attr)
+				attr += ' data-also="{}"'.format(" ".join([p.fromId() for p in peak.dataAlsoPeaks]))
+			print '<tr{}{}>'.format(attr, getCommonDataAttributes(peak, section))
 
 			attr = ''
 			if peak.hasHtmlId:
@@ -1757,8 +1900,8 @@ def writeJSON(pl):
 	f('",\n')
 	f('\t"type": "FeatureCollection",\n')
 	f('\t"features": [')
-	for peaks in pl.peaks:
-		for peak in peaks:
+	for section in pl.sections:
+		for peak in section.peaks:
 			if not (peak.delisted or peak.suspended):
 				if firstPeak:
 					firstPeak = False
@@ -1801,7 +1944,7 @@ def createList(pl):
 	import sps_create
 
 	try:
-		sps_create.createList(pl, peakLists, Peak, setLandManagement)
+		sps_create.createList(pl, peakLists, Peak, Section, setLandManagement)
 	except FormatError as e:
 		sys.exit(e.message)
 
