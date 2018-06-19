@@ -625,5 +625,6 @@ Peaks =peaks addPeakOverlay
 	Tahoe Ogul Peaks :ogul^
 	Other Desert Peaks :odp^
 	Other Sierra Peaks :osp^
+	Other California Peaks :ocap^
 UC Reserves =uc add_UC_Reserve
 	Sweeney Granite Mountains :granites

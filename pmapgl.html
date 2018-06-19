@@ -385,7 +385,7 @@ function createMap(options)
 		new BaseLayer('Nav Preview', 'np', 'navigation-preview-day-v2'),
 		new BaseLayer('Nav Guidance', 'ng', 'navigation-guidance-day-v2'),
 	];
-	for (var pl of ['dps', 'sps', 'gbp', 'hps', 'npc', 'ogul', 'odp', 'osp'])
+	for (var pl of ['dps', 'sps', 'gbp', 'hps', 'npc', 'ogul', 'odp', 'osp', 'ocap'])
 		validOverlays[pl] = 'json/peaks/' + pl + '.json';
 	parseQueryString(queryString);
 
