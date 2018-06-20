@@ -133,15 +133,19 @@ class Section(object):
 			attr = "/".join(attr)
 			count[attr] = count.get(attr, 0) + 1
 
-		def getmax(count):
-			return max([(v, k) for k, v in count.iteritems()])[1].split("/")
+		def setmax(attr, count):
+			count, attrValue = max([(v, k) for k, v in count.iteritems()])
+			if count > 1:
+				attrValue = attrValue.split("/")
+				if getattr(self, attr) != attrValue:
+					setattr(self, attr, attrValue)
 
 		for peak in self.peaks:
 			incr(peak.country, countryCount)
 			incr(peak.state, stateCount)
 
-		self.country = getmax(countryCount)
-		self.state = getmax(stateCount)
+		setmax("country", countryCount)
+		setmax("state", stateCount)
 
 class Peak(object):
 	def __init__(self, section):
@@ -169,9 +173,9 @@ class Peak(object):
 		self.dataAlso = []
 		self.dataAlsoPeaks = []
 		self.country = section.country
+		self.countryUS = 'US' in self.country
 		self.state = section.state
 		self.flags = section.flags
-		self.nonUS = False
 		self.hasHtmlId = False
 		self.isClimbed = False
 		self.isEmblem = False
@@ -455,7 +459,7 @@ def parseLandManagement(htmlFile, peak):
 		badLine()
 	line = line[4:-6]
 
-	if peak.nonUS:
+	if not peak.countryUS:
 		if line == '&nbsp;':
 			return
 		badLine()
@@ -1410,6 +1414,8 @@ def parseDataCountry(row, value):
 	if m is None:
 		raise FormatError("Invalid data-country attribute")
 	row.country = value.split("/")
+	if isinstance(row, Peak):
+		row.countryUS = "US" in row.country
 
 def parseDataState(row, value):
 	m = RE.dataState.match(value)
@@ -1558,22 +1564,16 @@ def readHTML(pl):
 				raise FormatError("Peak ID doesn't match section number")
 			if peakNumber != len(section.peaks) + 1:
 				raise FormatError("Peak ID doesn't match peak number")
-			if pl.id == 'DPS' and sectionNumber == 9:
-				peak.nonUS = True
 
 			line = htmlFile.next()
 			m = RE.column2.match(line)
 			if m is None:
 				badLine()
-			peak.latitude = m.group(1)
-			peak.longitude = m.group(2)
-			peak.zoom = m.group(3)
-			peak.baseLayer = m.group(4)
-			peak.name = m.group(5)
-			suffix = m.group(6)
-			peak.otherName = m.group(7)
+			(peak.latitude, peak.longitude,
+				peak.zoom, peak.baseLayer,
+				peak.name, suffix, peak.otherName) = m.groups()
 
-			if peak.baseLayer != ('t1' if peak.nonUS else 't4'):
+			if peak.baseLayer != ('t4' if peak.countryUS else 't1'):
 				badLine()
 
 			if suffix is None:
@@ -1634,7 +1634,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.listsOfJohn.match(line)
 			if m is None:
-				if line != emptyCell or not (peak.nonUS or pl.id in ('OSP',)):
+				if line != emptyCell or pl.id not in ('OSP',) and peak.countryUS:
 					badLine()
 			else:
 				peak.listsOfJohnId = m.group(1)
@@ -1659,7 +1659,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.weather.match(line)
 			if m is None:
-				if not (peak.nonUS and line == emptyCell):
+				if line != emptyCell or peak.countryUS:
 					badLine()
 			else:
 				wxLatitude = m.group(2)
@@ -1829,10 +1829,10 @@ def writeHTML(pl):
 				else:
 					print str(peak.column12),
 
-			if peak.nonUS:
-				print emptyCell
-			else:
+			if peak.countryUS:
 				print weatherFormat.format(peak.longitude, peak.latitude)
+			else:
+				print emptyCell
 
 			if peak.isClimbed:
 				print '<td>{}</td>'.format(climbed2Html(peak.climbed))
@@ -1899,7 +1899,7 @@ def writePeakJSON(f, peak):
 		f('\t\t\t"emblem": true,\n')
 	elif peak.isMtneer:
 		f('\t\t\t"mtneer": true,\n')
-	if peak.nonUS:
+	if not peak.countryUS:
 		f('\t\t\t"noWX": true,\n')
 
 	f('\t\t\t"elev": "')
