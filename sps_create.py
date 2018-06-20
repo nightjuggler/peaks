@@ -664,7 +664,7 @@ class PeakPb(TablePeak):
 	#   See LoJ DPS Elevation Adjustments. Pb seems to have done the same as LoJ, except
 	#   that instead of rounding down (2939.6' => 2939'), Pb rounded to the nearest foot
 	#   (2939.6' => 2940')
-	#
+
 		('Bridge Mountain', 6955, 'min'): 6988, # 2130m
 		('Bridge Mountain', 6988, 'max'): 7021, # 2140m
 		('Needle Peak', 5801, 'min'): 5804, # 1769m
@@ -744,7 +744,7 @@ class PeakPb(TablePeak):
 	#   NAVD 88 elevation which "was computed by applying the VERTCON shift value to the
 	#   NGVD 29 height" which is given as 8,587'. Since the vertical datum for primary
 	#   elevations on Pb is NGVD 29, it seems that either 8,591' or 8,587' should be used.
-	#
+
 		('Basin Mountain', 13200, 'max'): 13181,
 		('Highland Peak', 10936, 'min'): 10935,
 		('Highland Peak', 10936, 'max'): 10935,
@@ -776,7 +776,7 @@ class PeakPb(TablePeak):
 	#    elevation might be too low, too. Here, the elevation is given as 7920 feet, assuming the
 	#    benchmark is 4 feet below the high point."
 	#   [http://peakbagger.com/peak.aspx?pid=3304]
-	#
+
 		('Bull Mountain', 9934, 'min'): 9920,
 		('Bull Mountain', 9934, 'max'): 9960,
 		('Duffer Peak', 9400, 'min'): 9397,
@@ -785,7 +785,7 @@ class PeakPb(TablePeak):
 		('Hays Canyon Peak', 7920, 'max'): 7916,
 
 	# Pb Elevation Adjustments for Other Desert Peaks:
-	#
+
 		('Kelso Peak', 4777, 'min'): 4757, # 1450m
 		('Kelso Peak', 4777, 'max'): 4790, # 1460m
 
@@ -796,58 +796,45 @@ class PeakPb(TablePeak):
 	#    of the point marked 12,835' on the topographic map. A point on the ridge to the south is
 	#    approximately five feet higher and thus the summit of this peak."
 	#   [http://peakbagger.com/peak.aspx?pid=2660]
-	#
+
 		('Mount Starr', 12840, 'min'): 12835,
 		('Mount Starr', 12840, 'max'): 12835,
 	}
 	prominenceMap = {
-	# Pb DPS Prominence Adjustments
+	# --------------------------
+	# Pb Prominence Adjustments
+	# --------------------------
 	#
-	# - East Ord Mountain
+	# - East Ord Mountain (DPS)
 	#   The contour interval at the saddle is 40', not 20'. So the saddle range is 4680'-4640', not
 	#   4680'-4660'. Thus the maximum prominence is raised by 20'. LoJ also uses 4660' for the saddle.
 	#
-	# - Signal Peak
+	# - Mount Williamson (HPS)
+	#   Pb should list http://peakbagger.com/peak.aspx?pid=47494 (Peak 8248)
+	#   instead of http://peakbagger.com/peak.aspx?pid=1309
+	#
+	# - Signal Peak (DPS)
 	#   The minimum saddle elevation can be raised from 1380' to 1390', thus reducing the maximum
 	#   prominence by 10' to 3487'. The main contour interval on the 7.5' quad (Lone Mountain, AZ)
 	#   is 20 feet, giving a saddle range of 1380'-1400', but there's a supplementary contour on
 	#   both downward-sloping sides (east and west) of the saddle at 1390'. LoJ also uses 1395' for
 	#   the average saddle elevation.
-	#
-		('East Ord Mountain', 1508, 'max'): 1528,
-		('Signal Peak', 3497, 'max'): 3487,
 
-	# Pb HPS Prominence Adjustments
-	#
-	# - Mount Williamson
-	#   Pb should list http://peakbagger.com/peak.aspx?pid=47494 (Peak 8248)
-	#   instead of http://peakbagger.com/peak.aspx?pid=1309
-	#
-		('Mount Williamson', None, 'min'): 1568, # 8,248' - 6,680'
-		('Mount Williamson', None, 'max'): 1608, # 8,248' - 6,640'
-
-	# Pb SPS Prominence Adjustments
-	#
-		('Pilot Knob (South)', 720, 'min'): 680,
-		('Pilot Knob (South)', 800, 'max'): 760,
-
-	# Pb Prominence Adjustments for Great Basin Peaks / Nevada Peaks Club
-	#
-		('Duffer Peak', 40, 'min'): 0,
-		('Duffer Peak', 120, 'max'): 80,
-
-	# Pb Prominence Adjustments for Other Desert Peaks
-	#
-		('Billy Goat Peak', 896, 'min'): 879, # 1748m - 1480m
-		('Billy Goat Peak', 896, 'max'): 912, # 1748m - 1470m
-		('Peak 5196', 376, 'min'): 356,
-		('Peak 5196', 376, 'max'): 396,
-
-	# Pb Prominence Adjustments for Other Sierra Peaks
-	#
-		('Gamblers Special Peak', 263, 'min'): 262, # 80m
-		('Gamblers Special Peak', 393, 'max'): 394, # 120m
-		('Two Teats', 132, 'min'): 131, # 40m
+		('Billy Goat Peak',               896, 'min'):   879, # 1748m - 1480m           ODP
+		('Billy Goat Peak',               896, 'max'):   912, # 1748m - 1470m           ODP
+		('Duffer Peak',                    40, 'min'):     0, #                         GBP
+		('Duffer Peak',                   120, 'max'):    80, #                         GBP
+		('East Ord Mountain',            1508, 'max'):  1528, #                         DPS
+		('Gamblers Special Peak',         263, 'min'):   262, # 80m                     OSP
+		('Gamblers Special Peak',         393, 'max'):   394, # 120m                    OSP
+		('Mount Williamson',             None, 'min'):  1568, # 8248' - 6680'           HPS
+		('Mount Williamson',             None, 'max'):  1608, # 8248' - 6640'           HPS
+		('Peak 5196',                     376, 'min'):   356, #                         ODP
+		('Peak 5196',                     376, 'max'):   396, #                         ODP
+		('Pilot Knob (South)',            720, 'min'):   680, #                         SPS
+		('Pilot Knob (South)',            800, 'max'):   760, #                         SPS
+		('Signal Peak',                  3497, 'max'):  3487, #                         DPS
+		('Two Teats',                     132, 'min'):   131, # 40m                     OSP
 	}
 	def postProcess(self, peakListId=None):
 		def str2int(s):
@@ -1093,14 +1080,20 @@ class PeakPb(TablePeak):
 		for country in countries:
 			if country.endswith(" (Highest Point)"):
 				country = country[:-16]
-			self.country.append(countryNameMap.get(country, country))
+			code = countryNameMap.get(country)
+			if code is None:
+				err("{} Cannot get country code for {}", self.fmtIdName, country)
+			self.country.append(code)
 
 	def readState(self, states):
 		self.state = []
 		for state in states:
 			if state.endswith(" (Highest Point)"):
 				state = state[:-16]
-			self.state.append(stateNameMap.get(state, state))
+			code = stateNameMap.get(state)
+			if code is None:
+				err("{} Cannot get state code for {}", self.fmtIdName, state)
+			self.state.append(code)
 
 	def readPeakFile(self, fileName):
 		tables = TableParser(fileName, numTables=3, startTag="h1").tables
@@ -1325,6 +1318,7 @@ class PeakLoJ(TablePeak):
 			name = name[:-4] + 'HP'
 		return self.nameMap.get((name, elevation), name)
 
+	elevationMap = {
 	# LoJ SPS Elevation Adjustments:
 	#
 	# - Adams Peak (8,199) vs 8,197 (topo):
@@ -1393,8 +1387,7 @@ class PeakLoJ(TablePeak):
 	#   However, the 1907-1937 Mount Whitney 30' (1:125,000) quads show a spot elevation of 13,232' for
 	#   the peak directly east of South Guard Lake! Did LoJ get the elevation from one of these maps?
 	#   I added support for 30' quads so I don't have to make an adjustment for this peak.
-	#
-	elevationMap = {
+
 		('Adams Peak', 8199): 8197,
 		('Mount Agassiz', 13892): 13893,
 		('Basin Mountain', 13190): 13181,
@@ -1428,7 +1421,7 @@ class PeakLoJ(TablePeak):
 	#   "This location is higher than contour with spot elevation 892m. Elevation is interpolation of
 	#    spot elevation and next higher contour." (892m + 900m) / 2 / 0.3048 m/ft = 2939.6 ft
 	#   [https://listsofjohn.com/peak/65349]
-	#
+
 		('Boundary Peak', 13143): 13140,
 		('East Ord Mountain', 6169): 6168,
 		('Needle Peak', 5802): 1768.8,
@@ -1456,12 +1449,12 @@ class PeakLoJ(TablePeak):
 	#   and thus rounds to 8238'. However, the 1:100k map was "Compiled from USGS 1:24 000 and
 	#   1:62 500-scale topographic maps dated 1964-1981", and the 1:62,500-scale topo shows a spot
 	#   elevation of 8237'. So 8237' seems more correct than 8238'.
-	#
+
 		('Eagle Peak', 9900): 9892,
 		('Kumiva Peak', 8238): 8237,
 
 	# LoJ Elevation Adjustments for Other Desert Peaks:
-	#
+
 		('Billy Goat Peak', 5735): 1748.0, # LoJ didn't round down
 	}
 	saddleElevationMap = {
@@ -2464,10 +2457,11 @@ def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbos
 					log("{} Pb state ({}) != LoJ state ({})", fmtIdName,
 						"/".join(peakPb.state), "/".join(peakLoJ.state))
 
-				if peakLoJ.ydsClass is None:
-					if verbose:
-						log("{} Unspecified YDS class", fmtIdName)
-				else:
+				if peak.country != peakPb.country:
+					peak.country = peakPb.country
+				if peak.state != peakPb.state:
+					peak.state = peakPb.state
+				if peakLoJ.ydsClass is not None:
 					peak.grade = peakLoJ.ydsClass
 
 				setLandManagement(peak)
@@ -2494,6 +2488,7 @@ def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbos
 						if fromId not in p.dataAlso:
 							log('{} Add "{}" to data-also for {} {}',
 								fmtIdName, fromId, p.peakList.id, p.id)
+		section.setDataAttributes()
 
 	for peak in mapPb.itervalues():
 		log("Pb peak {} ({}) not used!", peak.id, peak.name)

@@ -125,6 +125,24 @@ class Section(object):
 		self.state = peakList.state
 		self.flags = peakList.flags
 
+	def setDataAttributes(self):
+		countryCount = {}
+		stateCount = {}
+
+		def incr(attr, count):
+			attr = "/".join(attr)
+			count[attr] = count.get(attr, 0) + 1
+
+		def getmax(count):
+			return max([(v, k) for k, v in count.iteritems()])[1].split("/")
+
+		for peak in self.peaks:
+			incr(peak.country, countryCount)
+			incr(peak.state, stateCount)
+
+		self.country = getmax(countryCount)
+		self.state = getmax(stateCount)
+
 class Peak(object):
 	def __init__(self, section):
 		self.id = ''
