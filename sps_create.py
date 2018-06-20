@@ -496,7 +496,7 @@ def getLoadListsFromTable(pl):
 		for section in pl.sections:
 			for peak in section.peaks:
 				peakId = getattr(peak, peakClass.classAttrId, None)
-				if peakId is not None:
+				if not (peakId is None or peakId[0] == "-"):
 					filename = peakClass.getPeakFileName(peakId)
 					if not os.path.exists(filename):
 						loadList.append((peakClass.getPeakURL(peakId), filename))
@@ -561,8 +561,6 @@ class PeakPb(TablePeak):
 
 	@classmethod
 	def getPeakFileName(self, peakId):
-		if peakId[0] == "-":
-			peakId = peakId[1:]
 		return "extract/data/pb/{}/p{}.html".format(peakId[0], peakId)
 	@classmethod
 	def getPeakURL(self, peakId):
@@ -1674,10 +1672,20 @@ class PeakBB(object):
 		"SP": ("summitpostId", "www.summitpost.org/mountain/"),
 	}
 	numPeaks = {
-		"GBP": 117,
+		"GBP": 118,
 	}
 	ListAdditions = {
 		"GBP": ((
+			("id", "24904"),
+			("name", "Duffer Peak South"),
+			("latitude", "41.6574"),
+			("longitude", "-118.7323"),
+			("elevation", 9428),
+			("prominence", 4139),
+			("listsOfJohnId", "16781"),
+			("peakbaggerId", "3322"),
+			("summitpostId", "518638"),
+			),(
 			("id", "34255"),
 			("name", "Chocolate Peak"),
 			("latitude", "39.3532"),
@@ -2203,7 +2211,7 @@ def checkData(pl, setProm=False, setVR=False):
 		for section in pl.sections:
 			for peak in section.peaks:
 				peakId = getattr(peak, peakClass.classAttrId, None)
-				if peakId is None:
+				if peakId is None or peakId[0] == "-":
 					continue
 
 				fileName = peakClass.getPeakFileName(peakId)
@@ -2339,7 +2347,10 @@ def createBBMap(peakLists):
 def setPeak(peak, peakClass, idMap):
 	peak2Id = getattr(peak, peakClass.classAttrId, None)
 	if peak2Id is None:
-		log("No {} ID for {}!", peakClass.classId, peak.name)
+		log("{:5} {:24} Missing {} ID", peak.id, peak.name, peakClass.classId)
+		peak2 = None
+	elif peak2Id[0] == "-":
+		log("{:5} {:24} Skipping provisional {} ID {}", peak.id, peak.name, peakClass.classId, peak2Id)
 		peak2 = None
 	else:
 		fileName = peakClass.getPeakFileName(peak2Id)
@@ -2416,7 +2427,7 @@ def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbos
 					log("{} Using existing data from {} {}", fmtIdName,
 						existingPeak.peakList.id, existingPeak.id)
 
-				peak = peakClass(pl)
+				peak = peakClass(section)
 				peak.dataFrom = existingPeak.fromId()
 
 				for i, p in enumerate(existingPeak.dataAlsoPeaks):
