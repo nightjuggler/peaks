@@ -41,7 +41,7 @@ peakListParams = {
 	},
 	'gbp': {
 		'geojsonTitle': 'Great Basin Peaks',
-		'numPeaks': 118,
+		'numPeaks': 120,
 		'numSections': 14,
 	},
 	'hps': {
@@ -134,8 +134,8 @@ class Section(object):
 			count[attr] = count.get(attr, 0) + 1
 
 		def setmax(attr, count):
-			count, attrValue = max([(v, k) for k, v in count.iteritems()])
-			if count > 1:
+			tally, attrValue = max([(v, k) for k, v in count.iteritems()])
+			if tally > 1 or len(count) == 1:
 				attrValue = attrValue.split("/")
 				if getattr(self, attr) != attrValue:
 					setattr(self, attr, attrValue)

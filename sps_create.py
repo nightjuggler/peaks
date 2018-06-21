@@ -616,6 +616,7 @@ class PeakPb(TablePeak):
 	# Hundred Peaks Section:
 		('Black Mountain', 7438):               'Black Mountain #5',
 	# Great Basin Peaks / Nevada Peaks Club:
+		('Baker Peak', 12305):                  'Baker Peak East',
 		('Duffer Peak-North Peak', 9400):       'Duffer Peak',
 		('Duffer Peak', 9428):                  'Duffer Peak South',
 		('Granite Peak', 8980):                 'Granite Peak (Washoe)',
@@ -1275,12 +1276,11 @@ class PeakLoJ(TablePeak):
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Granite Peak', 8980):                         'Granite Peak (Washoe)',
 		('Granite Peak', 9732):                         'Granite Peak (Humboldt)',
-		('Hot Creek Range HP', 10260):                  'Morey Peak',
 		('Mount Grant', 11300):                         'Mount Grant (West)',
 		('Mount Jefferson-North Summit', 11814):        'Mount Jefferson North',
 		('Muddy Mountains HP', 5431):                   'Muddy Benchmark',
 		('Peak 11340', 11340):                          'Thomas Peak',
-		('Peak 12305', 12305):                          'Baker Peak',
+		('Peak 12305', 12305):                          'Baker Peak East',
 	# Sierra Peaks Section:
 		('Coyote Peaks, East', 10892):  'Coyote Peaks',
 		('Devils Crags', 12420):        'Devil\'s Crag #1',
@@ -1665,7 +1665,7 @@ class PeakBB(object):
 		"SP": ("summitpostId", "www.summitpost.org/mountain/"),
 	}
 	numPeaks = {
-		"GBP": 118,
+		"GBP": 120,
 	}
 	ListAdditions = {
 		"GBP": ((
@@ -1675,9 +1675,29 @@ class PeakBB(object):
 			("longitude", "-118.7323"),
 			("elevation", 9428),
 			("prominence", 4139),
-			("listsOfJohnId", "16781"),
+			("listsOfJohnId", "16781"), # Pine Forest Range HP
 			("peakbaggerId", "3322"),
 			("summitpostId", "518638"),
+			),(
+			("id", "33951"),
+			("name", "Baker Peak East"),
+			("latitude", "38.9687"),
+			("longitude", "-114.3092"),
+			("elevation", 12305),
+			("prominence", 496),
+			("listsOfJohnId", "40688"), # Peak 12305
+			("peakbaggerId", "3573"),
+			("summitpostId", "153395"),
+			),(
+			("id", "34060"),
+			("name", "Morey Peak North"),
+			("latitude", "38.6305"),
+			("longitude", "-116.2859"),
+			("elevation", 10260),
+			("prominence", 2600),
+			("listsOfJohnId", "17187"), # Hot Creek Range HP
+			("peakbaggerId", "34519"),
+			("summitpostId", "577683"),
 			),(
 			("id", "34255"),
 			("name", "Chocolate Peak"),
@@ -1704,20 +1724,6 @@ class PeakBB(object):
 	ListDeletions = {
 	}
 	PeakMods = {
-		#
-		# Morey Peak (NV) South Summit (10,246') vs. North Summit (10,240'+)
-		#
-		"9133": (
-			("listsOfJohnId", "17187"), # Hot Creek Range HP
-			("summitpostId", "577683"),
-		),
-		#
-		# Baker Peak (NV) West Summit (12,298') vs. East Summit (12,305')
-		#
-		"10126": (
-			("listsOfJohnId", "40688"), # Peak 12305
-			("peakbaggerId", "3573"),
-		),
 		"6259": (("name", "Mount Jefferson"),), # Mount Jefferson-South (11,941')
 		"9008": (("name", "Mount Grant (West)"),), # Mount Grant (11,300')
 		"10043": (("name", "Granite Peak (Washoe)"),), # Granite Peak (8,980')
@@ -2258,9 +2264,11 @@ PeakAttributes = {
 	"Boundary Peak": (("isEmblem", True),),
 	"Cache Peak": (("isEmblem", True),),
 	"Charleston Peak": (("isEmblem", True),),
+	"Duffer Peak South": (("otherName", "Pine Forest Range HP"),),
 	"Hayden Peak": (("otherName", "Cinnabar Mountain"),),
 	"Ibapah Peak": (("isEmblem", True),),
 	"McCullough Mountain": (("isEmblem", True),),
+	"Morey Peak North": (("otherName", "Hot Creek Range HP"),),
 	"Mount Rose": (("isEmblem", True),),
 	"Navajo Mountain": (("delisted", True),),
 	"Tule Peak": (("isEmblem", True),),
