@@ -2281,7 +2281,7 @@ PeakAttributes = {
 
 def readListFile(peakListId):
 	sectionPattern = re.compile("^([1-9][0-9]?)\\. ([- &,;0-9A-Za-z]+)$")
-	peakPattern = re.compile("^([1-9][0-9]?)\\.([1-9][0-9]?) +([#&'0-9;A-Za-z]+(?: [#&'()0-9;A-Za-z]+)*)")
+	peakPattern = re.compile("^([1-9][0-9]?)\\.([1-9][0-9]?[ab]?) +([#&'0-9;A-Za-z]+(?: [#&'()0-9;A-Za-z]+)*)")
 
 	fileName = "extract/data/{0}/{0}.txt".format(peakListId.lower())
 	listFile = open(fileName)
@@ -2302,14 +2302,13 @@ def readListFile(peakListId):
 			err("Expected empty line after section header:\n{}", line)
 
 		peaks = []
-		expectedPeakNumber = 0
+		expectedPeakNumber = ("1", "1a")
 		sections.append((sectionName, peaks))
 
 		for line in listFile:
 			if line == "\n":
 				break
 
-			expectedPeakNumber += 1
 			m = peakPattern.match(line)
 			if m is None:
 				err("Peak line doesn't match pattern:\n{}", line)
@@ -2317,10 +2316,18 @@ def readListFile(peakListId):
 
 			if int(sectionNumber) != expectedSectionNumber:
 				err("Expected section number {}:\n{}", expectedSectionNumber, line)
-			if int(peakNumber) != expectedPeakNumber:
-				err("Expected peak number {}:\n{}", expectedPeakNumber, line)
+			if peakNumber not in expectedPeakNumber:
+				err("Expected peak number {}:\n{}", " or ".join(expectedPeakNumber), line)
 
-			peaks.append(peakName)
+			peakId = "{}.{}".format(sectionNumber, peakNumber)
+			peaks.append((peakId, peakName))
+
+			if peakNumber[-1] == "a":
+				expectedPeakNumber = (peakNumber[:-1] + "b",)
+			else:
+				peakNumber = int(peakNumber[:-1] if peakNumber[-1] == "b" else peakNumber)
+				peakNumber = str(peakNumber + 1)
+				expectedPeakNumber = (peakNumber, peakNumber + "a")
 
 	listFile.close()
 	return sections
@@ -2396,12 +2403,11 @@ def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbos
 
 	pl.sections = []
 
-	for sectionNumber, (sectionName, sectionPeaks) in enumerate(sections, start=1):
+	for sectionName, sectionPeaks in sections:
 		section = sectionClass(pl, sectionName)
 		pl.sections.append(section)
 
-		for peakNumber, peakName in enumerate(sectionPeaks, start=1):
-			peakId = "{}.{}".format(sectionNumber, peakNumber)
+		for peakId, peakName in sectionPeaks:
 			peakBB = bbNameMap.get(peakName)
 			if peakBB is None:
 				err("{} {} not found in bbNameMap!", peakId, peakName)

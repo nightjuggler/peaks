@@ -51,7 +51,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 28,
+		'numPeaks': 31,
 		'numSections': 6,
 	},
 	'ogul': {
@@ -120,6 +120,7 @@ class Section(object):
 	def __init__(self, peakList, name):
 		self.name = name
 		self.peaks = []
+		self.id2Peak = None
 		self.peakList = peakList
 		self.country = peakList.country
 		self.state = peakList.state
@@ -996,25 +997,62 @@ class ColumnVR(object):
 
 		return self(name, rank)
 
-def column12_HPS(sectionNumber, peakNumber):
+def column12_HPS(peak):
 	return ColumnHPS, False
 
-def column12_OGUL(sectionNumber, peakNumber):
-	return ColumnPY, (sectionNumber, peakNumber) == (4, 2)
+def column12_OGUL(peak):
+	return ColumnPY, peak.id == "4.2"
 
-def column12_OSP(sectionNumber, peakNumber):
+def column12_OSP(peak):
+	sectionNumber = peak.idTuple[0]
 	if sectionNumber == 1:
 		return ColumnHPS, True
 	if sectionNumber >= 23:
 		return ColumnPY, True
 	return ColumnVR, True
 
-def column12_SPS(sectionNumber, peakNumber):
+def column12_SPS(peak):
+	sectionNumber = peak.idTuple[0]
 	if sectionNumber == 1:
 		return ColumnHPS, True
 	if sectionNumber >= 23:
 		return ColumnPY, False
 	return ColumnVR, True
+
+def checkPeakNumber(peak):
+	maxSubPeak = 2
+
+	sectionNumber, peakNumber = peak.id.split(".")
+	sectionNumber = int(sectionNumber)
+
+	if sectionNumber != len(peak.peakList.sections):
+		raise FormatError("Peak ID doesn't match section number")
+
+	subPeakNumber = ord(peakNumber[-1]) - ord("a") + 1
+	if subPeakNumber <= 0:
+		subPeakNumber = 0
+		peakNumber = int(peakNumber)
+	else:
+		peakNumber = int(peakNumber[:-1])
+
+	section = peak.peakList.sections[-1]
+
+	if section.peaks:
+		prevPeakNum, prevSubPeak = section.peaks[-1].idTuple[1:]
+		if prevSubPeak in (0, maxSubPeak):
+			expected = ((prevPeakNum + 1, 0), (prevPeakNum + 1, 1))
+		elif prevSubPeak == 1:
+			expected = ((prevPeakNum, 2),)
+		else:
+			expected = ((prevPeakNum + 1, 0), (prevPeakNum + 1, 1), (prevPeakNum, prevSubPeak + 1))
+	else:
+		expected = ((1, 0), (1, 1))
+
+	if (peakNumber, subPeakNumber) not in expected:
+		raise FormatError("Invalid peak number (expected {})", " or ".join(
+			[str(n1) + chr(ord("a") + n2 - 1) if n2 else str(n1) for n1, n2 in expected]))
+
+	peak.idTuple = (sectionNumber, peakNumber, subPeakNumber)
 
 def addSection(pl, m):
 	expectedNumber = len(pl.sections) + 1
@@ -1045,7 +1083,7 @@ class RE(object):
 	dataCountry = re.compile('^[A-Z]{2}(?:/[A-Z]{2})*$')
 	dataState = re.compile('^[A-Z]{2}(?:-[A-Z]{2,3})?(?:/[A-Z]{2}(?:-[A-Z]{2,3})?)*$')
 	dataFlags = re.compile('^[A-Z]+(?:,[A-Z]+)*$')
-	dataFrom = re.compile('(' + listId + ')(' + number + ')\\.(' + number + ')[ab]?[ds]?')
+	dataFrom = re.compile('(' + listId + ')(' + number + ')\\.(' + number + '[ab]?)[ds]?')
 	dataAlso = re.compile(fromId + '(?: ' + fromId + ')*')
 
 	firstRow = re.compile(
@@ -1446,7 +1484,7 @@ def parseDataFrom(peak, fromValue):
 	if m is None:
 		raise FormatError("Invalid data-from attribute")
 	peak.dataFrom = fromValue
-	peak.dataFromInfo = [html2ListId(m.group(1)), int(m.group(2)), int(m.group(3))]
+	peak.dataFromInfo = (html2ListId(m.group(1)), int(m.group(2)), m.group(3))
 
 def parseDataAlso(peak, alsoValue):
 	if not isinstance(peak, Peak):
@@ -1559,11 +1597,7 @@ def readHTML(pl):
 					raise FormatError("HTML ID doesn't match peak ID and/or peak list ID")
 				peak.hasHtmlId = True
 
-			sectionNumber, peakNumber = map(int, peak.id.split('.'))
-			if sectionNumber != len(pl.sections):
-				raise FormatError("Peak ID doesn't match section number")
-			if peakNumber != len(section.peaks) + 1:
-				raise FormatError("Peak ID doesn't match peak number")
+			checkPeakNumber(peak)
 
 			line = htmlFile.next()
 			m = RE.column2.match(line)
@@ -1649,7 +1683,7 @@ def readHTML(pl):
 
 			if pl.column12 is not None:
 				line = htmlFile.next()
-				columnClass, allowEmpty = pl.column12(sectionNumber, peakNumber)
+				columnClass, allowEmpty = pl.column12(peak)
 				if line == emptyCell:
 					if not allowEmpty:
 						badLine()
@@ -1709,7 +1743,10 @@ def readHTML(pl):
 		if pl2 is None:
 			pl2 = PeakList(pl2Id)
 			pl2.readHTML()
-		peak.copyFrom(pl2.sections[sectionNumber - 1].peaks[peakNumber - 1])
+		section = pl2.sections[sectionNumber - 1]
+		if section.id2Peak is None:
+			section.id2Peak = {p.id[p.id.find(".")+1:]: p for p in section.peaks}
+		peak.copyFrom(section.id2Peak[peakNumber])
 
 def writeHTML(pl):
 	sectionFormat = '<tr class="section"{4}><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
@@ -1774,7 +1811,7 @@ def writeHTML(pl):
 
 			attr = ''
 			if peak.hasHtmlId:
-				attr += ' id="{}{}"'.format(pl.id, peak.id)
+				attr += ' id="{}{}"'.format(pl.htmlId, peak.id)
 			if peak.extraRow is not None:
 				attr += ' rowspan="2"'
 			print '<td{}>{}</td>'.format(attr, peak.id)

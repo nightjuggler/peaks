@@ -483,7 +483,7 @@ function addListLink(row)
 
 	for (var ref of refArray)
 	{
-		var m = ref.match(/^((?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x))([0-9]+)\.[0-9]+([ds]?)$/);
+		var m = ref.match(/^((?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x))([0-9]+)\.[0-9]+[ab]?([ds]?)$/);
 		if (m === null) continue;
 
 		var htmlId = m[1];
