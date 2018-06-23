@@ -782,6 +782,8 @@ class PeakPb(TablePeak):
 		('Bull Mountain', 9934, 'max'): 9960,
 		('Duffer Peak', 9400, 'min'): 9397,
 		('Duffer Peak', 9440, 'max'): 9397,
+		('Granite Peak (Washoe)', 8980, 'min'): 8960,
+		('Granite Peak (Washoe)', 8980, 'max'): 9000,
 		('Hays Canyon Peak', 7920, 'min'): 7916,
 		('Hays Canyon Peak', 7920, 'max'): 7916,
 

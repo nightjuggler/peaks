@@ -51,7 +51,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 31,
+		'numPeaks': 38,
 		'numSections': 6,
 	},
 	'ogul': {
@@ -550,6 +550,12 @@ class USGSTopo(object):
 		'(?: \\((MSL|NGVD 29)\\))? USGS ([\\.013567x]+)\' Quad \\(1:([012456]{2,3},[05]00)\\) '
 		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
 
+	# Special cases for maps whose JPG filename prefix doesn't match the directory name
+	jpgState = {
+		'283359': 'OR', # 1954/1984 60' (1:250,000) Vya, NV -- directory is NV, but prefix is OR
+		'320710': 'NV', # 1962/1969 15' (1:62,500) Benton, CA -- directory is CA, but prefix is NV
+	}
+
 	class QuadInfo(object):
 		def __init__(self, scale, vdatum):
 			self.scale = scale
@@ -591,15 +597,9 @@ class USGSTopo(object):
 			raise FormatError("Elevation link suffix doesn't match expected pattern")
 		self.id = m.group(1)
 
-		state2 = self.state
-		# Special case for the 1962 15' (1:62,500) Benton, NV-CA quad:
-		# The JPG filename prefix is NV, but it's in the CA directory.
-		if self.id == '320710':
-			state2 = 'NV'
-
 		self.linkSuffix = "{0}/{1}_{2}_{3}_{4}_{5}{6}.jpg".format(
 			self.state,
-			state2,
+			self.jpgState.get(self.id, self.state),
 			self.name.replace('.', '').replace(' ', '%20'),
 			self.id,
 			self.year[:4],
