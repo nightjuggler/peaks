@@ -51,7 +51,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 45,
+		'numPeaks': 49,
 		'numSections': 6,
 	},
 	'ogul': {
