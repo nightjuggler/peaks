@@ -51,7 +51,7 @@ peakListParams = {
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 49,
+		'numPeaks': 53,
 		'numSections': 6,
 	},
 	'ogul': {
@@ -513,8 +513,8 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;((?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: 2)?(?: VABM)?(?: [1-9][0-9]{3})?)&quot; '
-		'\\(([A-Z]{2}[0-9]{4})\\)$')
+		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: 2)?(?: VABM)?(?: [1-9][0-9]{3})?)'
+		'|[1-9][0-9]{3,4})&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, stationID):
 		self.id = stationID
@@ -1628,7 +1628,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.grade.match(line)
 			if m is None:
-				if line != emptyCell or pl.id not in ('GBP',):
+				if line != emptyCell or (pl.id, peak.id) not in (('GBP', '9.10'), ('NPC', '2.11')):
 					badLine()
 			else:
 				peak.grade = m.group(1)

@@ -777,6 +777,9 @@ class PeakPb(TablePeak):
 	#    elevation might be too low, too. Here, the elevation is given as 7920 feet, assuming the
 	#    benchmark is 4 feet below the high point."
 	#   [http://peakbagger.com/peak.aspx?pid=3304]
+	#
+	# - Green Mountain (NPC)
+	#   The last 0 in 10680 was likely misread as an 8 (a contour line bisects it on the 7.5' topo).
 
 		('Bull Mountain', 9934, 'min'): 9920,
 		('Bull Mountain', 9934, 'max'): 9960,
@@ -784,6 +787,8 @@ class PeakPb(TablePeak):
 		('Duffer Peak', 9440, 'max'): 9397,
 		('Granite Peak (Washoe)', 8980, 'min'): 8960,
 		('Granite Peak (Washoe)', 8980, 'max'): 9000,
+		('Green Mountain', 10688, 'min'): 10680,
+		('Green Mountain', 10688, 'max'): 10680,
 		('Hays Canyon Peak', 7920, 'min'): 7916,
 		('Hays Canyon Peak', 7920, 'max'): 7916,
 
@@ -1431,9 +1436,9 @@ class PeakLoJ(TablePeak):
 		('Spectre Point', 4483): 4482,
 		('Stepladder Mountains HP', 2939): 895.0,
 
-	# LoJ GBP Elevation Adjustments:
+	# Other LoJ Elevation Adjustments:
 	#
-	# - Eagle Peak
+	# - Eagle Peak (GBP)
 	#   All the 7.5' topos on topoView show a spot elevation of 9,892'.
 	#   There aren't any 15' topos available on topoView for that area.
 	#   The 1:250,000 topos show a spot elevation of either 9,892' or 9,883'.
@@ -1444,20 +1449,23 @@ class PeakLoJ(TablePeak):
 	#   In that case the highest contour is at 9880', and the interval is 40'.
 	#   So the average would be 9900'.
 	#
-	# - Kumiva Peak
+	# - Kumiva Peak (GBP / NPC)
 	#   The LoJ page for Kumiva Peak has the following note: "1:250k map has spot elevation 8237,
 	#   consistent with 2511 meters on 1:100k map." [https://listsofjohn.com/peak/16838]
 	#   8237' is approximately 2510.6m and thus rounds to 2511m, and 2511m is approximately 8238.2'
 	#   and thus rounds to 8238'. However, the 1:100k map was "Compiled from USGS 1:24 000 and
 	#   1:62 500-scale topographic maps dated 1964-1981", and the 1:62,500-scale topo shows a spot
 	#   elevation of 8237'. So 8237' seems more correct than 8238'.
+	#
+	# - Verdi Peak (NPC)
+	#   "This contour [the north summit] determined higher than contour with spot elevation 11,074'.
+	#    Elevation [11,077'] is interpolation of spot elevation and next higher contour [11,080']."
+	#   [https://listsofjohn.com/peak/40725]
 
-		('Eagle Peak', 9900): 9892,
-		('Kumiva Peak', 8238): 8237,
-
-	# LoJ Elevation Adjustments for Other Desert Peaks:
-
-		('Billy Goat Peak', 5735): 1748.0, # LoJ didn't round down
+		('Billy Goat Peak',      5735):  1748.0,        # ODP -- LoJ didn't round down
+		('Eagle Peak',           9900):  9892,          # GBP
+		('Kumiva Peak',          8238):  8237,          # GBP
+		('Verdi Peak',          11077): 11074,          # NPC
 	}
 	saddleElevationMap = {
 		('Mount Hitchcock', 12697): 3870.0, # LoJ didn't round down
