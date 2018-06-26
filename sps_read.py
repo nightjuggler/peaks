@@ -61,8 +61,8 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 4,
-		'numSections': 3,
+		'numPeaks': 7,
+		'numSections': 4,
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
@@ -566,7 +566,7 @@ class USGSTopo(object):
 		'7.5x15':       QuadInfo( '25,000', ('NGVD 29',)),
 		'15':           QuadInfo( '62,500', ('MSL', 'NGVD 29')),
 		'30':           QuadInfo('125,000', ('MSL',)),
-		'60':           QuadInfo('250,000', ('MSL', None)),
+		'60':           QuadInfo('250,000', ('MSL', 'NGVD 29', None)),
 	}
 
 	def __init__(self, vdatum, series, scale, name, state, year):
