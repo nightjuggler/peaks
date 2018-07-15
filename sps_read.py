@@ -71,8 +71,8 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 26,
-		'numSections': 24,
+		'numPeaks': 32,
+		'numSections': 26,
 	},
 }
 def addPeakListSortKey():
@@ -1628,7 +1628,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.grade.match(line)
 			if m is None:
-				if line != emptyCell or (pl.id, peak.id) not in (('GBP', '9.10'), ('NPC', '2.11')):
+				if line != emptyCell or (pl.id, peak.id) not in (('GBP', '9.10'),):
 					badLine()
 			else:
 				peak.grade = m.group(1)
