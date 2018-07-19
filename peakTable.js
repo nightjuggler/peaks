@@ -57,13 +57,14 @@ function wildernessURL(latitude, longitude)
 		"?id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=" +
 		xmin + "," + ymin + "," + xmax + "," + ymax + ",102113";
 }
+/*
 function legendLink(mapServer)
 {
 	return encodeURIComponent('<b><a href="' + mapServer + '/legend" target="_blank">Legend</a></b>');
 }
 // See https://www.wilderness.net/NWPS/geography
 var wildernessMapServer = 'https://gisservices.cfc.umt.edu/arcgis/rest/services/ProtectedAreas/National_Wilderness_Preservation_System/MapServer';
-
+*/
 function wccLink(latitude, longitude)
 {
 	// WCC = National Water and Climate Center
@@ -324,20 +325,21 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=14&b=t&o=r&n=0.25&a=sma');
 
 	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
-		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=16&b=mbt');
+		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=15&b=mbt');
+
+	addMapLink(listNode, 'CalTopo with USGS 7.5\' Base Layer',
+		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=15&b=t&o=r&n=0.25');
 
 	if (peakFlags.CC)
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
-
+/*
 	var gmap4Link = 'https://mappingsupport.com/p/gmap4.php?ll=' + latCommaLong + '&z=15&t=t4';
-
-	addMapLink(listNode, 'Gmap4 (CalTopo Hi-res Basemap)', gmap4Link);
 
 	addMapLink(listNode, 'Gmap4 with Wilderness Areas',
 		gmap4Link + ',Wilderness_Areas&markers=title=' + legendLink(wildernessMapServer) +
 		'&rest=' + wildernessMapServer + '?name=Wilderness_Areas&layers=0&transparent=true');
-
+*/
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
 
 	addMapLink(listNode, 'Interagency Elevation Inventory',
@@ -521,6 +523,37 @@ function addListLink(row)
 	secondColumn.appendChild(document.createElement('BR'));
 	secondColumn.appendChild(spanElement);
 }
+function gmap4ToCalTopo(a)
+{
+	var q = a.search;
+	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
+
+	var baselayer = null;
+	var latlong = null;
+	var zoom = '15';
+
+	for (var s of q.substr(1).split('&'))
+	{
+		var i = s.indexOf('=');
+		if (i < 1 || i === s.length - 1) continue;
+		var k = s.substr(0, i);
+		var v = s.substr(i + 1);
+
+		if (k === 'll') latlong = v;
+		else if (k === 't') baselayer = v;
+		else if (k === 'z') zoom = v;
+	}
+
+	if (latlong === null) return;
+
+	if (baselayer === 't4') baselayer = 't&o=r&n=0.2';
+	else if (baselayer === 't1') baselayer = 'mbh';
+	else if (baselayer === 'h') baselayer = 'hyb';
+	else if (baselayer === 's') baselayer = 'sat';
+	else return;
+
+	a.href = 'https://caltopo.com/map.html#ll=' + latlong + '&z=' + zoom + '&b=' + baselayer;
+}
 function peakTableFirstRow()
 {
 	return document.getElementById('header').parentNode;
@@ -532,6 +565,9 @@ function decorateTable()
 
 	parseQueryString();
 	initPeakListMenu();
+
+	for (var a of document.getElementsByTagName('a'))
+		if (a.hostname === 'mappingsupport.com') gmap4ToCalTopo(a);
 
 	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
