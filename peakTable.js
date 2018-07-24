@@ -57,14 +57,6 @@ function wildernessURL(latitude, longitude)
 		"?id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=" +
 		xmin + "," + ymin + "," + xmax + "," + ymax + ",102113";
 }
-/*
-function legendLink(mapServer)
-{
-	return encodeURIComponent('<b><a href="' + mapServer + '/legend" target="_blank">Legend</a></b>');
-}
-// See https://www.wilderness.net/NWPS/geography
-var wildernessMapServer = 'https://gisservices.cfc.umt.edu/arcgis/rest/services/ProtectedAreas/National_Wilderness_Preservation_System/MapServer';
-*/
 function wccLink(latitude, longitude)
 {
 	// WCC = National Water and Climate Center
@@ -333,13 +325,10 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	if (peakFlags.CC)
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
-/*
-	var gmap4Link = 'https://mappingsupport.com/p/gmap4.php?ll=' + latCommaLong + '&z=15&t=t4';
 
-	addMapLink(listNode, 'Gmap4 with Wilderness Areas',
-		gmap4Link + ',Wilderness_Areas&markers=title=' + legendLink(wildernessMapServer) +
-		'&rest=' + wildernessMapServer + '?name=Wilderness_Areas&layers=0&transparent=true');
-*/
+	addMapLink(listNode, 'GIS Surfer',
+		'https://mappingsupport.com/p2/gissurfer.php?center=' + latCommaLong + '&zoom=14');
+
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
 
 	addMapLink(listNode, 'Interagency Elevation Inventory',
