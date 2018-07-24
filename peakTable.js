@@ -406,7 +406,7 @@ function addMapLinkBox(mapLinkSpan)
 	var peakFlags = secondColumn.parentNode.peakFlags;
 
 	var mapLink = nextNode(secondColumn.firstChild, 'A');
-	var latCommaLong = mapLink.search.split('&')[0].split('=')[1];
+	var latCommaLong = mapLink.href.split('#')[1].split('&')[0].split('=')[1];
 
 	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakFlags));
 }
