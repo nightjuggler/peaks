@@ -471,14 +471,19 @@ function makeLink(url, txt)
 }
 function popupHtml(ll, p, htmlFilename)
 {
-	var g4URL = 'https://mappingsupport.com/p/gmap4.php?ll=' + ll.lat + ',' + ll.lng + '&' + p.G4;
+	var g4Params = p.G4.split('&');
+	var z = g4Params[0];
+	var b = g4Params[1];
+	b = b === 't=t4' ? 'b=t&o=r&n=0.2' : 'b=mbh';
+
+	var topoLink = 'https://caltopo.com/map.html#ll=' + ll.lat + ',' + ll.lng + '&' + z + '&' + b;
 
 	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
 
 	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
 
-	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' '
-		+ makeLink(g4URL, p.name) + suffix + otherName;
+	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' ' +
+		makeLink(topoLink, p.name) + suffix + otherName;
 
 	var links = [];
 	if (p.SP) links.push(makeLink('https://www.summitpost.org/' + p.SP, 'SP'));
