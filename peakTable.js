@@ -316,10 +316,10 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	addMapLink(listNode, 'CalTopo with Land Management',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=14&b=t&o=r&n=0.25&a=sma');
 
-	addMapLink(listNode, 'CalTopo with MB Topo Base Layer',
+	addMapLink(listNode, 'CalTopo with Map Builder Topo',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=15&b=mbt');
 
-	addMapLink(listNode, 'CalTopo with USGS 7.5\' Base Layer',
+	addMapLink(listNode, 'CalTopo with USGS 7.5\' Topo',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=15&b=t&o=r&n=0.25');
 
 	if (peakFlags.CC)
@@ -350,6 +350,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	addMapLink(listNode, 'PMap (Mapbox.js)',
 		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ll=' + latCommaLong);
+
+	addMapLink(listNode, 'PMap with Wilderness Areas',
+		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&w&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
 		'https://nightjuggler.com/nature/pmapgl.html?o=' + peakList.id + '&ll=' + latCommaLong);

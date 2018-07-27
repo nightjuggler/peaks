@@ -142,12 +142,13 @@ progress {
 	margin: 0px 2px 0px 2px;
 }
 </style>
+<script src="MapServer.js"></script>
 <script src="pmap-lc.js"></script>
 <script>
 /* globals document, window */
 /* globals MouseEvent, XMLHttpRequest */
 /* globals L */
-/* globals LayerControl, addOverlays */
+/* globals LayerControl, addOverlays, addWildernessTileLayer */
 "use strict";
 
 function isValidId(s, n)
@@ -206,6 +207,7 @@ function parseQueryString(queryString)
 
 	var flags = {
 		cc: 'clickCenter',
+		w: 'addWilderness',
 	};
 	var handlers = {
 		b: parseBaseLayer,
@@ -411,6 +413,9 @@ function createMap(options)
 		layerControl.div.appendChild(document.createElement('hr'));
 		layerControl.fillMenu(layerControl.div, lcdjson, []);
 		addOverlays(queryString.overlays, lcdjson, mapBounds);
+
+		if (queryString.addWilderness)
+			addWildernessTileLayer(map);
 	}
 	loadJSON('pmap_lcd.json', addOverlayMenu);
 }
@@ -422,9 +427,10 @@ function init()
 
 	loadJSON('mapbox.' + suffix, createMap);
 }
+window.addEventListener('DOMContentLoaded', init, false);
 </script>
 </head>
-<body onload="init()">
+<body>
 
 <div id="map"></div>
 <div id="llDiv"><span id="llText">Latitude, Longitude</span>
