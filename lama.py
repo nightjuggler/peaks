@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 import json
 import subprocess
 from ppjson import prettyPrint
@@ -33,15 +34,17 @@ class Query(object):
 		url = "{}/{}/MapServer/{}/query?{}".format(self.home, self.service, self.layer, "&".join(params))
 		fileName = "lama.out"
 
-		command = ["/usr/bin/curl",
+		command = ["/usr/local/opt/curl/bin/curl",
 			"-o", fileName,
-			"--connect-timeout", "5",
-			"--max-time", "10",
+#			"--user-agent", "Mozilla/5.0",
+			"--connect-timeout", "6",
+			"--max-time", "12",
 			"--retry", "2",
 			url]
 
+		print("-----", self.name)
 		if verbose:
-			print " ".join(command)
+			print(*command)
 		else:
 			command.insert(1, "-s")
 
@@ -49,8 +52,8 @@ class Query(object):
 
 		if rc != 0:
 			if not verbose:
-				print " ".join(command)
-			print "Exit code {}".format(rc)
+				print(*command)
+			print("Exit code", rc)
 			return
 
 		with open(fileName) as f:
@@ -65,7 +68,7 @@ class Query(object):
 			fields = {alias: response[field] for field, alias in self.fields}
 			if self.processFields:
 				self.processFields(fields)
-			print self.printSpec.format(**fields)
+			print(self.printSpec.format(**fields))
 
 class WildernessQuery(Query):
 	name = "Wilderness Areas"
@@ -73,9 +76,9 @@ class WildernessQuery(Query):
 	service = "ProtectedAreas/National_Wilderness_Preservation_System"
 	layer = 0 # sr = 102113 (3785)
 	fields = [
-		("OBJECTID_1", "id"),
+#		("OBJECTID_1", "id"),
 		("NAME", "name"),
-		("URL", "url"),
+#		("URL", "url"),
 		("Agency", "agency"),
 		("YearDesignated", "year"),
 	]
@@ -92,9 +95,9 @@ class NPS_Query(Query):
 	service = "LandResourcesDivisionTractAndBoundaryService"
 	layer = 2 # sr = 102100 (3857)
 	fields = [
-		("OBJECTID", "id"),
+#		("OBJECTID", "id"),
 		("UNIT_NAME", "name"),
-		("UNIT_CODE", "code"),
+#		("UNIT_CODE", "code"),
 	]
 	printSpec = "{name}"
 
@@ -104,8 +107,8 @@ class USFS_Query(Query):
 	service = "EDW/EDW_ForestSystemBoundaries_01"
 	layer = 1 # sr = 102100 (3857)
 	fields = [
-		("OBJECTID", "id"),
-		("REGION", "region"),
+#		("OBJECTID", "id"),
+#		("REGION", "region"),
 		("FORESTNAME", "forest"),
 	]
 	printSpec = "{forest}"
@@ -115,6 +118,14 @@ class USFS_CountyQuery(Query):
 	home = "https://apps.fs.usda.gov/arcx/rest/services" # 10.51
 	service = "EDW/EDW_County_01"
 	layer = 1 # sr = 102100 (3857)
+	fields = [
+#		("OBJECTID", "id"),
+#		("COUNTYNAME", "county"),       # "White Pine" or "Carson City"
+		("LEGAL_NAME", "name"),         # "White Pine County" or "Carson City"
+#		("STATENAME", "state"),         # "Nevada"
+		("STATE_POSTAL_ABBR", "state"), # "NV"
+	]
+	printSpec = "{name}, {state}"
 
 class USFS_RangerDistrictQuery(Query):
 	name = "USFS Ranger District"
@@ -122,8 +133,8 @@ class USFS_RangerDistrictQuery(Query):
 	service = "EDW/EDW_RangerDistricts_01"
 	layer = 1 # sr = 102100 (3857)
 	fields = [
-		("OBJECTID", "id"),
-		("REGION", "region"),
+#		("OBJECTID", "id"),
+#		("REGION", "region"),
 		("FORESTNAME", "forest"),
 		("DISTRICTNAME", "district"),
 	]
@@ -135,10 +146,10 @@ class BLM_Query(Query):
 	service = "admin_boundaries/BLM_Natl_AdminUnit"
 	layer = 3 # sr = 102100 (3857) # also try layers 1 (State), 2 (District), and 4 (Other)
 	fields = [
-		("OBJECTID", "id"),
+#		("OBJECTID", "id"),
 		("ADMU_NAME", "name"),
 		("ADMIN_ST", "state"),
-		("ADMU_ST_URL", "url"),
+#		("ADMU_ST_URL", "url"),
 		("PARENT_NAME", "parent"),
 	]
 	printSpec = "{name} ({state}) ({parent})"
@@ -150,13 +161,13 @@ class BLM_NLCS_Query(Query):
 	layer = 1 # sr = 102100 (3857) # also try layer 0
 	fields = makePrefixedFields(
 		("Monuments_NCAs_SimilarDesignation2015", (
-			("OBJECTID", "id"),
+#			("OBJECTID", "id"),
 			("sma_code", "code"),
 			("NCA_NAME", "name"),
 			("STATE_GEOG", "state"),
 		)),
 		("nlcs_desc", (
-			("WEBLINK", "url"),
+#			("WEBLINK", "url"),
 		)),
 	)
 	printSpec = "{name} ({code}) ({state})"
@@ -167,7 +178,7 @@ class BLM_SMA_Query(Query):
 	service = "lands/BLM_Natl_SMA_LimitedScale"
 	layer = 1 # sr = 102100 (3857)
 	fields = [
-		("OBJECTID", "id"),
+#		("OBJECTID", "id"),
 		("ADMIN_UNIT_NAME", "name"),
 		("ADMIN_AGENCY_CODE", "agency"),
 	]
@@ -185,7 +196,7 @@ class BLM_WSA_Query(Query):
 	layer = 1 # sr = 102100 (3857)
 	fields = makePrefixedFields(
 		("nlcs_wsa_poly", (
-			("OBJECTID", "id"),
+#			("OBJECTID", "id"),
 			("NLCS_NAME", "name"),
 			("ADMIN_ST", "state"),
 			("WSA_RCMND", "rcmnd"),
@@ -198,6 +209,14 @@ class USGS_CountyQuery(Query):
 	home = "https://services.nationalmap.gov/arcgis/rest/services" # 10.41
 	service = "WFS/govunits"
 	layer = 3 # sr = 4326
+	fields = [
+#		("OBJECTID", "id"),
+#		("COUNTY_NAME", "county"), # "White Pine" or "Carson City"
+		("GNIS_NAME", "name"),     # "White Pine County" or "Carson City"
+		("STATE_NAME", "state"),   # "Nevada"
+#		("POPULATION", "pop"),     # 10030 or 55274
+	]
+	printSpec = "{name}, {state}"
 
 class USGS_TopoQuery(Query):
 	name = "USGS 7.5' Topo"
