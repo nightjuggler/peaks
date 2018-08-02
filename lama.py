@@ -1,24 +1,29 @@
 #!/usr/bin/python
 import json
-import os
+import subprocess
 from ppjson import prettyPrint
 
-class Query(object):
-	fields = "*"
+def makePrefixedFields(*prefixesWithFields):
+	return [("{}.{}".format(prefix, field), alias)
+			for prefix, fields in prefixesWithFields
+				for field, alias in fields]
 
-	@classmethod
-	def processResponse(self, features):
-		prettyPrint(features)
+class Query(object):
+	fields = []
+	printSpec = None
+	processFields = None
 
 	@classmethod
 	def query(self, geometry, distance=20, verbose=False):
+		fields = ",".join([field for field, alias in self.fields]) if self.fields else "*"
+
 		params = [
 			"f=json",
 			"geometry={}".format(geometry),
 			"geometryType=esriGeometryPoint",
 			"inSR=4326",
 			"spatialRel=esriSpatialRelIntersects",
-			"outFields={}".format(self.fields),
+			"outFields={}".format(fields),
 			"returnGeometry=false",
 		]
 		if distance:
@@ -28,134 +33,189 @@ class Query(object):
 		url = "{}/{}/MapServer/{}/query?{}".format(self.home, self.service, self.layer, "&".join(params))
 		fileName = "lama.out"
 
-		command = "/usr/bin/curl {}-o '{}' --retry 2 '{}'".format("" if verbose else "-s ", fileName, url)
+		command = ["/usr/bin/curl",
+			"-o", fileName,
+			"--connect-timeout", "5",
+			"--max-time", "10",
+			"--retry", "2",
+			url]
+
 		if verbose:
-			print command
-		os.system(command)
+			print " ".join(command)
+		else:
+			command.insert(1, "-s")
+
+		rc = subprocess.call(command)
+
+		if rc != 0:
+			if not verbose:
+				print " ".join(command)
+			print "Exit code {}".format(rc)
+			return
 
 		with open(fileName) as f:
 			jsonData = json.load(f)
 
-		features = [f['attributes'] for f in jsonData['features']]
+		for feature in jsonData["features"]:
+			response = feature["attributes"]
+			if not (self.fields and self.printSpec):
+				prettyPrint(response)
+				continue
 
-		self.processResponse(features)
+			fields = {alias: response[field] for field, alias in self.fields}
+			if self.processFields:
+				self.processFields(fields)
+			print self.printSpec.format(**fields)
 
 class WildernessQuery(Query):
-	name = 'Wilderness Boundaries'
-	home = 'https://gisservices.cfc.umt.edu/arcgis/rest/services' # 10.51
-	service = 'ProtectedAreas/National_Wilderness_Preservation_System'
+	name = "Wilderness Areas"
+	home = "https://gisservices.cfc.umt.edu/arcgis/rest/services" # 10.51
+	service = "ProtectedAreas/National_Wilderness_Preservation_System"
 	layer = 0 # sr = 102113 (3785)
-	fields = 'OBJECTID_1,NAME,URL,Agency,YearDesignated'
+	fields = [
+		("OBJECTID_1", "id"),
+		("NAME", "name"),
+		("URL", "url"),
+		("Agency", "agency"),
+		("YearDesignated", "year"),
+	]
+	printSpec = "{name} ({agency}) ({year})"
 
 	@classmethod
-	def processResponse(self, features):
-		for f in features:
-			name = f['NAME']
-			agency = f['Agency']
-			year = f['YearDesignated']
-			if agency == 'FS':
-				agency = 'USFS'
-			print '{} ({}) ({})'.format(name, agency, year)
+	def processFields(self, fields):
+		if fields["agency"] == "FS":
+			fields["agency"] = "USFS"
 
 class NPS_Query(Query):
-	name = 'National Park Service Boundaries'
-	home = 'https://mapservices.nps.gov/arcgis/rest/services' # 10.22
-	service = 'LandResourcesDivisionTractAndBoundaryService'
+	name = "National Park Service Unit"
+	home = "https://mapservices.nps.gov/arcgis/rest/services" # 10.22
+	service = "LandResourcesDivisionTractAndBoundaryService"
 	layer = 2 # sr = 102100 (3857)
-	fields = 'OBJECTID,UNIT_NAME,UNIT_CODE'
-
-	@classmethod
-	def processResponse(self, features):
-		for f in features:
-			print f['UNIT_NAME']
+	fields = [
+		("OBJECTID", "id"),
+		("UNIT_NAME", "name"),
+		("UNIT_CODE", "code"),
+	]
+	printSpec = "{name}"
 
 class USFS_Query(Query):
-	name = 'USFS Administrative Forest Boundaries'
-	home = 'https://apps.fs.usda.gov/arcx/rest/services' # 10.51
-	service = 'EDW/EDW_ForestSystemBoundaries_01'
+	name = "USFS Administrative Forest"
+	home = "https://apps.fs.usda.gov/arcx/rest/services" # 10.51
+	service = "EDW/EDW_ForestSystemBoundaries_01"
 	layer = 1 # sr = 102100 (3857)
-	fields = 'OBJECTID,REGION,FORESTNAME'
+	fields = [
+		("OBJECTID", "id"),
+		("REGION", "region"),
+		("FORESTNAME", "forest"),
+	]
+	printSpec = "{forest}"
 
-	@classmethod
-	def processResponse(self, features):
-		for f in features:
-			print f['FORESTNAME']
+class USFS_CountyQuery(Query):
+	name = "County (USFS)"
+	home = "https://apps.fs.usda.gov/arcx/rest/services" # 10.51
+	service = "EDW/EDW_County_01"
+	layer = 1 # sr = 102100 (3857)
 
 class USFS_RangerDistrictQuery(Query):
-	name = 'USFS Ranger District Boundaries'
-	home = 'https://apps.fs.usda.gov/arcx/rest/services' # 10.51
-	service = 'EDW/EDW_RangerDistricts_01'
+	name = "USFS Ranger District"
+	home = "https://apps.fs.usda.gov/arcx/rest/services" # 10.51
+	service = "EDW/EDW_RangerDistricts_01"
 	layer = 1 # sr = 102100 (3857)
-	fields = 'OBJECTID,REGION,FORESTNAME,DISTRICTNAME'
-
-	@classmethod
-	def processResponse(self, features):
-		for f in features:
-			forest = f['FORESTNAME']
-			district = f['DISTRICTNAME']
-			print '{} ({})'.format(forest, district)
+	fields = [
+		("OBJECTID", "id"),
+		("REGION", "region"),
+		("FORESTNAME", "forest"),
+		("DISTRICTNAME", "district"),
+	]
+	printSpec = "{forest} ({district})"
 
 class BLM_Query(Query):
-	name = 'BLM Field Office Boundaries'
-	home = 'https://gis.blm.gov/arcgis/rest/services' # 10.41
-	service = 'admin_boundaries/BLM_Natl_AdminUnit'
+	name = "BLM Administrative Unit"
+	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
+	service = "admin_boundaries/BLM_Natl_AdminUnit"
 	layer = 3 # sr = 102100 (3857) # also try layers 1 (State), 2 (District), and 4 (Other)
-	fields = 'OBJECTID,ADMIN_ST,ADMU_NAME,ADMU_ST_URL,PARENT_NAME'
-
-	@classmethod
-	def processResponse(self, features):
-		for f in features:
-			state = f['ADMIN_ST']
-			name = f['ADMU_NAME']
-			parent = f['PARENT_NAME']
-			print '{} ({}) ({})'.format(name, state, parent)
-
-class BLM_SMA_Query(Query):
-	name = 'Surface Management Agency'
-	home = 'https://gis.blm.gov/arcgis/rest/services' # 10.41
-	service = 'lands/BLM_Natl_SMA_LimitedScale'
-	layer = 1 # sr = 102100 (3857)
-	fields = 'OBJECTID,ADMIN_AGENCY_CODE,ADMIN_UNIT_NAME'
-
-	@classmethod
-	def processResponse(self, features):
-		for f in features:
-			name = f['ADMIN_UNIT_NAME']
-			agency = f['ADMIN_AGENCY_CODE']
-			print '{} ({})'.format(name, agency)
+	fields = [
+		("OBJECTID", "id"),
+		("ADMU_NAME", "name"),
+		("ADMIN_ST", "state"),
+		("ADMU_ST_URL", "url"),
+		("PARENT_NAME", "parent"),
+	]
+	printSpec = "{name} ({state}) ({parent})"
 
 class BLM_NLCS_Query(Query):
-	name = 'National Landscape Conservation System'
-	home = 'https://gis.blm.gov/arcgis/rest/services' # 10.41
-	service = 'lands/BLM_Natl_NLCS_NM_NCA_poly'
+	name = "National Landscape Conservation System"
+	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
+	service = "lands/BLM_Natl_NLCS_NM_NCA_poly"
 	layer = 1 # sr = 102100 (3857) # also try layer 0
+	fields = makePrefixedFields(
+		("Monuments_NCAs_SimilarDesignation2015", (
+			("OBJECTID", "id"),
+			("sma_code", "code"),
+			("NCA_NAME", "name"),
+			("STATE_GEOG", "state"),
+		)),
+		("nlcs_desc", (
+			("WEBLINK", "url"),
+		)),
+	)
+	printSpec = "{name} ({code}) ({state})"
 
-	field_prefix1 = 'Monuments_NCAs_SimilarDesignation2015'
-	field_prefix2 = 'nlcs_desc'
-
-	fields1 = ['OBJECTID', 'sma_code', 'NCA_NAME', 'STATE_ADMN', 'STATE_GEOG']
-	fields2 = ['WEBLINK']
-
-	fields1 = ["{}.{}".format(field_prefix1, field) for field in fields1]
-	fields2 = ["{}.{}".format(field_prefix2, field) for field in fields2]
-
-	fields = ','.join(fields1 + fields2)
+class BLM_SMA_Query(Query):
+	name = "Surface Management Agency"
+	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
+	service = "lands/BLM_Natl_SMA_LimitedScale"
+	layer = 1 # sr = 102100 (3857)
+	fields = [
+		("OBJECTID", "id"),
+		("ADMIN_UNIT_NAME", "name"),
+		("ADMIN_AGENCY_CODE", "agency"),
+	]
+	printSpec = "{name} ({agency})"
 
 	@classmethod
-	def processResponse(self, features):
-		nameField = "{}.{}".format(self.field_prefix1, 'NCA_NAME')
-		codeField = "{}.{}".format(self.field_prefix1, 'sma_code')
-		stateField = "{}.{}".format(self.field_prefix1, 'STATE_GEOG')
-		for f in features:
-			name = f[nameField]
-			code = f[codeField]
-			state = f[stateField]
-			print '{} ({}) ({})'.format(name, code, state)
+	def processFields(self, fields):
+		if fields["name"] is None:
+			fields["name"] = "Unit Name Not Specified"
+
+class BLM_WSA_Query(Query):
+	name = "Wilderness Study Areas"
+	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
+	service = "lands/BLM_Natl_NLCS_WLD_WSA"
+	layer = 1 # sr = 102100 (3857)
+	fields = makePrefixedFields(
+		("nlcs_wsa_poly", (
+			("OBJECTID", "id"),
+			("NLCS_NAME", "name"),
+			("ADMIN_ST", "state"),
+			("WSA_RCMND", "rcmnd"),
+		)),
+	)
+	printSpec = "{name} ({state}) ({rcmnd})"
+
+class USGS_CountyQuery(Query):
+	name = "County (The National Map)"
+	home = "https://services.nationalmap.gov/arcgis/rest/services" # 10.41
+	service = "WFS/govunits"
+	layer = 3 # sr = 4326
+
+class USGS_TopoQuery(Query):
+	name = "USGS 7.5' Topo"
+	home = "https://services.nationalmap.gov/arcgis/rest/services" # 10.41
+	service = "US_Topo_Availability"
+	layer = 0 # sr = 4326
+	fields = [
+		("CELL_NAME", "cell"),
+		("STATE_ALPHA", "state"),
+	]
+	printSpec = "{cell}, {state}"
 
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('latlong')
+	parser.add_argument("latlong")
+	parser.add_argument("-q", "--query", default="county,topo,nps,rd,nlcs,blm,sma,w,wsa")
+	parser.add_argument("-v", "--verbose", action="store_true")
 	args = parser.parse_args()
 
 	latitude, longitude = args.latlong.split(",")
@@ -164,17 +224,21 @@ def main():
 
 	queryMap = {
 		"blm": BLM_Query,
+		"county": USGS_CountyQuery,
+		"county_usfs": USFS_CountyQuery,
+		"fs": USFS_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
+		"rd": USFS_RangerDistrictQuery,
 		"sma": BLM_SMA_Query,
-		"usfs": USFS_Query,
-		"usfsrd": USFS_RangerDistrictQuery,
+		"topo": USGS_TopoQuery,
 		"w": WildernessQuery,
+		"wsa": BLM_WSA_Query,
 	}
-	queries = ("nps", "usfsrd", "nlcs", "blm", "sma", "w")
+	queries = args.query.split(",")
 
 	for q in [queryMap[k] for k in queries]:
-		q.query(geometry)
+		q.query(geometry, verbose=args.verbose)
 
 if __name__ == "__main__":
 	main()
