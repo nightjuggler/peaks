@@ -229,11 +229,35 @@ class USGS_TopoQuery(Query):
 	]
 	printSpec = "{cell}, {state}"
 
+class TigerCountyQuery(Query):
+	name = "County (TIGERweb)"
+	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" #
+	service = "TIGERweb/State_County"
+	layer = 13 # sr = 102100 (3857)
+	fields = [
+#		("OBJECTID", "id"),
+#		("BASENAME", "county"), # Sierra
+		("NAME", "name"),       # Sierra County
+	]
+	printSpec = "{name}"
+
+class TigerStateQuery(Query):
+	name = "State (TIGERweb)"
+	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" #
+	service = "TIGERweb/State_County"
+	layer = 12 # sr = 102100 (3857)
+	fields = [
+#		("OBJECTID", "id"),
+		("NAME", "name"),
+		("STUSAB", "state"),
+	]
+	printSpec = "{name} ({state})"
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
-	parser.add_argument("-q", "--query", default="county,topo,nps,rd,nlcs,blm,sma,w,wsa")
+	parser.add_argument("-q", "--query", default="state,county,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("-v", "--verbose", action="store_true")
 	args = parser.parse_args()
 
@@ -243,13 +267,15 @@ def main():
 
 	queryMap = {
 		"blm": BLM_Query,
-		"county": USGS_CountyQuery,
+		"county": TigerCountyQuery,
 		"county_usfs": USFS_CountyQuery,
+		"county_usgs": USGS_CountyQuery,
 		"fs": USFS_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
 		"rd": USFS_RangerDistrictQuery,
 		"sma": BLM_SMA_Query,
+		"state": TigerStateQuery,
 		"topo": USGS_TopoQuery,
 		"w": WildernessQuery,
 		"wsa": BLM_WSA_Query,
