@@ -5,51 +5,63 @@ var MapServer = (function() {
 'use strict';
 
 var MapServer = {
+	// Spatial Reference: 102100 (EPSG:3857) (WGS 84 / Pseudo-Mercator) unless otherwise specified.
+
 	wildernessSpec: {
-		// Spatial Reference: 102113 (3785)
+		// Spatial Reference: 102113 (EPSG:3785) (Popular Visualisation CRS / Mercator (deprecated))
 		alias: 'w',
 		url: 'https://gisservices.cfc.umt.edu/arcgis/rest/services/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
 		exportLayers: '0',
-		transparent: 'true',
+		transparent: true,
 		options: {opacity: 0.5, zIndex: 210},
 		queryLayer: '0',
 		queryFields: ['OBJECTID_1', 'NAME', 'URL', 'Agency', 'YearDesignated'],
 	},
 	topoSpec: {
-		// Spatial Reference: 102100 (3857)
 		alias: 't',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
 		exportLayers: '0',
-		transparent: 'false',
+		transparent: false,
 		options: {zIndex: 210},
 	},
 	imageryTopoSpec: {
-		// Spatial Reference: 102100 (3857)
 		alias: 'it',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
 		exportLayers: '0',
-		transparent: 'false',
+		transparent: false,
 		options: {zIndex: 210},
 	},
 	stateCountySpec: {
-		// Spatial Reference: 102100 (3857)
 		alias: 'sc',
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
 		exportLayers: '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16', // states and counties
-		transparent: 'true',
+		transparent: true,
 		options: {zIndex: 210},
 		queryLayer: '12',
 		queryFields: ['OBJECTID', 'NAME', 'STUSAB'],
 	},
 	countySpec: {
-		// Spatial Reference: 102100 (3857)
 		alias: 'c',
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
 		exportLayers: '1,3,5,7,9,11,13', // counties only
-		transparent: 'true',
+		transparent: true,
 		options: {zIndex: 210},
 		queryLayer: '13',
 		queryFields: ['OBJECTID', 'NAME'],
+	},
+	countyLabelsSpec: {
+		alias: 'cl',
+		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Labels/MapServer',
+		exportLayers: '65',
+		transparent: true,
+		options: {zIndex: 210},
+	},
+	zipcodeSpec: {
+		alias: 'z',
+		url: 'https://gis.usps.com/arcgis/rest/services/EDDM/EDDM_ZIP5/MapServer',
+		exportLayers: '0',
+		transparent: true,
+		options: {zIndex: 210},
 	},
 };
 
@@ -59,6 +71,13 @@ var tileOrigin = -(Math.PI * earthRadius);
 
 function tileLayer(spec)
 {
+	var baseURL = [spec.url + '/export?f=image',
+		'format=png',
+		'layers=show:' + spec.exportLayers,
+		'transparent=' + spec.transparent,
+		'bboxSR=102113',
+		'imageSR=102113'].join('&');
+
 	return L.GridLayer.extend({
 	createTile: function(tileCoords, done)
 	{
@@ -69,15 +88,10 @@ function tileLayer(spec)
 
 		var tileSize = this.getTileSize();
 
-		var url = spec.url + '/export?' + [
-			'bbox=' + [x.toFixed(p), (-y-m).toFixed(p), (x+m).toFixed(p), (-y).toFixed(p)].join(','),
-			'bboxSR=102113',
-			'layers=show:' + spec.exportLayers,
+		var url = [baseURL,
 			'size=' + tileSize.x + ',' + tileSize.y,
-			'imageSR=102113',
-			'format=png',
-			'transparent=' + spec.transparent,
-			'f=image'].join('&');
+			'bbox=' + [x.toFixed(p), (-y-m).toFixed(p), (x+m).toFixed(p), (-y).toFixed(p)].join(',')
+		].join('&');
 
 		var tile = new Image(tileSize.x, tileSize.y);
 
