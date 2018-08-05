@@ -32,7 +32,7 @@ function longitudeToWebMercatorX(longitude)
 
 	return (earthRadius * longitude * radiansPerDegree).toFixed(4);
 }
-function wildernessURL(latitude, longitude)
+function extentForLatLong(latitude, longitude)
 {
 /*
 	When querying the ArcGIS VEGeocoder for "lat,long", the bestView extent of the
@@ -53,9 +53,7 @@ function wildernessURL(latitude, longitude)
 	ymin = latitudeToWebMercatorY(ymin);
 	ymax = latitudeToWebMercatorY(ymax);
 
-	return "https://umontana.maps.arcgis.com/apps/webappviewer/index.html" +
-		"?id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=" +
-		xmin + "," + ymin + "," + xmax + "," + ymax + ",102113";
+	return [xmin, ymin, xmax, ymax, '102113'].join(',');
 }
 function wccLink(latitude, longitude)
 {
@@ -298,6 +296,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	var latLong = latCommaLong.split(',');
 	var latitude = Number(latLong[0]);
 	var longitude = Number(latLong[1]);
+	var extent = extentForLatLong(latitude, longitude);
 	var peakList = globalPeakInfo.peakList;
 
 	var listNode = document.createElement('UL');
@@ -307,6 +306,10 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'q=select+col0+from+1oAUIuqAirzAY_wkouZLdM4nRYyZ1p4TAg3p6aD2T' +
 		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
 		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG');
+
+	addMapLink(listNode, 'BLM National Data',
+		'https://blm-egis.maps.arcgis.com/apps/webappviewer/index.html?' +
+		'id=6f0da4c7931440a8a80bfe20eddd7550&extent=' + extent);
 
 	if (peakFlags.state_CA)
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
@@ -385,7 +388,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	addMapLink(listNode, 'Water & Climate Center', wccLink(latLong[0], latLong[1]));
 
-	addMapLink(listNode, 'Wilderness.net', wildernessURL(latitude, longitude));
+	addMapLink(listNode, 'Wilderness.net',
+		'https://umontana.maps.arcgis.com/apps/webappviewer/index.html?' +
+		'id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=' + extent);
 
 	var mapLinkBox = document.createElement('DIV');
 	mapLinkBox.className = 'mapLinkBox';
