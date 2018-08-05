@@ -4,6 +4,20 @@
 var MapServer = (function() {
 'use strict';
 
+function fitLink(map, spec)
+{
+	function fitBounds(event)
+	{
+		event.preventDefault();
+		map.fitBounds(spec.outline.getBounds());
+	}
+	var img = new Image();
+	img.alt = 'Zoom To Fit';
+	img.src = 'ztf.svg';
+	img.className = 'msZtf';
+	img.addEventListener('click', fitBounds, false);
+	return img;
+}
 function simpleFillSymbol(fillColor)
 {
 	return {
@@ -125,7 +139,7 @@ MapServer.wildernessSpec.popup = {
 		NPS: '#800080', // Purple (fill color is #A900E6)
 		USFS:'#008000', // Green  (fill color is #38A800)
 	},
-	init: function(div)
+	init: function(div, map)
 	{
 		this.linkNode = document.createElement('a');
 		this.nameNode = document.createTextNode('');
@@ -138,6 +152,7 @@ MapServer.wildernessSpec.popup = {
 		div.appendChild(this.textNode1);
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2);
+		div.appendChild(this.ztf = fitLink(map, this));
 	},
 	show: function(attr)
 	{
@@ -154,11 +169,12 @@ MapServer.wildernessSpec.popup = {
 	},
 };
 MapServer.countySpec.popup = {
-	init: function(div)
+	init: function(div, map)
 	{
 		this.nameNode = document.createTextNode('');
 
 		div.appendChild(this.nameNode);
+		div.appendChild(this.ztf = fitLink(map, this));
 	},
 	show: function(attr)
 	{
@@ -254,7 +270,7 @@ MapServer.enableQuery = function(map)
 
 		var specDiv = document.createElement('div');
 		spec.popup.div = specDiv;
-		spec.popup.init(specDiv);
+		spec.popup.init(specDiv, map);
 		popupDiv.appendChild(specDiv);
 
 		var baseURL = spec.url + '/' + spec.queryLayer + '/query?f=' + responseFormat;
@@ -277,6 +293,13 @@ MapServer.enableQuery = function(map)
 
 	function runQuery(url, clickID, ll, spec)
 	{
+		function showOutline(outline)
+		{
+			spec.popup.outline = outline;
+			spec.popup.ztf.style.display = '';
+			popup.update();
+			outlines.push(outline.addTo(map));
+		}
 		loadJSON(url, function(json) {
 			if (clickID !== globalClickID) return;
 			if (firstResponse) removeOutlines();
@@ -286,15 +309,17 @@ MapServer.enableQuery = function(map)
 			var style = spec.popup.show(attr);
 
 			spec.popup.div.style.display = 'block';
+			spec.popup.ztf.style.display = 'none';
 			if (popupEmpty) {
 				map.openPopup(popup.setLatLng(ll));
 				popupEmpty = false;
-			}
+			} else
+				popup.update();
 
 			var outlineID = attr[spec.queryFields[0]];
 			var outline = spec.outlineCache[outlineID];
 			if (outline) {
-				outlines.push(outline.addTo(map));
+				showOutline(outline);
 				return;
 			}
 
@@ -308,7 +333,7 @@ MapServer.enableQuery = function(map)
 				var outline = L.GeoJSON.geometryToLayer(geometry, style);
 				spec.outlineCache[outlineID] = outline;
 				if (clickID === globalClickID)
-					outlines.push(outline.addTo(map));
+					showOutline(outline);
 			});
 		}, function() {
 			if (clickID !== globalClickID) return;
