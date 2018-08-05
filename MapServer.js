@@ -104,6 +104,14 @@ var MapServer = {
 		exportLayers: '0',
 		transparent: true,
 	},
+	blmSpec: {
+		alias: 'blm',
+		url: 'https://gis.blm.gov/arcgis/rest/services/admin_boundaries/BLM_Natl_AdminUnit/MapServer',
+		exportLayers: '3', // 1=State, 2=District, 3=Field Office, 4=Other
+		transparent: true,
+		queryLayer: '3',
+		queryFields: ['OBJECTID', 'ADMU_NAME', 'ADMIN_ST', 'ADMU_ST_URL', 'PARENT_NAME'],
+	},
 };
 
 if (false)
@@ -160,6 +168,9 @@ MapServer.wildernessSpec.popup = {
 		if (agency === 'FS') agency = 'USFS';
 
 		this.linkNode.href = attr.URL;
+		if (this.linkNode.protocol !== 'https:')
+			this.linkNode.protocol = 'https:';
+
 		this.nameNode.nodeValue = attr.NAME;
 		this.textNode1.nodeValue = ' (' + agency + ')';
 		this.textNode2.nodeValue = '(' + attr.YearDesignated + ') (' +
@@ -181,6 +192,39 @@ MapServer.countySpec.popup = {
 		this.nameNode.nodeValue = attr.NAME;
 
 		return {color: '#000000', fillOpacity: 0};
+	},
+};
+MapServer.blmSpec.popup = {
+	init: function(div, map)
+	{
+		this.linkNode = document.createElement('a');
+		this.nameNode = document.createTextNode('');
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		this.linkNode.appendChild(this.nameNode);
+		div.appendChild(document.createTextNode('BLM '));
+		div.appendChild(this.linkNode);
+		div.appendChild(this.textNode1);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+		div.appendChild(this.ztf = fitLink(map, this));
+	},
+	show: function(attr)
+	{
+		var url = attr.ADMU_ST_URL;
+		if (url.charAt(0) === '\'')
+			url = url.substring(1);
+
+		this.linkNode.href = url;
+		if (this.linkNode.protocol !== 'https:')
+			this.linkNode.protocol = 'https:';
+
+		this.nameNode.nodeValue = attr.ADMU_NAME;
+		this.textNode1.nodeValue = ' (' + attr.ADMIN_ST + ')';
+		this.textNode2.nodeValue = '(' + attr.PARENT_NAME + ')';
+
+		return {color: '#0000FF', fillOpacity: 0};
 	},
 };
 
