@@ -49,7 +49,6 @@ class Query(object):
 			command.insert(1, "-s")
 
 		rc = subprocess.call(command)
-
 		if rc != 0:
 			if not verbose:
 				print(*command)
@@ -214,9 +213,9 @@ class USGS_CountyQuery(Query):
 #		("COUNTY_NAME", "county"), # "White Pine" or "Carson City"
 		("GNIS_NAME", "name"),     # "White Pine County" or "Carson City"
 		("STATE_NAME", "state"),   # "Nevada"
-#		("POPULATION", "pop"),     # 10030 or 55274
+		("POPULATION", "pop"),     # 10030 or 55274
 	]
-	printSpec = "{name}, {state}"
+	printSpec = "{name}, {state} (Population: {pop:,})"
 
 class USGS_TopoQuery(Query):
 	name = "USGS 7.5' Topo"
@@ -231,7 +230,7 @@ class USGS_TopoQuery(Query):
 
 class TigerCountyQuery(Query):
 	name = "County (TIGERweb)"
-	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" #
+	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" # 10.51
 	service = "TIGERweb/State_County"
 	layer = 13 # sr = 102100 (3857)
 	fields = [
@@ -243,7 +242,7 @@ class TigerCountyQuery(Query):
 
 class TigerStateQuery(Query):
 	name = "State (TIGERweb)"
-	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" #
+	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" # 10.51
 	service = "TIGERweb/State_County"
 	layer = 12 # sr = 102100 (3857)
 	fields = [
@@ -252,6 +251,14 @@ class TigerStateQuery(Query):
 		("STUSAB", "state"),
 	]
 	printSpec = "{name} ({state})"
+
+class CensusCountyQuery(Query):
+	name = "County (2010 Census)"
+	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" # 10.51
+	service = "TIGERweb/tigerWMS_Census2010"
+	layer = 100 # sr = 102100 (3857)
+	fields = [("NAME", "name"), ("POP100", "pop")]
+	printSpec = "{name} (Population: {pop:,})"
 
 def main():
 	import argparse
@@ -268,6 +275,7 @@ def main():
 	queryMap = {
 		"blm": BLM_Query,
 		"county": TigerCountyQuery,
+		"county_census": CensusCountyQuery,
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"fs": USFS_Query,
