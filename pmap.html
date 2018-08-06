@@ -60,6 +60,19 @@ progress {
 	width: 15px;
 	height: 15px;
 }
+.msZtf {
+	margin: 1px 4px;
+	vertical-align: middle;
+	width: 11px;
+	height: 11px;
+}
+.msZtf:hover {
+	cursor: pointer;
+	margin: 0px 3px;
+	vertical-align: middle;
+	width: 13px;
+	height: 13px;
+}
 .lcZtf {
 	margin: 3px 1px 2px 3px; /* top right bottom left */
 	vertical-align: top;
@@ -131,7 +144,11 @@ progress {
 	padding: 2px 8px 2px 6px;
 	white-space: nowrap;
 }
-.lcItem:hover {
+.tlcItem {
+	padding: 2px 8px 2px 5px;
+	white-space: nowrap;
+}
+.lcItem:hover, .tlcItem:hover {
 	background-color: rgb(232,232,232); /* If you change this, also change lcItemHoverColor in pmap-lc.js */
 }
 .lcItem > input[type="radio"] {
@@ -141,14 +158,17 @@ progress {
 .lcItem > input[type="checkbox"] {
 	margin: 0px 2px 0px 2px;
 }
+.tlcItem > input[type="checkbox"] {
+	margin: 0px 4px 0px 0px;
+}
 </style>
 <script src="MapServer.js"></script>
 <script src="pmap-lc.js"></script>
 <script>
 /* globals document, window */
 /* globals MouseEvent, XMLHttpRequest */
-/* globals L */
-/* globals LayerControl, addOverlays, addWildernessTileLayer */
+/* globals L, MapServer */
+/* globals LayerControl, addOverlays */
 "use strict";
 
 function isValidId(s, n)
@@ -207,7 +227,6 @@ function parseQueryString(queryString)
 
 	var flags = {
 		cc: 'clickCenter',
-		w: 'addWilderness',
 	};
 	var handlers = {
 		b: parseBaseLayer,
@@ -369,6 +388,18 @@ function createMap(options)
 	for (var layer of layers)
 		layerControl.addBaseLayer(layer, baseLayers[layer]);
 
+	layerControl.addBaseLayer('National Map Topo', MapServer.newLayer(MapServer.topoSpec));
+	layerControl.addBaseLayer('National Map Imagery', MapServer.newLayer(MapServer.imageryTopoSpec));
+	layerControl.addBaseLayer('Esri USA Topo', MapServer.newLayer(MapServer.esriTopoSpec));
+	layerControl.div.appendChild(document.createElement('hr'));
+	layerControl.addTileOverlay('BLM Districts', MapServer.newLayer(MapServer.blmSpec));
+	layerControl.addTileOverlay('Counties', MapServer.newLayer(MapServer.countySpec));
+	layerControl.addTileOverlay('Counties & States', MapServer.newLayer(MapServer.stateCountySpec));
+	layerControl.addTileOverlay('County Labels', MapServer.newLayer(MapServer.countyLabelsSpec));
+	layerControl.addTileOverlay('National Parks', MapServer.newLayer(MapServer.npsSpec));
+	layerControl.addTileOverlay('Wilderness Areas', MapServer.newLayer(MapServer.wildernessSpec));
+	layerControl.addTileOverlay('ZIP Codes', MapServer.newLayer(MapServer.zipcodeSpec));
+
 	var mapBounds = getMapBounds(map, {
 		fitWhenDoneSetting: !queryString.ll,
 		clickWhenDoneSetting: queryString.clickCenter,
@@ -413,9 +444,7 @@ function createMap(options)
 		layerControl.div.appendChild(document.createElement('hr'));
 		layerControl.fillMenu(layerControl.div, lcdjson, []);
 		addOverlays(queryString.overlays, lcdjson, mapBounds);
-
-		if (queryString.addWilderness)
-			addWildernessTileLayer(map);
+		MapServer.enableQuery(map);
 	}
 	loadJSON('pmap_lcd.json', addOverlayMenu);
 }

@@ -18,13 +18,25 @@ function fitLink(map, spec)
 	img.addEventListener('click', fitBounds, false);
 	return img;
 }
-function simpleFillSymbol(fillColor)
+function simpleLineSymbol(color, width)
 {
 	return {
+		type: 'esriSLS',
+		style: 'esriSLSSolid',
+		color: color,
+		width: width,
+	};
+}
+function simpleFillSymbol(color, outline)
+{
+	var symbol = {
 		type: 'esriSFS',
 		style: 'esriSFSSolid',
-		color: fillColor,
+		color: color,
 	};
+	if (outline)
+		symbol.outline = outline;
+	return symbol;
 }
 function classBreakInfo(maxValue, fillColor)
 {
@@ -59,7 +71,7 @@ var MapServer = {
 		transparent: true,
 		options: {opacity: 0.5, zIndex: 210},
 		queryLayer: '0',
-		queryFields: ['OBJECTID_1', 'NAME', 'URL', 'Agency', 'YearDesignated', 'Acreage'],
+		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
 	},
 	topoSpec: {
 		alias: 't',
@@ -99,10 +111,19 @@ var MapServer = {
 		transparent: true,
 	},
 	zipcodeSpec: {
-		alias: 'z',
+		alias: 'zip',
 		url: 'https://gis.usps.com/arcgis/rest/services/EDDM/EDDM_ZIP5/MapServer',
 		exportLayers: '0',
 		transparent: true,
+	},
+	npsSpec: {
+		alias: 'nps',
+		url: 'https://mapservices.nps.gov/arcgis/rest/services' +
+			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
+		exportLayers: '2',
+		transparent: true,
+		queryLayer: '2',
+		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 	},
 	blmSpec: {
 		alias: 'blm',
@@ -139,7 +160,40 @@ if (false)
 			classBreakInfo(2009, [0, 0, 255, 255]),
 			classBreakInfo(2019, [255, 0, 255, 255]),
 		]});
+if (false)
+	MapServer.blmSpec.dynamicLayers = dynamicLayer(101, 3, {
+		type: 'simple',
+		symbol: simpleFillSymbol([0, 0, 0, 0], simpleLineSymbol([138, 43, 226, 255], 2))
+	});
+if (true) {
+	MapServer.npsSpec.dynamicLayers = dynamicLayer(101, 2, {
+		type: 'simple',
+		symbol: simpleFillSymbol([255, 255, 0, 255])
+	});
+	MapServer.npsSpec.options = {opacity: 0.5, zIndex: 210};
+}
+MapServer.npsSpec.popup = {
+	init: function(div)
+	{
+		this.linkNode = document.createElement('a');
+		this.nameNode = document.createTextNode('');
 
+		this.linkNode.style.fontWeight = 'bold';
+		this.linkNode.appendChild(this.nameNode);
+		div.appendChild(this.linkNode);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		var code = attr.UNIT_CODE.toLowerCase();
+		if (code === 'kica' || code === 'sequ') code = 'seki';
+
+		this.linkNode.href = 'https://www.nps.gov/' + code + '/index.htm';
+		this.nameNode.nodeValue = attr.UNIT_NAME;
+
+		return {color: '#FFFF00', fillOpacity: 0};
+	},
+};
 MapServer.wildernessSpec.popup = {
 	outlineColor: {
 		BLM: '#0000FF', // Blue   (fill color is #FFFF00)
@@ -147,7 +201,7 @@ MapServer.wildernessSpec.popup = {
 		NPS: '#800080', // Purple (fill color is #A900E6)
 		USFS:'#008000', // Green  (fill color is #38A800)
 	},
-	init: function(div, map)
+	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
 		this.nameNode = document.createTextNode('');
@@ -160,17 +214,14 @@ MapServer.wildernessSpec.popup = {
 		div.appendChild(this.textNode1);
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2);
-		div.appendChild(this.ztf = fitLink(map, this));
+		div.appendChild(this.ztf);
 	},
 	show: function(attr)
 	{
 		var agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
-		this.linkNode.href = attr.URL;
-		if (this.linkNode.protocol !== 'https:')
-			this.linkNode.protocol = 'https:';
-
+		this.linkNode.href = 'https://www.wilderness.net/NWPS/wildView?WID=' + attr.WID;
 		this.nameNode.nodeValue = attr.NAME;
 		this.textNode1.nodeValue = ' (' + agency + ')';
 		this.textNode2.nodeValue = '(' + attr.YearDesignated + ') (' +
@@ -180,12 +231,12 @@ MapServer.wildernessSpec.popup = {
 	},
 };
 MapServer.countySpec.popup = {
-	init: function(div, map)
+	init: function(div)
 	{
 		this.nameNode = document.createTextNode('');
 
 		div.appendChild(this.nameNode);
-		div.appendChild(this.ztf = fitLink(map, this));
+		div.appendChild(this.ztf);
 	},
 	show: function(attr)
 	{
@@ -195,7 +246,7 @@ MapServer.countySpec.popup = {
 	},
 };
 MapServer.blmSpec.popup = {
-	init: function(div, map)
+	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
 		this.nameNode = document.createTextNode('');
@@ -208,7 +259,7 @@ MapServer.blmSpec.popup = {
 		div.appendChild(this.textNode1);
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2);
-		div.appendChild(this.ztf = fitLink(map, this));
+		div.appendChild(this.ztf);
 	},
 	show: function(attr)
 	{
@@ -228,12 +279,19 @@ MapServer.blmSpec.popup = {
 	},
 };
 
-var querySpecs = [];
-for (var specName in MapServer)
+var allQuerySpecs = [
+	MapServer.npsSpec,
+	MapServer.wildernessSpec,
+	MapServer.countySpec,
+	MapServer.blmSpec,
+];
+function getQuerySpecs()
 {
-	var spec = MapServer[specName];
-	if (spec.popup)
-		querySpecs.push(spec);
+	var querySpecs = [];
+	for (var spec of allQuerySpecs)
+		if (spec.popup)
+			querySpecs.push(spec);
+	return querySpecs;
 }
 
 var earthRadius = 6378137; // WGS 84 equatorial radius in meters
@@ -278,9 +336,9 @@ function tileLayer(spec)
 	}
 	});
 }
-MapServer.addLayer = function(map, spec)
+MapServer.newLayer = function(spec)
 {
-	map.addLayer(new (tileLayer(spec))(spec.options || {zIndex: 210}));
+	return new (tileLayer(spec))(spec.options || {zIndex: spec.transparent ? 210 : 200});
 };
 MapServer.enableQuery = function(map)
 {
@@ -290,6 +348,7 @@ MapServer.enableQuery = function(map)
 	var popupEmpty = false;
 	var firstResponse = false;
 	var outlines = [];
+	var querySpecs = getQuerySpecs();
 
 	function removeOutlines()
 	{
@@ -312,10 +371,11 @@ MapServer.enableQuery = function(map)
 	{
 		spec.outlineCache = {};
 
-		var specDiv = document.createElement('div');
-		spec.popup.div = specDiv;
-		spec.popup.init(specDiv, map);
-		popupDiv.appendChild(specDiv);
+		var popupSpec = spec.popup;
+		popupSpec.div = document.createElement('div');
+		popupSpec.ztf = fitLink(map, popupSpec);
+		popupSpec.init(popupSpec.div);
+		popupDiv.appendChild(popupSpec.div);
 
 		var baseURL = spec.url + '/' + spec.queryLayer + '/query?f=' + responseFormat;
 

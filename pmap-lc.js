@@ -665,6 +665,39 @@ LayerControl.prototype.addBaseLayer = function(name, layer)
 
 	ctrl.div.appendChild(div);
 };
+LayerControl.prototype.addTileOverlay = function(name, layer)
+{
+	var ctrl = this;
+
+	var input = document.createElement('input');
+	input.type = 'checkbox';
+	input.checked = false;
+
+	function clickCheckbox()
+	{
+		if (input.checked)
+			layer.addTo(ctrl.map);
+		else
+			layer.remove();
+	}
+	function clickName()
+	{
+		input.checked = !input.checked;
+		clickCheckbox();
+	}
+
+	var nameSpan = document.createElement('span');
+	nameSpan.appendChild(document.createTextNode(name));
+	nameSpan.addEventListener('click', clickName);
+	input.addEventListener('click', clickCheckbox);
+
+	var div = document.createElement('div');
+	div.className = 'tlcItem';
+	div.appendChild(input);
+	div.appendChild(nameSpan);
+
+	ctrl.div.appendChild(div);
+};
 function clickArrow(event)
 {
 	event.currentTarget.parentNode.firstChild.click();
