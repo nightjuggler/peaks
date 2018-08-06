@@ -1,5 +1,61 @@
 /* globals document, Image, L, loadJSON */
-/* exported MapServer */
+/* exported BaseLayers, TileOverlays, MapServer */
+
+var BaseLayers = {
+name: 'Base Layers',
+items: {
+	mapbox: {
+		name: 'Mapbox',
+		items: {
+			o: {name: 'Outdoors'},
+			rbh: {name: 'Run Bike Hike'},
+			s: {name: 'Satellite'},
+			sts: {name: 'Streets Satellite'},
+			st: {name: 'Streets'},
+			pencil: {name: 'Pencil'},
+			emerald: {name: 'Emerald'},
+		},
+		order: ['o', 'rbh', 's', 'sts', 'st', 'pencil', 'emerald'],
+	},
+	natmap: {
+		name: 'National Map',
+		items: {
+			topo: {
+		name: 'Topo',
+		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
+			},
+			imgtopo: {
+		name: 'Imagery Topo',
+		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
+			},
+		},
+		order: ['topo', 'imgtopo'],
+	},
+	esri: {
+		name: 'Esri',
+		items: {
+			usatopo: {
+		name: 'USA Topo',
+		url: 'https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer',
+			},
+		},
+		order: ['usatopo'],
+	},
+
+	o: 'mapbox',
+	rbh: 'mapbox',
+	s: 'mapbox',
+	sts: 'mapbox',
+	st: 'mapbox',
+},
+order: ['mapbox', 'natmap', 'esri'],
+};
+var TileOverlays = {
+name: 'Tile Overlays',
+items: {
+},
+order: [],
+};
 
 var MapServer = (function() {
 'use strict';
@@ -61,75 +117,44 @@ function dynamicLayer(id, mapLayerId, renderer)
 }
 
 var MapServer = {
-	// Spatial Reference: 102100 (EPSG:3857) (Web Mercator) unless otherwise specified.
-
 	wildernessSpec: {
 		// Spatial Reference: 102113 (EPSG:3785) (deprecated Web Mercator)
-		alias: 'w',
 		url: 'https://gisservices.cfc.umt.edu/arcgis/rest/services' +
 			'/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
-		transparent: true,
-		options: {opacity: 0.5, zIndex: 210},
+		opacity: 0.5,
 		queryLayer: '0',
 		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
 	},
-	topoSpec: {
-		alias: 't',
-		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
-		exportLayers: '0',
-	},
-	imageryTopoSpec: {
-		alias: 'ti',
-		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
-		exportLayers: '0',
-	},
-	esriTopoSpec: {
-		alias: 'te',
-		url: 'https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer',
-		exportLayers: '0',
-	},
-	stateCountySpec: {
-		alias: 'sc',
+	stateSpec: {
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
-		exportLayers: '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16', // states and counties
-		transparent: true,
+		exportLayers: '0,2,4,6,8,10,12,14,15,16', // states only
 		queryLayer: '12',
 		queryFields: ['OBJECTID', 'NAME', 'STUSAB'],
 	},
 	countySpec: {
-		alias: 'c',
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
 		exportLayers: '1,3,5,7,9,11,13', // counties only
-		transparent: true,
 		queryLayer: '13',
 		queryFields: ['OBJECTID', 'NAME'],
 	},
-	countyLabelsSpec: {
-		alias: 'cl',
+	countyLabelSpec: {
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Labels/MapServer',
 		exportLayers: '65',
-		transparent: true,
 	},
 	zipcodeSpec: {
-		alias: 'zip',
 		url: 'https://gis.usps.com/arcgis/rest/services/EDDM/EDDM_ZIP5/MapServer',
 		exportLayers: '0',
-		transparent: true,
 	},
 	npsSpec: {
-		alias: 'nps',
 		url: 'https://mapservices.nps.gov/arcgis/rest/services' +
 			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
 		exportLayers: '2',
-		transparent: true,
 		queryLayer: '2',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 	},
 	blmSpec: {
-		alias: 'blm',
 		url: 'https://gis.blm.gov/arcgis/rest/services/admin_boundaries/BLM_Natl_AdminUnit/MapServer',
 		exportLayers: '3', // 1=State, 2=District, 3=Field Office, 4=Other
-		transparent: true,
 		queryLayer: '3',
 		queryFields: ['OBJECTID', 'ADMU_NAME', 'ADMIN_ST', 'ADMU_ST_URL', 'PARENT_NAME'],
 	},
@@ -170,7 +195,7 @@ if (true) {
 		type: 'simple',
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
-	MapServer.npsSpec.options = {opacity: 0.5, zIndex: 210};
+	MapServer.npsSpec.opacity = 0.5;
 }
 MapServer.npsSpec.popup = {
 	init: function(div)
@@ -298,11 +323,11 @@ var earthRadius = 6378137; // WGS 84 equatorial radius in meters
 var earthCircumference = 2 * Math.PI * earthRadius;
 var tileOrigin = -(Math.PI * earthRadius);
 
-function tileLayer(spec)
+function tileLayer(spec, transparent)
 {
 	var baseURL = [spec.url + '/export?f=image', 'bboxSR=102113', 'imageSR=102113'];
 
-	if (spec.transparent)
+	if (transparent)
 		baseURL.push('transparent=true');
 	if (spec.dynamicLayers)
 		baseURL.push('dynamicLayers=' + spec.dynamicLayers);
@@ -336,9 +361,26 @@ function tileLayer(spec)
 	}
 	});
 }
-MapServer.newLayer = function(spec)
+MapServer.newOverlay = function(spec)
 {
-	return new (tileLayer(spec))(spec.options || {zIndex: spec.transparent ? 210 : 200});
+	var options = {
+		zIndex: 210,
+	};
+	if (spec.attribution)
+		options.attribution = spec.attribution;
+	if (spec.opacity)
+		options.opacity = spec.opacity;
+
+	return new (tileLayer(spec, true))(options);
+};
+MapServer.newBaseLayer = function(spec)
+{
+	var options = {
+	};
+	if (spec.attribution)
+		options.attribution = spec.attribution;
+
+	return new (tileLayer(spec, false))(options);
 };
 MapServer.enableQuery = function(map)
 {

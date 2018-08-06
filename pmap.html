@@ -167,7 +167,7 @@ progress {
 <script>
 /* globals document, window */
 /* globals MouseEvent, XMLHttpRequest */
-/* globals L, MapServer */
+/* globals L, BaseLayers, MapServer */
 /* globals LayerControl, addOverlays */
 "use strict";
 
@@ -205,19 +205,10 @@ function parseOverlay(q, v)
 	if (isValidId(v, 48))
 		q.overlays.push(v);
 }
-var validBaseLayers = {
-	o: 'Outdoors',
-	rbh: 'Run Bike Hike',
-	s: 'Satellite',
-	sts: 'Streets Satellite',
-	st: 'Streets',
-	p: 'Pencil',
-	e: 'Emerald',
-};
 function parseBaseLayer(q, v)
 {
-	if (isValidId(v, 3) && validBaseLayers[v])
-		q.baseLayer = validBaseLayers[v];
+	if (isValidId(v, 48))
+		q.baseLayer = v;
 }
 function parseQueryString(queryString)
 {
@@ -353,52 +344,37 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 function createMap(options)
 {
 	var queryString = {
-		baseLayer: 'Outdoors',
+		baseLayer: 'o',
 		clickCenter: false,
 		overlays: [],
 	};
 	parseQueryString(queryString);
 
-	var layers = [
-		'Outdoors',
-		'Run Bike Hike',
-		'Satellite',
-		'Streets Satellite',
-		'Streets',
-		'Pencil',
-		'Emerald',
-	];
-
-	var baseLayers = {};
-	for (var layer of layers)
-	{
-		var id = 'mapbox.' + layer.toLowerCase().replace(/ /g, '-');
-		baseLayers[layer] = L.mapbox.tileLayer(id, options);
-	}
-
 	var map = L.mapbox.map('map', null, {zoomControl: false, scrollWheelZoom: false});
-	var baseLayer = baseLayers[queryString.baseLayer].addTo(map);
+	var layerControl = new LayerControl(map);
+
+	layerControl.baseLayerMakers = {
+		mapbox: function(item) {
+			var id = 'mapbox.' + item.name.toLowerCase().replace(/ /g, '-');
+			return L.mapbox.tileLayer(id, options);
+		},
+	};
+	layerControl.addBaseLayers(layerControl.div, BaseLayers, [], MapServer.newBaseLayer);
+	layerControl.setBaseLayer(queryString.baseLayer, BaseLayers);
 
 	L.control.zoom({position: 'topright'}).addTo(map);
 
 	var scaleControl = L.control.scale().addTo(map);
 	scaleControl.getContainer().id = 'scaleControl';
 
-	var layerControl = new LayerControl(map, baseLayer);
-	for (var layer of layers)
-		layerControl.addBaseLayer(layer, baseLayers[layer]);
-
-	layerControl.addBaseLayer('National Map Topo', MapServer.newLayer(MapServer.topoSpec));
-	layerControl.addBaseLayer('National Map Imagery', MapServer.newLayer(MapServer.imageryTopoSpec));
-	layerControl.addBaseLayer('Esri USA Topo', MapServer.newLayer(MapServer.esriTopoSpec));
 	layerControl.div.appendChild(document.createElement('hr'));
-	layerControl.addTileOverlay('BLM Districts', MapServer.newLayer(MapServer.blmSpec));
-	layerControl.addTileOverlay('Counties', MapServer.newLayer(MapServer.countySpec));
-	layerControl.addTileOverlay('Counties & States', MapServer.newLayer(MapServer.stateCountySpec));
-	layerControl.addTileOverlay('County Labels', MapServer.newLayer(MapServer.countyLabelsSpec));
-	layerControl.addTileOverlay('National Parks', MapServer.newLayer(MapServer.npsSpec));
-	layerControl.addTileOverlay('Wilderness Areas', MapServer.newLayer(MapServer.wildernessSpec));
-	layerControl.addTileOverlay('ZIP Codes', MapServer.newLayer(MapServer.zipcodeSpec));
+	layerControl.addTileOverlay('BLM Districts', MapServer.newOverlay(MapServer.blmSpec));
+	layerControl.addTileOverlay('Counties', MapServer.newOverlay(MapServer.countySpec));
+	layerControl.addTileOverlay('County Labels', MapServer.newOverlay(MapServer.countyLabelSpec));
+	layerControl.addTileOverlay('National Parks', MapServer.newOverlay(MapServer.npsSpec));
+	layerControl.addTileOverlay('States', MapServer.newOverlay(MapServer.stateSpec));
+	layerControl.addTileOverlay('Wilderness Areas', MapServer.newOverlay(MapServer.wildernessSpec));
+	layerControl.addTileOverlay('ZIP Codes', MapServer.newOverlay(MapServer.zipcodeSpec));
 
 	var mapBounds = getMapBounds(map, {
 		fitWhenDoneSetting: !queryString.ll,

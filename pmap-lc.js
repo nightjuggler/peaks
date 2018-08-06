@@ -8,6 +8,7 @@
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 var USFS_Prefix = 'https://www.fs.usda.gov/';
 var USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
+var Weather_Prefix = 'https://forecast.weather.gov/MapClick.php';
 var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
 var Wilderness_Prefix = 'https://www.wilderness.net/NWPS/wildView?WID=';
 
@@ -85,9 +86,9 @@ function weatherLink(layer)
 	function setWxLink()
 	{
 		var ll = layer.getPopup().getLatLng();
-		a.href = 'https://forecast.weather.gov/MapClick.php'
-			+ '?lon=' + ll.lng.toFixed(6)
-			+ '&lat=' + ll.lat.toFixed(6);
+		a.href = Weather_Prefix +
+			'?lon=' + ll.lng.toFixed(6) +
+			'&lat=' + ll.lat.toFixed(6);
 	}
 
 	a.href = '#';
@@ -491,8 +492,7 @@ function popupHtml(ll, p, htmlFilename)
 	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
 	if (p.LoJ) links.push(makeLink('https://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
 	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
-	if (!p.noWX) links.push(makeLink('https://forecast.weather.gov/MapClick.php?lon='
-		+ ll.lng + '&lat=' + ll.lat, 'WX'));
+	if (!p.noWX) links.push(makeLink(Weather_Prefix + '?lon=' + ll.lng + '&lat=' + ll.lat, 'WX'));
 
 	links = links.length === 0 ? '' : '<br>' + links.join(', ');
 
@@ -596,7 +596,7 @@ function toggleLayerMenu(event)
 		lcDiv.scrollTop = scrollTop;
 	}
 }
-function LayerControl(map, currentBaseLayer)
+function LayerControl(map)
 {
 	var div = document.getElementById('layerControl');
 	var icon = document.getElementById('layerControlIcon');
@@ -634,37 +634,7 @@ function LayerControl(map, currentBaseLayer)
 
 	this.map = map;
 	this.div = div;
-	this.currentBaseLayer = currentBaseLayer;
 }
-LayerControl.prototype.addBaseLayer = function(name, layer)
-{
-	var ctrl = this;
-
-	var input = document.createElement('input');
-	input.type = 'radio';
-	input.name = 'baselayer';
-	input.checked = (layer === ctrl.currentBaseLayer);
-
-	function changeBaseLayer()
-	{
-		if (layer === ctrl.currentBaseLayer) return;
-		ctrl.currentBaseLayer.remove();
-		ctrl.currentBaseLayer = layer.addTo(ctrl.map);
-		input.checked = true;
-	}
-
-	var nameSpan = document.createElement('span');
-	nameSpan.appendChild(document.createTextNode(name));
-	nameSpan.addEventListener('click', changeBaseLayer);
-	input.addEventListener('click', changeBaseLayer);
-
-	var div = document.createElement('div');
-	div.className = 'lcItem';
-	div.appendChild(input);
-	div.appendChild(nameSpan);
-
-	ctrl.div.appendChild(div);
-};
 LayerControl.prototype.addTileOverlay = function(name, layer)
 {
 	var ctrl = this;
@@ -1051,3 +1021,72 @@ function addOverlays(overlays, rootLCD, mapBounds)
 		}
 	}
 }
+function makeChangeBaseLayer(ctrl, item, input)
+{
+	return function() {
+		if (ctrl.currentBaseLayer === item.layer) return;
+		if (ctrl.currentBaseLayer)
+			ctrl.currentBaseLayer.remove();
+		ctrl.currentBaseLayer = item.layer.addTo(ctrl.map);
+		input.checked = true;
+	};
+}
+LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, parentMakeLayer)
+{
+	for (var id of parentItem.order)
+	{
+		var item = parentItem.items[id];
+
+		var nameSpan = document.createElement('span');
+		nameSpan.className = 'lcName';
+		item.name = appendName(item.name, nameSpan);
+
+		var itemDiv = document.createElement('div');
+		itemDiv.className = 'lcItem';
+		itemDiv.appendChild(nameSpan);
+
+		parentDiv.appendChild(itemDiv);
+
+		var makeLayer = this.baseLayerMakers[getPathStr(path, id)] || parentMakeLayer;
+
+		if (item.items) {
+			var childDiv = document.createElement('div');
+			childDiv.className = 'lcMenu';
+
+			path.push(id);
+			this.addBaseLayers(childDiv, item, path, makeLayer);
+			path.pop();
+
+			parentDiv.appendChild(childDiv);
+
+			var arrowSpan = document.createElement('span');
+			arrowSpan.className = 'lcArrow';
+			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
+			arrowSpan.addEventListener('click', toggleLayerMenu, false);
+
+			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
+			nameSpan.addEventListener('click', clickArrow, false);
+		} else {
+			var input = document.createElement('input');
+			input.type = 'radio';
+			input.name = 'baselayer';
+			input.checked = false;
+			itemDiv.insertBefore(input, nameSpan);
+
+			item.input = input;
+			item.layer = makeLayer(item);
+
+			var changeBaseLayer = makeChangeBaseLayer(this, item, input);
+			nameSpan.addEventListener('click', changeBaseLayer);
+			input.addEventListener('click', changeBaseLayer);
+		}
+	}
+};
+LayerControl.prototype.setBaseLayer = function(pathStr, rootLCD)
+{
+	var item = getItem(pathStr.split('_'), rootLCD);
+	if (!item || !item.input) return;
+
+	this.currentBaseLayer = item.layer.addTo(this.map);
+	item.input.checked = true;
+};
