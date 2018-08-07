@@ -143,7 +143,7 @@ class BLM_Query(Query):
 	name = "BLM Administrative Unit"
 	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
 	service = "admin_boundaries/BLM_Natl_AdminUnit"
-	layer = 3 # sr = 102100 (3857) # also try layers 1 (State), 2 (District), and 4 (Other)
+	layer = 3 # sr = 102100 (3857) # 1=State, 2=District, 3=Field Office, 4=Other
 	fields = [
 #		("OBJECTID", "id"),
 		("ADMU_NAME", "name"),
@@ -157,7 +157,7 @@ class BLM_NLCS_Query(Query):
 	name = "National Landscape Conservation System"
 	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
 	service = "lands/BLM_Natl_NLCS_NM_NCA_poly"
-	layer = 1 # sr = 102100 (3857) # also try layer 0
+	layer = 1 # sr = 102100 (3857)
 	fields = makePrefixedFields(
 		("Monuments_NCAs_SimilarDesignation2015", (
 #			("OBJECTID", "id"),

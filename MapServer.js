@@ -23,17 +23,17 @@ items: {
 			topo: {
 		name: 'Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
-		attribution: '&copy; <a href="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer">USGS The National Map</a>; U.S. Census Bureau; HERE Road Data',
+		attribution: '&copy; [USGS The National Map]; U.S. Census Bureau; HERE Road Data',
 			},
 			imgtopo: {
 		name: 'Imagery Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
-		attribution: '&copy; <a href="https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer">USGS The National Map</a>',
+		attribution: '&copy; [USGS The National Map]',
 			},
 			naipplus: {
 		name: 'NAIP Plus',
 		url: 'https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/MapServer',
-		attribution: '&copy; <a href="https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/MapServer">USGS The National Map</a>',
+		attribution: '&copy; [USGS The National Map]',
 			},
 		},
 		order: ['topo', 'imgtopo', 'naipplus'],
@@ -44,7 +44,7 @@ items: {
 			usatopo: {
 		name: 'USA Topo',
 		url: 'https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer',
-		attribution: '<a href="https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer">Esri</a>; &copy; 2013 National Geographic Society, i-cubed',
+		attribution: '[Esri] | &copy; 2013 National Geographic Society, i-cubed',
 			},
 		},
 		order: ['usatopo'],
@@ -68,8 +68,24 @@ items: {
 		name: 'BLM Districts',
 		url: 'https://gis.blm.gov/arcgis/rest/services/admin_boundaries/BLM_Natl_AdminUnit/MapServer',
 		exportLayers: '3', // 1=State, 2=District, 3=Field Office, 4=Other
-		queryLayer: '3',
 		queryFields: ['OBJECTID', 'ADMU_NAME', 'ADMIN_ST', 'ADMU_ST_URL', 'PARENT_NAME'],
+		attribution: '[Bureau of Land Management]',
+			},
+			nlcs: {
+		name: 'BLM NLCS',
+		url: 'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_NLCS_NM_NCA_poly/MapServer',
+		// Layer 0 renders outlines (color:[255,77,0,255], width:1) with labels.
+		// Layer 1 renders solid fills (color:[255,128,0,255]) without labels.
+		exportLayers: '1',
+		opacity: 0.5,
+		queryFields: [
+			'Monuments_NCAs_SimilarDesignation2015.OBJECTID',
+			'Monuments_NCAs_SimilarDesignation2015.sma_code',
+			'Monuments_NCAs_SimilarDesignation2015.NCA_NAME',
+			'Monuments_NCAs_SimilarDesignation2015.STATE_GEOG',
+			'nlcs_desc.WEBLINK',
+		],
+		attribution: '[Bureau of Land Management]',
 			},
 			states: {
 		name: 'States',
@@ -95,7 +111,6 @@ items: {
 		url: 'https://mapservices.nps.gov/arcgis/rest/services' +
 			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
 		exportLayers: '2',
-		queryLayer: '2',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 			},
 			w: {
@@ -103,7 +118,6 @@ items: {
 		url: 'https://gisservices.cfc.umt.edu/arcgis/rest/services' +
 			'/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
 		opacity: 0.5,
-		queryLayer: '0',
 		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
 			},
 			zip: {
@@ -112,7 +126,7 @@ items: {
 		exportLayers: '0',
 			},
 		},
-		order: ['blm', 'counties', 'countylabels', 'nps', 'states', 'w', 'zip'],
+		order: ['blm', 'nlcs', 'counties', 'countylabels', 'nps', 'states', 'w', 'zip'],
 	}, // us
 	ca: {
 		name: 'California',
@@ -126,7 +140,6 @@ items: {
 		name: 'State Parks',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_State_Parks/MapServer',
 		opacity: 0.5,
-		queryLayer: '0',
 		queryFields: ['OBJECTID', 'UNITNAME', 'MgmtStatus', 'GISACRES'],
 			},
 		},
@@ -199,6 +212,7 @@ function dynamicLayer(id, mapLayerId, renderer)
 var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
 var countySpec = TileOverlays.items.us.items.counties;
+var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
 var stateSpec = TileOverlays.items.us.items.states;
 var wildernessSpec = TileOverlays.items.us.items.w;
@@ -260,6 +274,47 @@ npsSpec.popup = {
 		this.nameNode.nodeValue = attr.UNIT_NAME;
 
 		return {color: '#FFFF00', fillOpacity: 0};
+	},
+};
+nlcsSpec.popup = {
+	designation: {
+		'BLM_CMPA': 'Cooperative Management and Protection Area', // Steens Mountain (OR)
+		'BLM_FR': 'Forest Reserve',
+		'BLM_MON': 'National Monument', // e.g. Vermilion Cliffs (AZ)
+		'BLM_NA': 'Outstanding Natural Area',
+		'BLM_NCA': 'National Conservation Area',
+		'BLM_NM': 'National Monument',
+	},
+	init: function(div)
+	{
+		this.linkNode = document.createElement('a');
+		this.nameNode = document.createTextNode('');
+		this.textNode = document.createTextNode('');
+
+		this.linkNode.style.fontWeight = 'bold';
+		this.linkNode.appendChild(this.nameNode);
+		div.appendChild(this.linkNode);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		var name = attr['Monuments_NCAs_SimilarDesignation2015.NCA_NAME'];
+		var code = attr['Monuments_NCAs_SimilarDesignation2015.sma_code'];
+		var state = attr['Monuments_NCAs_SimilarDesignation2015.STATE_GEOG'];
+		var url = attr['nlcs_desc.WEBLINK'];
+
+		this.linkNode.href = url;
+		if (this.linkNode.protocol !== 'https:')
+			this.linkNode.protocol = 'https:';
+		if (this.linkNode.host !== 'www.blm.gov')
+			this.linkNode.host = 'www.blm.gov';
+
+		this.nameNode.nodeValue = name;
+		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
+
+		return {color: '#800000', fillOpacity: 0};
 	},
 };
 wildernessSpec.popup = {
@@ -371,6 +426,8 @@ blmSpec.popup = {
 		this.linkNode.href = url;
 		if (this.linkNode.protocol !== 'https:')
 			this.linkNode.protocol = 'https:';
+		if (this.linkNode.host !== 'www.blm.gov')
+			this.linkNode.host = 'www.blm.gov';
 
 		this.nameNode.nodeValue = attr.ADMU_NAME;
 		this.textNode1.nodeValue = ' (' + attr.ADMIN_ST + ')';
@@ -382,6 +439,7 @@ blmSpec.popup = {
 
 var allQuerySpecs = [
 	npsSpec,
+	nlcsSpec,
 	wildernessSpec,
 	caParkSpec,
 	countySpec,
@@ -442,6 +500,10 @@ function tileLayer(spec, transparent)
 	}
 	});
 }
+function getAttribution(spec)
+{
+	return spec.attribution.replace(/\[([- A-Za-z]+)\]/, '<a href="' + spec.url + '">$1</a>');
+}
 var MapServer = {};
 MapServer.newOverlay = function(spec)
 {
@@ -449,7 +511,7 @@ MapServer.newOverlay = function(spec)
 		zIndex: 210,
 	};
 	if (spec.attribution)
-		options.attribution = spec.attribution;
+		options.attribution = getAttribution(spec);
 	if (spec.opacity)
 		options.opacity = spec.opacity;
 
@@ -460,7 +522,7 @@ MapServer.newBaseLayer = function(spec)
 	var options = {
 	};
 	if (spec.attribution)
-		options.attribution = spec.attribution;
+		options.attribution = getAttribution(spec);
 
 	return new (tileLayer(spec, false))(options);
 };
@@ -517,7 +579,8 @@ MapServer.enableQuery = function(map)
 		addOutlineCheckbox(popupSpec, map);
 		popupDiv.appendChild(popupSpec.div);
 
-		var baseURL = spec.url + '/' + spec.queryLayer + '/query?f=' + responseFormat;
+		var queryLayer = spec.queryLayer || spec.exportLayers || '0';
+		var baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
 
 		spec.queryLL = [baseURL,
 			'returnGeometry=false',
