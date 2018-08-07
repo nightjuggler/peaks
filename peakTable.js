@@ -355,7 +355,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap with Wilderness Areas',
-		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&w&ll=' + latCommaLong);
+		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ot=w&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
 		'https://nightjuggler.com/nature/pmapgl.html?o=' + peakList.id + '&ll=' + latCommaLong);

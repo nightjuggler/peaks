@@ -130,6 +130,7 @@ items: {
 		},
 		order: ['counties', 'stateparks'],
 	},
+	w: 'us',
 },
 order: ['us', 'ca'],
 };
