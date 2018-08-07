@@ -117,18 +117,20 @@ items: {
 	ca: {
 		name: 'California',
 		items: {
-			'counties': {
+			counties: {
 		name: 'Counties (Color)',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_Counties_Color/MapServer',
 		opacity: 0.4,
 			},
-			'stateparks': {
+			parks: {
 		name: 'State Parks',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_State_Parks/MapServer',
 		opacity: 0.5,
+		queryLayer: '0',
+		queryFields: ['OBJECTID', 'UNITNAME', 'MgmtStatus', 'GISACRES'],
 			},
 		},
-		order: ['counties', 'stateparks'],
+		order: ['counties', 'parks'],
 	},
 	w: 'us',
 },
@@ -195,8 +197,10 @@ function dynamicLayer(id, mapLayerId, renderer)
 }
 
 var blmSpec = TileOverlays.items.us.items.blm;
+var caParkSpec = TileOverlays.items.ca.items.parks;
 var countySpec = TileOverlays.items.us.items.counties;
 var npsSpec = TileOverlays.items.us.items.nps;
+var stateSpec = TileOverlays.items.us.items.states;
 var wildernessSpec = TileOverlays.items.us.items.w;
 
 if (false)
@@ -294,6 +298,26 @@ wildernessSpec.popup = {
 		return {color: this.outlineColor[agency] || '#000000', fillOpacity: 0};
 	},
 };
+caParkSpec.popup = {
+	init: function(div)
+	{
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		div.appendChild(this.textNode1);
+		div.appendChild(this.ztf);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr.UNITNAME;
+		this.textNode2.nodeValue = '(' + attr.MgmtStatus + ') (' +
+			Math.round(attr.GISACRES).toLocaleString() + ' acres)';
+
+		return {color: '#70A800', fillOpacity: 0};
+	},
+};
 countySpec.popup = {
 	init: function(div)
 	{
@@ -305,6 +329,19 @@ countySpec.popup = {
 	show: function(attr)
 	{
 		this.nameNode.nodeValue = attr.NAME;
+
+		return {color: '#BBBBBB', fillOpacity: 0};
+	},
+};
+stateSpec.popup = {
+	init: function(div)
+	{
+		div.appendChild(this.nameNode = document.createTextNode(''));
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.nameNode.nodeValue = attr.NAME + ' (' + attr.STUSAB + ')';
 
 		return {color: '#000000', fillOpacity: 0};
 	},
@@ -346,7 +383,9 @@ blmSpec.popup = {
 var allQuerySpecs = [
 	npsSpec,
 	wildernessSpec,
+	caParkSpec,
 	countySpec,
+	stateSpec,
 	blmSpec,
 ];
 function getQuerySpecs()
