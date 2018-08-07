@@ -144,22 +144,14 @@ progress {
 	padding: 2px 8px 2px 6px;
 	white-space: nowrap;
 }
-.tlcItem {
-	padding: 2px 8px 2px 5px;
-	white-space: nowrap;
-}
-.lcItem:hover, .tlcItem:hover {
+.lcItem:hover {
 	background-color: rgb(232,232,232); /* If you change this, also change lcItemHoverColor in pmap-lc.js */
 }
 .lcItem > input[type="radio"] {
-	margin-left: 0px;
-	margin-right: 4px;
+	margin: 0px 2px 0px 2px;
 }
 .lcItem > input[type="checkbox"] {
 	margin: 0px 2px 0px 2px;
-}
-.tlcItem > input[type="checkbox"] {
-	margin: 0px 4px 0px 0px;
 }
 </style>
 <script src="MapServer.js"></script>
@@ -167,8 +159,7 @@ progress {
 <script>
 /* globals document, window */
 /* globals MouseEvent, XMLHttpRequest */
-/* globals L, BaseLayers, MapServer */
-/* globals LayerControl, addOverlays */
+/* globals L, BaseLayers, TileOverlays, MapServer, LayerControl */
 "use strict";
 
 function isValidId(s, n)
@@ -205,6 +196,11 @@ function parseOverlay(q, v)
 	if (isValidId(v, 48))
 		q.overlays.push(v);
 }
+function parseTileOverlay(q, v)
+{
+	if (isValidId(v, 48))
+		q.tileOverlays.push(v);
+}
 function parseBaseLayer(q, v)
 {
 	if (isValidId(v, 48))
@@ -223,6 +219,7 @@ function parseQueryString(queryString)
 		b: parseBaseLayer,
 		ll: parseLatLng,
 		o: parseOverlay,
+		ot: parseTileOverlay,
 		xy: parseLngLat,
 		z: parseZoom,
 	};
@@ -347,6 +344,7 @@ function createMap(options)
 		baseLayer: 'o',
 		clickCenter: false,
 		overlays: [],
+		tileOverlays: [],
 	};
 	parseQueryString(queryString);
 
@@ -368,13 +366,8 @@ function createMap(options)
 	scaleControl.getContainer().id = 'scaleControl';
 
 	layerControl.div.appendChild(document.createElement('hr'));
-	layerControl.addTileOverlay('BLM Districts', MapServer.newOverlay(MapServer.blmSpec));
-	layerControl.addTileOverlay('Counties', MapServer.newOverlay(MapServer.countySpec));
-	layerControl.addTileOverlay('County Labels', MapServer.newOverlay(MapServer.countyLabelSpec));
-	layerControl.addTileOverlay('National Parks', MapServer.newOverlay(MapServer.npsSpec));
-	layerControl.addTileOverlay('States', MapServer.newOverlay(MapServer.stateSpec));
-	layerControl.addTileOverlay('Wilderness Areas', MapServer.newOverlay(MapServer.wildernessSpec));
-	layerControl.addTileOverlay('ZIP Codes', MapServer.newOverlay(MapServer.zipcodeSpec));
+	layerControl.addTileOverlays(layerControl.div, TileOverlays, [], MapServer.newOverlay);
+	layerControl.setTileOverlays(queryString.tileOverlays, TileOverlays);
 
 	var mapBounds = getMapBounds(map, {
 		fitWhenDoneSetting: !queryString.ll,
@@ -418,8 +411,8 @@ function createMap(options)
 	function addOverlayMenu(lcdjson)
 	{
 		layerControl.div.appendChild(document.createElement('hr'));
-		layerControl.fillMenu(layerControl.div, lcdjson, []);
-		addOverlays(queryString.overlays, lcdjson, mapBounds);
+		layerControl.addOverlays(layerControl.div, lcdjson, []);
+		layerControl.setOverlays(queryString.overlays, lcdjson, mapBounds);
 		MapServer.enableQuery(map);
 	}
 	loadJSON('pmap_lcd.json', addOverlayMenu);

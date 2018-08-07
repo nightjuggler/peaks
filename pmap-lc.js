@@ -3,7 +3,6 @@
 /* globals L */
 /* globals enableTooltips */
 /* globals loadJSON */
-/* exported addOverlays */
 
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 var USFS_Prefix = 'https://www.fs.usda.gov/';
@@ -635,39 +634,6 @@ function LayerControl(map)
 	this.map = map;
 	this.div = div;
 }
-LayerControl.prototype.addTileOverlay = function(name, layer)
-{
-	var ctrl = this;
-
-	var input = document.createElement('input');
-	input.type = 'checkbox';
-	input.checked = false;
-
-	function clickCheckbox()
-	{
-		if (input.checked)
-			layer.addTo(ctrl.map);
-		else
-			layer.remove();
-	}
-	function clickName()
-	{
-		input.checked = !input.checked;
-		clickCheckbox();
-	}
-
-	var nameSpan = document.createElement('span');
-	nameSpan.appendChild(document.createTextNode(name));
-	nameSpan.addEventListener('click', clickName);
-	input.addEventListener('click', clickCheckbox);
-
-	var div = document.createElement('div');
-	div.className = 'tlcItem';
-	div.appendChild(input);
-	div.appendChild(nameSpan);
-
-	ctrl.div.appendChild(div);
-};
 function clickArrow(event)
 {
 	event.currentTarget.parentNode.firstChild.click();
@@ -921,7 +887,7 @@ function validateItem(item, path, id)
 	}
 	return true;
 }
-LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
+LayerControl.prototype.addOverlays = function(parentDiv, parentItem, path)
 {
 	for (var id of parentItem.order)
 	{
@@ -969,7 +935,7 @@ LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
-			this.fillMenu(childDiv, item, path);
+			this.addOverlays(childDiv, item, path);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
@@ -978,6 +944,7 @@ LayerControl.prototype.fillMenu = function(parentDiv, parentItem, path)
 			arrowSpan.className = 'lcArrow';
 			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
 			arrowSpan.addEventListener('click', toggleLayerMenu, false);
+
 			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
 			nameSpan.addEventListener('click', clickArrow, false);
 		}
@@ -1005,30 +972,25 @@ function getItem(path, item)
 	}
 	return item;
 }
-function addOverlays(overlays, rootLCD, mapBounds)
+LayerControl.prototype.setOverlays = function(overlays, rootLCD, mapBounds)
 {
 	for (var pathStr of overlays)
 	{
 		var item = getItem(pathStr.split('_'), rootLCD);
-		if (!item)
-			continue;
-		if (!item.checkbox) {
-			continue;
-		}
-		if (!item.checkbox.checked) {
+		if (item && item.checkbox && !item.checkbox.checked) {
 			mapBounds.addSetter(item);
 			item.checkbox.click();
 		}
 	}
-}
-function makeChangeBaseLayer(ctrl, item, input)
+};
+function makeChangeBaseLayer(ctrl, item)
 {
 	return function() {
 		if (ctrl.currentBaseLayer === item.layer) return;
 		if (ctrl.currentBaseLayer)
 			ctrl.currentBaseLayer.remove();
 		ctrl.currentBaseLayer = item.layer.addTo(ctrl.map);
-		input.checked = true;
+		item.input.checked = true;
 	};
 }
 LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, parentMakeLayer)
@@ -1076,7 +1038,7 @@ LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, par
 			item.input = input;
 			item.layer = makeLayer(item);
 
-			var changeBaseLayer = makeChangeBaseLayer(this, item, input);
+			var changeBaseLayer = makeChangeBaseLayer(this, item);
 			nameSpan.addEventListener('click', changeBaseLayer);
 			input.addEventListener('click', changeBaseLayer);
 		}
@@ -1089,4 +1051,79 @@ LayerControl.prototype.setBaseLayer = function(pathStr, rootLCD)
 
 	this.currentBaseLayer = item.layer.addTo(this.map);
 	item.input.checked = true;
+};
+function addTileOverlayClickHandler(ctrl, item)
+{
+	var input = item.input;
+
+	function clickCheckbox()
+	{
+		if (input.checked)
+			item.layer.addTo(ctrl.map);
+		else
+			item.layer.remove();
+	}
+	function clickName()
+	{
+		input.checked = !input.checked;
+		clickCheckbox();
+	}
+
+	input.addEventListener('click', clickCheckbox);
+	input.nextSibling.addEventListener('click', clickName);
+}
+LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, makeLayer)
+{
+	for (var id of parentItem.order)
+	{
+		var item = parentItem.items[id];
+
+		var nameSpan = document.createElement('span');
+		nameSpan.className = 'lcName';
+		item.name = appendName(item.name, nameSpan);
+
+		var itemDiv = document.createElement('div');
+		itemDiv.className = 'lcItem';
+		itemDiv.appendChild(nameSpan);
+
+		parentDiv.appendChild(itemDiv);
+
+		if (item.items) {
+			var childDiv = document.createElement('div');
+			childDiv.className = 'lcMenu';
+
+			path.push(id);
+			this.addTileOverlays(childDiv, item, path, makeLayer);
+			path.pop();
+
+			parentDiv.appendChild(childDiv);
+
+			var arrowSpan = document.createElement('span');
+			arrowSpan.className = 'lcArrow';
+			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
+			arrowSpan.addEventListener('click', toggleLayerMenu, false);
+
+			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
+			nameSpan.addEventListener('click', clickArrow, false);
+		} else {
+			var input = document.createElement('input');
+			input.type = 'checkbox';
+			input.checked = false;
+			itemDiv.insertBefore(input, nameSpan);
+
+			item.input = input;
+			item.layer = makeLayer(item);
+
+			addTileOverlayClickHandler(this, item);
+		}
+	}
+};
+LayerControl.prototype.setTileOverlays = function(overlays, rootLCD)
+{
+	for (var pathStr of overlays)
+	{
+		var item = getItem(pathStr.split('_'), rootLCD);
+		if (item && item.input && !item.input.checked)
+			item.input.click();
+	}
 };

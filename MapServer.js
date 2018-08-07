@@ -23,13 +23,20 @@ items: {
 			topo: {
 		name: 'Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
+		attribution: '&copy; <a href="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer">USGS The National Map</a>; U.S. Census Bureau; HERE Road Data',
 			},
 			imgtopo: {
 		name: 'Imagery Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
+		attribution: '&copy; <a href="https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer">USGS The National Map</a>',
+			},
+			naipplus: {
+		name: 'NAIP Plus',
+		url: 'https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/MapServer',
+		attribution: '&copy; <a href="https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/MapServer">USGS The National Map</a>',
 			},
 		},
-		order: ['topo', 'imgtopo'],
+		order: ['topo', 'imgtopo', 'naipplus'],
 	},
 	esri: {
 		name: 'Esri',
@@ -37,6 +44,7 @@ items: {
 			usatopo: {
 		name: 'USA Topo',
 		url: 'https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer',
+		attribution: '<a href="https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer">Esri</a>; &copy; 2013 National Geographic Society, i-cubed',
 			},
 		},
 		order: ['usatopo'],
@@ -53,8 +61,77 @@ order: ['mapbox', 'natmap', 'esri'],
 var TileOverlays = {
 name: 'Tile Overlays',
 items: {
+	us: {
+		name: 'National',
+		items: {
+			blm: {
+		name: 'BLM Districts',
+		url: 'https://gis.blm.gov/arcgis/rest/services/admin_boundaries/BLM_Natl_AdminUnit/MapServer',
+		exportLayers: '3', // 1=State, 2=District, 3=Field Office, 4=Other
+		queryLayer: '3',
+		queryFields: ['OBJECTID', 'ADMU_NAME', 'ADMIN_ST', 'ADMU_ST_URL', 'PARENT_NAME'],
+			},
+			states: {
+		name: 'States',
+		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
+		exportLayers: '0,2,4,6,8,10,12,14,15,16', // states only
+		queryLayer: '12',
+		queryFields: ['OBJECTID', 'NAME', 'STUSAB'],
+			},
+			counties: {
+		name: 'Counties',
+		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
+		exportLayers: '1,3,5,7,9,11,13', // counties only
+		queryLayer: '13',
+		queryFields: ['OBJECTID', 'NAME'],
+			},
+			countylabels: {
+		name: 'County Labels',
+		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Labels/MapServer',
+		exportLayers: '65',
+			},
+			nps: {
+		name: 'National Parks',
+		url: 'https://mapservices.nps.gov/arcgis/rest/services' +
+			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
+		exportLayers: '2',
+		queryLayer: '2',
+		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
+			},
+			w: {
+		name: 'Wilderness Areas',
+		url: 'https://gisservices.cfc.umt.edu/arcgis/rest/services' +
+			'/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
+		opacity: 0.5,
+		queryLayer: '0',
+		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
+			},
+			zip: {
+		name: 'ZIP Codes',
+		url: 'https://gis.usps.com/arcgis/rest/services/EDDM/EDDM_ZIP5/MapServer',
+		exportLayers: '0',
+			},
+		},
+		order: ['blm', 'counties', 'countylabels', 'nps', 'states', 'w', 'zip'],
+	}, // us
+	ca: {
+		name: 'California',
+		items: {
+			'counties': {
+		name: 'Counties (Color)',
+		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_Counties_Color/MapServer',
+		opacity: 0.4,
+			},
+			'stateparks': {
+		name: 'State Parks',
+		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_State_Parks/MapServer',
+		opacity: 0.5,
+			},
+		},
+		order: ['counties', 'stateparks'],
+	},
 },
-order: [],
+order: ['us', 'ca'],
 };
 
 var MapServer = (function() {
@@ -116,52 +193,13 @@ function dynamicLayer(id, mapLayerId, renderer)
 	}]);
 }
 
-var MapServer = {
-	wildernessSpec: {
-		// Spatial Reference: 102113 (EPSG:3785) (deprecated Web Mercator)
-		url: 'https://gisservices.cfc.umt.edu/arcgis/rest/services' +
-			'/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
-		opacity: 0.5,
-		queryLayer: '0',
-		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
-	},
-	stateSpec: {
-		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
-		exportLayers: '0,2,4,6,8,10,12,14,15,16', // states only
-		queryLayer: '12',
-		queryFields: ['OBJECTID', 'NAME', 'STUSAB'],
-	},
-	countySpec: {
-		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
-		exportLayers: '1,3,5,7,9,11,13', // counties only
-		queryLayer: '13',
-		queryFields: ['OBJECTID', 'NAME'],
-	},
-	countyLabelSpec: {
-		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Labels/MapServer',
-		exportLayers: '65',
-	},
-	zipcodeSpec: {
-		url: 'https://gis.usps.com/arcgis/rest/services/EDDM/EDDM_ZIP5/MapServer',
-		exportLayers: '0',
-	},
-	npsSpec: {
-		url: 'https://mapservices.nps.gov/arcgis/rest/services' +
-			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
-		exportLayers: '2',
-		queryLayer: '2',
-		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
-	},
-	blmSpec: {
-		url: 'https://gis.blm.gov/arcgis/rest/services/admin_boundaries/BLM_Natl_AdminUnit/MapServer',
-		exportLayers: '3', // 1=State, 2=District, 3=Field Office, 4=Other
-		queryLayer: '3',
-		queryFields: ['OBJECTID', 'ADMU_NAME', 'ADMIN_ST', 'ADMU_ST_URL', 'PARENT_NAME'],
-	},
-};
+var blmSpec = TileOverlays.items.us.items.blm;
+var countySpec = TileOverlays.items.us.items.counties;
+var npsSpec = TileOverlays.items.us.items.nps;
+var wildernessSpec = TileOverlays.items.us.items.w;
 
 if (false)
-	MapServer.wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
+	wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
 		type: 'uniqueValue', field1: 'Agency',
 		uniqueValueInfos: [
 			uniqueValueInfo('BLM', [0, 255, 255, 255]), // Aqua
@@ -170,7 +208,7 @@ if (false)
 			uniqueValueInfo('NPS', [255, 0, 255, 255]), // Fuchsia / Magenta
 		]});
 if (false)
-	MapServer.wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
+	wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
 
 		// Visual variables (like colorInfo which could be used for a continuous
 		// color ramp) are apparently not supported in the renderer for sublayers
@@ -186,18 +224,18 @@ if (false)
 			classBreakInfo(2019, [255, 0, 255, 255]),
 		]});
 if (false)
-	MapServer.blmSpec.dynamicLayers = dynamicLayer(101, 3, {
+	blmSpec.dynamicLayers = dynamicLayer(101, 3, {
 		type: 'simple',
 		symbol: simpleFillSymbol([0, 0, 0, 0], simpleLineSymbol([138, 43, 226, 255], 2))
 	});
 if (true) {
-	MapServer.npsSpec.dynamicLayers = dynamicLayer(101, 2, {
+	npsSpec.dynamicLayers = dynamicLayer(101, 2, {
 		type: 'simple',
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
-	MapServer.npsSpec.opacity = 0.5;
+	npsSpec.opacity = 0.5;
 }
-MapServer.npsSpec.popup = {
+npsSpec.popup = {
 	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
@@ -219,7 +257,7 @@ MapServer.npsSpec.popup = {
 		return {color: '#FFFF00', fillOpacity: 0};
 	},
 };
-MapServer.wildernessSpec.popup = {
+wildernessSpec.popup = {
 	outlineColor: {
 		BLM: '#0000FF', // Blue   (fill color is #FFFF00)
 		FWS: '#FFA500', // Orange (fill color is #FFAA00)
@@ -255,7 +293,7 @@ MapServer.wildernessSpec.popup = {
 		return {color: this.outlineColor[agency] || '#000000', fillOpacity: 0};
 	},
 };
-MapServer.countySpec.popup = {
+countySpec.popup = {
 	init: function(div)
 	{
 		this.nameNode = document.createTextNode('');
@@ -270,7 +308,7 @@ MapServer.countySpec.popup = {
 		return {color: '#000000', fillOpacity: 0};
 	},
 };
-MapServer.blmSpec.popup = {
+blmSpec.popup = {
 	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
@@ -305,10 +343,10 @@ MapServer.blmSpec.popup = {
 };
 
 var allQuerySpecs = [
-	MapServer.npsSpec,
-	MapServer.wildernessSpec,
-	MapServer.countySpec,
-	MapServer.blmSpec,
+	npsSpec,
+	wildernessSpec,
+	countySpec,
+	blmSpec,
 ];
 function getQuerySpecs()
 {
@@ -325,6 +363,9 @@ var tileOrigin = -(Math.PI * earthRadius);
 
 function tileLayer(spec, transparent)
 {
+	// 102113 (EPSG:3785) is the deprecated spatial reference identifier for Web Mercator.
+	// Would the updated identifier 102100 (EPSG:3857) also work?
+
 	var baseURL = [spec.url + '/export?f=image', 'bboxSR=102113', 'imageSR=102113'];
 
 	if (transparent)
@@ -361,6 +402,7 @@ function tileLayer(spec, transparent)
 	}
 	});
 }
+var MapServer = {};
 MapServer.newOverlay = function(spec)
 {
 	var options = {
