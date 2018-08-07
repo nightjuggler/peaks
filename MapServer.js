@@ -330,7 +330,7 @@ countySpec.popup = {
 	{
 		this.nameNode.nodeValue = attr.NAME;
 
-		return {color: '#BBBBBB', fillOpacity: 0};
+		return {color: '#A52A2A', fillOpacity: 0};
 	},
 };
 stateSpec.popup = {
@@ -464,6 +464,21 @@ MapServer.newBaseLayer = function(spec)
 
 	return new (tileLayer(spec, false))(options);
 };
+function addOutlineCheckbox(spec, map)
+{
+	var input = document.createElement('input');
+	input.type = 'checkbox';
+	input.checked = false;
+	input.addEventListener('click', function() {
+		if (input.checked)
+			spec.outline.addTo(map);
+		else
+			spec.outline.remove();
+	}, false);
+
+	spec.div.insertBefore(input, spec.ztf.nextSibling);
+	spec.toggle = input;
+}
 MapServer.enableQuery = function(map)
 {
 	var geojson = false;
@@ -499,6 +514,7 @@ MapServer.enableQuery = function(map)
 		popupSpec.div = document.createElement('div');
 		popupSpec.ztf = fitLink(map, popupSpec);
 		popupSpec.init(popupSpec.div);
+		addOutlineCheckbox(popupSpec, map);
 		popupDiv.appendChild(popupSpec.div);
 
 		var baseURL = spec.url + '/' + spec.queryLayer + '/query?f=' + responseFormat;
@@ -521,10 +537,14 @@ MapServer.enableQuery = function(map)
 
 	function runQuery(url, clickID, ll, spec)
 	{
+		var popupSpec = spec.popup;
+
 		function showOutline(outline)
 		{
-			spec.popup.outline = outline;
-			spec.popup.ztf.style.display = '';
+			popupSpec.outline = outline;
+			popupSpec.ztf.style.display = '';
+			popupSpec.toggle.style.display = '';
+			popupSpec.toggle.checked = true;
 			popup.update();
 			outlines.push(outline.addTo(map));
 		}
@@ -534,10 +554,11 @@ MapServer.enableQuery = function(map)
 			if (json.features.length === 0) return;
 
 			var attr = json.features[0][geojson ? 'properties' : 'attributes'];
-			var style = spec.popup.show(attr);
+			var style = popupSpec.show(attr);
 
-			spec.popup.div.style.display = 'block';
-			spec.popup.ztf.style.display = 'none';
+			popupSpec.div.style.display = 'block';
+			popupSpec.ztf.style.display = 'none';
+			popupSpec.toggle.style.display = 'none';
 			if (popupEmpty) {
 				map.openPopup(popup.setLatLng(ll));
 				popupEmpty = false;
