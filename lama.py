@@ -15,8 +15,8 @@ class Query(object):
 	processFields = None
 
 	@classmethod
-	def query(self, geometry, distance=20, verbose=False):
-		fields = ",".join([field for field, alias in self.fields]) if self.fields else "*"
+	def query(self, geometry, distance=20, raw=False, verbose=False):
+		fields = ",".join([field for field, alias in self.fields]) if self.fields and not raw else "*"
 
 		params = [
 			"f=json",
@@ -60,7 +60,7 @@ class Query(object):
 
 		for feature in jsonData["features"]:
 			response = feature["attributes"]
-			if not (self.fields and self.printSpec):
+			if raw or not (self.fields and self.printSpec):
 				prettyPrint(response)
 				continue
 
@@ -260,11 +260,20 @@ class CensusCountyQuery(Query):
 	fields = [("NAME", "name"), ("POP100", "pop")]
 	printSpec = "{name} (Population: {pop:,})"
 
+class CA_StateParksQuery(Query):
+	name = "California State Parks"
+	home = "https://services.gis.ca.gov/arcgis/rest/services" # 10.51
+	service = "Boundaries/CA_State_Parks"
+	layer = 0 # sr = 102100 (3857)
+	fields = [("UNITNAME", "name"), ("MgmtStatus", "status"), ("GISACRES", "acres")]
+	printSpec = "{name} ({status}) ({acres:,.0f} acres)"
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
 	parser.add_argument("-q", "--query", default="state,county,topo,nps,rd,nlcs,blm,sma,w,wsa")
+	parser.add_argument("--raw", action="store_true")
 	parser.add_argument("-v", "--verbose", action="store_true")
 	args = parser.parse_args()
 
@@ -274,6 +283,7 @@ def main():
 
 	queryMap = {
 		"blm": BLM_Query,
+		"ca_parks": CA_StateParksQuery,
 		"county": TigerCountyQuery,
 		"county_census": CensusCountyQuery,
 		"county_usfs": USFS_CountyQuery,
@@ -291,7 +301,7 @@ def main():
 	queries = args.query.split(",")
 
 	for q in [queryMap[k] for k in queries]:
-		q.query(geometry, verbose=args.verbose)
+		q.query(geometry, raw=args.raw, verbose=args.verbose)
 
 if __name__ == "__main__":
 	main()
