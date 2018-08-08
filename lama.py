@@ -100,6 +100,14 @@ class NPS_Query(Query):
 	]
 	printSpec = "{name}"
 
+class NWR_Query(Query):
+	name = "National Wildlife Refuge"
+	home = "https://gis.fws.gov/arcgis/rest/services" # 10.51
+	service = "FWS_Refuge_Boundaries"
+	layer = 3 # sr = 4269 (NAD 83)
+	fields = [("ORGNAME", "name"), ("SUM_GISACRES", "acres")]
+	printSpec = "{name} ({acres:,.0f} acres)"
+
 class USFS_Query(Query):
 	name = "USFS Administrative Forest"
 	home = "https://apps.fs.usda.gov/arcx/rest/services" # 10.51
@@ -291,6 +299,7 @@ def main():
 		"fs": USFS_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
+		"nwr": NWR_Query,
 		"rd": USFS_RangerDistrictQuery,
 		"sma": BLM_SMA_Query,
 		"state": TigerStateQuery,
