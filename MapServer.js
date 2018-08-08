@@ -237,8 +237,14 @@ items: {
 		queryFields: ['OBJECTID', 'UNITNAME', 'MgmtStatus', 'GISACRES'],
 		attribution: '[services.gis.ca.gov]',
 			},
+			zip: {
+		name: 'ZIP Codes',
+		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/Zips/MapServer',
+		queryFields: ['OBJECTID', 'ZIP_CODE', 'NAME', 'STATE', 'POPULATION', 'SQMI'],
+		attribution: '[USPS]',
+			},
 		},
-		order: ['counties', 'parks'],
+		order: ['counties', 'parks', 'zip'],
 	},
 	w: 'us',
 },
@@ -306,6 +312,7 @@ function dynamicLayer(id, mapLayerId, renderer)
 
 var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
+var caZipSpec = TileOverlays.items.ca.items.zip;
 var countySpec = TileOverlays.items.us.items.counties;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
@@ -542,6 +549,18 @@ caParkSpec.popup = {
 		return '#70A800';
 	},
 };
+caZipSpec.popup = {
+	init: function(div)
+	{
+		div.appendChild(this.textNode = document.createTextNode(''));
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode.nodeValue = attr.NAME + ', ' + attr.STATE + ' ' + attr.ZIP_CODE;
+		return '#008080';
+	},
+};
 countySpec.popup = {
 	init: function(div)
 	{
@@ -607,11 +626,12 @@ blmSpec.popup = {
 var allQuerySpecs = [
 	npsSpec,
 	nlcsSpec,
-//	fsrdSpec,
+	fsrdSpec,
 	nwrSpec,
 	wildernessSpec,
 	wsaSpec,
 	caParkSpec,
+	caZipSpec,
 	countySpec,
 	stateSpec,
 	blmSpec,
