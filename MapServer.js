@@ -310,8 +310,10 @@ var countySpec = TileOverlays.items.us.items.counties;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
+var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
 var wildernessSpec = TileOverlays.items.us.items.w;
+var wsaSpec = TileOverlays.items.us.items.wsa;
 
 if (false)
 	wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
@@ -447,6 +449,24 @@ fsrdSpec.popup = {
 		return '#556B2F';
 	},
 };
+nwrSpec.popup = {
+	init: function(div)
+	{
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		div.appendChild(this.textNode1);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr.ORGNAME;
+		this.textNode2.nodeValue = '(' + Math.round(attr.SUM_GISACRES).toLocaleString() + ' acres)';
+		return '#FFA07A';
+	},
+};
 wildernessSpec.popup = {
 	outlineColor: {
 		BLM: '#0000FF', // Blue   (fill color is #FFFF00)
@@ -481,6 +501,25 @@ wildernessSpec.popup = {
 			attr.Acreage.toLocaleString() + ' acres)';
 
 		return this.outlineColor[agency] || '#000000';
+	},
+};
+wsaSpec.popup = {
+	init: function(div)
+	{
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		div.appendChild(this.textNode1);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr['nlcs_wsa_poly.NLCS_NAME'];
+		this.textNode2.nodeValue = '(' + attr['nlcs_wsa_poly.ADMIN_ST'] + ') (' +
+			attr['nlcs_wsa_poly.WSA_RCMND'] + ')';
+		return '#B22222';
 	},
 };
 caParkSpec.popup = {
@@ -569,7 +608,9 @@ var allQuerySpecs = [
 	npsSpec,
 	nlcsSpec,
 //	fsrdSpec,
+	nwrSpec,
 	wildernessSpec,
+	wsaSpec,
 	caParkSpec,
 	countySpec,
 	stateSpec,
