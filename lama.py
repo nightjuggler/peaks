@@ -276,11 +276,25 @@ class CA_StateParksQuery(Query):
 	fields = [("UNITNAME", "name"), ("MgmtStatus", "status"), ("GISACRES", "acres")]
 	printSpec = "{name} ({status}) ({acres:,.0f} acres)"
 
+class CA_ZIP_Code_Query(Query):
+	name = "ZIP Code (California)"
+	home = "https://services.gis.ca.gov/arcgis/rest/services" # 10.51
+	service = "Boundaries/Zips"
+	layer = 0 # sr = 102100 (3857)
+	fields = [
+		("ZIP_CODE", "zip"),
+		("NAME", "name"),
+		("STATE", "state"),
+		("POPULATION", "pop"),
+		("SQMI", "area"),
+	]
+	printSpec = "{name}, {state} {zip} / Population: {pop:,} (2014) / {area:,.2f} square miles"
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
-	parser.add_argument("-q", "--query", default="state,county,topo,nps,rd,nlcs,blm,sma,w,wsa")
+	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("--raw", action="store_true")
 	parser.add_argument("-v", "--verbose", action="store_true")
 	args = parser.parse_args()
@@ -306,6 +320,7 @@ def main():
 		"topo": USGS_TopoQuery,
 		"w": WildernessQuery,
 		"wsa": BLM_WSA_Query,
+		"zip_ca": CA_ZIP_Code_Query,
 	}
 	queries = args.query.split(",")
 
