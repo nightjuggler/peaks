@@ -6,6 +6,14 @@
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <script src="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.js"></script>
 <link href="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.css" rel="stylesheet">
+<!--
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css"
+	integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+	crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js"
+	integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q=="
+	crossorigin=""></script>
+-->
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <style>
@@ -41,6 +49,7 @@ progress {
 	right: 10px;
 	font-family: verdana;
 	font-size: 10pt;
+	z-index: 1000;
 }
 #llText {
 	background-color: rgba(255,255,255,0.8);
@@ -184,12 +193,10 @@ function parseLatLng(q, v) { parseLL(q, v, 1, 2); }
 function parseLngLat(q, v) { parseLL(q, v, 2, 1); }
 function parseZoom(q, v)
 {
-	if (v.match(/^[1-9][0-9]?$/) === null) return;
-
-	var zoom = parseInt(v, 10);
-	if (zoom < 1 || zoom > 22) return;
-
-	q.zoom = zoom;
+	if (v.match(/^[12][0-9]?$/))
+		q.zoom = parseInt(v, 10);
+	else if (v === '0')
+		q.zoom = 0;
 }
 function parseOverlay(q, v)
 {
@@ -341,22 +348,25 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 function createMap(options)
 {
 	var queryString = {
-		baseLayer: 'o',
+		baseLayer: L.mapbox ? 'o' : 'esri_usatopo',
 		clickCenter: false,
 		overlays: [],
 		tileOverlays: [],
 	};
 	parseQueryString(queryString);
 
-	var map = L.mapbox.map('map', null, {zoomControl: false, scrollWheelZoom: false});
+	var mapOptions = {zoomControl: false, scrollWheelZoom: false};
+	var map = L.mapbox ? L.mapbox.map('map', null, mapOptions) : L.map('map', mapOptions);
 	var layerControl = new LayerControl(map);
 
-	layerControl.baseLayerMakers = {
-		mapbox: function(item) {
+	if (L.mapbox)
+		layerControl.baseLayerMakers.mapbox = function(item) {
 			var id = 'mapbox.' + item.name.toLowerCase().replace(/ /g, '-');
 			return L.mapbox.tileLayer(id, options);
-		},
-	};
+		};
+	else
+		BaseLayers.order.splice(0, 1); // Remove 'mapbox'
+
 	layerControl.addBaseLayers(layerControl.div, BaseLayers, [], MapServer.newBaseLayer);
 	layerControl.setBaseLayer(queryString.baseLayer, BaseLayers);
 
@@ -419,6 +429,8 @@ function createMap(options)
 }
 function init()
 {
+	if (!L.mapbox) { createMap(); return; }
+
 	var protocol = window.location.protocol;
 	isLocal = protocol === 'file:' || protocol === '';
 	var suffix = isLocal ? 'json' : 'cgi';

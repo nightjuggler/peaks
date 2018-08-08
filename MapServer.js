@@ -28,6 +28,12 @@ items: {
 			imgtopo: {
 		name: 'Imagery Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
+		maxZoom: 19,
+		attribution: '&copy; [USGS The National Map]',
+			},
+			naip: {
+		name: 'NAIP Imagery',
+		url: 'https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer',
 		attribution: '&copy; [USGS The National Map]',
 			},
 			naipplus: {
@@ -36,18 +42,44 @@ items: {
 		attribution: '&copy; [USGS The National Map]',
 			},
 		},
-		order: ['topo', 'imgtopo', 'naipplus'],
+		order: ['topo', 'imgtopo', 'naip', 'naipplus'],
 	},
 	esri: {
 		name: 'Esri',
 		items: {
+			imagery: {
+		name: 'Imagery',
+		url: 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer',
+		tile: true,
+		maxZoom: 19, // why not 23?
+		attribution: '[Esri], DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, ' +
+			'USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+			},
+			clarity: {
+		name: 'Imagery Clarity',
+		url: 'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer',
+		tile: true,
+		maxZoom: 19, // why not 23?
+		attribution: '[Esri], DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, ' +
+			'USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+			},
+			firefly: {
+		name: 'Imagery Firefly',
+		url: 'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer',
+		tile: true,
+		maxZoom: 19, // why not 23?
+		attribution: '[Esri], DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, ' +
+			'USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+			},
 			usatopo: {
 		name: 'USA Topo',
 		url: 'https://services.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer',
+		tile: true,
+		maxZoom: 15,
 		attribution: '[Esri] | &copy; 2013 National Geographic Society, i-cubed',
 			},
 		},
-		order: ['usatopo'],
+		order: ['imagery', 'clarity', 'firefly', 'usatopo'],
 	},
 
 	o: 'mapbox',
@@ -459,20 +491,23 @@ var earthRadius = 6378137; // WGS 84 equatorial radius in meters
 var earthCircumference = 2 * Math.PI * earthRadius;
 var tileOrigin = -(Math.PI * earthRadius);
 
-function tileLayer(spec, transparent)
+function exportLayer(spec, transparent)
 {
-	// 102113 (EPSG:3785) is the deprecated spatial reference identifier for Web Mercator.
-	// Would the updated identifier 102100 (EPSG:3857) also work?
+	// ESRI:102113 (EPSG:3785) is the deprecated spatial reference identifier for Web Mercator.
+	// ESRI:102100 (EPSG:3857) should also work.
 
-	var baseURL = [spec.url + '/export?f=image', 'bboxSR=102113', 'imageSR=102113'];
+	var exportImage = spec.url.endsWith('/ImageServer');
+	var command = exportImage ? '/exportImage' : '/export';
+	var baseURL = [spec.url + command + '?f=image', 'bboxSR=102113', 'imageSR=102113'];
 
-	if (transparent)
-		baseURL.push('transparent=true');
-	if (spec.dynamicLayers)
-		baseURL.push('dynamicLayers=' + spec.dynamicLayers);
-	else if (spec.exportLayers)
-		baseURL.push('layers=show:' + spec.exportLayers);
-
+	if (!exportImage) {
+		if (transparent)
+			baseURL.push('transparent=true');
+		if (spec.dynamicLayers)
+			baseURL.push('dynamicLayers=' + spec.dynamicLayers);
+		else if (spec.exportLayers)
+			baseURL.push('layers=show:' + spec.exportLayers);
+	}
 	baseURL = baseURL.join('&');
 
 	return L.GridLayer.extend({
@@ -502,7 +537,10 @@ function tileLayer(spec, transparent)
 }
 function getAttribution(spec)
 {
-	return spec.attribution.replace(/\[([- A-Za-z]+)\]/, '<a href="' + spec.url + '">$1</a>');
+	var url = spec.url;
+	if (spec.tile)
+		url += '?f=pjson';
+	return spec.attribution.replace(/\[([- A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
 }
 var MapServer = {};
 MapServer.newOverlay = function(spec)
@@ -515,7 +553,7 @@ MapServer.newOverlay = function(spec)
 	if (spec.opacity)
 		options.opacity = spec.opacity;
 
-	return new (tileLayer(spec, true))(options);
+	return new (exportLayer(spec, true))(options);
 };
 MapServer.newBaseLayer = function(spec)
 {
@@ -523,8 +561,12 @@ MapServer.newBaseLayer = function(spec)
 	};
 	if (spec.attribution)
 		options.attribution = getAttribution(spec);
+	if (spec.maxZoom)
+		options.maxZoom = spec.maxZoom;
+	if (spec.tile)
+		return L.tileLayer(spec.url + '/tile/{z}/{y}/{x}', options);
 
-	return new (tileLayer(spec, false))(options);
+	return new (exportLayer(spec, false))(options);
 };
 function addOutlineCheckbox(spec, map)
 {

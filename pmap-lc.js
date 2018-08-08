@@ -633,6 +633,8 @@ function LayerControl(map)
 
 	this.map = map;
 	this.div = div;
+
+	this.baseLayerMakers = {};
 }
 function clickArrow(event)
 {
@@ -990,6 +992,7 @@ function makeChangeBaseLayer(ctrl, item)
 		if (ctrl.currentBaseLayer)
 			ctrl.currentBaseLayer.remove();
 		ctrl.currentBaseLayer = item.layer.addTo(ctrl.map);
+		ctrl.map.setMaxZoom(item.maxZoom || 23);
 		item.input.checked = true;
 	};
 }
@@ -1038,19 +1041,22 @@ LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, par
 			item.input = input;
 			item.layer = makeLayer(item);
 
-			var changeBaseLayer = makeChangeBaseLayer(this, item);
-			nameSpan.addEventListener('click', changeBaseLayer);
-			input.addEventListener('click', changeBaseLayer);
+			if (item.layer) {
+				var changeBaseLayer = makeChangeBaseLayer(this, item);
+				nameSpan.addEventListener('click', changeBaseLayer);
+				input.addEventListener('click', changeBaseLayer);
+			} else {
+				input.disabled = true;
+				nameSpan.style.color = 'rgb(128,128,128)';
+			}
 		}
 	}
 };
 LayerControl.prototype.setBaseLayer = function(pathStr, rootLCD)
 {
 	var item = getItem(pathStr.split('_'), rootLCD);
-	if (!item || !item.input) return;
-
-	this.currentBaseLayer = item.layer.addTo(this.map);
-	item.input.checked = true;
+	if (item && item.input)
+		item.input.click();
 };
 function addTileOverlayClickHandler(ctrl, item)
 {
