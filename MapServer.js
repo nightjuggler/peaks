@@ -119,12 +119,26 @@ items: {
 		],
 		attribution: '[Bureau of Land Management]',
 			},
+			wsa: {
+		name: 'Wilderness Study Areas',
+		url: 'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_NLCS_WLD_WSA/MapServer',
+		exportLayers: '1',
+		opacity: 0.5,
+		queryFields: [
+			'nlcs_wsa_poly.OBJECTID',
+			'nlcs_wsa_poly.NLCS_NAME',
+			'nlcs_wsa_poly.ADMIN_ST',
+			'nlcs_wsa_poly.WSA_RCMND',
+		],
+		attribution: '[Bureau of Land Management]',
+			},
 			states: {
 		name: 'States',
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer',
 		exportLayers: '0,2,4,6,8,10,12,14,15,16', // states only
 		queryLayer: '12',
 		queryFields: ['OBJECTID', 'NAME', 'STUSAB'],
+		attribution: '[U.S. Census Bureau]',
 			},
 			counties: {
 		name: 'Counties',
@@ -132,11 +146,41 @@ items: {
 		exportLayers: '1,3,5,7,9,11,13', // counties only
 		queryLayer: '13',
 		queryFields: ['OBJECTID', 'NAME'],
+		attribution: '[U.S. Census Bureau]',
 			},
 			countylabels: {
 		name: 'County Labels',
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Labels/MapServer',
 		exportLayers: '65',
+		attribution: '[U.S. Census Bureau]',
+			},
+			nwr: {
+		name: 'FWS Refuges',
+		url: 'https://gis.fws.gov/arcgis/rest/services/FWS_Refuge_Boundaries/MapServer',
+		exportLayers: '3',
+		opacity: 0.5,
+		queryFields: ['OBJECTID', 'ORGNAME', 'SUM_GISACRES'],
+		attribution: '[U.S. Fish &amp; Wildlife Service]',
+			},
+			nwrlabels: {
+		name: 'FWS Refuge Labels',
+		url: 'https://gis.fws.gov/arcgis/rest/services/FWS_Refuge_Boundaries/MapServer',
+		exportLayers: '1',
+		attribution: '[U.S. Fish &amp; Wildlife Service]',
+			},
+			fs: {
+		name: 'National Forests',
+		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer',
+		queryLayer: '1',
+		queryFields: ['OBJECTID', 'FORESTNAME'],
+		attribution: '[U.S. Forest Service]',
+			},
+			fsrd: {
+		name: 'National Forest|Ranger Districts',
+		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RangerDistricts_01/MapServer',
+		queryLayer: '1',
+		queryFields: ['OBJECTID', 'FORESTNAME', 'DISTRICTNAME'],
+		attribution: '[U.S. Forest Service]',
 			},
 			nps: {
 		name: 'National Parks',
@@ -144,6 +188,7 @@ items: {
 			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
 		exportLayers: '2',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
+		attribution: '[National Park Service]',
 			},
 			w: {
 		name: 'Wilderness Areas',
@@ -151,14 +196,30 @@ items: {
 			'/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
 		opacity: 0.5,
 		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
+		attribution: '[Wilderness Institute], College of Forestry and Conservation, University of Montana',
 			},
 			zip: {
 		name: 'ZIP Codes',
 		url: 'https://gis.usps.com/arcgis/rest/services/EDDM/EDDM_ZIP5/MapServer',
 		exportLayers: '0',
+		attribution: '[USPS]',
 			},
 		},
-		order: ['blm', 'nlcs', 'counties', 'countylabels', 'nps', 'states', 'w', 'zip'],
+		order: [
+			'blm',
+			'nlcs',
+			'counties',
+			'countylabels',
+			'nwr',
+			'nwrlabels',
+			'fs',
+			'fsrd',
+			'nps',
+			'states',
+			'w',
+			'wsa',
+			'zip',
+		],
 	}, // us
 	ca: {
 		name: 'California',
@@ -167,12 +228,14 @@ items: {
 		name: 'Counties (Color)',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_Counties_Color/MapServer',
 		opacity: 0.4,
+		attribution: '[services.gis.ca.gov]',
 			},
 			parks: {
 		name: 'State Parks',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_State_Parks/MapServer',
 		opacity: 0.5,
 		queryFields: ['OBJECTID', 'UNITNAME', 'MgmtStatus', 'GISACRES'],
+		attribution: '[services.gis.ca.gov]',
 			},
 		},
 		order: ['counties', 'parks'],
@@ -244,6 +307,7 @@ function dynamicLayer(id, mapLayerId, renderer)
 var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
 var countySpec = TileOverlays.items.us.items.counties;
+var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
 var stateSpec = TileOverlays.items.us.items.states;
@@ -286,6 +350,20 @@ if (true) {
 	});
 	npsSpec.opacity = 0.5;
 }
+if (false) {
+	var renderer = {
+		type: 'simple',
+		symbol: simpleFillSymbol([128, 128, 0, 255])
+	};
+	fsrdSpec.dynamicLayers = JSON.stringify([{
+		id: 101, source: {type: 'mapLayer', mapLayerId: 0},
+		drawingInfo: {showLabels: false, renderer: renderer}
+	},{
+		id: 102, source: {type: 'mapLayer', mapLayerId: 1},
+		drawingInfo: {showLabels: false, renderer: renderer}
+	}]);
+	fsrdSpec.opacity = 0.5;
+}
 npsSpec.popup = {
 	init: function(div)
 	{
@@ -305,7 +383,7 @@ npsSpec.popup = {
 		this.linkNode.href = 'https://www.nps.gov/' + code + '/index.htm';
 		this.nameNode.nodeValue = attr.UNIT_NAME;
 
-		return {color: '#FFFF00', fillOpacity: 0};
+		return '#FFFF00';
 	},
 };
 nlcsSpec.popup = {
@@ -346,7 +424,27 @@ nlcsSpec.popup = {
 		this.nameNode.nodeValue = name;
 		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
 
-		return {color: '#800000', fillOpacity: 0};
+		return '#800000';
+	},
+};
+fsrdSpec.popup = {
+	init: function(div)
+	{
+		var boldNode = document.createElement('b');
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		boldNode.appendChild(this.textNode1);
+		div.appendChild(boldNode);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr.FORESTNAME;
+		this.textNode2.nodeValue = '(' + attr.DISTRICTNAME + ')';
+		return '#556B2F';
 	},
 };
 wildernessSpec.popup = {
@@ -382,7 +480,7 @@ wildernessSpec.popup = {
 		this.textNode2.nodeValue = '(' + attr.YearDesignated + ') (' +
 			attr.Acreage.toLocaleString() + ' acres)';
 
-		return {color: this.outlineColor[agency] || '#000000', fillOpacity: 0};
+		return this.outlineColor[agency] || '#000000';
 	},
 };
 caParkSpec.popup = {
@@ -402,7 +500,7 @@ caParkSpec.popup = {
 		this.textNode2.nodeValue = '(' + attr.MgmtStatus + ') (' +
 			Math.round(attr.GISACRES).toLocaleString() + ' acres)';
 
-		return {color: '#70A800', fillOpacity: 0};
+		return '#70A800';
 	},
 };
 countySpec.popup = {
@@ -416,8 +514,7 @@ countySpec.popup = {
 	show: function(attr)
 	{
 		this.nameNode.nodeValue = attr.NAME;
-
-		return {color: '#A52A2A', fillOpacity: 0};
+		return '#A52A2A';
 	},
 };
 stateSpec.popup = {
@@ -429,8 +526,7 @@ stateSpec.popup = {
 	show: function(attr)
 	{
 		this.nameNode.nodeValue = attr.NAME + ' (' + attr.STUSAB + ')';
-
-		return {color: '#000000', fillOpacity: 0};
+		return '#000000';
 	},
 };
 blmSpec.popup = {
@@ -465,13 +561,14 @@ blmSpec.popup = {
 		this.textNode1.nodeValue = ' (' + attr.ADMIN_ST + ')';
 		this.textNode2.nodeValue = '(' + attr.PARENT_NAME + ')';
 
-		return {color: '#0000FF', fillOpacity: 0};
+		return '#0000FF';
 	},
 };
 
 var allQuerySpecs = [
 	npsSpec,
 	nlcsSpec,
+//	fsrdSpec,
 	wildernessSpec,
 	caParkSpec,
 	countySpec,
@@ -540,7 +637,7 @@ function getAttribution(spec)
 	var url = spec.url;
 	if (spec.tile)
 		url += '?f=pjson';
-	return spec.attribution.replace(/\[([- A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
+	return spec.attribution.replace(/\[([- &,\.\/:;A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
 }
 var MapServer = {};
 MapServer.newOverlay = function(spec)
@@ -660,6 +757,8 @@ MapServer.enableQuery = function(map)
 
 			var attr = json.features[0][geojson ? 'properties' : 'attributes'];
 			var style = popupSpec.show(attr);
+			if (typeof style === 'string')
+				style = {color: style, fillOpacity: 0};
 
 			popupSpec.div.style.display = 'block';
 			popupSpec.ztf.style.display = 'none';
