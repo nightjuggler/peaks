@@ -329,6 +329,10 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
 
+	addMapLink(listNode, 'GeoMAC Wildfire Viewer',
+		'https://nifc.maps.arcgis.com/apps/webappviewer/index.html?' +
+		'id=fa067b6b21534df283a87acc3ae3227c&extent=' + extent);
+
 	addMapLink(listNode, 'GIS Surfer',
 		'https://mappingsupport.com/p2/gissurfer.php?center=' + latCommaLong + '&zoom=14');
 
