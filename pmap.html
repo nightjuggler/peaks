@@ -34,6 +34,22 @@ progress {
 .blmPopup {
 	text-align: center;
 }
+.popupDiv input {
+	margin-top: 0;
+	margin-bottom: 0;
+	padding-top: 0;
+	padding-bottom: 0;
+	vertical-align: middle;
+}
+.popupDiv input[type="color"] {
+	border-style: none;
+	margin-left: 0;
+	margin-right: 0;
+	padding-left: 0;
+	padding-right: 0;
+	width: 25px;
+	height: 10px;
+}
 .elevDiv {
 	display: inline-block;
 	vertical-align: top;
@@ -306,19 +322,6 @@ function getMapBounds(map, options)
 
 	return methods;
 }
-function centerIcon()
-{
-	var o = {iconSize: [28, 28], className: 'centerIcon'};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">'
-		+ '<line x1="13" y1="0" x2="13" y2="28" stroke="white" stroke-dasharray="9 10" />'
-		+ '<line x1="14" y1="0" x2="14" y2="28" stroke="black" stroke-dasharray="9 10" />'
-		+ '<line x1="15" y1="0" x2="15" y2="28" stroke="white" stroke-dasharray="9 10" />'
-		+ '<line y1="13" x1="0" y2="13" x2="28" stroke="white" stroke-dasharray="9 10" />'
-		+ '<line y1="14" x1="0" y2="14" x2="28" stroke="black" stroke-dasharray="9 10" />'
-		+ '<line y1="15" x1="0" y2="15" x2="28" stroke="white" stroke-dasharray="9 10" />'
-		+ '</svg>';
-	return L.divIcon(o);
-}
 var isLocal;
 function loadJSON(url, onSuccess, onFailure, progressBar)
 {
@@ -413,7 +416,7 @@ function createMap(options)
 		keyboard: false,
 		interactive: false,
 		zIndexOffset: 1000,
-		icon: centerIcon()
+		icon: L.icon({iconUrl: 'cross.svg', iconSize: [29, 29]})
 	}).addTo(map);
 
 	map.on('move', function() {

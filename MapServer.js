@@ -774,14 +774,24 @@ function addOutlineCheckbox(spec, map)
 	input.type = 'checkbox';
 	input.checked = false;
 	input.addEventListener('click', function() {
-		if (input.checked)
+		if (spec.toggle.checked)
 			spec.outline.addTo(map);
 		else
 			spec.outline.remove();
 	}, false);
 
-	spec.div.insertBefore(input, spec.ztf.nextSibling);
+	var nextNode = spec.ztf.nextSibling;
+	spec.div.insertBefore(input, nextNode);
 	spec.toggle = input;
+
+	input = document.createElement('input');
+	input.type = 'color';
+	input.addEventListener('change', function() {
+		spec.style.color = spec.colorInput.value;
+		spec.outline.setStyle(spec.style);
+	}, false);
+	spec.div.insertBefore(input, nextNode);
+	spec.colorInput = input;
 }
 MapServer.enableQuery = function(map)
 {
@@ -850,6 +860,8 @@ MapServer.enableQuery = function(map)
 			popupSpec.ztf.style.display = '';
 			popupSpec.toggle.style.display = '';
 			popupSpec.toggle.checked = true;
+			popupSpec.colorInput.value = popupSpec.style.color;
+			popupSpec.colorInput.style.display = '';
 			popup.update();
 			outlines.push(outline.addTo(map));
 		}
@@ -863,9 +875,11 @@ MapServer.enableQuery = function(map)
 			if (typeof style === 'string')
 				style = {color: style, fillOpacity: 0};
 
+			popupSpec.style = style;
 			popupSpec.div.style.display = 'block';
 			popupSpec.ztf.style.display = 'none';
 			popupSpec.toggle.style.display = 'none';
+			popupSpec.colorInput.style.display = 'none';
 			if (popupEmpty) {
 				map.openPopup(popup.setLatLng(ll));
 				popupEmpty = false;
