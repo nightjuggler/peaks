@@ -290,6 +290,14 @@ class CA_ZIP_Code_Query(Query):
 	]
 	printSpec = "{name}, {state} {zip} / Population: {pop:,} (2014) / {area:,.2f} square miles"
 
+class AIANNH_Query(Query):
+	name = "American Indian, Alaska Native, and Native Hawaiian Areas"
+	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" # 10.51
+	service = "TIGERweb/AIANNHA"
+	layer = 47 # sr = 102100 (3857)
+	fields = [("NAME", "name")]
+	printSpec = "{name}"
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
@@ -304,6 +312,7 @@ def main():
 	geometry = "{},{}".format(longitude, latitude)
 
 	queryMap = {
+		"aiannh": AIANNH_Query,
 		"blm": BLM_Query,
 		"ca_parks": CA_StateParksQuery,
 		"county": TigerCountyQuery,

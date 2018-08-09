@@ -96,6 +96,14 @@ items: {
 	us: {
 		name: 'National',
 		items: {
+			aiannh: {
+		name: 'American Indian,|Alaska Native, and|Native Hawaiian Areas',
+		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/AIANNHA/MapServer',
+		exportLayers: '47',
+		opacity: 0.5,
+		queryFields: ['OBJECTID', 'NAME'],
+		attribution: '[U.S. Census Bureau]',
+			},
 			blm: {
 		name: 'BLM Districts',
 		url: 'https://gis.blm.gov/arcgis/rest/services/admin_boundaries/BLM_Natl_AdminUnit/MapServer',
@@ -206,6 +214,7 @@ items: {
 			},
 		},
 		order: [
+			'aiannh',
 			'blm',
 			'nlcs',
 			'counties',
@@ -310,6 +319,7 @@ function dynamicLayer(id, mapLayerId, renderer)
 	}]);
 }
 
+var aiannhSpec = TileOverlays.items.us.items.aiannh;
 var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
 var caZipSpec = TileOverlays.items.ca.items.zip;
@@ -373,6 +383,37 @@ if (false) {
 	}]);
 	fsrdSpec.opacity = 0.5;
 }
+aiannhSpec.popup = {
+	init: function(div)
+	{
+		var boldNode = document.createElement('b');
+		boldNode.appendChild(this.nameNode = document.createTextNode(''));
+		this.brNode = document.createElement('br');
+
+		div.appendChild(boldNode);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		var name = attr.NAME;
+		var line2 = ' and Off-Reservation Trust Land';
+
+		if (name.endsWith(line2)) {
+			if (!this.brNode.parentNode)
+				this.div.insertBefore(this.brNode, this.textNode2);
+			this.nameNode.nodeValue = name.substring(0, name.length - line2.length);
+			this.textNode2.nodeValue = line2.substring(1);
+		} else {
+			if (this.brNode.parentNode)
+				this.div.removeChild(this.brNode);
+			this.nameNode.nodeValue = name;
+			this.textNode2.nodeValue = '';
+		}
+
+		return '#CC33FF';
+	},
+};
 npsSpec.popup = {
 	init: function(div)
 	{
@@ -624,6 +665,7 @@ blmSpec.popup = {
 };
 
 var allQuerySpecs = [
+	aiannhSpec,
 	npsSpec,
 	nlcsSpec,
 	fsrdSpec,
