@@ -355,6 +355,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		+ '&dump_app_trace=false'
 		+ '&db_debug=false');
 
+	addMapLink(listNode, 'OpenTopoMap',
+		'https://opentopomap.org/#map=14/' + latLong[0] + '/' + latLong[1]);
+
 	addMapLink(listNode, 'PMap (Mapbox.js)',
 		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ll=' + latCommaLong);
 
@@ -396,8 +399,28 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://umontana.maps.arcgis.com/apps/webappviewer/index.html?' +
 		'id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=' + extent);
 
+	var llSpan = document.createElement('SPAN');
+	llSpan.style.color = 'black';
+	llSpan.style.cursor = 'pointer';
+	var deg = '\u00B0';
+	var llText = (latitude < 0 ? -latitude + deg + 'S ' : latitude + deg + 'N ') +
+		(longitude < 0 ? -longitude + deg + 'W' : longitude + deg + 'E');
+	llSpan.appendChild(document.createTextNode(llText));
+	llSpan.addEventListener('click', function() {
+		llSpan.firstChild.nodeValue = latCommaLong;
+		window.getSelection().selectAllChildren(llSpan);
+		document.execCommand('copy');
+		llSpan.firstChild.nodeValue = llText;
+	});
+
+	var llDiv = document.createElement('DIV');
+	llDiv.style.textAlign = 'center';
+	llDiv.style.paddingBottom = '2px';
+	llDiv.appendChild(llSpan);
+
 	var mapLinkBox = document.createElement('DIV');
 	mapLinkBox.className = 'mapLinkBox';
+	mapLinkBox.appendChild(llDiv);
 	mapLinkBox.appendChild(listNode);
 	return mapLinkBox;
 }
