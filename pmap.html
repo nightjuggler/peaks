@@ -349,6 +349,7 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 
 	xhr.open('GET', url);
 	xhr.send();
+	return xhr;
 }
 function createMap(options)
 {

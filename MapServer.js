@@ -1,4 +1,4 @@
-/* globals document, Image, L, loadJSON */
+/* globals document, Image, window, L, loadJSON */
 /* exported BaseLayers, TileOverlays, MapServer */
 
 var BaseLayers = {
@@ -263,6 +263,20 @@ order: ['us', 'ca'],
 var MapServer = (function() {
 'use strict';
 
+function latLngToStr(lat, lng)
+{
+	var deg = '\u00B0';
+	return (lat.charAt(0) === '-' ? lat.substring(1) + deg + 'S ' : lat + deg + 'N ') +
+		(lng.charAt(0) === '-' ? lng.substring(1) + deg + 'W' : lng + deg + 'E');
+}
+function degToStr(degrees)
+{
+	degrees = degrees.toFixed(6);
+	var len = degrees.length - 1;
+	while (degrees.charAt(len) === '0') --len;
+	if (degrees.charAt(len) === '.') --len;
+	return degrees.substring(0, len + 1);
+}
 function fitLink(map, spec)
 {
 	function fitBounds(event)
@@ -770,17 +784,21 @@ MapServer.newBaseLayer = function(spec)
 };
 function addOutlineCheckbox(spec, map)
 {
+	var nextNode = spec.ztf.nextSibling;
+
 	var input = document.createElement('input');
 	input.type = 'checkbox';
 	input.checked = false;
 	input.addEventListener('click', function() {
-		if (spec.toggle.checked)
-			spec.outline.addTo(map);
-		else
-			spec.outline.remove();
+		if (spec.outline) {
+			if (spec.toggle.checked)
+				spec.outline.addTo(map);
+			else
+				spec.outline.remove();
+		}
+		else if (spec.toggle.checked)
+			spec.runGeometryQuery();
 	}, false);
-
-	var nextNode = spec.ztf.nextSibling;
 	spec.div.insertBefore(input, nextNode);
 	spec.toggle = input;
 
@@ -788,7 +806,8 @@ function addOutlineCheckbox(spec, map)
 	input.type = 'color';
 	input.addEventListener('change', function() {
 		spec.style.color = spec.colorInput.value;
-		spec.outline.setStyle(spec.style);
+		if (spec.outline)
+			spec.outline.setStyle(spec.style);
 	}, false);
 	spec.div.insertBefore(input, nextNode);
 	spec.colorInput = input;
@@ -801,7 +820,7 @@ MapServer.enableQuery = function(map)
 	var popupEmpty = false;
 	var firstResponse = false;
 	var outlines = [];
-	var querySpecs = getQuerySpecs();
+	var popupSpecs = [];
 
 	function removeOutlines()
 	{
@@ -810,8 +829,11 @@ MapServer.enableQuery = function(map)
 			outlines.length = 0;
 		}
 		if (!popupEmpty) {
-			for (var spec of querySpecs)
-				spec.popup.div.style.display = 'none';
+			for (var spec of popupSpecs) {
+				spec.outline = null;
+				spec.outlineID = null;
+				spec.div.style.display = 'none';
+			}
 			popupEmpty = true;
 		}
 		firstResponse = false;
@@ -820,10 +842,23 @@ MapServer.enableQuery = function(map)
 	var popupDiv = document.createElement('div');
 	popupDiv.className = 'popupDiv blmPopup';
 
-	for (var spec of querySpecs)
-	{
-		spec.outlineCache = {};
+	var llSpan = document.createElement('span');
+	llSpan.style.cursor = 'pointer';
+	llSpan.appendChild(document.createTextNode(''));
+	llSpan.addEventListener('click', function() {
+		var llText = llSpan.firstChild.nodeValue;
+		llSpan.firstChild.nodeValue = llSpan.dataset.ll;
+		window.getSelection().selectAllChildren(llSpan);
+		document.execCommand('copy');
+		llSpan.firstChild.nodeValue = llText;
+	});
 
+	var llDiv = document.createElement('div');
+	llDiv.appendChild(llSpan);
+	popupDiv.appendChild(llDiv);
+
+	for (var spec of getQuerySpecs())
+	{
 		var popupSpec = spec.popup;
 		popupSpec.div = document.createElement('div');
 		popupSpec.ztf = fitLink(map, popupSpec);
@@ -834,77 +869,98 @@ MapServer.enableQuery = function(map)
 		var queryLayer = spec.queryLayer || spec.exportLayers || '0';
 		var baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
 
-		spec.queryLL = [baseURL,
+		popupSpec.queryField0 = spec.queryFields[0];
+		popupSpec.queryByLL = [baseURL,
 			'returnGeometry=false',
 			'outFields=' + spec.queryFields.join(','),
 			'spatialRel=esriSpatialRelIntersects',
 			'inSR=4326', // WGS 84 (EPSG:4326) longitude/latitude
 			'geometryType=esriGeometryPoint',
 			'geometry='].join('&');
-		spec.queryID = [baseURL,
+		popupSpec.queryByID = [baseURL,
 			'returnGeometry=true',
 			'geometryPrecision=5',
 			'outSR=4326',
 			'objectIds='].join('&');
+
+		popupSpec.outlineCache = {};
+		popupSpec.activeQueries = {};
+		popupSpecs.push(popupSpec);
 	}
 
 	var popup = L.popup({maxWidth: 600}).setContent(popupDiv);
 
-	function runQuery(url, clickID, ll, spec)
+	function runQuery(clickID, spec, ll, lngCommaLat)
 	{
-		var popupSpec = spec.popup;
-
 		function showOutline(outline)
 		{
-			popupSpec.outline = outline;
-			popupSpec.ztf.style.display = '';
-			popupSpec.toggle.style.display = '';
-			popupSpec.toggle.checked = true;
-			popupSpec.colorInput.value = popupSpec.style.color;
-			popupSpec.colorInput.style.display = '';
+			spec.outline = outline;
+			outlines.push(outline);
+			if (spec.toggle.checked) outline.addTo(map);
+			spec.ztf.style.display = '';
 			popup.update();
-			outlines.push(outline.addTo(map));
 		}
-		loadJSON(url, function(json) {
+		loadJSON(spec.queryByLL + lngCommaLat, function(json) {
 			if (clickID !== globalClickID) return;
 			if (firstResponse) removeOutlines();
 			if (json.features.length === 0) return;
 
 			var attr = json.features[0][geojson ? 'properties' : 'attributes'];
-			var style = popupSpec.show(attr);
+			var style = spec.show(attr);
 			if (typeof style === 'string')
 				style = {color: style, fillOpacity: 0};
 
-			popupSpec.style = style;
-			popupSpec.div.style.display = 'block';
-			popupSpec.ztf.style.display = 'none';
-			popupSpec.toggle.style.display = 'none';
-			popupSpec.colorInput.style.display = 'none';
+			spec.style = style;
+			spec.div.style.display = '';
+			spec.ztf.style.display = 'none';
+			spec.colorInput.value = style.color;
 			if (popupEmpty) {
 				map.openPopup(popup.setLatLng(ll));
 				popupEmpty = false;
 			} else
 				popup.update();
 
-			var outlineID = attr[spec.queryFields[0]];
-			var outline = spec.outlineCache[outlineID];
-			if (outline) {
-				showOutline(outline);
-				return;
-			}
+			var outlineID = attr[spec.queryField0];
+			spec.outlineID = outlineID;
 
-			loadJSON(spec.queryID + outlineID, function(json) {
-				if (json.features.length === 0) return;
-				var geometry = json.features[0].geometry;
-				if (!geojson) {
-					if (json.geometryType !== 'esriGeometryPolygon') return;
-					geometry = {type: 'Polygon', coordinates: geometry.rings};
-				}
-				var outline = L.GeoJSON.geometryToLayer(geometry, style);
-				spec.outlineCache[outlineID] = outline;
-				if (clickID === globalClickID)
-					showOutline(outline);
-			});
+			spec.runGeometryQuery = function()
+			{
+				if (spec.activeQueries[outlineID]) return;
+
+				spec.activeQueries[outlineID] = loadJSON(spec.queryByID + outlineID,
+				function(json) {
+					delete spec.activeQueries[outlineID];
+
+					if (!json || !json.features) return;
+					if (json.features.length === 0) return;
+
+					var geometry = json.features[0].geometry;
+					if (!geojson)
+						if (json.geometryType === 'esriGeometryPolygon')
+							geometry = {type: 'Polygon', coordinates: geometry.rings};
+						else
+							return;
+
+					if (clickID !== globalClickID && outlineID === spec.outlineID)
+						style = spec.style;
+					var outline = L.GeoJSON.geometryToLayer(geometry, style);
+					spec.outlineCache[outlineID] = outline;
+
+					if (outlineID === spec.outlineID)
+						showOutline(outline);
+				},
+				function() {
+					delete spec.activeQueries[outlineID];
+					spec.toggle.checked = false;
+				});
+			};
+
+			var outline = spec.outlineCache[outlineID];
+			if (outline)
+				showOutline(outline);
+			else if (spec.toggle.checked)
+				spec.runGeometryQuery();
+
 		}, function() {
 			if (clickID !== globalClickID) return;
 			if (firstResponse) removeOutlines();
@@ -916,10 +972,15 @@ MapServer.enableQuery = function(map)
 		firstResponse = true;
 
 		var ll = event.latlng;
-		var lngCommaLat = ll.lng.toFixed(6) + ',' + ll.lat.toFixed(6);
+		var lng = degToStr(ll.lng);
+		var lat = degToStr(ll.lat);
+		var lngCommaLat = lng + ',' + lat;
 
-		for (var spec of querySpecs)
-			runQuery(spec.queryLL + lngCommaLat, globalClickID, ll, spec);
+		llSpan.firstChild.nodeValue = latLngToStr(lat, lng);
+		llSpan.dataset.ll = lat + ',' + lng;
+
+		for (var spec of popupSpecs)
+			runQuery(globalClickID, spec, ll, lngCommaLat);
 	});
 };
 
