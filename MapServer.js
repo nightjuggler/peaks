@@ -212,6 +212,37 @@ items: {
 		exportLayers: '0',
 		attribution: '[USPS]',
 			},
+			geomac: {
+				name: 'GeoMAC',
+				items: {
+					cp: {
+		name: 'Current Perimeters',
+		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		exportLayers: '2',
+		attribution: '[GeoMAC]',
+					},
+					lp: {
+		name: 'Latest Perimeters',
+		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		exportLayers: '3',
+		queryField0: 'objectid',
+		attribution: '[GeoMAC]',
+					},
+					modis: {
+		name: 'MODIS Fire Detection',
+		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		exportLayers: '4',
+		attribution: '[GeoMAC]',
+					},
+					viirs: {
+		name: 'VIIRS Fire Detection',
+		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		exportLayers: '5',
+		attribution: '[GeoMAC]',
+					},
+				},
+				order: ['cp', 'lp', 'modis', 'viirs'],
+			},
 		},
 		order: [
 			'aiannh',
@@ -223,6 +254,7 @@ items: {
 			'nwrlabels',
 			'fs',
 			'fsrd',
+			'geomac',
 			'nps',
 			'states',
 			'w',
@@ -338,6 +370,7 @@ var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
 var caZipSpec = TileOverlays.items.ca.items.zip;
 var countySpec = TileOverlays.items.us.items.counties;
+var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
@@ -677,6 +710,27 @@ blmSpec.popup = {
 		return '#0000FF';
 	},
 };
+fireSpec.popup = {
+	init: function(div)
+	{
+		div.appendChild(this.nameNode = document.createTextNode(''));
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2 = document.createTextNode(''));
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		var name = attr.incidentname + ' Fire';
+		if (attr.incomplex === 'Y')
+			name += ' (' + attr.complexname + ')';
+
+		var size = (Math.round(attr.gisacres * 100) / 100).toLocaleString();
+
+		this.nameNode.nodeValue = name;
+		this.textNode2.nodeValue = '(' + size + ' acres)';
+		return '#FF0000';
+	},
+};
 
 var allQuerySpecs = [
 	aiannhSpec,
@@ -691,6 +745,7 @@ var allQuerySpecs = [
 	countySpec,
 	stateSpec,
 	blmSpec,
+	fireSpec,
 ];
 function getQuerySpecs()
 {
@@ -869,10 +924,10 @@ MapServer.enableQuery = function(map)
 		var queryLayer = spec.queryLayer || spec.exportLayers || '0';
 		var baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
 
-		popupSpec.queryField0 = spec.queryFields[0];
+		popupSpec.queryField0 = spec.queryFields ? spec.queryFields[0] : spec.queryField0 || 'OBJECTID';
 		popupSpec.queryByLL = [baseURL,
 			'returnGeometry=false',
-			'outFields=' + spec.queryFields.join(','),
+			'outFields=' + (spec.queryFields ? spec.queryFields.join(',') : '*'),
 			'spatialRel=esriSpatialRelIntersects',
 			'inSR=4326', // WGS 84 (EPSG:4326) longitude/latitude
 			'geometryType=esriGeometryPoint',

@@ -2,6 +2,7 @@
 from __future__ import print_function
 import json
 import subprocess
+import time
 from ppjson import prettyPrint
 
 def makePrefixedFields(*prefixesWithFields):
@@ -298,6 +299,60 @@ class AIANNH_Query(Query):
 	fields = [("NAME", "name")]
 	printSpec = "{name}"
 
+class GeoMAC_CurrentPerimetersQuery(Query):
+	name = "GeoMAC Current Fire Perimeters"
+	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
+	service = "geomac_dyn"
+	layer = 2 # sr = 102100 (3857)
+	fields = [
+		("objectid", "id"),
+		("active", "isActive"),
+		("complexname", "complexName"),
+		("incomplex", "inComplex"),
+		("incidentname", "name"),
+		("datecurrent", "date"),
+		("perimeterdatetime", "perimeterTime"),
+		("gisacres", "acres"),
+		("uniquefireidentifier", "fid"),
+	]
+	printSpec = "{name} Fire"
+
+	@classmethod
+	def processFields(self, fields):
+		fields["name"] = fields["name"].title()
+		isActive = fields["isActive"]
+		fields["isActive"] = "Yes" if isActive == "Y" else "No" if isActive == "N" else isActive
+		fields["date"] = time.strftime("%Y-%m-%d %H:%M:%S",
+			time.gmtime(fields["date"] / 1000))
+		fields["perimeterTime"] = time.strftime("%Y-%m-%d %H:%M:%S",
+			time.gmtime(fields["perimeterTime"] / 1000))
+		if fields["inComplex"] == "Y":
+			self.printSpec += " ({complexName})"
+		self.printSpec = "\n".join([
+			self.printSpec,
+			"\tActive: {isActive}",
+			"\tSize: {acres:,.2f} acres",
+			"\tDate Current: {date}",
+			"\tPerimeter Date/Time: {perimeterTime}",
+			"\tUnique Fire Identifier: {fid}",
+		])
+
+class GeoMAC_LatestPerimetersQuery(GeoMAC_CurrentPerimetersQuery):
+	name = "GeoMAC Latest Fire Perimeters"
+	layer = 3 # sr = 102100 (3857)
+
+class GeoMAC_MODIS_Query(Query):
+	name = "GeoMAC MODIS Fire Detection"
+	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
+	service = "geomac_dyn"
+	layer = 4 # sr = 102100 (3857)
+
+class GeoMAC_VIIRS_Query(Query):
+	name = "GeoMAC VIIRS IBAND Fire Detection"
+	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
+	service = "geomac_dyn"
+	layer = 5 # sr = 102100 (3857)
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
@@ -320,6 +375,10 @@ def main():
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"fs": USFS_Query,
+		"geomac_cp": GeoMAC_CurrentPerimetersQuery,
+		"geomac_lp": GeoMAC_LatestPerimetersQuery,
+		"geomac_modis": GeoMAC_MODIS_Query,
+		"geomac_viirs": GeoMAC_VIIRS_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
 		"nwr": NWR_Query,
