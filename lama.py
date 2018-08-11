@@ -341,6 +341,11 @@ class GeoMAC_LatestPerimetersQuery(GeoMAC_CurrentPerimetersQuery):
 	name = "GeoMAC Latest Fire Perimeters"
 	layer = 3 # sr = 102100 (3857)
 
+class GeoMAC_PerimetersDD83_Query(GeoMAC_CurrentPerimetersQuery):
+	name = "GeoMAC Perimeters DD83"
+	service = "geomac_perims"
+	layer = 4 # sr = 4269
+
 class GeoMAC_MODIS_Query(Query):
 	name = "GeoMAC MODIS Fire Detection"
 	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
@@ -376,6 +381,7 @@ def main():
 		"county_usgs": USGS_CountyQuery,
 		"fs": USFS_Query,
 		"geomac_cp": GeoMAC_CurrentPerimetersQuery,
+		"geomac_dd83": GeoMAC_PerimetersDD83_Query,
 		"geomac_lp": GeoMAC_LatestPerimetersQuery,
 		"geomac_modis": GeoMAC_MODIS_Query,
 		"geomac_viirs": GeoMAC_VIIRS_Query,
