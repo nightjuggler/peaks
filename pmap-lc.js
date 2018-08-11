@@ -1058,6 +1058,27 @@ LayerControl.prototype.setBaseLayer = function(pathStr, rootLCD)
 	if (item && item.input)
 		item.input.click();
 };
+function makeVersionSpec(parent, version)
+{
+	var spec = {};
+	for (var k of ['attribution', 'dynamicLayers', 'exportLayers', 'opacity', 'url'])
+	{
+		if (version.hasOwnProperty(k))
+			spec[k] = version[k];
+		else if (parent.hasOwnProperty(k))
+			spec[k] = parent[k];
+	}
+	return spec;
+}
+function makeChangeVersion(ctrl, parent, version)
+{
+	return function() {
+		if (parent.layer === version.layer) return;
+		parent.layer.remove();
+		parent.layer = version.layer.addTo(ctrl.map);
+		version.input.checked = true;
+	};
+}
 function addTileOverlayClickHandler(ctrl, item)
 {
 	var input = item.input;
@@ -1078,7 +1099,7 @@ function addTileOverlayClickHandler(ctrl, item)
 	input.addEventListener('click', clickCheckbox);
 	input.nextSibling.addEventListener('click', clickName);
 }
-LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, makeLayer)
+LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, makeLayer, versionParent)
 {
 	for (var id of parentItem.order)
 	{
@@ -1092,6 +1113,34 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
+		if (item.url || versionParent && !item.items) {
+			var input = document.createElement('input');
+			itemDiv.insertBefore(input, nameSpan);
+			item.input = input;
+
+			if (versionParent) {
+				input.type = 'radio';
+				input.name = versionParent.versionName;
+				if (id === '') {
+					input.checked = true;
+				} else {
+					input.checked = false;
+					item.layer = makeLayer(makeVersionSpec(versionParent, item));
+				}
+				var changeVersion = makeChangeVersion(this, versionParent, item);
+				input.addEventListener('click', changeVersion);
+				nameSpan.addEventListener('click', changeVersion);
+			} else {
+				input.type = 'checkbox';
+				input.checked = false;
+				item.layer = makeLayer(item);
+
+				addTileOverlayClickHandler(this, item);
+			}
+			if (!item.items)
+				itemDiv.style.paddingLeft = '18px';
+		}
+
 		parentDiv.appendChild(itemDiv);
 
 		if (item.items) {
@@ -1099,7 +1148,15 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
-			this.addTileOverlays(childDiv, item, path, makeLayer);
+			if (versionParent)
+				this.addTileOverlays(childDiv, item, path, makeLayer, versionParent);
+			else if (item.url) {
+				item.versionName = 'V_' + path.join('_');
+				item.items[''] = {name: 'Default Rendering', layer: item.layer};
+				item.order.unshift('');
+				this.addTileOverlays(childDiv, item, path, makeLayer, item);
+			} else
+				this.addTileOverlays(childDiv, item, path, makeLayer);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
@@ -1111,16 +1168,6 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 
 			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
 			nameSpan.addEventListener('click', clickArrow, false);
-		} else {
-			var input = document.createElement('input');
-			input.type = 'checkbox';
-			input.checked = false;
-			itemDiv.insertBefore(input, nameSpan);
-
-			item.input = input;
-			item.layer = makeLayer(item);
-
-			addTileOverlayClickHandler(this, item);
 		}
 	}
 };

@@ -379,57 +379,78 @@ var stateSpec = TileOverlays.items.us.items.states;
 var wildernessSpec = TileOverlays.items.us.items.w;
 var wsaSpec = TileOverlays.items.us.items.wsa;
 
-if (false)
-	wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
-		type: 'uniqueValue', field1: 'Agency',
-		uniqueValueInfos: [
-			uniqueValueInfo('BLM', [0, 255, 255, 255]), // Aqua
-			uniqueValueInfo('FWS', [255, 160, 122, 255]), // LightSalmon
-			uniqueValueInfo('FS', [50, 205, 50, 255]), // LimeGreen
-			uniqueValueInfo('NPS', [255, 0, 255, 255]), // Fuchsia / Magenta
-		]});
-if (false)
-	wildernessSpec.dynamicLayers = dynamicLayer(101, 0, {
+(function() {
+	blmSpec.items = {
+		dl1: {
+			name: 'Custom Rendering',
+			dynamicLayers: dynamicLayer(101, 3, {
+				type: 'simple',
+				symbol: simpleFillSymbol([0, 0, 0, 0], simpleLineSymbol([138, 43, 226, 255], 2))
+			}),
+		},
+	};
+	blmSpec.order = ['dl1'];
 
-		// Visual variables (like colorInfo which could be used for a continuous
-		// color ramp) are apparently not supported in the renderer for sublayers
-		// (dynamic layers are sublayers) prior to ArcGIS Enterprise 10.6.
-
-		type: 'classBreaks', field: 'YearDesignated', minValue: 1964,
-		classBreakInfos: [
-			classBreakInfo(1969, [255, 0, 0, 255]),
-			classBreakInfo(1979, [255, 165, 0, 255]),
-			classBreakInfo(1989, [255, 255, 0, 255]),
-			classBreakInfo(1999, [0, 255, 0, 255]),
-			classBreakInfo(2009, [0, 0, 255, 255]),
-			classBreakInfo(2019, [255, 0, 255, 255]),
-		]});
-if (false)
-	blmSpec.dynamicLayers = dynamicLayer(101, 3, {
+	var renderer = {
 		type: 'simple',
-		symbol: simpleFillSymbol([0, 0, 0, 0], simpleLineSymbol([138, 43, 226, 255], 2))
-	});
-if (true) {
+		symbol: simpleFillSymbol([128, 128, 0, 255])
+	};
+
+	fsrdSpec.items = {
+		dl1: {
+			name: 'Custom Rendering',
+			dynamicLayers: JSON.stringify([{
+				id: 101, source: {type: 'mapLayer', mapLayerId: 0},
+				drawingInfo: {showLabels: false, renderer: renderer}
+			},{
+				id: 102, source: {type: 'mapLayer', mapLayerId: 1},
+				drawingInfo: {showLabels: false, renderer: renderer}
+			}]),
+			opacity: 0.5,
+		},
+	};
+	fsrdSpec.order = ['dl1'];
+
 	npsSpec.dynamicLayers = dynamicLayer(101, 2, {
 		type: 'simple',
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
 	npsSpec.opacity = 0.5;
-}
-if (false) {
-	var renderer = {
-		type: 'simple',
-		symbol: simpleFillSymbol([128, 128, 0, 255])
+
+	wildernessSpec.items = {
+		dl1: {
+			name: 'Custom Coloring 1|(by Agency)',
+			dynamicLayers: dynamicLayer(101, 0, {
+				type: 'uniqueValue', field1: 'Agency',
+				uniqueValueInfos: [
+					uniqueValueInfo('BLM', [0, 255, 255, 255]), // Aqua
+					uniqueValueInfo('FWS', [255, 160, 122, 255]), // LightSalmon
+					uniqueValueInfo('FS', [50, 205, 50, 255]), // LimeGreen
+					uniqueValueInfo('NPS', [255, 0, 255, 255]), // Fuchsia / Magenta
+				]}),
+		},
+		dl2: {
+			name: 'Custom Coloring 2|(by Year Designated)',
+			dynamicLayers: dynamicLayer(101, 0, {
+
+				// Visual variables (like colorInfo which could be used for a continuous
+				// color ramp) are apparently not supported in the renderer for sublayers
+				// (dynamic layers are sublayers) prior to ArcGIS Enterprise 10.6.
+
+				type: 'classBreaks', field: 'YearDesignated', minValue: 1964,
+				classBreakInfos: [
+					classBreakInfo(1969, [255, 0, 0, 255]),
+					classBreakInfo(1979, [255, 165, 0, 255]),
+					classBreakInfo(1989, [255, 255, 0, 255]),
+					classBreakInfo(1999, [0, 255, 0, 255]),
+					classBreakInfo(2009, [0, 0, 255, 255]),
+					classBreakInfo(2019, [255, 0, 255, 255]),
+				]}),
+		},
 	};
-	fsrdSpec.dynamicLayers = JSON.stringify([{
-		id: 101, source: {type: 'mapLayer', mapLayerId: 0},
-		drawingInfo: {showLabels: false, renderer: renderer}
-	},{
-		id: 102, source: {type: 'mapLayer', mapLayerId: 1},
-		drawingInfo: {showLabels: false, renderer: renderer}
-	}]);
-	fsrdSpec.opacity = 0.5;
-}
+	wildernessSpec.order = ['dl1', 'dl2'];
+})();
+
 aiannhSpec.popup = {
 	init: function(div)
 	{
