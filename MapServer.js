@@ -217,34 +217,34 @@ items: {
 				items: {
 					cp: {
 		name: 'Current Perimeters',
-		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
 		exportLayers: '2',
 		queryField0: 'objectid',
 		attribution: '[GeoMAC]',
 					},
 					lp: {
 		name: 'Latest Perimeters',
-		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
 		exportLayers: '3',
 		queryField0: 'objectid',
 		attribution: '[GeoMAC]',
 					},
 					dd83: {
 		name: 'Perimeters DD83',
-		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
 		exportLayers: '4',
 		queryField0: 'objectid',
 		attribution: '[GeoMAC]',
 					},
 					modis: {
 		name: 'MODIS Fire Detection',
-		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
 		exportLayers: '4',
 		attribution: '[GeoMAC]',
 					},
 					viirs: {
 		name: 'VIIRS Fire Detection',
-		url: 'https://wildfire.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
 		exportLayers: '5',
 		attribution: '[GeoMAC]',
 					},
@@ -295,6 +295,7 @@ items: {
 		},
 		order: ['counties', 'parks', 'zip'],
 	},
+	geomac: 'us',
 	w: 'us',
 },
 order: ['us', 'ca'],
@@ -303,6 +304,13 @@ order: ['us', 'ca'],
 var MapServer = (function() {
 'use strict';
 
+/*
+var GeoMAC_Servers = [
+	['w', 'wildfire'],
+	['1', 'rmgsc-haws1'],
+	['2', 'rmgsc-haws2'],
+];
+*/
 function latLngToStr(lat, lng)
 {
 	var deg = '\u00B0';
@@ -316,6 +324,26 @@ function degToStr(degrees)
 	while (degrees.charAt(len) === '0') --len;
 	if (degrees.charAt(len) === '.') --len;
 	return degrees.substring(0, len + 1);
+}
+function getDateTime(millisecondsSinceEpoch)
+{
+	var date = new Date(millisecondsSinceEpoch);
+	var year = date.getFullYear();
+	var month = date.getMonth() + 1;
+	var day = date.getDate();
+
+	if (month < 10) month = '0' + month;
+	if (day < 10) day = '0' + day;
+
+	var h = date.getHours();
+	var m = date.getMinutes();
+	var s = date.getSeconds();
+
+	if (h < 10) h = h === 0 ? '00' : '0' + h;
+	if (m < 10) m = m === 0 ? '00' : '0' + m;
+	if (s < 10) s = s === 0 ? '00' : '0' + s;
+
+	return [year, month, day].join('-') + ' ' + [h, m, s].join(':');
 }
 function fitLink(map, spec)
 {
@@ -427,7 +455,7 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 
 	wildernessSpec.items = {
 		dl1: {
-			name: 'Custom Coloring 1|(by Agency)',
+			name: 'Custom Colors|(by Agency)',
 			dynamicLayers: dynamicLayer(101, 0, {
 				type: 'uniqueValue', field1: 'Agency',
 				uniqueValueInfos: [
@@ -438,7 +466,7 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 				]}),
 		},
 		dl2: {
-			name: 'Custom Coloring 2|(by Year Designated)',
+			name: 'Custom Colors|(by Year Designated)',
 			dynamicLayers: dynamicLayer(101, 0, {
 
 				// Visual variables (like colorInfo which could be used for a continuous
@@ -457,6 +485,7 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 		},
 	};
 	wildernessSpec.order = ['dl1', 'dl2'];
+	wildernessSpec.versionName = 'Default Colors|(by Agency)';
 })();
 
 aiannhSpec.popup = {
@@ -570,7 +599,7 @@ fsrdSpec.popup = {
 	{
 		this.textNode1.nodeValue = attr.FORESTNAME;
 		this.textNode2.nodeValue = '(' + attr.DISTRICTNAME + ')';
-		return '#556B2F';
+		return '#008080';
 	},
 };
 nwrSpec.popup = {
@@ -675,7 +704,7 @@ caZipSpec.popup = {
 	show: function(attr)
 	{
 		this.textNode.nodeValue = attr.NAME + ', ' + attr.STATE + ' ' + attr.ZIP_CODE;
-		return '#008080';
+		return '#FF1493';
 	},
 };
 countySpec.popup = {
@@ -744,8 +773,10 @@ fireSpec.popup = {
 	{
 		div.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(this.ztf);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 	},
 	show: function(attr)
 	{
@@ -754,9 +785,11 @@ fireSpec.popup = {
 			name += ' (' + attr.complexname + ')';
 
 		var size = (Math.round(attr.gisacres * 100) / 100).toLocaleString();
+		var date = getDateTime(attr.perimeterdatetime);
 
 		this.nameNode.nodeValue = name;
-		this.textNode2.nodeValue = '(' + size + ' acres)';
+		this.textNode1.nodeValue = '(' + size + ' acres)';
+		this.textNode2.nodeValue = '(' + date + ')';
 		return '#FF0000';
 	},
 };
@@ -841,9 +874,11 @@ function getAttribution(spec)
 	return spec.attribution.replace(/\[([- &,\.\/:;A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
 }
 var MapServer = {};
-MapServer.newOverlay = function(spec)
+TileOverlays.makeLayer = function(spec)
 {
 	var options = {
+		minZoom: 0,
+		maxZoom: 23,
 		zIndex: 210,
 	};
 	if (spec.attribution)
@@ -853,9 +888,11 @@ MapServer.newOverlay = function(spec)
 
 	return new (exportLayer(spec, true))(options);
 };
-MapServer.newBaseLayer = function(spec)
+BaseLayers.makeLayer = function(spec)
 {
 	var options = {
+		minZoom: 0,
+		maxZoom: 23,
 	};
 	if (spec.attribution)
 		options.attribution = getAttribution(spec);
@@ -872,7 +909,7 @@ function addOutlineCheckbox(spec, map)
 
 	var input = document.createElement('input');
 	input.type = 'checkbox';
-	input.checked = false;
+	input.checked = spec.runGeometryQuery ? true : false;
 	input.addEventListener('click', function() {
 		if (spec.outline) {
 			if (spec.toggle.checked)
@@ -888,8 +925,10 @@ function addOutlineCheckbox(spec, map)
 
 	input = document.createElement('input');
 	input.type = 'color';
+	if (spec.color)
+		input.value = spec.color;
 	input.addEventListener('change', function() {
-		spec.style.color = spec.colorInput.value;
+		spec.style.color = spec.color = spec.colorInput.value;
 		if (spec.outline)
 			spec.outline.setStyle(spec.style);
 	}, false);
@@ -980,7 +1019,10 @@ MapServer.enableQuery = function(map)
 		{
 			spec.outline = outline;
 			outlines.push(outline);
-			if (spec.toggle.checked) outline.addTo(map);
+			if (outline.options.color !== spec.style.color)
+				outline.setStyle(spec.style);
+			if (spec.toggle.checked)
+				outline.addTo(map);
 			spec.ztf.style.display = '';
 			popup.update();
 		}
@@ -992,12 +1034,15 @@ MapServer.enableQuery = function(map)
 			var attr = json.features[0][geojson ? 'properties' : 'attributes'];
 			var style = spec.show(attr);
 			if (typeof style === 'string')
-				style = {color: style, fillOpacity: 0};
+				style = {color: style.toLowerCase(), fillOpacity: 0};
 
 			spec.style = style;
 			spec.div.style.display = '';
 			spec.ztf.style.display = 'none';
-			spec.colorInput.value = style.color;
+			if (spec.color)
+				style.color = spec.color;
+			else
+				spec.colorInput.value = style.color;
 			if (popupEmpty) {
 				map.openPopup(popup.setLatLng(ll));
 				popupEmpty = false;

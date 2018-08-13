@@ -633,8 +633,6 @@ function LayerControl(map)
 
 	this.map = map;
 	this.div = div;
-
-	this.baseLayerMakers = {};
 }
 function clickArrow(event)
 {
@@ -889,7 +887,7 @@ function validateItem(item, path, id)
 	}
 	return true;
 }
-LayerControl.prototype.addOverlays = function(parentDiv, parentItem, path)
+LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 {
 	for (var id of parentItem.order)
 	{
@@ -937,7 +935,7 @@ LayerControl.prototype.addOverlays = function(parentDiv, parentItem, path)
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
-			this.addOverlays(childDiv, item, path);
+			this._addOverlays(item, childDiv, path);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
@@ -974,8 +972,11 @@ function getItem(path, item)
 	}
 	return item;
 }
-LayerControl.prototype.setOverlays = function(overlays, rootLCD, mapBounds)
+LayerControl.prototype.addOverlays = function(rootLCD, overlays, mapBounds)
 {
+	this.div.appendChild(document.createElement('hr'));
+	this._addOverlays(rootLCD, this.div, []);
+
 	for (var pathStr of overlays)
 	{
 		var item = getItem(pathStr.split('_'), rootLCD);
@@ -996,11 +997,12 @@ function makeChangeBaseLayer(ctrl, item)
 		item.input.checked = true;
 	};
 }
-LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, parentMakeLayer)
+LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, parentMakeLayer)
 {
 	for (var id of parentItem.order)
 	{
 		var item = parentItem.items[id];
+		if (!item) continue;
 
 		var nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
@@ -1012,14 +1014,14 @@ LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, par
 
 		parentDiv.appendChild(itemDiv);
 
-		var makeLayer = this.baseLayerMakers[getPathStr(path, id)] || parentMakeLayer;
+		var makeLayer = item.makeLayer || parentMakeLayer;
 
 		if (item.items) {
 			var childDiv = document.createElement('div');
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
-			this.addBaseLayers(childDiv, item, path, makeLayer);
+			this._addBaseLayers(item, childDiv, path, makeLayer);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
@@ -1052,8 +1054,10 @@ LayerControl.prototype.addBaseLayers = function(parentDiv, parentItem, path, par
 		}
 	}
 };
-LayerControl.prototype.setBaseLayer = function(pathStr, rootLCD)
+LayerControl.prototype.addBaseLayers = function(rootLCD, pathStr)
 {
+	this._addBaseLayers(rootLCD, this.div, [], rootLCD.makeLayer);
+
 	var item = getItem(pathStr.split('_'), rootLCD);
 	if (item && item.input)
 		item.input.click();
@@ -1099,11 +1103,12 @@ function addTileOverlayClickHandler(ctrl, item)
 	input.addEventListener('click', clickCheckbox);
 	input.nextSibling.addEventListener('click', clickName);
 }
-LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, makeLayer, versionParent)
+LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, parentMakeLayer, versionParent)
 {
 	for (var id of parentItem.order)
 	{
 		var item = parentItem.items[id];
+		if (!item) continue;
 
 		var nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
@@ -1113,6 +1118,8 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
+		var makeLayer = item.makeLayer || parentMakeLayer;
+
 		if (item.url || versionParent && !item.items) {
 			var input = document.createElement('input');
 			itemDiv.insertBefore(input, nameSpan);
@@ -1120,8 +1127,8 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 
 			if (versionParent) {
 				input.type = 'radio';
-				input.name = versionParent.versionName;
-				if (id === '') {
+				input.name = versionParent.versionID;
+				if (item.layer) {
 					input.checked = true;
 				} else {
 					input.checked = false;
@@ -1149,14 +1156,14 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 
 			path.push(id);
 			if (versionParent)
-				this.addTileOverlays(childDiv, item, path, makeLayer, versionParent);
+				this._addTileOverlays(item, childDiv, path, makeLayer, versionParent);
 			else if (item.url) {
-				item.versionName = 'V_' + path.join('_');
-				item.items[''] = {name: 'Default Rendering', layer: item.layer};
+				item.versionID = 'V_' + path.join('_');
+				item.items[''] = {name: item.versionName || 'Default Rendering', layer: item.layer};
 				item.order.unshift('');
-				this.addTileOverlays(childDiv, item, path, makeLayer, item);
+				this._addTileOverlays(item, childDiv, path, makeLayer, item);
 			} else
-				this.addTileOverlays(childDiv, item, path, makeLayer);
+				this._addTileOverlays(item, childDiv, path, makeLayer);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
@@ -1171,12 +1178,24 @@ LayerControl.prototype.addTileOverlays = function(parentDiv, parentItem, path, m
 		}
 	}
 };
-LayerControl.prototype.setTileOverlays = function(overlays, rootLCD)
+LayerControl.prototype.addTileOverlays = function(rootLCD, overlays, geometryQueries)
 {
+	this.div.appendChild(document.createElement('hr'));
+	this._addTileOverlays(rootLCD, this.div, [], rootLCD.makeLayer);
+
 	for (var pathStr of overlays)
 	{
-		var item = getItem(pathStr.split('_'), rootLCD);
+		let item = getItem(pathStr.split('_'), rootLCD);
 		if (item && item.input && !item.input.checked)
 			item.input.click();
+	}
+	for (var a of geometryQueries)
+	{
+		let item = getItem(a[0].split('_'), rootLCD);
+		if (item && item.popup) {
+			item.popup.runGeometryQuery = true;
+			if (a.length > 1)
+				item.popup.color = '#' + a[1].toLowerCase();
+		}
 	}
 };

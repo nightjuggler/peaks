@@ -224,6 +224,20 @@ function parseTileOverlay(q, v)
 	if (isValidId(v, 48))
 		q.tileOverlays.push(v);
 }
+function parseGeometryQuery(q, v)
+{
+	var a = [];
+	v = v.split(':');
+
+	if (v.length > 0 && isValidId(v[0], 48))
+		a.push(v[0]);
+	if (v.length > 1 && v[1].match(/^[0-9A-Fa-f]{6}$/))
+		a.push(v[1]);
+	if (v.length > 2)
+		return;
+
+	q.geometryQueries.push(a);
+}
 function parseBaseLayer(q, v)
 {
 	if (isValidId(v, 48))
@@ -236,13 +250,14 @@ function parseQueryString(queryString)
 	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
 
 	var flags = {
-		cc: 'clickCenter',
+		clk: 'clickCenter',
 	};
 	var handlers = {
 		b: parseBaseLayer,
 		ll: parseLatLng,
 		o: parseOverlay,
 		ot: parseTileOverlay,
+		qg: parseGeometryQuery,
 		xy: parseLngLat,
 		z: parseZoom,
 	};
@@ -358,6 +373,7 @@ function createMap(options)
 		clickCenter: false,
 		overlays: [],
 		tileOverlays: [],
+		geometryQueries: [],
 	};
 	parseQueryString(queryString);
 
@@ -366,24 +382,20 @@ function createMap(options)
 	var layerControl = new LayerControl(map);
 
 	if (L.mapbox)
-		layerControl.baseLayerMakers.mapbox = function(item) {
+		BaseLayers.items.mapbox.makeLayer = function(item) {
 			var id = 'mapbox.' + item.name.toLowerCase().replace(/ /g, '-');
 			return L.mapbox.tileLayer(id, options);
 		};
 	else
 		BaseLayers.order.splice(0, 1); // Remove 'mapbox'
 
-	layerControl.addBaseLayers(layerControl.div, BaseLayers, [], MapServer.newBaseLayer);
-	layerControl.setBaseLayer(queryString.baseLayer, BaseLayers);
+	layerControl.addBaseLayers(BaseLayers, queryString.baseLayer);
+	layerControl.addTileOverlays(TileOverlays, queryString.tileOverlays, queryString.geometryQueries);
 
 	L.control.zoom({position: 'topright'}).addTo(map);
 
 	var scaleControl = L.control.scale().addTo(map);
 	scaleControl.getContainer().id = 'scaleControl';
-
-	layerControl.div.appendChild(document.createElement('hr'));
-	layerControl.addTileOverlays(layerControl.div, TileOverlays, [], MapServer.newOverlay);
-	layerControl.setTileOverlays(queryString.tileOverlays, TileOverlays);
 
 	var mapBounds = getMapBounds(map, {
 		fitWhenDoneSetting: !queryString.ll,
@@ -427,9 +439,7 @@ function createMap(options)
 	function addOverlayMenu(lcdjson)
 	{
 		mapBounds.addSetter();
-		layerControl.div.appendChild(document.createElement('hr'));
-		layerControl.addOverlays(layerControl.div, lcdjson, []);
-		layerControl.setOverlays(queryString.overlays, lcdjson, mapBounds);
+		layerControl.addOverlays(lcdjson, queryString.overlays, mapBounds);
 		MapServer.enableQuery(map);
 		mapBounds.delSetter();
 	}
