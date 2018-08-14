@@ -1078,8 +1078,11 @@ function makeChangeVersion(ctrl, parent, version)
 {
 	return function() {
 		if (parent.layer === version.layer) return;
-		parent.layer.remove();
-		parent.layer = version.layer.addTo(ctrl.map);
+		if (parent.input.checked) {
+			parent.layer.remove();
+			version.layer.addTo(ctrl.map);
+		}
+		parent.layer = version.layer;
 		version.input.checked = true;
 	};
 }
@@ -1101,7 +1104,8 @@ function addTileOverlayClickHandler(ctrl, item)
 	}
 
 	input.addEventListener('click', clickCheckbox);
-	input.nextSibling.addEventListener('click', clickName);
+	if (!item.items)
+		input.nextSibling.addEventListener('click', clickName);
 }
 LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, parentMakeLayer, versionParent)
 {
