@@ -213,7 +213,7 @@ items: {
 		attribution: '[USPS]',
 			},
 			geomac: {
-				name: 'GeoMAC',
+				name: 'GeoMAC (_dyn)',
 				items: {
 					cp: {
 		name: 'Current Perimeters',
@@ -226,13 +226,6 @@ items: {
 		name: 'Latest Perimeters',
 		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
 		exportLayers: '3',
-		queryField0: 'objectid',
-		attribution: '[GeoMAC]',
-					},
-					dd83: {
-		name: 'Perimeters DD83',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
-		exportLayers: '4',
 		queryField0: 'objectid',
 		attribution: '[GeoMAC]',
 					},
@@ -249,7 +242,32 @@ items: {
 		attribution: '[GeoMAC]',
 					},
 				},
-				order: ['cp', 'lp', 'dd83', 'modis', 'viirs'],
+				order: ['cp', 'lp', 'modis', 'viirs'],
+			},
+			geomacperims: {
+				name: 'GeoMAC (_perims)',
+				items: {
+					m: {
+		name: 'MODIS',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
+		exportLayers: '3',
+		attribution: '[GeoMAC]',
+					},
+					p: {
+		name: 'Perimeters',
+		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
+		exportLayers: '4',
+		queryField0: 'objectid',
+		attribution: '[GeoMAC]',
+					},
+				},
+				order: ['m', 'p'],
+			},
+			glims: {
+		name: 'GLIMS Glaciers',
+		url: 'http://www.glims.org/mapservice',
+		layers: 'GLIMS_GLACIERS',
+		attribution: '<a href="https://www.glims.org/">GLIMS</a> and NSIDC',
 			},
 		},
 		order: [
@@ -263,6 +281,8 @@ items: {
 			'fs',
 			'fsrd',
 			'geomac',
+			'geomacperims',
+			'glims',
 			'nps',
 			'states',
 			'w',
@@ -304,13 +324,6 @@ order: ['us', 'ca'],
 var MapServer = (function() {
 'use strict';
 
-/*
-var GeoMAC_Servers = [
-	['w', 'wildfire'],
-	['1', 'rmgsc-haws1'],
-	['2', 'rmgsc-haws2'],
-];
-*/
 function latLngToStr(lat, lng)
 {
 	var deg = '\u00B0';
@@ -412,12 +425,13 @@ var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
 var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
+var viirsSpec = TileOverlays.items.us.items.geomac.items.viirs;
 var wildernessSpec = TileOverlays.items.us.items.w;
 var wsaSpec = TileOverlays.items.us.items.wsa;
 
 (function() {
 	blmSpec.items = {
-		dl1: {
+		custom: {
 			name: 'Custom Rendering',
 			dynamicLayers: dynamicLayer(101, 3, {
 				type: 'simple',
@@ -425,7 +439,7 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 			}),
 		},
 	};
-	blmSpec.order = ['dl1'];
+	blmSpec.order = ['custom'];
 
 	var renderer = {
 		type: 'simple',
@@ -433,7 +447,7 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 	};
 
 	fsrdSpec.items = {
-		dl1: {
+		custom: {
 			name: 'Custom Rendering',
 			dynamicLayers: JSON.stringify([{
 				id: 101, source: {type: 'mapLayer', mapLayerId: 0},
@@ -445,13 +459,36 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 			opacity: 0.5,
 		},
 	};
-	fsrdSpec.order = ['dl1'];
+	fsrdSpec.order = ['custom'];
 
 	npsSpec.dynamicLayers = dynamicLayer(101, 2, {
 		type: 'simple',
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
 	npsSpec.opacity = 0.5;
+
+	viirsSpec.items = {
+		custom: {
+			name: 'Custom Rendering',
+			dynamicLayers: JSON.stringify([{
+				id: 101, source: {type: 'mapLayer', mapLayerId: 5},
+				definitionExpression: 'load_stat=\'Active Burning\'',
+				drawingInfo: {renderer: {type: 'simple',
+					symbol: simpleFillSymbol([255, 0, 0, 255])}}
+			},{
+				id: 102, source: {type: 'mapLayer', mapLayerId: 5},
+				definitionExpression: 'load_stat=\'Last 12-24 hrs\'',
+				drawingInfo: {renderer: {type: 'simple',
+					symbol: simpleFillSymbol([255, 165, 0, 255])}}
+			},{
+				id: 103, source: {type: 'mapLayer', mapLayerId: 5},
+				definitionExpression: 'load_stat=\'Last 24-48 hrs\'',
+				drawingInfo: {renderer: {type: 'simple',
+					symbol: simpleFillSymbol([0, 0, 0, 255])}}
+			}]),
+		},
+	};
+	viirsSpec.order = ['custom'];
 
 	wildernessSpec.items = {
 		dl1: {
@@ -873,7 +910,22 @@ function getAttribution(spec)
 		url += '?f=pjson';
 	return spec.attribution.replace(/\[([- &,\.\/:;A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
 }
-var MapServer = {};
+function makeLayerWMS(spec)
+{
+	var options = {
+		layers: spec.layers,
+		format: 'image/png',
+		transparent: true,
+		minZoom: 0,
+		maxZoom: 23,
+		zIndex: 210,
+	};
+	if (spec.attribution)
+		options.attribution = spec.attribution;
+
+	return L.tileLayer.wms(spec.url, options);
+}
+TileOverlays.items.us.items.glims.makeLayer = makeLayerWMS;
 TileOverlays.makeLayer = function(spec)
 {
 	var options = {
@@ -935,6 +987,7 @@ function addOutlineCheckbox(spec, map)
 	spec.div.insertBefore(input, nextNode);
 	spec.colorInput = input;
 }
+var MapServer = {};
 MapServer.enableQuery = function(map)
 {
 	var geojson = false;
