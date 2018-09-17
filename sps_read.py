@@ -380,7 +380,6 @@ class LandMgmtArea(object):
 
 landNameLookup = {
 	"Carrizo Plain National Monument":      'landBLM',
-	"Fandango WSA":                         'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Gold Butte National Monument":         'landBLM',
 	"Hart Mountain NAR":                    'landFWS',
@@ -390,14 +389,11 @@ landNameLookup = {
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
 	"Mono Basin Scenic Area":               'Inyo National Forest',
-	"Morey Peak WSA":                       'landBLM',
 	"Navajo Nation":                        'landRez',
 	"NAWS China Lake":                      'landDOD',
 	"Organ Pipe Cactus NM":                 'landNPS',
 	"Providence Mountains SRA":             'landSP',
 	"Pyramid Lake Indian Reservation":      'landRez',
-	"Red Rock Canyon NCA":                  'landBLM',
-	"Silver Peak Range WSA":                'landBLM',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                 'landBLM',
 	"Tohono O'odham Indian Reservation":    'landRez',
@@ -408,6 +404,8 @@ landNameSuffixes = [
 	(' National Preserve',          'landNPS'),
 	(' National Wildlife Refuge',   'landFWS'),
 	(' State Park',                 'landSP'),
+	(' NCA',                        'landBLM'),
+	(' WSA',                        'landBLM'),
 ]
 landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
 landLinkPattern = {
