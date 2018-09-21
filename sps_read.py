@@ -71,7 +71,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 36,
+		'numPeaks': 37,
 		'numSections': 26,
 	},
 }
