@@ -71,7 +71,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 37,
+		'numPeaks': 40,
 		'numSections': 26,
 	},
 }
@@ -1113,7 +1113,7 @@ class RE(object):
 	prominenceTooltip = re.compile(
 		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
 		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
-		' \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\)(<br>Line Parent: '
+		'(?: \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\))?(<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
 	summitpost = re.compile(
@@ -1363,11 +1363,11 @@ class Prominence(object):
 		return int2str(self.avgFeet())
 
 	def html(self):
-		return '<span>{}<div class="tooltip">{} - {} ({}){}</div></span>'.format(
+		return '<span>{}<div class="tooltip">{} - {}{}{}</div></span>'.format(
 			self.avgStr(),
 			self.peakElev,
 			self.saddleElev,
-			self.source,
+			"" if self.source is None else " ({})".format(self.source),
 			self.extraInfo)
 
 def promElevation(baseElevation, contourInterval, elevation, saddle=False):
@@ -1387,7 +1387,7 @@ def getProminence(e1a, c1a, e1, e2a, c2a, e2, source, extraInfo):
 	e1 = promElevation(e1a, c1a, e1)
 	e2 = promElevation(e2a, c2a, e2, True)
 
-	if source not in ("LoJ", "Pb", "LoJ/Pb"):
+	if source not in ("LoJ", "Pb", "LoJ/Pb", None):
 		raise FormatError("Prominence source must be LoJ, Pb, or LoJ/Pb")
 
 	return Prominence(e1, e2, source, extraInfo)
