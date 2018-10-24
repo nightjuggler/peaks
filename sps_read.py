@@ -66,7 +66,7 @@ peakListParams = {
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
-		'numPeaks': 6,
+		'numPeaks': 8,
 		'numSections': 8,
 	},
 	'osp': {
