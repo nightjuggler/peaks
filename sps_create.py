@@ -1137,6 +1137,8 @@ class PeakPb(TablePeak):
 
 			elif row[0].startswith("<b>Google Maps Dynamic Map</b>"):
 				self.readName(row[0][30:])
+			elif row[0].startswith("<b>Dynamic Map</b>"):
+				self.readName(row[0][18:])
 
 		self.postProcess2(maxPeak)
 
