@@ -14,6 +14,7 @@ class Query(object):
 	fields = []
 	printSpec = None
 	processFields = None
+	serverType = "Map"
 
 	@classmethod
 	def query(self, geometry, distance=20, raw=False, verbose=False):
@@ -32,7 +33,8 @@ class Query(object):
 			params.append("distance={}".format(distance))
 			params.append("units=esriSRUnit_Meter")
 
-		url = "{}/{}/MapServer/{}/query?{}".format(self.home, self.service, self.layer, "&".join(params))
+		url = "{}/{}/{}Server/{}/query?{}".format(self.home, self.service, self.serverType, self.layer,
+			"&".join(params))
 		fileName = "lama.out"
 
 		command = ["/usr/local/opt/curl/bin/curl",
@@ -358,6 +360,13 @@ class GeoMAC_VIIRS_Query(Query):
 	service = "geomac_dyn"
 	layer = 5 # sr = 102100 (3857)
 
+class SLO_OpenSpaceQuery(Query):
+	name = "City of San Luis Obispo Open Space"
+	home = "https://services.arcgis.com/yygmGNIVQrHqSELP/arcgis/rest/services" # 10.61
+	service = "OpenSpaceSLO"
+	serverType = "Feature"
+	layer = 0 # sr = 2874
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
@@ -389,6 +398,7 @@ def main():
 		"nps": NPS_Query,
 		"nwr": NWR_Query,
 		"rd": USFS_RangerDistrictQuery,
+		"slo": SLO_OpenSpaceQuery,
 		"sma": BLM_SMA_Query,
 		"state": TigerStateQuery,
 		"topo": USGS_TopoQuery,
