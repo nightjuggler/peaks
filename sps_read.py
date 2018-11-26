@@ -46,8 +46,13 @@ peakListParams = {
 	},
 	'hps': {
 		'geojsonTitle': 'Hundred Peaks Section',
-		'numPeaks': 23,
+		'numPeaks': 24,
 		'numSections': 32,
+	},
+	'lpc': {
+		'geojsonTitle': 'Lower Peaks Committee',
+		'numPeaks': 3,
+		'numSections': 16,
 	},
 	'npc': {
 		'geojsonTitle': 'Nevada Peaks Club',
@@ -61,12 +66,12 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 7,
-		'numSections': 4,
+		'numPeaks': 9,
+		'numSections': 5,
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
-		'numPeaks': 8,
+		'numPeaks': 7,
 		'numSections': 8,
 	},
 	'osp': {
@@ -76,7 +81,7 @@ peakListParams = {
 	},
 }
 def addPeakListSortKey():
-	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'gbp', 'npc', 'odp', 'osp', 'ocap')):
+	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'lpc', 'gbp', 'npc', 'odp', 'osp', 'ocap')):
 		peakListParams[peakListId]['sortkey'] = i
 addPeakListSortKey()
 
@@ -336,6 +341,8 @@ class LandMgmtArea(object):
 
 		if name.startswith("BLM "):
 			return "landBLM"
+		if name.startswith("City of "):
+			return "landCity"
 
 		raise FormatError("Unrecognized land management name: {}", name)
 
@@ -379,6 +386,7 @@ class LandMgmtArea(object):
 		return area
 
 landNameLookup = {
+	"Bishop Peak Natural Reserve":          'City of San Luis Obispo',
 	"Carrizo Plain National Monument":      'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Gold Butte National Monument":         'landBLM',
@@ -394,6 +402,7 @@ landNameLookup = {
 	"Organ Pipe Cactus NM":                 'landNPS',
 	"Providence Mountains SRA":             'landSP',
 	"Pyramid Lake Indian Reservation":      'landRez',
+	"Reservoir Canyon Natural Reserve":     'City of San Luis Obispo',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                 'landBLM',
 	"Tohono O'odham Indian Reservation":    'landRez',
@@ -415,18 +424,20 @@ landLinkPattern = {
 	'landNPS':      re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$'),
 	'landSP':       re.compile('^https://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$'),
 }
-landOrder = {
-	'landDOD':      0,
-	'landRez':      1,
-	'landFWS':      2,
-	'landBLM':      3,
-	'landFS':       4,
-	'landBLMW':     5,
-	'landFSW':      6,
-	'landSP':       7, # California Department of Parks and Recreation - https://www.parks.ca.gov/
-	'landUDWR':     7, # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
-	'landNPS':      8,
-}
+landOrder = {landClass: i for i, landClass in enumerate((
+	'landPrivate',
+	'landCity',
+	'landDOD',
+	'landRez',
+	'landFWS',
+	'landBLM',
+	'landFS',
+	'landBLMW',
+	'landFSW',
+	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
+	'landUDWR',     # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
+	'landNPS',
+))}
 
 def getLandClass(landList):
 	landClass = None
@@ -462,6 +473,11 @@ def parseLandManagement(htmlFile, peak):
 		if line == '&nbsp;':
 			return
 		badLine()
+
+	if line == '&nbsp;':
+		if peak.landClass == 'landPrivate':
+			return
+		raise FormatError("Empty land management column")
 
 	peak.landManagement = landList = []
 

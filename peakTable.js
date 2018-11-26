@@ -237,6 +237,7 @@ function initPeakListMenu()
 		{id: 'dps', name: 'Desert Peaks Section'},
 		{id: 'gbp', name: 'Great Basin Peaks List'},
 		{id: 'hps', name: 'Hundred Peaks Section'},
+		{id: 'lpc', name: 'Lower Peaks Committee'},
 		{id: 'npc', name: 'Nevada Peaks Club'},
 		{id: 'sps', name: 'Sierra Peaks Section'},
 		{id: 'ogul',name: 'Tahoe Ogul Peaks List'},

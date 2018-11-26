@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Lower Peaks Committee</title>
+<link rel="stylesheet" href="peakTable.css">
+<link rel="stylesheet" href="tooltip.css">
+<script src="tooltip.js"></script>
+<script src="peakTable.js"></script>
+<base href="https://nightjuggler.com/nature/">
+<link rel="icon" href="https://nightjuggler.com/logo/pilogo.ico">
+</head>
+<body>
+
+<b><a href="/">Home</a>
+| <a href="index.html">Nature</a>
+| <a href="BayArea.html">Bay Area</a>
+| <a href="Ventana.html">Big Sur</a>
+| <a href="desert.html">Desert</a>
+| <a href="index.html#Sierra">Sierra</a>
+| </b>
+<select id="peakListMenu"></select>
+
+<p><table id="peakTable" class="land landColumn">
+<tr class="section"><td id="header" colspan="13">
+<a href="https://angeles.sierraclub.org/lower_peaks_committee/peak_list">Lower Peaks Committee</a>
+[<a href="pmap.html?o=lpc">Map</a>,
+<a href="pmapgl.html?o=lpc">MapGL</a>]
+<span id="legendLink">LEGEND</span>
+</td></tr>
+<tr><td colspan="13"><div class="div50"><ul>
+<li><a href="https://www.snwburd.com/dayhikes/list/5">Bob Burd</a>
+(<a href="https://www.snwburd.com/">BB</a>)
+<li><a href="https://listsofjohn.com/customlists?lid=712">Lists of John</a>
+(<a href="https://listsofjohn.com/">LoJ</a>)
+<li><a href="http://peakbagger.com/list.aspx?lid=5054">Peakbagger.com</a>
+(<a href="http://peakbagger.com/">Pb</a>)
+</ul></div><div class="div50">Columns:
+<br><input type="checkbox" id="toggleLandColumn" checked /> Land Management
+<br><input type="checkbox" id="toggleClimbedColumn" checked /> Climbed
+<span id="climbedCountSpan"></span>
+<br>Rows:
+<br><input type="checkbox" id="toggleSuspended" /> Suspended Peaks
+<span id="suspendedCountSpan"></span>
+<br>Colors:
+<br><select id="colorMenu">
+<option value="land">Land Management</option>
+<option value="classic">Classic</option>
+<option value="nocolor">None</option>
+</select></div></td></tr>
+<tr class="section"><td id="LPC1" colspan="13">1. Ventura County and North</td></tr>
+<tr class="landFS">
+<td>1.1</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=35.4145,-120.73388&z=15&t=t4">Cerro Alto</a></td>
+<td><a href="https://www.fs.usda.gov/lpnf">Los Padres National Forest</a></td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_Atascadero_288091_1995_24000.jpg">2,624</a><div class="tooltip">2624' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Atascadero, CA&quot; (1995/2000)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_San%20Luis%20Obispo_301594_1952_62500.jpg">2,620</a><div class="tooltip">2620' (MSL) USGS 15' Quad (1:62,500) &quot;San Luis Obispo, CA&quot; (1952/1960)</div></span></td>
+<td>Class 1</td>
+<td>364</td>
+<td>&nbsp;</td>
+<td><a href="https://en.wikipedia.org/wiki/Cerro_Alto_(San_Luis_Obispo_County,_California)">W</a></td>
+<td><a href="https://www.snwburd.com/dayhikes/peak/1317">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/66169">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=13439">Pb</a></td>
+<td><a href="https://forecast.weather.gov/MapClick.php?lon=-120.73388&lat=35.4145">WX</a></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="climbed landCity">
+<td rowspan="2">1.2</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=35.3023,-120.6977&z=15&t=t4">Bishop Peak</a></td>
+<td>City of San Luis Obispo<br>Bishop Peak Natural Reserve HP</td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_San%20Luis%20Obispo_295027_1995_24000.jpg">1,546</a><div class="tooltip">1546' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;San Luis Obispo, CA&quot; (1995/2000)</div></span><br><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_San%20Luis%20Obispo_301594_1952_62500.jpg">1,559</a><div class="tooltip">1559' (MSL) USGS 15' Quad (1:62,500) &quot;San Luis Obispo, CA&quot; (1952/1960)</div></span></td>
+<td>Class 1s3</td>
+<td>1,086</td>
+<td><a href="https://www.summitpost.org/bishop-peak/184644">SP</a></td>
+<td><a href="https://en.wikipedia.org/wiki/Bishop_Peak_(California)">W</a></td>
+<td><a href="https://www.snwburd.com/dayhikes/peak/1322">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/69011">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=24158">Pb</a></td>
+<td><a href="https://forecast.weather.gov/MapClick.php?lon=-120.6977&lat=35.3023">WX</a></td>
+<td>8/10/2010 solo
+<br>1/24/2017 solo</td>
+</tr>
+<tr><td colspan="12"><ul>
+<li>8/10/2010 solo from the <a href="https://caltopo.com/map.html#ll=35.3012,-120.68915&z=19&b=hyb">Highland Drive Trailhead</a>
+<li>1/24/2017 solo from the <a href="https://caltopo.com/map.html#ll=35.3044,-120.68547&z=19&b=hyb">Patricia Drive Trailhead</a>
+</ul></td></tr>
+<tr class="section"><td id="LPC2" colspan="13">2. Western Angeles National Forest</td></tr>
+<tr class="section"><td id="LPC3" colspan="13">3. San Fernando Valley</td></tr>
+<tr class="section"><td id="LPC4" colspan="13">4. Santa Monica Mountains</td></tr>
+<tr class="section"><td id="LPC5" colspan="13">5. Catalina Island and Santa Cruz Island</td></tr>
+<tr class="section"><td id="LPC6" colspan="13">6. Antelope Valley</td></tr>
+<tr class="section"><td id="LPC7" colspan="13">7. Verdugo Range</td></tr>
+<tr class="section"><td id="LPC8" colspan="13">8. Griffith Park</td></tr>
+<tr class="section"><td id="LPC9" colspan="13">9. San Gabriel Mountains</td></tr>
+<tr class="section"><td id="LPC10" colspan="13">10. San Bernardino Mountains</td></tr>
+<tr class="section"><td id="LPC11" colspan="13">11. Chino Hills</td></tr>
+<tr class="section"><td id="LPC12" colspan="13">12. Lake Perris Area</td></tr>
+<tr class="section"><td id="LPC13" colspan="13">13. Santa Ana Mountains</td></tr>
+<tr class="section"><td id="LPC14" colspan="13">14. Joshua Tree National Park</td></tr>
+<tr class="climbed landNPS">
+<td rowspan="2">14.1</td>
+<td><a href="https://mappingsupport.com/p/gmap4.php?ll=33.73419,-115.79917&z=15&t=t4">Mastodon Peak</a></td>
+<td><a href="https://www.nps.gov/jotr/index.htm">Joshua Tree National Park</a></td>
+<td><span><a href="https://ngmdb.usgs.gov/img4/ht_icons/Browse/CA/CA_Cottonwood%20Spring_100212_1988_24000.jpg">3,440+</a><div class="tooltip">3440-3479' (NGVD 29) USGS 7.5' Quad (1:24,000) &quot;Cottonwood Spring, CA&quot; (1988)</div></span></td>
+<td>Class 2</td>
+<td><span>120<div class="tooltip">(3,440 + 40/2) - (3,360 - 40/2) (LoJ)</div></span></td>
+<td><a href="https://www.summitpost.org/mastodon-peak/443947">SP</a></td>
+<td>&nbsp;</td>
+<td><a href="https://www.snwburd.com/dayhikes/peak/2826">BB</a></td>
+<td><a href="https://listsofjohn.com/peak/64123">LoJ</a></td>
+<td><a href="http://peakbagger.com/peak.aspx?pid=13449">Pb</a></td>
+<td><a href="https://forecast.weather.gov/MapClick.php?lon=-115.79917&lat=33.73419">WX</a></td>
+<td>3/27/2018 with Angie</td>
+</tr>
+<tr><td colspan="12"><ul>
+<li>3/27/2018 with Angie from <a href="https://mappingsupport.com/p/gmap4.php?ll=33.74564,-115.8123&z=15&t=t4">Cottonwood Campground, Loop B</a>
+</ul></td></tr>
+<tr class="section"><td id="LPC15" colspan="13">15. Anza-Borrego Desert State Park</td></tr>
+<tr class="section"><td id="LPC16" colspan="13">16. San Diego County</td></tr>
+</table>
+
+<div id="legend" class="land">
+<div class="wide section">Colors</div>
+<div class="lcb landBLM"></div> Bureau of Land Management (BLM)<br>
+<div class="lcb landBLMW"></div> BLM Wilderness<br>
+<div class="lcb landFS"></div> U.S. Forest Service (National Forest)<br>
+<div class="lcb landFSW"></div> Forest Service Wilderness<br>
+<div class="lcb landNPS"></div> National Park Service<br>
+<div class="lcb climbed"></div> Climbed Peak
+<div class="wide section">Abbreviations</div>
+<div class="lab">BB</div> Bob Burd<br>
+<div class="lab">HP</div> High Point<br>
+<div class="lab">LoJ</div> Lists of John (.com)<br>
+<div class="lab">Pb</div> Peakbagger (.com)<br>
+<div class="lab">SP</div> Summit Post (.org)<br>
+<div class="lab">W</div> Wikipedia (.org)<br>
+<div class="lab">WX</div> Weather (.gov)
+<div class="wide section"><div id="closeLegend">CLOSE</div></div>
+</div>
+
+</body>
+</html>
