@@ -51,7 +51,7 @@ peakListParams = {
 	},
 	'lpc': {
 		'geojsonTitle': 'Lower Peaks Committee',
-		'numPeaks': 3,
+		'numPeaks': 5,
 		'numSections': 16,
 	},
 	'npc': {
@@ -416,7 +416,7 @@ landNameSuffixes = [
 	(' NCA',                        'landBLM'),
 	(' WSA',                        'landBLM'),
 ]
-landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
+landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &;A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
 landLinkPattern = {
 	'landWild':     re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$'),
 	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/[-a-z]+$'),
@@ -526,7 +526,7 @@ class NGSDataSheet(object):
 	sources = {}
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
-		'^([0-9]{4}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
+		'^([1-9][0-9]{2,3}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
 		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: 2)?(?: VABM)?(?: [1-9][0-9]{3})?)'
 		'|[1-9][0-9]{3,4})&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
