@@ -66,8 +66,8 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 9,
-		'numSections': 5,
+		'numPeaks': 35,
+		'numSections': 11,
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
@@ -328,9 +328,6 @@ class LandMgmtArea(object):
 		return '<a href="{}">{}</a>{}'.format(self.link, self.name, highPoint)
 
 	def getLandClass(self, name):
-		if name.endswith(" Wilderness"):
-			return "landWild"
-
 		landClass = landNameLookup.get(name)
 		if landClass is not None:
 			return landClass
@@ -390,24 +387,32 @@ landNameLookup = {
 	"Carrizo Plain National Monument":      'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Gold Butte National Monument":         'landBLM',
+	"Golden Gate NRA":                      'landNPS',
 	"Hart Mountain NAR":                    'landFWS',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Hawthorne Army Depot":                 'landDOD',
 	"Indian Peak WMA":                      'landUDWR',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
+	"Mission Peak Regional Preserve":       'landEBRPD',
 	"Mono Basin Scenic Area":               'Inyo National Forest',
+	"Mount Davidson Park":                  'landCity',
 	"Navajo Nation":                        'landRez',
 	"NAWS China Lake":                      'landDOD',
+	"Ohlone Regional Wilderness":           'landEBRPD',
 	"Organ Pipe Cactus NM":                 'landNPS',
+	"Point Reyes National Seashore":        'landNPS',
 	"Providence Mountains SRA":             'landSP',
 	"Pyramid Lake Indian Reservation":      'landRez',
 	"Reservoir Canyon Natural Reserve":     'City of San Luis Obispo',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                 'landBLM',
+	"Sunol Regional Wilderness":            'landEBRPD',
 	"Tohono O'odham Indian Reservation":    'landRez',
+	"Twin Peaks Natural Area":              'landCity',
 }
 landNameSuffixes = [
+	(' Wilderness',                 'landWild'),
 	(' National Forest',            'landFS'),
 	(' National Park',              'landNPS'),
 	(' National Preserve',          'landNPS'),
@@ -415,18 +420,25 @@ landNameSuffixes = [
 	(' State Park',                 'landSP'),
 	(' NCA',                        'landBLM'),
 	(' WSA',                        'landBLM'),
+	(' Open Space Preserve',        'landMROSD'),
+	(' County Park',                'landCounty'),
 ]
-landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &;A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
+landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &.;A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
 landLinkPattern = {
 	'landWild':     re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$'),
+	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[_a-z]+/$'),
 	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/[-a-z]+$'),
 	'landFWS':      re.compile('^https://www\\.fws\\.gov/refuge/[_a-z]+/$'),
+	'landMROSD':    re.compile('^https://www\\.openspace\\.org/preserves/[-a-z]+$'),
 	'landNPS':      re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$'),
 	'landSP':       re.compile('^https://www\\.parks\\.ca\\.gov/\\?page_id=[0-9]+$'),
 }
 landOrder = {landClass: i for i, landClass in enumerate((
 	'landPrivate',
 	'landCity',
+	'landCounty',
+	'landEBRPD',    # East Bay Regional Park District - https://www.ebparks.org/
+	'landMROSD',    # Midpeninsula Regional Open Space District - https://www.openspace.org/
 	'landDOD',
 	'landRez',
 	'landFWS',
@@ -527,7 +539,7 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([1-9][0-9]{2,3}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: 2)?(?: VABM)?(?: [1-9][0-9]{3})?)'
+		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [23])?(?: VABM)?(?: [1-9][0-9]{3})?)'
 		'|[1-9][0-9]{3,4})&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, stationID):
@@ -560,7 +572,7 @@ class USGSTopo(object):
 		'^[A-Z]{2}/[A-Z]{2}_(?:Mc)?[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
 		'([0-9]{6})_[0-9]{4}_(?:[012456]{5,6})\\.jpg$')
 	tooltipPattern = re.compile(
-		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{4,5}(?:-[0-9]{4,5})?\'))'
+		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{3,5}(?:-[0-9]{3,5})?\'))'
 		'(?: \\((MSL|NGVD 29)\\))? USGS ([\\.013567x]+)\' Quad \\(1:([012456]{2,3},[05]00)\\) '
 		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
 
@@ -671,9 +683,9 @@ def parseElevationTooltip(e, link, tooltip):
 	raise FormatError("Unrecognized elevation link")
 
 class Elevation(object):
-	pattern1 = re.compile('^([0-9]{1,2},[0-9]{3}\\+?)')
+	pattern1 = re.compile('^([1-9](?:[0-9]?,[0-9])?[0-9]{2}\\+?)')
 	pattern2 = re.compile(
-		'^<span><a href="([^"]+)">([0-9]{1,2},[0-9]{3}\\+?)</a>'
+		'^<span><a href="([^"]+)">' + pattern1.pattern[1:] + '</a>'
 		'<div class="tooltip">([- &\'(),\\.:;/0-9A-Za-z]+)(?:(</div></span>)|$)')
 
 	def __init__(self, elevation, latlng):
@@ -685,7 +697,7 @@ class Elevation(object):
 		self.latlng = latlng
 
 	def getElevation(self):
-		return '{},{:03}'.format(*divmod(self.elevationFeet, 1000)) + ('+' if self.isRange else '')
+		return int2str(self.elevationFeet) + ('+' if self.isRange else '')
 
 	def sortkey(self):
 		src = self.source
@@ -734,8 +746,8 @@ class Elevation(object):
 			elevationMin = int(elevation)
 			elevationMax = int(elevationMax)
 			interval = elevationMax - elevationMin + 1
-			if self.source.series in ('7.5', '7.5x15'):
-				contourIntervals = (10, 20) if inMeters else (20, 40)
+			if self.source.series == '7.5':
+				contourIntervals = (10, 20) if inMeters else (20, 25, 40)
 			else:
 				contourIntervals = (80,)
 			if interval not in contourIntervals or elevationMin % interval != 0:
@@ -1136,7 +1148,7 @@ class RE(object):
 		'^<td><a href="https://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
 	)
 	wikipedia = re.compile(
-		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([_,()%0-9A-Za-z]+)">W</a></td>$'
+		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([%(),.0-9A-Z_a-z]+)">W</a></td>$'
 	)
 	bobBurd = re.compile(
 		'^<td><a href="https://www\\.snwburd\\.com/dayhikes/peak/([0-9]+)">BB</a></td>$'
@@ -1204,6 +1216,44 @@ def parseClimbedWith(line):
 
 	return line, climbedWith
 
+def parseClimbedTooltip(line):
+	if not line.startswith('<div class="tooltip"><b>with</b><br>'):
+		raise FormatError("Climbed tooltip doesn't match expected pattern")
+	line = line[36:]
+
+	climbedWith = []
+	while True:
+		photoLink = None
+		if line.startswith('<a href="'):
+			line = line[9:]
+			m = RE.climbedWithLink.match(line)
+			if m is None:
+				raise FormatError("Climbed-with link doesn't match expected pattern")
+			photoLink = m.group(1)
+			line = line[m.end():]
+
+		m = RE.climbedWithName.match(line)
+		if m is None:
+			raise FormatError("Climbed-with name doesn't match expected pattern")
+		name = m.group()
+		line = line[m.end():]
+		if photoLink is None:
+			climbedWith.append(name)
+		else:
+			if not line.startswith('</a>'):
+				raise FormatError("Expected </a> after climbed-with name")
+			line = line[4:]
+			climbedWith.append((name, photoLink))
+
+		if not line.startswith('<br>'):
+			break
+		line = line[4:]
+
+	if not line.startswith('</div></span>'):
+		raise FormatError("Climbed tooltip doesn't match expected pattern")
+
+	return line[13:], climbedWith
+
 def parseClimbed(line, htmlFile):
 	climbed = []
 
@@ -1212,6 +1262,11 @@ def parseClimbed(line, htmlFile):
 
 	while True:
 		line = line[4:]
+
+		tooltip = False
+		if line.startswith('<span>'):
+			tooltip = True
+			line = line[6:]
 
 		photoLink = None
 		if line.startswith('<a href="'):
@@ -1235,12 +1290,15 @@ def parseClimbed(line, htmlFile):
 			line = line[4:]
 			climbedDate = (date, photoLink)
 
-		if line.startswith(' solo'):
+		if tooltip:
+			line, climbedWith = parseClimbedTooltip(line)
+			climbed.append((climbedDate, climbedWith, True))
+		elif line.startswith(' solo'):
 			line = line[5:]
-			climbed.append((climbedDate, []))
+			climbed.append((climbedDate, [], False))
 		elif line.startswith(' with '):
 			line, climbedWith = parseClimbedWith(line[6:])
-			climbed.append((climbedDate, climbedWith))
+			climbed.append((climbedDate, climbedWith, False))
 		else:
 			raise FormatError("Expected 'solo' or 'with' after climbed date")
 
@@ -1257,7 +1315,7 @@ def parseClimbed(line, htmlFile):
 def climbed2Html(climbed):
 	lines = []
 
-	for date, climbedWith in climbed:
+	for date, climbedWith, tooltip in climbed:
 		line = []
 
 		if isinstance(date, str):
@@ -1266,24 +1324,30 @@ def climbed2Html(climbed):
 			line.append('<a href="/photos/{1}">{0}</a>'.format(*date))
 
 		if climbedWith:
-			line.append('with')
-
 			names = []
 			for name in climbedWith:
 				if isinstance(name, str):
 					names.append(name)
 				else:
 					names.append('<a href="{1}">{0}</a>'.format(*name))
-			if len(names) > 2:
-				names = ', and '.join([', '.join(names[:-1]), names[-1]])
+
+			if tooltip:
+				line.insert(0, '<span>')
+				line.append('<div class="tooltip"><b>with</b><br>')
+				line.append('<br>'.join(names))
+				line.append('</div></span>')
+			elif len(names) > 2:
+				line.append(' with ')
+				line.append(', '.join(names[:-1]))
+				line.append(', and ')
+				line.append(names[-1])
 			else:
-				names = ' and '.join(names)
-
-			line.append(names)
+				line.append(' with ')
+				line.append(' and '.join(names))
 		else:
-			line.append('solo')
+			line.append(' solo')
 
-		lines.append(' '.join(line))
+		lines.append(''.join(line))
 
 	return '\n<br>'.join(lines)
 
@@ -1935,7 +1999,7 @@ def writePeakJSON(f, peak):
 	if peak.isClimbed:
 		p.append(('climbed', '<br>'.join([date if isinstance(date, str) else
 			'<a href=\\"https://nightjuggler.com/photos/{1}\\">{0}</a>'.format(*date)
-			for date, climbedWith in peak.climbed])))
+			for date, climbedWith, tooltip in peak.climbed])))
 
 	for k, v in p:
 		f('\t\t\t"')
@@ -2019,6 +2083,23 @@ def createList(pl):
 
 	writeHTML(pl)
 
+def printStats(pl):
+	climbedProms = []
+	for pl in peakLists.itervalues():
+		for section in pl.sections:
+			for peak in section.peaks:
+				if peak.dataFrom is None and peak.isClimbed:
+					climbedProms.append((toMeters(max([prom if isinstance(prom, int)
+						else prom.avgFeet() for prom in peak.prominences])), peak.name))
+
+	n = len(climbedProms)
+	for prom, name in sorted(climbedProms):
+		if prom >= n:
+			break
+		n -= 1
+
+	print "P-Index:", n
+
 def readAllHTML():
 	for plId in peakListParams:
 		if plId not in peakLists:
@@ -2035,6 +2116,7 @@ def main():
 		'load': loadFiles,
 		'setprom': setProm,
 		'setvr': setVR,
+		'stats': printStats,
 	}
 	import argparse
 	parser = argparse.ArgumentParser()

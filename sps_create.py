@@ -12,6 +12,9 @@ def err(*args, **kwargs):
 	log(*args, **kwargs)
 	sys.exit()
 
+def int2str(n):
+	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
+
 class TableParserError(Exception):
 	def __init__(self, message, *args, **kwargs):
 		self.message = message.format(*args, **kwargs)
@@ -299,6 +302,8 @@ def str2IntLoJ(s, description, peakName):
 		return int(s)
 	if RE.numGE1k.match(s):
 		return int(s[:-4]) * 1000 + int(s[-3:])
+	if s == "0":
+		return 0
 
 	err("{} '{}' ({}) doesn't match expected pattern", description, s, peakName)
 
@@ -307,6 +312,8 @@ def str2IntPb(s, description, peak):
 		return int(s)
 	if RE.numGE10k.match(s):
 		return int(s[:-4]) * 1000 + int(s[-3:])
+	if s == "0":
+		return 0
 
 	err("{} {} doesn't match expected pattern: {}", peak.fmtIdName, description, s)
 
@@ -351,7 +358,7 @@ class ElevationPb(object):
 		self.isRange = minFeet < maxFeet
 
 	def __str__(self):
-		return "{},{:03}".format(*divmod(self.feet, 1000)) + ("+" if self.isRange else "")
+		return int2str(self.feet) + ("+" if self.isRange else "")
 
 	def __eq__(self, other):
 		return self.feet == other.feet and self.maxFeet == other.maxFeet
@@ -370,7 +377,7 @@ class SimpleElevation(object):
 		self.feet = feet
 
 	def __str__(self):
-		return "{},{:03}".format(*divmod(self.feet, 1000))
+		return int2str(self.feet)
 
 	def __eq__(self, other):
 		return self.feet == other.feet
@@ -807,6 +814,13 @@ class PeakPb(TablePeak):
 
 		('Mount Starr', 12840, 'min'): 12835,
 		('Mount Starr', 12840, 'max'): 12835,
+
+	# Pb Elevation Adjustments for Other California Peaks:
+
+		('Islay Hill', 780, 'min'): 760,
+		('Islay Hill', 820, 'max'): 800,
+		('Point Reyes Hill', 1342, 'min'): 1336,
+		('Point Reyes Hill', 1344, 'max'): 1336,
 	}
 	prominenceMap = {
 	# --------------------------
@@ -902,6 +916,7 @@ class PeakPb(TablePeak):
 		"Lassen Volcanic":      "National Park",
 		"Mojave":               "National Preserve",
 		"Organ Pipe Cactus":    "NM",
+		"Pinnacles":            "National Park",
 		"Sequoia-Kings Canyon": ("Kings Canyon National Park", "Sequoia National Park"),
 		"Yosemite":             "National Park",
 		"Zion":                 "National Park",
@@ -927,8 +942,8 @@ class PeakPb(TablePeak):
 		return True
 
 	landPattern = re.compile(
-		"^(?:Land: ([- '\\(\\)/A-Za-z]+))?(?:<br/>)?"
-		"(?:Wilderness/Special Area: ([- \\(\\)/A-Za-z]+))?$"
+		"^(?:Land: ([- '()./A-Za-z]+))?(?:<br/>)?"
+		"(?:Wilderness/Special Area: ([- ()/A-Za-z]+))?$"
 	)
 	def readLandManagement(self, land):
 		land = land.replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
@@ -959,10 +974,10 @@ class PeakPb(TablePeak):
 				self.landManagement.append(LandMgmtArea.add(area, self, highPoint))
 
 	elevationPattern1 = re.compile(
-		"^<h2>Elevation: ([1-9][0-9](?:,[0-9])?[0-9]{2})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
+		"^<h2>Elevation: ([1-9][0-9]{2,3}|[1-9][0-9],[0-9]{3})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
 	)
 	elevationPattern2 = re.compile(
-		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9](?:,[0-9])?[0-9]{2})\\2 feet</h2>$"
+		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9]{2,3}|[1-9][0-9],[0-9]{3})\\2 feet</h2>$"
 	)
 	def readElevation(self, maxPeak, html):
 		m = self.elevationPattern1.match(html)
@@ -1002,8 +1017,8 @@ class PeakPb(TablePeak):
 		maxPeak.elevation = maxElev
 
 	prominencePattern = re.compile(
-		"^<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
-		"\\(Detailed prominence information\\)<br/><a>Clean Prominence</a>\n"
+		"^(?:<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
+		"\\(Detailed prominence information\\)<br/>)?<a>Clean Prominence</a>\n"
 		": ([,0-9]+) (ft|m)/([,0-9]+) (ft|m)<br/><a>Optimistic Prominence</a>\n"
 		": ([,0-9]+) \\3/([,0-9]+) \\5<br/><a>(?:Line Parent</a>\n"
 		": <a href=\"peak\\.aspx\\?pid=([1-9][0-9]*)\">([- 0-9A-Za-z]+)</a>\n<br/><a>)?Key Col</a>\n"
@@ -1041,7 +1056,8 @@ class PeakPb(TablePeak):
 			maxProm1, maxProm2 = maxProm2, maxProm1
 			maxSaddleElev1, maxSaddleElev2 = maxSaddleElev2, maxSaddleElev1
 
-		self.id = peakId
+		if peakId != self.id and peakId is not None:
+			err("{} Pb ID from Key Col Page link ({}) != {}", self.fmtIdName, peakId, self.id)
 		self.prominence = minProm1
 		maxPeak.prominence = maxProm1
 
