@@ -2101,21 +2101,43 @@ def createList(pl):
 	writeHTML(pl)
 
 def printStats(pl):
+	climbedElevs = []
 	climbedProms = []
 	for pl in peakLists.itervalues():
 		for section in pl.sections:
 			for peak in section.peaks:
 				if peak.dataFrom is None and peak.isClimbed:
-					climbedProms.append((toMeters(max([prom if isinstance(prom, int)
-						else prom.avgFeet() for prom in peak.prominences])), peak.name))
+					maxProm = toMeters(max([prom if isinstance(prom, int)
+						else prom.avgFeet() for prom in peak.prominences]))
 
-	n = len(climbedProms)
-	for prom, name in sorted(climbedProms):
-		if prom >= n:
-			break
+					climbedProms.append((maxProm, peak.name))
+
+					if maxProm >= 100:
+						minElev = toMeters(min([elev.elevationFeet
+							for elev in peak.elevations]))
+
+						climbedElevs.append((minElev, peak.name))
+
+	n = len(climbedElevs)
+	eIndex = 0
+	for elev, name in sorted(climbedElevs):
+		print "{:3}.  {:4}m  {}".format(n, elev, name)
+		if eIndex == 0 and elev >= n:
+			eIndex = n
 		n -= 1
 
-	print "P-Index:", n
+	print "E-Index:", eIndex
+	print
+
+	n = len(climbedProms)
+	pIndex = 0
+	for prom, name in sorted(climbedProms):
+		print "{:3}.  {:4}m  {}".format(n, prom, name)
+		if pIndex == 0 and prom >= n:
+			pIndex = n
+		n -= 1
+
+	print "P-Index:", pIndex
 
 def readAllHTML():
 	for plId in peakListParams:
