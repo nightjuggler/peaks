@@ -555,7 +555,7 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([1-9][0-9]{2,3}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [23])?(?: VABM)?(?: [1-9][0-9]{3})?)'
+		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [23])?(?: VABM)?(?: [1-9][0-9]{3})?(?: Reset)?)'
 		'|[1-9][0-9]{3,4})&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, stationID):
@@ -765,7 +765,7 @@ class Elevation(object):
 			if self.source.series == '7.5':
 				contourIntervals = (10, 20) if inMeters else (20, 25, 40)
 			else:
-				contourIntervals = (80,)
+				contourIntervals = (80, 50, 25)
 			if interval not in contourIntervals or elevationMin % interval != 0:
 				raise FormatError("Elevation range in tooltip not valid")
 			self.source.setContourInterval(interval)
