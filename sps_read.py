@@ -66,8 +66,8 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 35,
-		'numSections': 11,
+		'numPeaks': 55,
+		'numSections': 12,
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
@@ -387,19 +387,20 @@ landNameLookup = {
 	"Carrizo Plain National Monument":      'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
 	"Gold Butte National Monument":         'landBLM',
-	"Golden Gate NRA":                      'landNPS',
+	"Golden Gate National Recreation Area": 'landNPS',
+	"Harry Barbier Memorial Park":          'City of San Rafael',
 	"Hart Mountain NAR":                    'landFWS',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Hawthorne Army Depot":                 'landDOD',
 	"Indian Peak WMA":                      'landUDWR',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
-	"Mission Peak Regional Preserve":       'landEBRPD',
+	"Marin Municipal Water District":       'landCounty',
 	"Mono Basin Scenic Area":               'Inyo National Forest',
 	"Mount Davidson Park":                  'landCity',
 	"Navajo Nation":                        'landRez',
 	"NAWS China Lake":                      'landDOD',
-	"Ohlone Regional Wilderness":           'landEBRPD',
+	"Olompali State Historic Park":         'landSP',
 	"Organ Pipe Cactus NM":                 'landNPS',
 	"Point Reyes National Seashore":        'landNPS',
 	"Providence Mountains SRA":             'landSP',
@@ -407,9 +408,25 @@ landNameLookup = {
 	"Reservoir Canyon Natural Reserve":     'City of San Luis Obispo',
 	"Spring Mountains NRA":                 'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                 'landBLM',
-	"Sunol Regional Wilderness":            'landEBRPD',
 	"Tohono O'odham Indian Reservation":    'landRez',
 	"Twin Peaks Natural Area":              'landCity',
+
+	# East Bay Regional Park District
+	"Mission Peak Regional Preserve":       'landEBRPD',
+	"Ohlone Regional Wilderness":           'landEBRPD',
+	"Sunol Regional Wilderness":            'landEBRPD',
+
+	# Marin County Open Space District
+	"Loma Alta Open Space Preserve":        'landCounty',
+	"Lucas Valley Open Space Preserve":     'landCounty',
+	"Mount Burdell Open Space Preserve":    'landCounty',
+	"Ring Mountain Open Space Preserve":    'landCounty',
+	"White Hill Open Space Preserve":       'landCounty',
+
+	# Midpeninsula Regional Open Space District
+	"Monte Bello Open Space Preserve":      'landMROSD',
+	"Russian Ridge Open Space Preserve":    'landMROSD',
+	"Sierra Azul Open Space Preserve":      'landMROSD',
 }
 landNameSuffixes = [
 	(' Wilderness',                 'landWild'),
@@ -420,7 +437,6 @@ landNameSuffixes = [
 	(' State Park',                 'landSP'),
 	(' NCA',                        'landBLM'),
 	(' WSA',                        'landBLM'),
-	(' Open Space Preserve',        'landMROSD'),
 	(' County Park',                'landCounty'),
 ]
 landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &.;A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
@@ -1129,7 +1145,8 @@ class RE(object):
 	column2 = re.compile(
 		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
 		'll=([0-9]{1,2}\\.[0-9]{1,6}),(-[0-9]{1,3}\\.[0-9]{1,6})&z=(1[0-9])&t=(t[14])">'
-		'([ #&\'()\\.0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?(?:<br>\\(([ A-Za-z]+)\\))?</td>$'
+		'([ #&\'().0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?'
+		'(?:<br>\\(([A-Z][a-z]+(?: [A-Za-z]+)*(?: [1-9][0-9]*)?)\\))?</td>$'
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
@@ -1139,8 +1156,8 @@ class RE(object):
 	numMeters = re.compile('^[1-9][0-9]{0,3}(?:\\.[0-9])?$')
 	prominence = re.compile('^[,0-9]+')
 	prominenceTooltip = re.compile(
-		'^(?:\\(([,0-9]+m?) \\+ ([124]0m?)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
-		' - (?:\\(([,0-9]+m?) - ([124]0m?)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
+		'^(?:\\(([,0-9]+m?) \\+ (10m?|20m?|25|40)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
+		' - (?:\\(([,0-9]+m?) - (10m?|20m?|25|40)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
 		'(?: \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\))?(<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
@@ -1374,7 +1391,7 @@ def elevStr2Int(e):
 
 class SimpleElevation(object):
 	def __init__(self, baseElevation, contourInterval=0, inMeters=False, saddle=False):
-		assert contourInterval in (0, 10, 20, 40)
+		assert contourInterval in (0, 10, 20, 25, 40)
 		assert contourInterval == 0 and inMeters or isinstance(baseElevation, int)
 
 		if saddle:

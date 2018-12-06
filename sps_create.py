@@ -649,6 +649,10 @@ class PeakPb(TablePeak):
 		('Silver Peak-Southwest Summit', 10772):'Silver Peak (South)',
 	# Other Sierra Peaks:
 		("Gambler's Special", 12927):           'Gamblers Special Peak',
+	# Other California Peaks:
+		('Mount Tamalpais-East Peak', 2572):    'Mount Tamalpais East Peak',
+		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
+		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
@@ -817,10 +821,24 @@ class PeakPb(TablePeak):
 
 	# Pb Elevation Adjustments for Other California Peaks:
 
+		('Hawk Hill', 920, 'min'): 900,
+		('Hawk Hill', 920, 'max'): 925,
 		('Islay Hill', 780, 'min'): 760,
 		('Islay Hill', 820, 'max'): 800,
+		('Mount Tamalpais East Peak', 2572, 'min'): 2571,
+		('Mount Tamalpais East Peak', 2574, 'max'): 2571,
+		('Mount Tamalpais Middle Peak', 2518, 'min'): 2480,
+		('Mount Tamalpais Middle Peak', 2520, 'max'): 2520,
+		('Mount Tamalpais West Peak', 2576, 'min'): 2560,
+		('Mount Tamalpais West Peak', 2578, 'max'): 2600,
 		('Point Reyes Hill', 1342, 'min'): 1336,
 		('Point Reyes Hill', 1344, 'max'): 1336,
+		('Post Summit', 3456, 'min'): 3455,
+		('Post Summit', 3456, 'max'): 3455,
+		('Slacker Hill', 937, 'min'): 925,
+		('Slacker Hill', 937, 'max'): 950,
+		('White Hill', 1434, 'min'): 1430,
+		('White Hill', 1434, 'max'): 1430,
 	}
 	prominenceMap = {
 	# --------------------------
@@ -855,8 +873,14 @@ class PeakPb(TablePeak):
 		('Peak 5196',                     376, 'max'):   396, #                         ODP
 		('Pilot Knob (South)',            720, 'min'):   680, #                         SPS
 		('Pilot Knob (South)',            800, 'max'):   760, #                         SPS
+		('Ring Mountain',                 402, 'min'):   442, # 602'-160'               OCAP
+		('Ring Mountain',                 442, 'max'):   482, # 602'-120'               OCAP
 		('Signal Peak',                  3497, 'max'):  3487, #                         DPS
+		('Slacker Hill',                  274, 'min'):   262, # 937' - 675'             OCAP
+		('Slacker Hill',                  274, 'max'):   287, # 937' - 650'             OCAP
 		('Two Teats',                     132, 'min'):   131, # 40m                     OSP
+		('White Hill',                    308, 'min'):   314, # 1434' - 1120'           OCAP
+		('White Hill',                    310, 'max'):   354, # 1434' - 1080'           OCAP
 	}
 	def postProcess(self, peakListId=None):
 		def str2int(s):
@@ -1490,6 +1514,8 @@ class PeakLoJ(TablePeak):
 		('Humphreys Peak', 6580): 6590, # LoJ seems to have used 6600'-40'/2, but the interval is only 20'
 		('Joe Devel Peak', 12894): 3930.0, # LoJ didn't round down
 		('Kingston Peak', 3582): 1092.1, # LoJ seems to have used 1092m
+		('Ring Mountain', 189): 140, # The saddle is between the 120' and 160' contours
+		('Slacker Hill', 663): 662, # The saddle is between the 650' and 675' contours
 	}
 	def postProcess(self, peakListId=None):
 		self.elevation = str2IntLoJ(self.elevation, 'Elevation', self.name)
