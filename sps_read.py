@@ -79,9 +79,15 @@ peakListParams = {
 		'numPeaks': 40,
 		'numSections': 26,
 	},
+	'owp': {
+		'geojsonTitle': 'Other Western Peaks',
+		'numPeaks': 4,
+		'numSections': 10,
+	},
 }
 def addPeakListSortKey():
-	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'lpc', 'gbp', 'npc', 'odp', 'osp', 'ocap')):
+	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'lpc', 'gbp', 'npc',
+		'odp', 'osp', 'ocap', 'owp')):
 		peakListParams[peakListId]['sortkey'] = i
 addPeakListSortKey()
 
@@ -398,6 +404,7 @@ landNameLookup = {
 	"Marin Municipal Water District":       'landCounty',
 	"Mono Basin Scenic Area":               'Inyo National Forest',
 	"Mount Davidson Park":                  'landCity',
+	"Mount St. Helens National Volcanic Monument": 'Gifford Pinchot National Forest',
 	"Navajo Nation":                        'landRez',
 	"NAWS China Lake":                      'landDOD',
 	"Olompali State Historic Park":         'landSP',
@@ -439,7 +446,7 @@ landNameSuffixes = [
 	(' WSA',                        'landBLM'),
 	(' County Park',                'landCounty'),
 ]
-landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &.;A-Za-z]+)</a>( HP)?)|([- \'A-Za-z]+)')
+landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &.;A-Za-z]+)</a>( HP)?)|([- \'.A-Za-z]+)')
 landLinkPattern = {
 	'landWild':     re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$'),
 	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[_a-z]+/$'),
@@ -1755,7 +1762,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.bobBurd.match(line)
 			if m is None:
-				if line != emptyCell or pl.id not in ('OSP',):
+				if line != emptyCell or pl.id not in ('OSP', 'OWP'):
 					badLine()
 			else:
 				peak.bobBurdId = m.group(1)

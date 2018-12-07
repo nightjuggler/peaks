@@ -406,10 +406,15 @@ stateNameMap = {
 
 	"Arizona":        "AZ",
 	"California":     "CA",
+	"Colorado":       "CO",
 	"Idaho":          "ID",
+	"Montana":        "MT",
 	"Nevada":         "NV",
+	"New Mexico":     "NM",
 	"Oregon":         "OR",
 	"Utah":           "UT",
+	"Washington":     "WA",
+	"Wyoming":        "WY",
 }
 landMap = {
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
@@ -420,6 +425,8 @@ landMap = {
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
 	"Mono Basin NSA":                               "Mono Basin Scenic Area",
+	"Mount Saint Helens National Volcanic Monument":"Mount St. Helens National Volcanic Monument",
+	"Mount Saint Helens NVM":                       "Mount St. Helens National Volcanic Monument",
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",
 	"Red Rock Canyon National Conservation Area":   "Red Rock Canyon NCA",
 	"Steens Mountain National Recreation Lands":    "Steens Mountain CMPA",

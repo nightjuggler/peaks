@@ -244,6 +244,7 @@ function initPeakListMenu()
 		{id: 'odp', name: 'Other Desert Peaks'},
 		{id: 'osp', name: 'Other Sierra Peaks'},
 		{id: 'ocap',name: 'Other California Peaks'},
+		{id: 'owp', name: 'Other Western Peaks'},
 	];
 
 	var menu = document.getElementById('peakListMenu');
