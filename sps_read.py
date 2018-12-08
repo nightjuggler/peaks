@@ -46,7 +46,7 @@ peakListParams = {
 	},
 	'hps': {
 		'geojsonTitle': 'Hundred Peaks Section',
-		'numPeaks': 24,
+		'numPeaks': 25,
 		'numSections': 32,
 	},
 	'lpc': {

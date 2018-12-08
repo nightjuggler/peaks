@@ -792,6 +792,11 @@ class PeakPb(TablePeak):
 		('Sierra Buttes', 8590, 'min'): 8591,
 		('Sierra Buttes', 8590, 'max'): 8591,
 
+	# Pb HPS Elevation Adjustments:
+
+		('San Jacinto Peak', 10839, 'min'): 10804,
+		('San Jacinto Peak', 10839, 'max'): 10804,
+
 	# Pb Elevation Adjustments for Great Basin Peaks / Nevada Peaks Club
 	#
 	# - Bull Mountain
