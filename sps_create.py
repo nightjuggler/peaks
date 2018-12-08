@@ -629,12 +629,15 @@ class PeakPb(TablePeak):
 		('Superstition Benchmark', 5057):       'Superstition Mountain',
 	# Hundred Peaks Section:
 		('Black Mountain', 7438):               'Black Mountain #5',
+		('Cannell Point', 8314):                'Cannel Point',
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Baker Peak', 12305):                  'Baker Peak East',
+		('Baker Peak-West Summit', 12298):      'Baker Peak',
 		('Duffer Peak-North Peak', 9400):       'Duffer Peak',
 		('Duffer Peak', 9428):                  'Duffer Peak South',
 		('Granite Peak', 8980):                 'Granite Peak (Washoe)',
 		('Granite Peak', 9732):                 'Granite Peak (Humboldt)',
+		('Morey Peak-North Peak', 10240):       'Morey Peak North',
 		('Mount Grant', 11280):                 'Mount Grant (West)',
 		('Mount Jefferson-North Summit', 11814):'Mount Jefferson North',
 		('Petersen Mountains HP', 7841):        'Petersen Mountain',
@@ -656,10 +659,20 @@ class PeakPb(TablePeak):
 		('Silver Peak-Southwest Summit', 10772):'Silver Peak (South)',
 	# Other Sierra Peaks:
 		("Gambler's Special", 12927):           'Gamblers Special Peak',
+		('Maggies Peaks-South Summit', 8699):   'Maggies Peaks South',
+		('Mount Lamarck-North Peak', 13464):    'Northwest Lamarck',
+		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
+		('Peak 9980', 9980):                    'Sirretta Peak North',
+		('The Sisters', 10153):                 'The Sisters East',
 	# Other California Peaks:
+		('Maguire Peak', 1688):                 'Maguire Peaks West',
+		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
+		('Monument Peak North', 2600):          'Monument Peak',
 		('Mount Tamalpais-East Peak', 2572):    'Mount Tamalpais East Peak',
 		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
 		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
+	# Other Western Peaks:
+		('Mount Saint Helens', 8333):           'Mount St. Helens',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
@@ -1326,6 +1339,7 @@ class PeakLoJ(TablePeak):
 		('Superstition Peak', 5057):                    'Superstition Mountain',
 	# Hundred Peaks Section:
 		('Black Mountain', 7438):                       'Black Mountain #5',
+		('Cannel Benchmark', 8314):                     'Cannel Point',
 		('Inspiration Benchmark', 5580):                'Mount Inspiration',
 		('Little Berdoo Benchmark', 5460):              'Little Berdoo Peak',
 		('Warren Benchmark', 5103):                     'Warren Point',
@@ -1344,6 +1358,8 @@ class PeakLoJ(TablePeak):
 		('Mount Morgan', 13001):        'Mount Morgan (North)',
 		('Mount Stanford', 13973):      'Mount Stanford (South)',
 		('Mount Stanford', 12838):      'Mount Stanford (North)',
+		('Pilot Knob', 6220):           'Pilot Knob (South)',
+		('Pilot Knob', 12245):          'Pilot Knob (North)',
 		('Pyramid Peak', 12778):        'Pyramid Peak (South)',
 		('Pyramid Peak', 9983):         'Pyramid Peak (North)',
 		('Sawtooth Peak', 8020):        'Sawtooth Peak (South)',
@@ -1354,6 +1370,23 @@ class PeakLoJ(TablePeak):
 		('Silver Peak', 8930):                          'Silver Peak (North)',
 		('Silver Peak', 10772):                         'Silver Peak (South)',
 		('Twin Peaks, East', 8878):                     'Twin Peaks',
+	# Other Sierra Peaks:
+		('Maggies Peaks, South', 8699):                 'Maggies Peaks South',
+		('Peak 9970', 9970):                            'Mariuolumne Dome',
+		('Peak 9980', 9980):                            'Sirretta Peak North',
+		('Peak 13074', 13074):                          'Rosco Peak',
+		('Peak 13464', 13464):                          'Northwest Lamarck',
+	# Other California Peaks:
+		('East Peak', 2571):                            'Mount Tamalpais East Peak',
+		('Maguire Peaks, East', 1660):                  'Maguire Peaks East',
+		('Maguire Peaks, West', 1688):                  'Maguire Peaks West',
+		('Middle Peak', 2500):                          'Mount Tamalpais Middle Peak',
+		('Mount Tamalpais', 2580):                      'Mount Tamalpais West Peak',
+		('North Peak', 1898):                           'Montara Mountain',
+		('Peak 2620', 2620):                            'Monument Peak',
+		('Twin Peaks, South', 922):                     'Twin Peaks',
+	# Other Western Peaks:
+		('Mount Saint Helens', 8333):                   'Mount St. Helens',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
@@ -2285,7 +2318,15 @@ def checkData(pl, setProm=False, setVR=False):
 
 				peak3 = getattr(peak, peakClass.classAttrPeak, None)
 				if peak3 is None:
-					setattr(peak, peakClass.classAttrPeak, peak2)
+					peak3 = peakMap.get(peak2)
+					if peak3 is None:
+						print "{} Name doesn't match ({})".format(
+							peak.fmtIdName, peak2.name)
+						setattr(peak, peakClass.classAttrPeak, peak2)
+					elif peak3 is not peak:
+						print "{} Name matches a different peak ({})!".format(
+							peak.fmtIdName, peak2.name)
+						continue
 				else:
 					peak2.compare(peak3)
 
