@@ -668,6 +668,9 @@ class PeakPb(TablePeak):
 		('Maguire Peak', 1688):                 'Maguire Peaks West',
 		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
 		('Monument Peak North', 2600):          'Monument Peak',
+		('Mount Saint Helena-East Peak', 4200): 'Mount Saint Helena East',
+		('Mount Saint Helena-South Peak', 4003):'Mount Saint Helena South',
+		('Mount Saint Helena-Southeast Peak', 4023): 'Mount Saint Helena Southeast',
 		('Mount Tamalpais-East Peak', 2572):    'Mount Tamalpais East Peak',
 		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
 		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
@@ -1389,6 +1392,7 @@ class PeakLoJ(TablePeak):
 		('Mount Tamalpais', 2580):                      'Mount Tamalpais West Peak',
 		('North Peak', 1898):                           'Montara Mountain',
 		('Peak 2620', 2620):                            'Monument Peak',
+		('South Peak', 4003):                           'Mount Saint Helena South',
 		('Twin Peaks, South', 922):                     'Twin Peaks',
 	# Other Western Peaks:
 		('Mount Saint Helens', 8333):                   'Mount St. Helens',

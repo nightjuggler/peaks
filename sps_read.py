@@ -66,7 +66,7 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 55,
+		'numPeaks': 64,
 		'numSections': 12,
 	},
 	'odp': {
@@ -389,6 +389,7 @@ class LandMgmtArea(object):
 		return area
 
 landNameLookup = {
+	"Berryessa Snow Mountain National Monument": 'landBLM',
 	"Bishop Peak Natural Reserve":          'City of San Luis Obispo',
 	"Carrizo Plain National Monument":      'landBLM',
 	"Giant Sequoia National Monument":      'Sequoia National Forest',
@@ -398,6 +399,7 @@ landNameLookup = {
 	"Hart Mountain NAR":                    'landFWS',
 	"Harvey Monroe Hall RNA":               'Hoover Wilderness',
 	"Hawthorne Army Depot":                 'landDOD',
+	"Hood Mountain Regional Park":          'landCounty',
 	"Indian Peak WMA":                      'landUDWR',
 	"Lake Mead NRA":                        'landNPS',
 	"Lake Tahoe Basin Management Unit":     'landFS',
@@ -1730,7 +1732,7 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.grade.match(line)
 			if m is None:
-				if line != emptyCell or (pl.id, peak.id) not in (('GBP', '9.10'),):
+				if line != emptyCell or (pl.id, peak.id) not in ():
 					badLine()
 			else:
 				peak.grade = m.group(1)
@@ -1762,7 +1764,10 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.bobBurd.match(line)
 			if m is None:
-				if line != emptyCell or pl.id not in ('OSP', 'OWP'):
+				if line != emptyCell or pl.id not in ('OWP',) and (pl.id, peak.id) not in (
+					('OCAP', '4.4'), # Mount Saint Helena Southeast
+					('OSP', '17.4'), # Ruby Mesa
+				):
 					badLine()
 			else:
 				peak.bobBurdId = m.group(1)
@@ -1770,7 +1775,10 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.listsOfJohn.match(line)
 			if m is None:
-				if line != emptyCell or pl.id not in ('OSP',) and peak.countryUS:
+				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
+					('OCAP', '4.4'), # Mount Saint Helena Southeast
+					('OSP', '17.4'), # Ruby Mesa
+				):
 					badLine()
 			else:
 				peak.listsOfJohnId = m.group(1)
@@ -2114,16 +2122,18 @@ def printStats(pl):
 		for section in pl.sections:
 			for peak in section.peaks:
 				if peak.dataFrom is None and peak.isClimbed:
+					name = peak.name.replace('&quot;', '"')
+
 					maxProm = toMeters(max([prom if isinstance(prom, int)
 						else prom.avgFeet() for prom in peak.prominences]))
 
-					climbedProms.append((maxProm, peak.name))
+					climbedProms.append((maxProm, name))
 
 					if maxProm >= 100:
 						minElev = toMeters(min([elev.elevationFeet
 							for elev in peak.elevations]))
 
-						climbedElevs.append((minElev, peak.name))
+						climbedElevs.append((minElev, name))
 
 	n = len(climbedElevs)
 	eIndex = 0
