@@ -1015,7 +1015,7 @@ class ColumnHPS(SimpleColumn):
 	pattern = re.compile('^[0-9]{2}[a-z]$')
 
 class ColumnPY(SimpleColumn):
-	prefix = '<td><a href="http://www.petesthousandpeaks.com/Captions/nspg/'
+	prefix = '<td><a href="https://www.petesthousandpeaks.com/Captions/nspg/'
 	suffix = '.html">PY</a></td>\n'
 	pattern = re.compile('^[a-z]+$')
 
@@ -1183,7 +1183,7 @@ class RE(object):
 		'^<td><a href="https://listsofjohn\\.com/peak/([0-9]+)">LoJ</a></td>$'
 	)
 	peakbagger = re.compile(
-		'^<td><a href="http://peakbagger\\.com/peak.aspx\\?pid=(-?[1-9][0-9]*)">Pb</a></td>$'
+		'^<td><a href="https://peakbagger\\.com/peak.aspx\\?pid=(-?[1-9][0-9]*)">Pb</a></td>$'
 	)
 	weather = re.compile(
 		'^<td><a href="https://forecast\\.weather\\.gov/MapClick\\.php\\?'
@@ -1786,7 +1786,9 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.peakbagger.match(line)
 			if m is None:
-				if line != emptyCell or pl.id not in ('OSP',):
+				if line != emptyCell or (pl.id, peak.id) not in (
+					('OSP', '17.4'), # Ruby Mesa
+				):
 					badLine()
 			else:
 				peak.peakbaggerId = m.group(1)
@@ -1865,7 +1867,7 @@ def writeHTML(pl):
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
 	bobBurdFormat = '<td><a href="https://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
 	listsOfJohnFormat = '<td><a href="https://listsofjohn.com/peak/{0}">LoJ</a></td>'
-	peakbaggerFormat = '<td><a href="http://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
+	peakbaggerFormat = '<td><a href="https://peakbagger.com/peak.aspx?pid={0}">Pb</a></td>'
 	weatherFormat = '<td><a href="https://forecast.weather.gov/MapClick.php?lon={0}&lat={1}">WX</a></td>'
 
 	emptyCell = '<td>&nbsp;</td>'
