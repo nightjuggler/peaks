@@ -478,7 +478,7 @@ def loadURLs(loadLists):
 
 	for i, loadList in enumerate(map(lambda *a: filter(None, a), *loadLists), start=1):
 		for url, filename in loadList:
-			command = "/usr/bin/curl -o '{}' '{}'".format(filename, url)
+			command = "/usr/local/opt/curl/bin/curl -o '{}' '{}'".format(filename, url)
 			log(command)
 			os.system(command)
 			os.chmod(filename, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
@@ -637,6 +637,7 @@ class PeakPb(TablePeak):
 		('Duffer Peak', 9428):                  'Duffer Peak South',
 		('Granite Peak', 8980):                 'Granite Peak (Washoe)',
 		('Granite Peak', 9732):                 'Granite Peak (Humboldt)',
+		('Granite Peak', 11218):                'Granite Peak (Snake Range)',
 		('Morey Peak-North Peak', 10240):       'Morey Peak North',
 		('Mount Grant', 11280):                 'Mount Grant (West)',
 		('Mount Jefferson-North Summit', 11814):'Mount Jefferson North',
@@ -1354,6 +1355,7 @@ class PeakLoJ(TablePeak):
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Granite Peak', 8980):                         'Granite Peak (Washoe)',
 		('Granite Peak', 9732):                         'Granite Peak (Humboldt)',
+		('Granite Peak', 11218):                        'Granite Peak (Snake Range)',
 		('Mount Grant', 11300):                         'Mount Grant (West)',
 		('Mount Jefferson-North Summit', 11814):        'Mount Jefferson North',
 		('Muddy Mountains HP', 5431):                   'Muddy Benchmark',

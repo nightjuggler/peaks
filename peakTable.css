@@ -214,3 +214,8 @@ select {
 .pll a {
 	color: black;
 }
+.libq { /* List Item Block Quote */
+	text-align: justify;
+	width: 800px;
+	white-space: normal;
+}
