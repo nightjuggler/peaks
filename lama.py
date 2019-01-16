@@ -61,7 +61,13 @@ class Query(object):
 		with open(fileName) as f:
 			jsonData = json.load(f)
 
-		for feature in jsonData["features"]:
+		features = jsonData.get("features")
+		if features is None:
+			print("Query response doesn't include features!")
+			print(jsonData)
+			return
+
+		for feature in features:
 			response = feature["attributes"]
 			if raw or not (self.fields and self.printSpec):
 				prettyPrint(response)
