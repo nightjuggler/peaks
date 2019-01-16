@@ -63,8 +63,8 @@ class Query(object):
 
 		features = jsonData.get("features")
 		if features is None:
-			print("Query response doesn't include features!")
-			print(jsonData)
+			print("Query response doesn't have the \"features\" property!")
+			prettyPrint(jsonData)
 			return
 
 		for feature in features:
