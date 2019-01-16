@@ -578,7 +578,7 @@ class PeakPb(TablePeak):
 		return "extract/data/pb/{}/p{}.html".format(peakId[0], peakId)
 	@classmethod
 	def getPeakURL(self, peakId):
-		return "http://peakbagger.com/peak.aspx?pid={}".format(peakId)
+		return "https://peakbagger.com/peak.aspx?pid={}".format(peakId)
 
 	tableReaderArgs = dict(tableAttributes='class="gray"')
 	columnMap = {
@@ -808,7 +808,7 @@ class PeakPb(TablePeak):
 	#    about 8 or 9 feet higher than the nearby Dunn Benchmark. So the elevation of the large contour
 	#    to the east of the benchmark is shown as 9934 feet. The terrain is very gentle and most
 	#    peakbaggers will visit both spots anyway."
-	#   [http://peakbagger.com/peak.aspx?pid=3440]
+	#   [https://peakbagger.com/peak.aspx?pid=3440]
 	#
 	# - Hays Canyon Peak
 	#   "Field observations show that the highest point on this flat-topped mountain is near the
@@ -816,7 +816,7 @@ class PeakPb(TablePeak):
 	#    lower than the benchmark knoll. These contour are likely a map error, but the benchmark
 	#    elevation might be too low, too. Here, the elevation is given as 7920 feet, assuming the
 	#    benchmark is 4 feet below the high point."
-	#   [http://peakbagger.com/peak.aspx?pid=3304]
+	#   [https://peakbagger.com/peak.aspx?pid=3304]
 	#
 	# - Green Mountain (NPC)
 	#   The last 0 in 10680 was likely misread as an 8 (a contour line bisects it on the 7.5' topo).
@@ -843,7 +843,7 @@ class PeakPb(TablePeak):
 	#   "Field observations by climbers have shown that the highest point on Mount Starr is south
 	#    of the point marked 12,835' on the topographic map. A point on the ridge to the south is
 	#    approximately five feet higher and thus the summit of this peak."
-	#   [http://peakbagger.com/peak.aspx?pid=2660]
+	#   [https://peakbagger.com/peak.aspx?pid=2660]
 
 		('Mount Starr', 12840, 'min'): 12835,
 		('Mount Starr', 12840, 'max'): 12835,
@@ -879,8 +879,8 @@ class PeakPb(TablePeak):
 	#   4680'-4660'. Thus the maximum prominence is raised by 20'. LoJ also uses 4660' for the saddle.
 	#
 	# - Mount Williamson (HPS)
-	#   Pb should list http://peakbagger.com/peak.aspx?pid=47494 (Peak 8248)
-	#   instead of http://peakbagger.com/peak.aspx?pid=1309
+	#   Pb should list https://peakbagger.com/peak.aspx?pid=47494 (Peak 8248)
+	#   instead of https://peakbagger.com/peak.aspx?pid=1309
 	#
 	# - Signal Peak (DPS)
 	#   The minimum saddle elevation can be raised from 1380' to 1390', thus reducing the maximum
