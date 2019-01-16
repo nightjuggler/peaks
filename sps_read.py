@@ -389,6 +389,7 @@ class LandMgmtArea(object):
 		return area
 
 landNameLookup = {
+	"Basin and Range National Monument":    'landBLM',
 	"Berryessa Snow Mountain National Monument": 'landBLM',
 	"Bishop Peak Natural Reserve":          'City of San Luis Obispo',
 	"Carrizo Plain National Monument":      'landBLM',

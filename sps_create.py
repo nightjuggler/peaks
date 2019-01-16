@@ -2272,10 +2272,8 @@ def checkLandManagement(peak, peak2):
 
 	if land1 is None:
 		land1 = []
-
-	elif len(land2) == 0 and len(land1) == 1:
-		if land1[0].name.startswith(("BLM ", "NAWS ")):
-			return
+	elif land1[0].name.startswith("BLM "):
+		land1 = land1[1:]
 
 	for area in land1:
 		hp = land2.pop(area.name, None)
