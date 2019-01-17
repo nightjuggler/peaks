@@ -610,7 +610,7 @@ class PeakPb(TablePeak):
 	columnMap['Elev-Ft(Opt)'] = columnMap['Elev-Ft']
 	columnMap['Prom-Ft(Opt)'] = columnMap['Prom-Ft']
 	numPeaks = {
-		'DPS':   99,
+		'DPS':   96,
 		'GBP':  115,
 		'HPS':  281,
 		'NPC':   73,
@@ -687,10 +687,6 @@ class PeakPb(TablePeak):
 	elevationMap = {
 	# Pb DPS Elevation Adjustments:
 	#
-	# - Bridge Mountain
-	#   Pb lists this peak with an elevation of 6955+ feet (2120-2130m), but the highest
-	#   contour is pretty clearly at 2130m, thus implying an elevation of 6988+ feet.
-	#
 	# - Needle Peak
 	#   See LoJ DPS Elevation Adjustments, except that a possible reason for Pb's 5,801'
 	#   is that the 1768.8m spot elevation from the 7.5' topo was rounded down to 1768m.
@@ -701,8 +697,6 @@ class PeakPb(TablePeak):
 	#   that instead of rounding down (2939.6' => 2939'), Pb rounded to the nearest foot
 	#   (2939.6' => 2940')
 
-		('Bridge Mountain', 6955, 'min'): 6988, # 2130m
-		('Bridge Mountain', 6988, 'max'): 7021, # 2140m
 		('Needle Peak', 5801, 'min'): 5804, # 1769m
 		('Needle Peak', 5801, 'max'): 5804, # 1769m
 		('Stepladder Mountains HP', 2940, 'min'): 2920, # 890m
