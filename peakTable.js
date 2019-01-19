@@ -110,7 +110,7 @@ function terriaObject(latitude, longitude)
 }
 
 // See https://en.wikipedia.org/wiki/Geometric_Shapes
-var rowCollapsedIcon = ' \u25B6';
+var rowCollapsedIcon = ' \u25B6\uFE0E';
 var rowExpandedIcon = ' \u25BC';
 var mapLinkIconUp = '\u25B2';
 var mapLinkIconDown = '\u25BC';
@@ -315,7 +315,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	if (peakFlags.state_CA)
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
-			'http://www.calands.org/map?simple=true&base=topo&y=' + latLong[0] + '&x=' +
+			'http://www.mapcollaborator.org/cpad/?base=topo&y=' + latLong[0] + '&x=' +
 			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
 
 	addMapLink(listNode, 'CalTopo with Land Management',
