@@ -831,7 +831,7 @@ fireSpec.popup = {
 	},
 };
 
-var allQuerySpecs = [
+var querySpecs = [
 	aiannhSpec,
 	npsSpec,
 	nlcsSpec,
@@ -846,14 +846,6 @@ var allQuerySpecs = [
 	blmSpec,
 	fireSpec,
 ];
-function getQuerySpecs()
-{
-	var querySpecs = [];
-	for (var spec of allQuerySpecs)
-		if (spec.popup)
-			querySpecs.push(spec);
-	return querySpecs;
-}
 
 var earthRadius = 6378137; // WGS 84 equatorial radius in meters
 var earthCircumference = 2 * Math.PI * earthRadius;
@@ -988,32 +980,15 @@ function addOutlineCheckbox(spec, map)
 	spec.colorInput = input;
 }
 var MapServer = {};
-MapServer.enableQuery = function(map)
+MapServer.initPointQueries = function(map)
 {
 	var geojson = false;
 	var responseFormat = geojson ? 'geojson' : 'json';
 	var globalClickID = 0;
-	var popupEmpty = false;
+	var popupEmpty = true;
 	var firstResponse = false;
 	var outlines = [];
 	var popupSpecs = [];
-
-	function removeOutlines()
-	{
-		if (outlines) {
-			for (var outline of outlines) outline.remove();
-			outlines.length = 0;
-		}
-		if (!popupEmpty) {
-			for (var spec of popupSpecs) {
-				spec.outline = null;
-				spec.outlineID = null;
-				spec.div.style.display = 'none';
-			}
-			popupEmpty = true;
-		}
-		firstResponse = false;
-	}
 
 	var popupDiv = document.createElement('div');
 	popupDiv.className = 'popupDiv blmPopup';
@@ -1033,14 +1008,16 @@ MapServer.enableQuery = function(map)
 	llDiv.appendChild(llSpan);
 	popupDiv.appendChild(llDiv);
 
-	for (var spec of getQuerySpecs())
+	var popup = L.popup({maxWidth: 600}).setContent(popupDiv);
+
+	function queryInit(spec)
 	{
 		var popupSpec = spec.popup;
 		popupSpec.div = document.createElement('div');
 		popupSpec.ztf = fitLink(map, popupSpec);
 		popupSpec.init(popupSpec.div);
 		addOutlineCheckbox(popupSpec, map);
-		popupDiv.appendChild(popupSpec.div);
+		popupSpec.div.style.display = 'none';
 
 		var queryLayer = spec.queryLayer || spec.exportLayers || '0';
 		var baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
@@ -1059,12 +1036,80 @@ MapServer.enableQuery = function(map)
 			'outSR=4326',
 			'objectIds='].join('&');
 
+		popupSpec.outline = null;
+		popupSpec.outlineID = null;
 		popupSpec.outlineCache = {};
 		popupSpec.activeQueries = {};
-		popupSpecs.push(popupSpec);
+	}
+	function queryEnable(spec)
+	{
+		let popupSpec = spec.popup;
+		if (!popupSpec.div)
+			queryInit(spec);
+
+		let order = spec.queryOrder;
+		let n = querySpecs.length;
+		let i = n - 1;
+
+		while (i >= 0 && order < querySpecs[i].queryOrder) --i;
+
+		popupDiv.insertBefore(popupSpec.div, ++i === n ? null : popupSpecs[i].div);
+		querySpecs.splice(i, 0, spec);
+		popupSpecs.splice(i, 0, popupSpec);
+
+		if (popup.isOpen())
+			runQuery(globalClickID, popupSpec, null, llSpan.dataset.ll.split(',').reverse().join(','));
+	}
+	function queryDisable(spec)
+	{
+		let i = querySpecs.length - 1;
+		while (i >= 0 && spec !== querySpecs[i]) --i;
+
+		let popupSpec = spec.popup;
+		popupDiv.removeChild(popupSpec.div);
+		querySpecs.splice(i, 1);
+		popupSpecs.splice(i, 1);
+
+		popupSpec.outline = null;
+		popupSpec.outlineID = null;
+		popupSpec.div.style.display = 'none';
+	}
+	function makeToggleQuery(spec)
+	{
+		return function(event) {
+			let checkbox = spec.queryToggle;
+			if (!event || event.currentTarget !== checkbox)
+				checkbox.checked = !checkbox.checked;
+			if (checkbox.checked)
+				queryEnable(spec);
+			else
+				queryDisable(spec);
+		};
+	}
+	function removeOutlines()
+	{
+		if (outlines) {
+			for (var outline of outlines) outline.remove();
+			outlines.length = 0;
+		}
+		if (!popupEmpty) {
+			for (var spec of popupSpecs) {
+				spec.outline = null;
+				spec.outlineID = null;
+				spec.div.style.display = 'none';
+			}
+			popupEmpty = true;
+		}
+		firstResponse = false;
 	}
 
-	var popup = L.popup({maxWidth: 600}).setContent(popupDiv);
+	let queryOrder = 0;
+	for (let spec of querySpecs)
+	{
+		spec.queryOrder = ++queryOrder;
+		spec.toggleQuery = makeToggleQuery(spec);
+	}
+	querySpecs = [];
 
 	function runQuery(clickID, spec, ll, lngCommaLat)
 	{

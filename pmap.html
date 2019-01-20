@@ -71,6 +71,7 @@ progress {
 	background-color: rgba(255,255,255,0.8);
 	border-radius: 5px;
 	padding: 3px 5px;
+	cursor: pointer;
 }
 .popupZtf {
 	margin: 1px 3px;
@@ -224,6 +225,11 @@ function parseTileOverlay(q, v)
 	if (isValidId(v, 48))
 		q.tileOverlays.push(v);
 }
+function parsePointQuery(q, v)
+{
+	if (isValidId(v, 48))
+		q.pointQueries.push(v);
+}
 function parseGeometryQuery(q, v)
 {
 	var a = [];
@@ -257,6 +263,7 @@ function parseQueryString(queryString)
 		ll: parseLatLng,
 		o: parseOverlay,
 		ot: parseTileOverlay,
+		q: parsePointQuery,
 		qg: parseGeometryQuery,
 		xy: parseLngLat,
 		z: parseZoom,
@@ -371,9 +378,10 @@ function createMap(options)
 	var queryString = {
 		baseLayer: L.mapbox ? 'o' : 'esri_usatopo',
 		clickCenter: false,
-		overlays: [],
-		tileOverlays: [],
 		geometryQueries: [],
+		overlays: [],
+		pointQueries: [],
+		tileOverlays: [],
 	};
 	parseQueryString(queryString);
 
@@ -390,7 +398,9 @@ function createMap(options)
 		BaseLayers.order.splice(0, 1); // Remove 'mapbox'
 
 	layerControl.addBaseLayers(BaseLayers, queryString.baseLayer);
-	layerControl.addTileOverlays(TileOverlays, queryString.tileOverlays, queryString.geometryQueries);
+	layerControl.addTileOverlays(TileOverlays, queryString.tileOverlays);
+	MapServer.initPointQueries(map);
+	layerControl.addPointQueries(TileOverlays, queryString.pointQueries, queryString.geometryQueries);
 
 	L.control.zoom({position: 'topright'}).addTo(map);
 
@@ -417,7 +427,12 @@ function createMap(options)
 
 	document.getElementById('fitLink').addEventListener('click', mapBounds.fit, false);
 
-	var llText = document.getElementById('llText').firstChild;
+	var llSpan = document.getElementById('llText');
+	var llText = llSpan.firstChild;
+	llSpan.addEventListener('click', function() {
+		window.getSelection().selectAllChildren(llSpan);
+		document.execCommand('copy');
+	});
 	function updateCenter()
 	{
 		var center = map.getCenter();
@@ -440,7 +455,6 @@ function createMap(options)
 	{
 		mapBounds.addSetter();
 		layerControl.addOverlays(lcdjson, queryString.overlays, mapBounds);
-		MapServer.enableQuery(map);
 		mapBounds.delSetter();
 	}
 	loadJSON('pmap_lcd.json', addOverlayMenu);

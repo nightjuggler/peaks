@@ -488,9 +488,9 @@ function popupHtml(ll, p, htmlFilename)
 	var links = [];
 	if (p.SP) links.push(makeLink('https://www.summitpost.org/' + p.SP, 'SP'));
 	if (p.W) links.push(makeLink(Wikipedia_Prefix + p.W, 'W'));
-	if (p.BB) links.push(makeLink('http://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
+	if (p.BB) links.push(makeLink('https://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
 	if (p.LoJ) links.push(makeLink('https://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
-	if (p.Pb) links.push(makeLink('http://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
+	if (p.Pb) links.push(makeLink('https://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
 	if (!p.noWX) links.push(makeLink(Weather_Prefix + '?lon=' + ll.lng + '&lat=' + ll.lat, 'WX'));
 
 	links = links.length === 0 ? '' : '<br>' + links.join(', ');
@@ -1006,7 +1006,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 
 		var nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
-		item.name = appendName(item.name, nameSpan);
+		appendName(item.name, nameSpan);
 
 		var itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
@@ -1086,26 +1086,19 @@ function makeChangeVersion(ctrl, parent, version)
 		version.input.checked = true;
 	};
 }
-function addTileOverlayClickHandler(ctrl, item)
+function makeToggleTileOverlay(ctrl, item)
 {
 	var input = item.input;
 
-	function clickCheckbox()
+	return function(event)
 	{
+		if (event.currentTarget !== input)
+			input.checked = !input.checked;
 		if (input.checked)
 			item.layer.addTo(ctrl.map);
 		else
 			item.layer.remove();
-	}
-	function clickName()
-	{
-		input.checked = !input.checked;
-		clickCheckbox();
-	}
-
-	input.addEventListener('click', clickCheckbox);
-	if (!item.items)
-		input.nextSibling.addEventListener('click', clickName);
+	};
 }
 LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, parentMakeLayer, versionParent)
 {
@@ -1116,7 +1109,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 
 		var nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
-		item.name = appendName(item.name, nameSpan);
+		appendName(item.name, nameSpan);
 
 		var itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
@@ -1124,32 +1117,42 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 
 		var makeLayer = item.makeLayer || parentMakeLayer;
 
-		if (item.url || versionParent && !item.items) {
-			var input = document.createElement('input');
-			itemDiv.insertBefore(input, nameSpan);
-			item.input = input;
-
-			if (versionParent) {
+		if (versionParent) {
+			if (!item.items) {
+				let input = document.createElement('input');
 				input.type = 'radio';
 				input.name = versionParent.versionID;
+				item.input = input;
+
 				if (item.layer) {
 					input.checked = true;
 				} else {
 					input.checked = false;
 					item.layer = makeLayer(makeVersionSpec(versionParent, item));
 				}
+
 				var changeVersion = makeChangeVersion(this, versionParent, item);
 				input.addEventListener('click', changeVersion);
 				nameSpan.addEventListener('click', changeVersion);
-			} else {
-				input.type = 'checkbox';
-				input.checked = false;
-				item.layer = makeLayer(item);
 
-				addTileOverlayClickHandler(this, item);
-			}
-			if (!item.items)
+				itemDiv.insertBefore(input, nameSpan);
 				itemDiv.style.paddingLeft = '18px';
+			}
+		} else if (item.url) {
+			let input = document.createElement('input');
+			input.type = 'checkbox';
+			input.checked = false;
+			item.input = input;
+			item.layer = makeLayer(item);
+
+			let toggleOverlay = makeToggleTileOverlay(this, item);
+			input.addEventListener('click', toggleOverlay);
+
+			itemDiv.insertBefore(input, nameSpan);
+			if (!item.items) {
+				itemDiv.style.paddingLeft = '18px';
+				nameSpan.addEventListener('click', toggleOverlay);
+			}
 		}
 
 		parentDiv.appendChild(itemDiv);
@@ -1182,7 +1185,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 		}
 	}
 };
-LayerControl.prototype.addTileOverlays = function(rootLCD, overlays, geometryQueries)
+LayerControl.prototype.addTileOverlays = function(rootLCD, overlays)
 {
 	this.div.appendChild(document.createElement('hr'));
 	this._addTileOverlays(rootLCD, this.div, [], rootLCD.makeLayer);
@@ -1192,6 +1195,70 @@ LayerControl.prototype.addTileOverlays = function(rootLCD, overlays, geometryQue
 		let item = getItem(pathStr.split('_'), rootLCD);
 		if (item && item.input && !item.input.checked)
 			item.input.click();
+	}
+};
+LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
+{
+	var hasInput = false;
+
+	for (var id of parentItem.order)
+	{
+		var item = parentItem.items[id];
+		if (!item || !item.toggleQuery && !(item.items && !item.url)) continue;
+
+		var nameSpan = document.createElement('span');
+		nameSpan.className = 'lcName';
+		appendName(item.name, nameSpan);
+
+		var itemDiv = document.createElement('div');
+		itemDiv.className = 'lcItem';
+		itemDiv.appendChild(nameSpan);
+
+		if (item.toggleQuery) {
+			var input = document.createElement('input');
+			input.type = 'checkbox';
+			input.checked = false;
+			item.queryToggle = input;
+
+			itemDiv.insertBefore(input, nameSpan);
+			itemDiv.style.paddingLeft = '18px';
+			parentDiv.appendChild(itemDiv);
+
+			nameSpan.addEventListener('click', item.toggleQuery);
+			input.addEventListener('click', item.toggleQuery);
+			hasInput = true;
+		} else {
+			var childDiv = document.createElement('div');
+			childDiv.className = 'lcMenu';
+
+			if (!this._addPointQueries(item, childDiv))
+				continue;
+
+			parentDiv.appendChild(itemDiv);
+			parentDiv.appendChild(childDiv);
+
+			var arrowSpan = document.createElement('span');
+			arrowSpan.className = 'lcArrow';
+			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
+			arrowSpan.addEventListener('click', toggleLayerMenu, false);
+
+			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
+			nameSpan.addEventListener('click', clickArrow, false);
+		}
+	}
+
+	return hasInput;
+};
+LayerControl.prototype.addPointQueries = function(rootLCD, pointQueries, geometryQueries)
+{
+	this.div.appendChild(document.createElement('hr'));
+	this._addPointQueries(rootLCD, this.div);
+
+	for (var q of pointQueries)
+	{
+		let item = getItem(q.split('_'), rootLCD);
+		if (item && item.queryToggle && !item.queryToggle.checked)
+			item.toggleQuery();
 	}
 	for (var a of geometryQueries)
 	{
