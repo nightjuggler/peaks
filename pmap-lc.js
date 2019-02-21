@@ -2,6 +2,7 @@
 /* globals console, document, Image, window */
 /* globals L */
 /* globals enableTooltips */
+/* globals popupHTML, topoMaps */
 /* globals loadJSON */
 
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
@@ -465,44 +466,6 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FFFF00'/* Yellow */}});
 };
-function makeLink(url, txt)
-{
-	return '<a href="' + url + '">' + txt + '</a>';
-}
-function popupHtml(ll, p, htmlFilename)
-{
-	var g4Params = p.G4.split('&');
-	var z = g4Params[0];
-	var b = g4Params[1];
-	b = b === 't=t4' ? 'b=t&o=r&n=0.2' : 'b=mbh';
-
-	var topoLink = 'https://caltopo.com/map.html#ll=' + ll.lat + ',' + ll.lng + '&' + z + '&' + b;
-
-	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
-
-	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
-
-	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' ' +
-		makeLink(topoLink, p.name) + suffix + otherName;
-
-	var links = [];
-	if (p.SP) links.push(makeLink('https://www.summitpost.org/' + p.SP, 'SP'));
-	if (p.W) links.push(makeLink(Wikipedia_Prefix + p.W, 'W'));
-	if (p.BB) links.push(makeLink('https://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
-	if (p.LoJ) links.push(makeLink('https://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
-	if (p.Pb) links.push(makeLink('https://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
-	if (!p.noWX) links.push(makeLink(Weather_Prefix + '?lon=' + ll.lng + '&lat=' + ll.lat, 'WX'));
-
-	links = links.length === 0 ? '' : '<br>' + links.join(', ');
-
-	var yds = p.YDS ? '<br>Class ' + p.YDS : '';
-	var climbed = p.climbed ? '<br>Climbed <div class="elevDiv">' + p.climbed + '</div>' : '';
-
-	return '<div class="popupDiv"><b>' + name + '</b>'
-		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
-		+ '<br>Prominence: <div class="elevDiv">' + p.prom + '</div>'
-		+ yds + links + climbed + '</div>';
-}
 function peakIcon(p)
 {
 	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
@@ -518,12 +481,13 @@ addFunctions.addPeakOverlay = function(geojson, map, lcItem)
 {
 	var id = geojson.id;
 	var htmlFilename = id.toLowerCase() + '.html#' + id;
+	topoMaps = geojson.topomaps;
 
 	function addPeak(feature, latlng)
 	{
 		var p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
-			.bindPopup(popupHtml(latlng, p, htmlFilename))
+			.bindPopup(popupHTML(latlng.lng, latlng.lat, p, htmlFilename))
 			.on('popupopen', enableTooltips)
 			.on('dblclick', function() {
 				map.setView(latlng, map.getMaxZoom() - 5);

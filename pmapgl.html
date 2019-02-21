@@ -93,10 +93,11 @@ a {text-decoration: none;}
 	height: 26px;
 }
 </style>
+<script src="pmap-shared.js"></script>
 <script>
 /* globals document, window, XMLHttpRequest */
 /* globals mapboxgl */
-/* globals enableTooltips */
+/* globals enableTooltips, popupHTML, topoMaps */
 "use strict";
 function isValidId(s)
 {
@@ -183,48 +184,6 @@ function parseQueryString(queryString)
 		if (isValidId(k) && handlers[k])
 			handlers[k](queryString, v);
 	}
-}
-function makeLink(url, txt)
-{
-	return '<a href="' + url + '">' + txt + '</a>';
-}
-function popupHtml(ll, p, htmlFilename)
-{
-	var lng = ll[0];
-	var lat = ll[1];
-
-	var g4Params = p.G4.split('&');
-	var z = g4Params[0];
-	var b = g4Params[1];
-	b = b === 't=t4' ? 'b=t&o=r&n=0.2' : 'b=mbh';
-
-	var topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&' + z + '&' + b;
-
-	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
-
-	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
-
-	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' ' +
-		makeLink(topoLink, p.name) + suffix + otherName;
-
-	var links = [];
-	if (p.SP) links.push(makeLink('https://www.summitpost.org/' + p.SP, 'SP'));
-	if (p.W) links.push(makeLink('https://en.wikipedia.org/wiki/' + p.W, 'W'));
-	if (p.BB) links.push(makeLink('https://www.snwburd.com/dayhikes/peak/' + p.BB, 'BB'));
-	if (p.LoJ) links.push(makeLink('https://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
-	if (p.Pb) links.push(makeLink('https://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
-	if (!p.noWX) links.push(makeLink('https://forecast.weather.gov/MapClick.php?lon='
-		+ lng + '&lat=' + lat, 'WX'));
-
-	links = links.length === 0 ? '' : '<br>' + links.join(', ');
-
-	var yds = p.YDS ? '<br>Class ' + p.YDS : '';
-	var climbed = p.climbed ? '<br>Climbed <div class="elevDiv">' + p.climbed + '</div>' : '';
-
-	return '<div class="popupDiv"><b>' + name + '</b>'
-		+ '<br>Elevation: <div class="elevDiv">' + p.elev + '</div>'
-		+ '<br>Prominence: <div class="elevDiv">' + p.prom + '</div>'
-		+ yds + links + climbed + '</div>';
 }
 var svgNS = 'http://www.w3.org/2000/svg';
 function peakIcon(p)
@@ -498,6 +457,7 @@ function createMap(options)
 
 		var idPrefix = geojson.id;
 		var htmlFilename = idPrefix.toLowerCase() + '.html#' + idPrefix;
+		topoMaps = geojson.topomaps;
 
 		function addPeak(ll, p)
 		{
@@ -514,7 +474,7 @@ function createMap(options)
 
 			var popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
 				.setLngLat(ll)
-				.setHTML(popupHtml(ll, p, htmlFilename));
+				.setHTML(popupHTML(ll[0], ll[1], p, htmlFilename));
 
 			return new mapboxgl.Marker(icon)
 				.setLngLat(ll)

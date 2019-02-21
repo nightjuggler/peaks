@@ -209,6 +209,9 @@ class Peak(object):
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
 
+	def elevationJSON(self):
+		return '[{}]'.format(','.join([e.json() for e in self.elevations]))
+
 	def prominenceHTML(self):
 		return '<br>'.join([int2str(prom) if isinstance(prom, int) else prom.html()
 			for prom in self.prominences])
@@ -591,8 +594,12 @@ class NGSDataSheet(object):
 		raise FormatError("NGS Data Sheet ID {} referenced {} peak", self.id,
 			"more than once by the same" if src.peak is peak else "by more than one")
 
+	def elevJSON(self, elev):
+		return '[2,{},"{}","{}"]'.format(elev.elevationMeters, self.id, self.name)
+
 class USGSTopo(object):
 	sources = {}
+	sourcesJSON = set()
 	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
 	linkPattern = re.compile(
 		'^[A-Z]{2}/[A-Z]{2}_(?:Mc)?[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
@@ -609,16 +616,17 @@ class USGSTopo(object):
 	}
 
 	class QuadInfo(object):
-		def __init__(self, scale, vdatum):
+		def __init__(self, seriesID, scale, vdatum):
+			self.id = seriesID
 			self.scale = scale
 			self.vdatum = vdatum
 
 	quadInfo = {
-		'7.5':          QuadInfo( '24,000', ('MSL', 'NGVD 29')),
-		'7.5x15':       QuadInfo( '25,000', ('NGVD 29',)),
-		'15':           QuadInfo( '62,500', ('MSL', 'NGVD 29')),
-		'30':           QuadInfo('125,000', ('MSL',)),
-		'60':           QuadInfo('250,000', ('MSL', 'NGVD 29', None)),
+		'7.5':          QuadInfo(0,  '24,000', ('MSL', 'NGVD 29')),
+		'7.5x15':       QuadInfo(1,  '25,000', ('NGVD 29',)),
+		'15':           QuadInfo(2,  '62,500', ('MSL', 'NGVD 29')),
+		'30':           QuadInfo(3, '125,000', ('MSL',)),
+		'60':           QuadInfo(4, '250,000', ('MSL', 'NGVD 29', None)),
 	}
 
 	def __init__(self, vdatum, series, scale, name, state, year):
@@ -635,6 +643,7 @@ class USGSTopo(object):
 
 		self.vdatum = vdatum
 		self.series = series
+		self.seriesID = info.id
 		self.scale = scale
 		self.name = name
 		self.state = state
@@ -690,6 +699,21 @@ class USGSTopo(object):
 
 		peak.elevations[-1].source = src
 		src.peaks.append(peak)
+
+	def elevJSON(self, elev):
+		self.sourcesJSON.add(self)
+
+		args = [1, elev.elevationMeters] if self.inMeters else [0, elev.elevationFeet]
+		args.append(self.contourInterval if elev.isRange else 0)
+		args.append(self.id)
+
+		return '[{}]'.format(','.join(map(str, args)))
+
+	def json(self):
+		vdatumID = 2 if self.vdatum is None else 1 if self.vdatum == 'MSL' else 0
+
+		return '"{}":[{},{},"{}","{}","{}"]'.format(self.id, self.seriesID, vdatumID,
+			self.name, self.linkSuffix[:5], self.year)
 
 def parseElevationTooltip(e, link, tooltip):
 	for sourceClass in (NGSDataSheet, USGSTopo):
@@ -761,6 +785,18 @@ class Elevation(object):
 			self.source.linkPrefix,
 			self.source.linkSuffix,
 			self.getElevation(), self.getTooltip(), self.extraLines)
+
+	def json(self):
+		if self.source is None:
+			return '"{}"'.format(self.getElevation())
+
+		jstr = self.source.elevJSON(self)
+
+		if self.extraLines:
+			return '[{},"{}"]'.format(jstr[1:-1],
+				self.extraLines.replace('"', '\\"').replace('\n', '\\n'))
+
+		return jstr
 
 	def checkTooltipElevation(self, elevation):
 		inMeters = elevation[-1] == 'm'
@@ -2005,13 +2041,10 @@ def writeHTML(pl):
 
 def writePeakJSON(f, peak):
 	f('{\n')
-	f('\t\t"type": "Feature",\n')
-	f('\t\t"geometry": {"type": "Point", "coordinates": [')
-	f(peak.longitude)
-	f(',')
-	f(peak.latitude)
-	f(']},\n')
-	f('\t\t"properties": {\n')
+	f('"type":"Feature",\n"geometry":{"type":"Point","coordinates":')
+	f('[{},{}]'.format(peak.longitude, peak.latitude))
+	f('},\n')
+	f('"properties":{\n')
 
 	p = [('id', peak.id), ('name', peak.name)]
 	if peak.otherName is not None:
@@ -2037,37 +2070,33 @@ def writePeakJSON(f, peak):
 			for date, climbedWith, tooltip in peak.climbed])))
 
 	for k, v in p:
-		f('\t\t\t"')
-		f(k)
-		f('": "')
-		f(v)
-		f('",\n')
+		f('"{}":"{}",\n'.format(k, v))
 
 	if peak.isHighPoint:
-		f('\t\t\t"HP": true,\n')
+		f('"HP":true,\n')
 	elif peak.isEmblem:
-		f('\t\t\t"emblem": true,\n')
+		f('"emblem":true,\n')
 	elif peak.isMtneer:
-		f('\t\t\t"mtneer": true,\n')
+		f('"mtneer":true,\n')
 	if not peak.countryUS:
-		f('\t\t\t"noWX": true,\n')
+		f('"noWX":true,\n')
 
-	f('\t\t\t"elev": "')
-	f(peak.elevationHTML().replace('"', '\\"').replace('\n', '\\n'))
-	f('"\n\t\t}}')
+	f('"elev":')
+	if len(peak.elevations) == 1 and peak.elevations[0].source is None:
+		f(peak.elevations[0].json())
+	else:
+		f(peak.elevationJSON())
+	f('\n}}')
 
 def writeJSON(pl):
 	f = sys.stdout.write
 	firstPeak = True
 
 	f('{\n')
-	f('\t"id": "')
-	f(pl.id)
-	f('",\n\t"name": "')
-	f(pl.geojsonTitle)
-	f('",\n')
-	f('\t"type": "FeatureCollection",\n')
-	f('\t"features": [')
+	f('"id":"{}",\n'.format(pl.id))
+	f('"name":"{}",\n'.format(pl.geojsonTitle))
+	f('"type":"FeatureCollection",\n')
+	f('"features":[')
 	for section in pl.sections:
 		for peak in section.peaks:
 			if not (peak.delisted or peak.suspended):
@@ -2076,8 +2105,10 @@ def writeJSON(pl):
 				else:
 					f(',')
 				writePeakJSON(f, peak)
-	f(']\n')
-	f('}\n')
+
+	f('],\n"topomaps":{\n')
+	f(',\n'.join([topo.json() for topo in sorted(USGSTopo.sourcesJSON, key=lambda topo: topo.id)]))
+	f('\n}}\n')
 
 def checkData(pl):
 	import sps_create
