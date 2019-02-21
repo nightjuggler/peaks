@@ -17,21 +17,29 @@ class Query(object):
 	serverType = "Map"
 
 	@classmethod
-	def query(self, geometry, distance=20, raw=False, verbose=False):
-		fields = ",".join([field for field, alias in self.fields]) if self.fields and not raw else "*"
+	def query(self, geometry, distance=20, raw=False, returnGeometry=False, verbose=False, where=None):
+		params = ["f=json"]
+		if geometry:
+			params.append("geometry={}".format(geometry))
+			params.append("geometryType=esriGeometryPoint")
+			params.append("inSR=4326")
+			params.append("spatialRel=esriSpatialRelIntersects")
 
-		params = [
-			"f=json",
-			"geometry={}".format(geometry),
-			"geometryType=esriGeometryPoint",
-			"inSR=4326",
-			"spatialRel=esriSpatialRelIntersects",
-			"outFields={}".format(fields),
-			"returnGeometry=false",
-		]
+		params.append("outFields={}".format(",".join([field for field, alias in self.fields])
+			if self.fields and not raw else "*"))
+
+		if returnGeometry:
+			params.append("returnGeometry=true")
+			params.append("geometryPrecision=5")
+			params.append("outSR=4326")
+		else:
+			params.append("returnGeometry=false")
+
 		if distance:
 			params.append("distance={}".format(distance))
 			params.append("units=esriSRUnit_Meter")
+		if where:
+			params.append("where={}".format(where))
 
 		url = "{}/{}/{}Server/{}/query?{}".format(self.home, self.service, self.serverType, self.layer,
 			"&".join(params))
@@ -71,6 +79,8 @@ class Query(object):
 			response = feature["attributes"]
 			if raw or not (self.fields and self.printSpec):
 				prettyPrint(response)
+				if returnGeometry:
+					prettyPrint(feature["geometry"])
 				continue
 
 			fields = {alias: response[field] for field, alias in self.fields}
@@ -245,6 +255,12 @@ class USGS_TopoQuery(Query):
 	]
 	printSpec = "{cell}, {state}"
 
+class USGS_TopoViewQuery(Query):
+	name = "USGS TopoView"
+	home = "https://ngmdb.usgs.gov/arcgis/rest/services"
+	service = "topoView/ustOverlay"
+	layer = 0 # sr = 102100 (3857)
+
 class TigerCountyQuery(Query):
 	name = "County (TIGERweb)"
 	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" # 10.51
@@ -373,18 +389,43 @@ class SLO_OpenSpaceQuery(Query):
 	serverType = "Feature"
 	layer = 0 # sr = 2874
 
+def checkDegrees(degrees, minValue, maxValue):
+	try:
+		degrees = float(degrees)
+	except ValueError:
+		return False
+
+	if degrees < minValue or degrees > maxValue:
+		return False
+
+	return True
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
+	parser.add_argument("-d", "--distance", type=float, default=20)
 	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("--raw", action="store_true")
+	parser.add_argument("--return-geometry", action="store_true")
 	parser.add_argument("-v", "--verbose", action="store_true")
+	parser.add_argument("-w", "--where")
 	args = parser.parse_args()
 
-	latitude, longitude = args.latlong.split(",")
+	if args.latlong == "none":
+		geometry = None
+	else:
+		try:
+			latitude, longitude = args.latlong.split(",")
+		except ValueError:
+			print("Latitude,Longitude not valid!")
+			return
 
-	geometry = "{},{}".format(longitude, latitude)
+		if not checkDegrees(latitude, -90, 90) or not checkDegrees(longitude, -180, 180):
+			print("Latitude,Longitude not valid!")
+			return
+
+		geometry = "{},{}".format(longitude, latitude)
 
 	queryMap = {
 		"aiannh": AIANNH_Query,
@@ -408,14 +449,23 @@ def main():
 		"sma": BLM_SMA_Query,
 		"state": TigerStateQuery,
 		"topo": USGS_TopoQuery,
+		"topoview": USGS_TopoViewQuery,
 		"w": WildernessQuery,
 		"wsa": BLM_WSA_Query,
 		"zip_ca": CA_ZIP_Code_Query,
 	}
 	queries = args.query.split(",")
 
+	kwargs = {
+		"distance":             args.distance,
+		"raw":                  args.raw,
+		"returnGeometry":       args.return_geometry,
+		"verbose":              args.verbose,
+		"where":                args.where,
+	}
+
 	for q in [queryMap[k] for k in queries]:
-		q.query(geometry, raw=args.raw, verbose=args.verbose)
+		q.query(geometry, **kwargs)
 
 if __name__ == "__main__":
 	main()
