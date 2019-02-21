@@ -357,6 +357,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		+ '&dump_app_trace=false'
 		+ '&db_debug=false');
 
+	addMapLink(listNode, 'OpenStreetMap',
+		'https://www.openstreetmap.org/#map=16/' + latLong[0] + '/' + latLong[1] + '&layers=C');
+
 	addMapLink(listNode, 'OpenTopoMap',
 		'https://opentopomap.org/#map=14/' + latLong[0] + '/' + latLong[1]);
 
