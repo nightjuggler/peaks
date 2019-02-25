@@ -2114,6 +2114,10 @@ def checkData(pl):
 	import sps_create
 	sps_create.checkData(pl)
 
+def compareTopoMetadata(pl):
+	import topoview
+	topoview.compare(USGSTopo.sources)
+
 def setProm(pl):
 	import sps_create
 	sps_create.checkData(pl, setProm=True)
@@ -2124,9 +2128,13 @@ def setVR(pl):
 	sps_create.checkData(pl, setVR=True)
 	writeHTML(pl)
 
-def loadFiles(pl):
+def loadPeakFiles(pl):
 	import sps_create
 	sps_create.loadFiles(pl)
+
+def loadTopoMetadata(pl):
+	import topoview
+	topoview.load(USGSTopo.sources)
 
 def setLandManagement(peak):
 	peakPb = peak.peakbaggerPeak
@@ -2198,12 +2206,14 @@ def readAllHTML():
 def main():
 	outputFunction = {
 		'check': checkData,
+		'cmptopo': compareTopoMetadata,
 		'create': createList,
 		'elev': printElevationStats,
 		'html': writeHTML,
 		'json': writeJSON,
 		'land': printLandManagementAreas,
-		'load': loadFiles,
+		'load': loadPeakFiles,
+		'loadtopo': loadTopoMetadata,
 		'setprom': setProm,
 		'setvr': setVR,
 		'stats': printStats,
