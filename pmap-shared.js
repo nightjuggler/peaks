@@ -8,20 +8,12 @@ var topoScale = ['24,000', '25,000', '62,500', '125,000', '250,000'];
 
 function fillTopo(f, topoID)
 {
-	let [seriesID, vdatumID, name, state, year] = topoMaps[topoID];
-	let scale = topoScale[seriesID];
+	let [seriesID, vdatumID, name, year, linkSuffix] = topoMaps[topoID];
 
-	f[1] = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/' + [
-			state,
-			name.replace(/\./g, '').replace(/ /g, '%20'),
-			topoID,
-			year.substring(0, 4),
-			scale.substring(0, scale.length - 4) +
-			scale.substring(scale.length - 3)
-		].join('_') + '.jpg';
+	f[1] = 'https://ngmdb.usgs.gov/ht-bin/tv_browse.pl?id=' + linkSuffix;
 
-	f[5] += verticalDatums[vdatumID] + ' USGS ' + topoSeries[seriesID] + '\' Quad (1:' + scale +
-		') &quot;' + name + ', ' + state.substring(0, 2) + '&quot; (' + year + ')';
+	f[5] += verticalDatums[vdatumID] + ' USGS ' + topoSeries[seriesID] + '\' Quad (1:' + topoScale[seriesID] +
+		') &quot;' + name + '&quot; (' + year + ')';
 }
 function fillElevation(f, elevFeet, elevOrig, range, unitAbbr)
 {

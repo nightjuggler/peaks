@@ -600,20 +600,13 @@ class NGSDataSheet(object):
 class USGSTopo(object):
 	sources = {}
 	sourcesJSON = set()
-	linkPrefix = 'https://ngmdb.usgs.gov/img4/ht_icons/Browse/'
-	linkPattern = re.compile(
-		'^[A-Z]{2}/[A-Z]{2}_(?:Mc)?[A-Z][a-z]+(?:%20[A-Z][a-z]+)*(?:%20(?:[SN][WE]))?_'
-		'([0-9]{6})_[0-9]{4}_(?:[012456]{5,6})\\.jpg$')
+	linkPrefix = 'https://ngmdb.usgs.gov/ht-bin/tv_browse.pl?id='
+	linkPattern = re.compile('^[0-9a-f]{32}$')
+	namePattern = re.compile('^(?:Mc)?[A-Z][a-z]+\\.?(?: [A-Z][a-z]+\\.?)*(?: [SN][WE])?$')
 	tooltipPattern = re.compile(
 		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{3,5}(?:-[0-9]{3,5})?\'))'
 		'(?: \\((MSL|NGVD 29)\\))? USGS ([\\.013567x]+)\' Quad \\(1:([012456]{2,3},[05]00)\\) '
 		'&quot;([\\. A-Za-z]+), ([A-Z]{2})&quot; \\(([0-9]{4}(?:/[0-9]{4})?)\\)$')
-
-	# Special cases for maps whose JPG filename prefix doesn't match the directory name
-	jpgState = {
-		'283359': 'OR', # 1954/1984 60' (1:250,000) Vya, NV -- directory is NV, but prefix is OR
-		'320710': 'NV', # 1962/1969 15' (1:62,500) Benton, CA -- directory is CA, but prefix is NV
-	}
 
 	class QuadInfo(object):
 		def __init__(self, seriesID, scale, vdatum):
@@ -640,6 +633,8 @@ class USGSTopo(object):
 			if vdatum is None:
 				raise FormatError("Missing vertical datum for {}' quad", series)
 			raise FormatError("Unexpected vertical datum ({}) for {}' quad", vdatum, series)
+		if not self.namePattern.match(name):
+			raise FormatError("Topo name doesn't match expected pattern")
 
 		self.vdatum = vdatum
 		self.series = series
@@ -653,19 +648,10 @@ class USGSTopo(object):
 		self.contourInterval = None
 
 	def setLinkSuffix(self, linkSuffix):
-		m = self.linkPattern.match(linkSuffix)
-		if m is None:
+		if not self.linkPattern.match(linkSuffix):
 			raise FormatError("Elevation link suffix doesn't match expected pattern")
-		self.id = m.group(1)
-
-		self.linkSuffix = "{0}/{1}_{2}_{3}_{4}_{5}{6}.jpg".format(
-			self.state,
-			self.jpgState.get(self.id, self.state),
-			self.name.replace('.', '').replace(' ', '%20'),
-			self.id,
-			self.year[:4],
-			self.scale[:-4],
-			self.scale[-3:])
+		self.id = linkSuffix
+		self.linkSuffix = linkSuffix
 
 	def __str__(self):
 		return "USGS {}' Quad (1:{}) &quot;{}, {}&quot; ({})".format(
@@ -712,8 +698,8 @@ class USGSTopo(object):
 	def json(self):
 		vdatumID = 2 if self.vdatum is None else 1 if self.vdatum == 'MSL' else 0
 
-		return '"{}":[{},{},"{}","{}","{}"]'.format(self.id, self.seriesID, vdatumID,
-			self.name, self.linkSuffix[:5], self.year)
+		return '"{}":[{},{},"{}, {}","{}","{}"]'.format(self.id, self.seriesID, vdatumID,
+			self.name, self.state, self.year, self.linkSuffix)
 
 def parseElevationTooltip(e, link, tooltip):
 	for sourceClass in (NGSDataSheet, USGSTopo):
@@ -1010,11 +996,13 @@ def printElevationStats(pl):
 
 	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
 
-	for topoID, src in sorted(USGSTopo.sources.iteritems()):
+	for src in sorted(USGSTopo.sources.itervalues(), key=lambda topo:
+		(int(topo.scale[:-4]) * 1000 + int(topo.scale[-3:]), topo.state, topo.name, topo.year)):
+
 		numRefs = len(src.peaks)
 		numPeaks = len(set(src.peaks))
 
-		print '{}  {:>3}  {:>7}  {} {:20} {:9}  {}/{}{}'.format(topoID,
+		print '{}  {:>6}  {:>7}  {} {:24} {:9}  {}/{}{}'.format(src.id,
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
@@ -2089,6 +2077,12 @@ def writePeakJSON(f, peak):
 	f('\n}}')
 
 def writeJSON(pl):
+	import topoview
+	topos = topoview.read_csv()
+
+	for topo in USGSTopo.sources.itervalues():
+		topo.id = topos[topo.id].scan_id
+
 	f = sys.stdout.write
 	firstPeak = True
 
@@ -2220,8 +2214,8 @@ def main():
 	}
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('inputMode', nargs='?', default='sps', choices=sorted(peakListParams.keys()))
-	parser.add_argument('outputMode', nargs='?', default='html', choices=sorted(outputFunction.keys()))
+	parser.add_argument('inputMode', nargs='?', default='sps', choices=sorted(peakListParams))
+	parser.add_argument('outputMode', nargs='?', default='html', choices=sorted(outputFunction))
 	args = parser.parse_args()
 
 	readAllHTML()

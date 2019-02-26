@@ -31,7 +31,7 @@ class TopoView(object):
 		for (name, pattern), value in zip(self.FIELDS, values):
 			setattr(self, name, value)
 
-def query(bin_num, scan_id, longitude, latitude):
+def query(bin_num, topo_id, longitude, latitude):
 	params = [
 		'f=json',
 		'geometry={},{}'.format(longitude, latitude),
@@ -47,7 +47,7 @@ def query(bin_num, scan_id, longitude, latitude):
 		'where=' + '%20AND%20'.join([
 			'bin_num={}'.format(bin_num),
 			'series=\'HTMC\'',
-			'scan_id={}'.format(scan_id),
+			'md5=\'{}\''.format(topo_id),
 		]),
 	]
 
@@ -132,13 +132,15 @@ def read_csv():
 		try:
 			for line in f:
 				line_number += 1
-				if line_pattern.match(line):
-					topo = TopoView(line.split(','))
-					if topo.scan_id in topos:
-						raise TopoError("Duplicate ID {}", topo.scan_id)
-					topos[topo.scan_id] = topo
-				else:
+				if not line_pattern.match(line):
 					raise TopoError("Doesn't match expected pattern")
+
+				topo = TopoView(line.split(','))
+				topo_id = topo.md5
+				if topo_id in topos:
+					raise TopoError("Duplicate ID {}", topo_id)
+				topos[topo_id] = topo
+
 		except TopoError as e:
 			print("{}, line {} {}!".format(CSV_FILENAME, line_number, e.message))
 			return None
@@ -158,15 +160,15 @@ def load(sources):
 	}
 
 	with open(CSV_FILENAME, 'a', 1) as f:
-		for scan_id, topo in sorted(sources.iteritems()):
-			if topo.id in topos:
+		for topo_id, topo in sorted(sources.iteritems()):
+			if topo_id in topos:
 				continue
 			bin_num = scale_to_bin_num.get(topo.scale)
 			if bin_num is None:
-				print("Can't get bin_num for topo {}!".format(topo.id))
+				print("Can't get bin_num for topo {}!".format(topo_id))
 				break
 			peak = topo.peaks[0]
-			response = query(bin_num, topo.id, peak.longitude, peak.latitude)
+			response = query(bin_num, topo_id, peak.longitude, peak.latitude)
 			if response is None:
 				break
 			f.write(','.join([str(response[name]) for name, pattern in TopoView.FIELDS]))
@@ -181,22 +183,23 @@ def compare(sources):
 	if topos is None:
 		return
 
-	for scan_id, topoview in sorted(topos.iteritems()):
-		topo = sources.get(scan_id)
+	for topo_id, topoview in sorted(topos.iteritems()):
+		topo = sources.get(topo_id)
+		if topo is None:
+			print(topo_id, "Not used in the HTML")
+			continue
 
 		if topo.scale[:-4] + topo.scale[-3:] != topoview.map_scale:
-			print(scan_id, "Scale doesn't match")
+			print(topo_id, "Scale doesn't match")
 		if topo.state != topoview.primary_state:
-			print(scan_id, "Primary state doesn't match")
-		if topo.jpgState.get(topo.id, topo.state) != topoview.map_state:
-			print(scan_id, "State doesn't match")
+			print(topo_id, "Primary state doesn't match")
 		if topo.name.replace('.', '') != topoview.map_name:
-			print(scan_id, "Name doesn't match")
+			print(topo_id, "Name doesn't match")
 		if topo.year[:4] != topoview.date_on_map:
-			print(scan_id, "Year doesn't match")
+			print(topo_id, "Year doesn't match")
 		if len(topo.year) == 4:
 			if topoview.date_on_map != topoview.imprint_year:
-				print(scan_id, "Imprint year isn't specified")
+				print(topo_id, "Imprint year isn't specified")
 		else:
 			if topo.year[5:] != topoview.imprint_year:
-				print(scan_id, "Imprint year doesn't match")
+				print(topo_id, "Imprint year doesn't match")
