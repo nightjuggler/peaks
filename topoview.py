@@ -27,6 +27,18 @@ class TopoView(object):
 		('datum',               'NAD(?:27|83)'),
 		('gnis_cell_id',        '[1-9][0-9]{1,5}'),
 	)
+	CORRECTIONS = {
+		'9ea38c139f448a1f2dd697b449f1d328': (
+			# I don't see 1976 (or any imprint year) anywhere on this map. So I'm going to
+			# use the most recent year printed on the map (1969).
+			('imprint_year', '1969'),
+		),
+		'b457cf41edc198624eb74ac0e1362064': (
+			# The pdf (CA_Chilcoot_297086_1950_62500_geo.pdf) clearly shows 1983 (not 1993)
+			# for the imprint year.
+			('imprint_year', '1983'),
+		),
+	}
 	def __init__(self, values):
 		for (name, pattern), value in zip(self.FIELDS, values):
 			setattr(self, name, value)
@@ -183,23 +195,45 @@ def compare(sources):
 	if topos is None:
 		return
 
+	for topo_id, corrections in TopoView.CORRECTIONS.iteritems():
+		topo = topos[topo_id]
+		for name, value in corrections:
+			setattr(topo, name, value)
+
 	for topo_id, topoview in sorted(topos.iteritems()):
 		topo = sources.get(topo_id)
 		if topo is None:
 			print(topo_id, "Not used in the HTML")
 			continue
 
+		diffs = []
+
 		if topo.scale[:-4] + topo.scale[-3:] != topoview.map_scale:
-			print(topo_id, "Scale doesn't match")
+			diffs.append("Scale doesn't match")
 		if topo.state != topoview.primary_state:
-			print(topo_id, "Primary state doesn't match")
+			diffs.append("Primary state doesn't match")
 		if topo.name.replace('.', '') != topoview.map_name:
-			print(topo_id, "Name doesn't match")
+			diffs.append("Name doesn't match")
 		if topo.year[:4] != topoview.date_on_map:
-			print(topo_id, "Year doesn't match")
+			diffs.append("Year doesn't match")
 		if len(topo.year) == 4:
 			if topoview.date_on_map != topoview.imprint_year:
-				print(topo_id, "Imprint year isn't specified")
+				diffs.append("Imprint year isn't specified ({})".format(topoview.imprint_year))
 		else:
 			if topo.year[5:] != topoview.imprint_year:
-				print(topo_id, "Imprint year doesn't match")
+				diffs.append("Imprint year doesn't match ({} != {})".format(
+					topo.year[5:], topoview.imprint_year))
+
+		if diffs:
+			peak_lists = set()
+			for peak in topo.peaks:
+				peak_lists.add(peak.peakList.id)
+				for other in peak.dataAlsoPeaks:
+					peak_lists.add(other.peakList.id)
+
+			peak_lists = ', '.join(sorted(peak_lists))
+			num_peaks = '{:>3}'.format(len(topo.peaks))
+			url = topo.linkPrefix + topo_id
+
+			for diff in diffs:
+				print(url, '{:42}'.format(diff), num_peaks, peak_lists, sep='  ')
