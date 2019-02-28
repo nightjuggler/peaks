@@ -336,7 +336,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'id=fa067b6b21534df283a87acc3ae3227c&extent=' + extent);
 
 	addMapLink(listNode, 'GIS Surfer',
-		'https://mappingsupport.com/p2/gissurfer.php?center=' + latCommaLong + '&zoom=14');
+		'https://mappingsupport.com/p2/gissurfer.php?center=' + latCommaLong + '&zoom=14&basemap=USA_basemap');
 
 	addMapLink(listNode, 'Google Maps', 'https://www.google.com/maps/@' + latCommaLong + ',10z');
 
@@ -552,37 +552,6 @@ function addListLink(row)
 	secondColumn.appendChild(document.createElement('BR'));
 	secondColumn.appendChild(spanElement);
 }
-function gmap4ToCalTopo(a)
-{
-	var q = a.search;
-	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
-
-	var baselayer = null;
-	var latlong = null;
-	var zoom = '15';
-
-	for (var s of q.substr(1).split('&'))
-	{
-		var i = s.indexOf('=');
-		if (i < 1 || i === s.length - 1) continue;
-		var k = s.substr(0, i);
-		var v = s.substr(i + 1);
-
-		if (k === 'll') latlong = v;
-		else if (k === 't') baselayer = v;
-		else if (k === 'z') zoom = v;
-	}
-
-	if (latlong === null) return;
-
-	if (baselayer === 't4') baselayer = 't&o=r&n=0.2';
-	else if (baselayer === 't1') baselayer = 'oo';
-	else if (baselayer === 'h') baselayer = 'hyb';
-	else if (baselayer === 's') baselayer = 'sat';
-	else return;
-
-	a.href = 'https://caltopo.com/map.html#ll=' + latlong + '&z=' + zoom + '&b=' + baselayer;
-}
 function peakTableFirstRow()
 {
 	return document.getElementById('header').parentNode;
@@ -596,7 +565,8 @@ function decorateTable()
 	initPeakListMenu();
 
 	for (var a of document.getElementsByTagName('a'))
-		if (a.hostname === 'mappingsupport.com') gmap4ToCalTopo(a);
+		if (a.hostname === 'caltopo.com' && a.href.substring(a.href.length - 4) === '&b=t')
+			a.href += '&o=r&n=0.2';
 
 	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
