@@ -576,7 +576,7 @@ function gmap4ToCalTopo(a)
 	if (latlong === null) return;
 
 	if (baselayer === 't4') baselayer = 't&o=r&n=0.2';
-	else if (baselayer === 't1') baselayer = 'mbh';
+	else if (baselayer === 't1') baselayer = 'oo';
 	else if (baselayer === 'h') baselayer = 'hyb';
 	else if (baselayer === 's') baselayer = 'sat';
 	else return;

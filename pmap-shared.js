@@ -80,12 +80,10 @@ function makeLink(url, txt)
 }
 function popupHTML(lng, lat, p, htmlFilename)
 {
-	var g4Params = p.G4.split('&');
-	var z = g4Params[0];
-	var b = g4Params[1];
-	b = b === 't=t4' ? 'b=t&o=r&n=0.2' : 'b=mbh';
+	var z = p.z || 15;
+	var b = p.noWX ? 'oo' : 't&o=r&n=0.2';
 
-	var topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&' + z + '&' + b;
+	var topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&z=' + z + '&b=' + b;
 
 	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
 

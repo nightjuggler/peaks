@@ -2042,7 +2042,6 @@ def writePeakJSON(f, peak):
 	p.append(('prom', peak.prominenceHTML().replace('"', '\\"')))
 	if peak.grade is not None:
 		p.append(('YDS', peak.grade))
-	p.append(('G4', 'z={}&t={}'.format(peak.zoom, peak.baseLayer)))
 	if peak.bobBurdId is not None:
 		p.append(('BB', peak.bobBurdId))
 	if peak.listsOfJohnId is not None:
@@ -2061,6 +2060,8 @@ def writePeakJSON(f, peak):
 	for k, v in p:
 		f('"{}":"{}",\n'.format(k, v))
 
+	if peak.zoom != '15':
+		f('"z":{},\n'.format(peak.zoom))
 	if peak.isHighPoint:
 		f('"HP":true,\n')
 	elif peak.isEmblem:
