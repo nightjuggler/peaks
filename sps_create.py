@@ -848,6 +848,8 @@ class PeakPb(TablePeak):
 		('Hawk Hill', 920, 'max'): 925,
 		('Islay Hill', 780, 'min'): 760,
 		('Islay Hill', 820, 'max'): 800,
+		('Mine Hill', 1728, 'min'): 1720,
+		('Mine Hill', 1728, 'max'): 1760,
 		('Mount Tamalpais East Peak', 2572, 'min'): 2571,
 		('Mount Tamalpais East Peak', 2574, 'max'): 2571,
 		('Mount Tamalpais Middle Peak', 2518, 'min'): 2480,

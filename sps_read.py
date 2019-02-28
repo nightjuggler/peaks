@@ -66,7 +66,7 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 64,
+		'numPeaks': 69,
 		'numSections': 12,
 	},
 	'odp': {
@@ -427,6 +427,7 @@ landNameLookup = {
 	# East Bay Regional Park District
 	"Mission Peak Regional Preserve":       'landEBRPD',
 	"Ohlone Regional Wilderness":           'landEBRPD',
+	"Sibley Volcanic Regional Preserve":    'landEBRPD',
 	"Sunol Regional Wilderness":            'landEBRPD',
 
 	# Marin County Open Space District
@@ -1180,7 +1181,7 @@ class RE(object):
 		'^<td><a href="https://mappingsupport\\.com/p/gmap4\\.php\\?'
 		'll=([34][0-9]\\.[0-9]{1,5}),(-1[012][0-9]\\.[0-9]{1,5})&z=(1[0-9])&t=(t[14])">'
 		'([ #&\'().0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?'
-		'(?:<br>\\(([A-Z][a-z]+(?: [A-Za-z]+)*(?: [1-9][0-9]*)?)\\))?</td>$'
+		'(?:<br>\\(([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: (?:HP|[1-9][0-9]+|VOR))?)\\))?</td>$'
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
