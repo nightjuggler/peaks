@@ -119,6 +119,9 @@ var extraRow = {};
 var landColumnArray = [];
 var climbedColumnArray = [];
 var globalPeakInfo = {
+	pathPrefix: '',
+	peakListId: '',
+
 	numPeaks: 0,
 	numClimbed: 0,
 	numDelisted: 0,
@@ -155,7 +158,7 @@ function parseQueryString()
 	var handlers = {
 	};
 
-	for (var s of q.substr(1).split('&'))
+	for (var s of q.substring(1).split('&'))
 	{
 		var i = s.indexOf('=');
 		if (i < 0 && isValidParam(s) && flags[s]) {
@@ -163,8 +166,8 @@ function parseQueryString()
 			continue;
 		}
 		if (i < 1 || i === s.length - 1) continue;
-		var k = s.substr(0, i);
-		var v = s.substr(i + 1);
+		var k = s.substring(0, i);
+		var v = s.substring(i + 1);
 
 		if (isValidParam(k) && handlers[k])
 			handlers[k](v);
@@ -222,10 +225,24 @@ function setRowFlags(row, parentFlags)
 }
 function getPeakListId()
 {
-	var i, path = window.location.pathname;
+	var path = window.location.href;
+	var n = path.length;
+	var i = -1;
+	var j = 0;
 
-	if (path.substr(-5) === '.html' && (i = path.lastIndexOf('/')) >= 0)
-		return path.substr(i + 1, path.length - i - 6);
+	while (j < n) {
+		var ch = path.charAt(j);
+		if (ch === '/')
+			i = j;
+		else if (ch === '?' || ch === '#')
+			break;
+		j += 1;
+	}
+
+	globalPeakInfo.pathPrefix = path.substring(0, i + 1);
+
+	if (path.endsWith('.html', j))
+		return path.substring(i + 1, j - 5);
 
 	return null;
 }
@@ -255,7 +272,7 @@ function initPeakListMenu()
 		if (menu)
 			menu.add(new Option(pl.name, pl.id, selected, selected));
 		if (selected)
-			globalPeakInfo.peakList = pl;
+			globalPeakInfo.peakListId = id;
 	}
 
 	if (menu)
@@ -263,11 +280,11 @@ function initPeakListMenu()
 		var selectedIndex = menu.selectedIndex;
 
 		menu.addEventListener('change', function() {
-			var path = menu.options[menu.selectedIndex].value + '.html';
-			var href = window.location.href;
+			var id = peakLists[menu.selectedIndex].id;
 
 			menu.selectedIndex = selectedIndex;
-			window.location = href.substr(0, href.lastIndexOf('/') + 1) + path;
+
+			window.location = globalPeakInfo.pathPrefix + id + '.html';
 		}, false);
 	}
 }
@@ -299,7 +316,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	var latitude = Number(latLong[0]);
 	var longitude = Number(latLong[1]);
 	var extent = extentForLatLong(latitude, longitude);
-	var peakList = globalPeakInfo.peakList;
+	var peakListId = globalPeakInfo.peakListId;
 
 	var listNode = document.createElement('UL');
 
@@ -349,7 +366,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		+ '?FormatBox=Decimal%20Degrees'
 		+ '&selectedFormat=Decimal%20Degrees'
 		+ '&DLatBox=' + latLong[0]
-		+ '&DLonBox=' + latLong[1].substr(1)
+		+ '&DLonBox=' + latLong[1].substring(1)
 		+ '&RadBox=1'
 		+ '&TypeSelected=X-0'
 		+ '&StabilSelected=0'
@@ -364,13 +381,13 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://opentopomap.org/#map=14/' + latLong[0] + '/' + latLong[1]);
 
 	addMapLink(listNode, 'PMap (Mapbox.js)',
-		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ll=' + latCommaLong);
+		'https://nightjuggler.com/nature/pmap.html?o=' + peakListId + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap with Wilderness Areas',
-		'https://nightjuggler.com/nature/pmap.html?o=' + peakList.id + '&ot=w&ll=' + latCommaLong);
+		'https://nightjuggler.com/nature/pmap.html?o=' + peakListId + '&ot=w&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
-		'https://nightjuggler.com/nature/pmapgl.html?o=' + peakList.id + '&ll=' + latCommaLong);
+		'https://nightjuggler.com/nature/pmapgl.html?o=' + peakListId + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'SkyVector',
 		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');
@@ -522,9 +539,9 @@ function addListLink(row)
 		var sectionNumber = m[2];
 
 		if (listId.charAt(0) === 'x')
-			listId = listId.substr(1);
+			listId = listId.substring(1);
 		if (listId.charAt(listId.length - 1) === 'x')
-			listId = listId.substr(0, listId.length - 1);
+			listId = listId.substring(0, listId.length - 1);
 
 		var linkHref = listId.toLowerCase() + '.html';
 		var linkText = listId;
@@ -539,7 +556,7 @@ function addListLink(row)
 		}
 
 		var listLink = document.createElement('A');
-		listLink.href = linkHref + '#' + htmlId + sectionNumber;
+		listLink.href = globalPeakInfo.pathPrefix + linkHref + '#' + htmlId + sectionNumber;
 		listLink.appendChild(document.createTextNode(linkText));
 
 		if (spanElement.children.length !== 0)
@@ -582,9 +599,9 @@ function decorateTable()
 		}
 
 		setRowFlags(row, sectionFlags);
-		var climbed = row.className.substr(0, 7) === 'climbed';
-		var delisted = row.className.substr(-8) === 'delisted';
-		var suspended = row.className.substr(-9) === 'suspended';
+		var climbed = row.className.slice(0, 7) === 'climbed';
+		var delisted = row.className.slice(-8) === 'delisted';
+		var suspended = row.className.slice(-9) === 'suspended';
 
 		g.numPeaks += 1;
 		if (climbed) {
