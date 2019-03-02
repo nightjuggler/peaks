@@ -316,6 +316,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	var latitude = Number(latLong[0]);
 	var longitude = Number(latLong[1]);
 	var extent = extentForLatLong(latitude, longitude);
+	var pathPrefix = globalPeakInfo.pathPrefix;
 	var peakListId = globalPeakInfo.peakListId;
 
 	var listNode = document.createElement('UL');
@@ -381,13 +382,13 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://opentopomap.org/#map=14/' + latLong[0] + '/' + latLong[1]);
 
 	addMapLink(listNode, 'PMap (Mapbox.js)',
-		'https://nightjuggler.com/nature/pmap.html?o=' + peakListId + '&ll=' + latCommaLong);
+		pathPrefix + 'pmap.html?o=' + peakListId + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap with Wilderness Areas',
-		'https://nightjuggler.com/nature/pmap.html?o=' + peakListId + '&ot=w&ll=' + latCommaLong);
+		pathPrefix + 'pmap.html?o=' + peakListId + '&ot=w&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
-		'https://nightjuggler.com/nature/pmapgl.html?o=' + peakListId + '&ll=' + latCommaLong);
+		pathPrefix + 'pmapgl.html?o=' + peakListId + '&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'SkyVector',
 		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');
