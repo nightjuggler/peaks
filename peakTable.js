@@ -1,5 +1,5 @@
 /* globals document, Option, window */
-"use strict";
+'use strict';
 
 var radiansPerDegree = Math.PI / 180.0; // 0.017453292519943295
 var degreesPerRadian = 180.0 / Math.PI;
@@ -85,9 +85,9 @@ function round(number, precision)
 }
 function terriaObject(latitude, longitude)
 {
-	var distance = 600;
+	var distance = 3000; // meters
 	var deltaLat = deltaLatForDistanceNorth(distance);
-	var deltaLong = deltaLongForDistanceEast(latitude, distance * 4/3);
+	var deltaLong = deltaLongForDistanceEast(latitude, distance);
 
 	var camera = {
 		west: round(longitude - deltaLong, 6),
@@ -96,14 +96,9 @@ function terriaObject(latitude, longitude)
 		north: round(latitude + deltaLat, 6)
 	};
 	return {
-		version: "0.0.05",
 		initSources: [
-			"init/usgs.json",
 			{
-				initialCamera: camera,
-				homeCamera: camera,
-				baseMapName: "USGS Topo WMS",
-				viewerMode: "2d"
+				initialCamera: camera
 			}
 		]
 	};
@@ -408,10 +403,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		+ longitudeToWebMercatorX(longitude) + ','
 		+ latitudeToWebMercatorY(latitude) + ',102100&level=15');
 
-	addMapLink(listNode, 'USGS National Map (Terria)',
-		'https://viewer.nationalmap.gov/advanced/terriajs-usgs/#start='
-		+ encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude)))
-		+ '&hideExplorerPanel=1&activeTabId=DataCatalogue');
+	addMapLink(listNode, 'USGS Protected Areas Database',
+		'https://maps.usgs.gov/padus/#start='
+		+ encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude))));
 
 	addMapLink(listNode, 'USGS TopoView',
 		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
