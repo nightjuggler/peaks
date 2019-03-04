@@ -1,0 +1,40 @@
+body {
+	margin: 0;
+	padding: 0;
+}
+#map {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 100%;
+}
+a {
+	text-decoration: none;
+}
+.popupDiv {
+	color: black;
+	font-family: verdana;
+	font-size: 10pt;
+	line-height: normal;
+	white-space: nowrap;
+}
+.popupDiv a {
+	color: rgb(0,0,238);
+	font-weight: inherit;
+}
+.peakName {
+	font-weight: bold;
+}
+.pll { /* Peak List Link(s) */
+	font-size: 8pt;
+}
+.pll a {
+	color: rgb(138,43,226); /* BlueViolet */
+}
+.peakDiv {
+	padding-top: 2px;
+}
+.inline {
+	display: inline-block;
+	vertical-align: top;
+}

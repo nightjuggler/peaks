@@ -197,13 +197,30 @@ class Peak(object):
 		self.delisted = False
 		self.suspended = False
 
-	def fromId(self):
-		from_id = self.peakList.htmlId + self.id
+	def idSuffix(self):
 		if self.delisted:
-			from_id += 'd'
-		elif self.suspended:
-			from_id += 's'
-		return from_id
+			return 'd'
+		if self.suspended:
+			return 's'
+		return ''
+
+	def fromId(self):
+		return self.peakList.htmlId + self.id + self.idSuffix()
+
+	def jsonId(self):
+		if not self.dataAlsoPeaks:
+			return '"{}{}"'.format(self.id, self.idSuffix())
+
+		peaks = self.dataAlsoPeaks[:]
+		if self.dataFrom is None:
+			peaks.insert(0, self)
+		else:
+			peaks.insert(0, self.dataFromPeak)
+
+		peaks.sort(key=lambda p: p.peakList.sortkey)
+
+		return '[{}]'.format(','.join(['"{}.{}{}"'.format(p.peakList.id, p.id, p.idSuffix())
+			for p in peaks]))
 
 	def elevationHTML(self):
 		return '<br>'.join([e.html() for e in self.elevations])
@@ -2034,8 +2051,9 @@ def writePeakJSON(f, peak):
 	f('[{},{}]'.format(peak.longitude, peak.latitude))
 	f('},\n')
 	f('"properties":{\n')
+	f('"id":{},\n'.format(peak.jsonId()))
 
-	p = [('id', peak.id), ('name', peak.name)]
+	p = [('name', peak.name)]
 	if peak.otherName is not None:
 		p.append(('name2', peak.otherName))
 

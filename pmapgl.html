@@ -8,22 +8,8 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
+<link href="pmap.css" rel="stylesheet">
 <style>
-body {margin: 0; padding: 0;}
-#map {position: absolute; top: 0; bottom: 0; width: 100%;}
-a {text-decoration: none;}
-.popupDiv {
-	font-family: verdana;
-	font-size: 10pt;
-	white-space: nowrap;
-}
-.popupDiv b a {
-	font-weight: bold;
-}
-.elevDiv {
-	display: inline-block;
-	vertical-align: top;
-}
 #llDiv {
 	position: absolute;
 	bottom: 40px;
@@ -97,7 +83,7 @@ a {text-decoration: none;}
 <script>
 /* globals document, window, XMLHttpRequest */
 /* globals mapboxgl */
-/* globals enableTooltips, popupHTML, topoMaps */
+/* globals enableTooltips, popupHTML, setPopupGlobals */
 "use strict";
 function isValidId(s)
 {
@@ -455,9 +441,7 @@ function createMap(options)
 	{
 		if (geojson.features.length === 0) return;
 
-		var idPrefix = geojson.id;
-		var htmlFilename = idPrefix.toLowerCase() + '.html#' + idPrefix;
-		topoMaps = geojson.topomaps;
+		setPopupGlobals(geojson);
 
 		function addPeak(ll, p)
 		{
@@ -474,7 +458,7 @@ function createMap(options)
 
 			var popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
 				.setLngLat(ll)
-				.setHTML(popupHTML(ll[0], ll[1], p, htmlFilename));
+				.setHTML(popupHTML(ll[0], ll[1], p));
 
 			return new mapboxgl.Marker(icon)
 				.setLngLat(ll)

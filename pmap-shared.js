@@ -1,11 +1,18 @@
-/* exported popupHTML, topoMaps */
+/* exported popupHTML, setPopupGlobals */
 'use strict';
 
+var defaultPeakList;
 var topoMaps;
+
 var verticalDatums = [' (NGVD 29)', ' (MSL)', ''];
 var topoSeries = ['7.5', '7.5x15', '15', '30', '60'];
 var topoScale = ['24,000', '25,000', '62,500', '125,000', '250,000'];
 
+function setPopupGlobals(geojson)
+{
+	defaultPeakList = geojson.id;
+	topoMaps = geojson.topomaps;
+}
 function fillTopo(f, topoID)
 {
 	let [seriesID, vdatumID, name, year, linkSuffix] = topoMaps[topoID];
@@ -70,6 +77,40 @@ function elevationHTML(elevations)
 
 	return a.join('<br>');
 }
+function makePLL(listID, peakID)
+{
+	var url = listID.toLowerCase() + '.html';
+	var txt = listID;
+
+	var section = peakID.substring(0, peakID.indexOf('.'));
+	var suffix = peakID.charAt(peakID.length - 1);
+
+	if (suffix === 'd') {
+		url += '?showDelisted';
+		txt = 'ex-' + listID;
+	}
+	else if (suffix === 's') {
+		url += '?showSuspended';
+		txt = '(' + listID + ')';
+	}
+
+	return '<a href="' + url + '#' + listID + section + '">' + txt + '</a>';
+}
+function getPLL(peakID) // PLL = Peak List Link(s)
+{
+	if (typeof peakID === 'string')
+		return makePLL(defaultPeakList, peakID);
+
+	var links = [];
+
+	for (var id of peakID)
+	{
+		var i = id.indexOf('.');
+		links.push(makePLL(id.substring(0, i), id.substring(i + 1)));
+	}
+
+	return links.join(' ');
+}
 function weatherLink(lng, lat)
 {
 	return 'https://forecast.weather.gov/MapClick.php?lon=' + lng + '&lat=' + lat;
@@ -78,19 +119,38 @@ function makeLink(url, txt)
 {
 	return '<a href="' + url + '">' + txt + '</a>';
 }
-function popupHTML(lng, lat, p, htmlFilename)
+function makeDiv(className, content)
+{
+	return '<div class="' + className + '">' + content + '</div>';
+}
+function inlineDiv(prefix, content)
+{
+	return prefix + ' <div class="inline">' + content + '</div>';
+}
+function popupHTML(lng, lat, p)
 {
 	var z = p.z || 15;
 	var b = p.noWX ? 'oo' : 't&o=r&n=0.2';
 
 	var topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&z=' + z + '&b=' + b;
 
-	var suffix = p.HP ? ' HP' : p.emblem ? ' **' : p.mtneer ? ' *' : '';
+	var name = makeLink(topoLink, p.name);
+	if (p.HP)
+		name += ' HP';
+	else if (p.emblem)
+		name += ' **';
+	else if (p.mtneer)
+		name += ' *';
+	if (p.name2)
+		name += '<br>(' + p.name2 + ')';
 
-	var otherName = p.name2 ? '<br>(' + p.name2 + ')' : '';
+	var html = makeDiv('peakName', name);
 
-	var name = makeLink(htmlFilename + p.id.split('.')[0], p.id) + ' ' +
-		makeLink(topoLink, p.name) + suffix + otherName;
+	html += makeDiv('pll', getPLL(p.id));
+	html += makeDiv('peakDiv', inlineDiv('Elevation:', elevationHTML(p.elev)));
+	html += makeDiv('peakDiv', inlineDiv('Prominence:', p.prom));
+	if (p.YDS)
+		html += makeDiv('peakDiv', 'Class ' + p.YDS);
 
 	var links = [];
 	if (p.SP) links.push(makeLink('https://www.summitpost.org/' + p.SP, 'SP'));
@@ -99,14 +159,11 @@ function popupHTML(lng, lat, p, htmlFilename)
 	if (p.LoJ) links.push(makeLink('https://listsofjohn.com/peak/' + p.LoJ, 'LoJ'));
 	if (p.Pb) links.push(makeLink('https://peakbagger.com/peak.aspx?pid=' + p.Pb, 'Pb'));
 	if (!p.noWX) links.push(makeLink(weatherLink(lng, lat), 'WX'));
+	if (links.length)
+		html += makeDiv('peakDiv', links.join(', '));
 
-	links = links.length === 0 ? '' : '<br>' + links.join(', ');
+	if (p.climbed)
+		html += makeDiv('peakDiv', inlineDiv('Climbed', p.climbed));
 
-	var yds = p.YDS ? '<br>Class ' + p.YDS : '';
-	var climbed = p.climbed ? '<br>Climbed <div class="elevDiv">' + p.climbed + '</div>' : '';
-
-	return '<div class="popupDiv"><b>' + name + '</b>' +
-		'<br>Elevation: <div class="elevDiv">' + elevationHTML(p.elev) + '</div>' +
-		'<br>Prominence: <div class="elevDiv">' + p.prom + '</div>' +
-		yds + links + climbed + '</div>';
+	return makeDiv('popupDiv', html);
 }

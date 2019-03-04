@@ -2,7 +2,7 @@
 /* globals console, document, Image, window */
 /* globals L */
 /* globals enableTooltips */
-/* globals popupHTML, topoMaps */
+/* globals popupHTML, setPopupGlobals */
 /* globals loadJSON */
 
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
@@ -479,15 +479,13 @@ function peakIcon(p)
 }
 addFunctions.addPeakOverlay = function(geojson, map, lcItem)
 {
-	var id = geojson.id;
-	var htmlFilename = id.toLowerCase() + '.html#' + id;
-	topoMaps = geojson.topomaps;
+	setPopupGlobals(geojson);
 
 	function addPeak(feature, latlng)
 	{
 		var p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
-			.bindPopup(popupHTML(latlng.lng, latlng.lat, p, htmlFilename))
+			.bindPopup(popupHTML(latlng.lng, latlng.lat, p))
 			.on('popupopen', enableTooltips)
 			.on('dblclick', function() {
 				map.setView(latlng, map.getMaxZoom() - 5);
