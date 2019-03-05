@@ -1016,13 +1016,16 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 		}
 	}
 };
-LayerControl.prototype.addBaseLayers = function(rootLCD, pathStr)
+LayerControl.prototype.addBaseLayers = function(rootLCD, path, defaultPath)
 {
 	this._addBaseLayers(rootLCD, this.div, [], rootLCD.makeLayer);
 
-	var item = getItem(pathStr.split('_'), rootLCD);
-	if (item && item.input)
-		item.input.click();
+	var item = getItem(path.split('_'), rootLCD);
+	if (!item || !item.layer) {
+		item = getItem(defaultPath.split('_'), rootLCD);
+		if (!item || !item.layer) return;
+	}
+	item.input.click();
 };
 function makeVersionSpec(parent, version)
 {

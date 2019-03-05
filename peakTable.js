@@ -376,14 +376,17 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	addMapLink(listNode, 'OpenTopoMap',
 		'https://opentopomap.org/#map=14/' + latLong[0] + '/' + latLong[1]);
 
+	addMapLink(listNode, 'PMap (Leaflet)',
+		pathPrefix + 'pmap.html?o=' + peakListId + '&z=15&ll=' + latCommaLong);
+
 	addMapLink(listNode, 'PMap (Mapbox.js)',
-		pathPrefix + 'pmap.html?o=' + peakListId + '&ll=' + latCommaLong);
+		pathPrefix + 'pmapmb.html?o=' + peakListId + '&z=15&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap with Wilderness Areas',
-		pathPrefix + 'pmap.html?o=' + peakListId + '&ot=w&ll=' + latCommaLong);
+		pathPrefix + 'pmap.html?o=' + peakListId + '&ot=w&q=w&z=15&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'PMap GL (Mapbox GL JS)',
-		pathPrefix + 'pmapgl.html?o=' + peakListId + '&ll=' + latCommaLong);
+		pathPrefix + 'pmapgl.html?o=' + peakListId + '&z=15&ll=' + latCommaLong);
 
 	addMapLink(listNode, 'SkyVector',
 		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');

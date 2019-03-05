@@ -4,25 +4,18 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.js"></script>
-<link href="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.css" rel="stylesheet">
-<!--
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css"
-	integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" id="leafletcss"
+	integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
 	crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js"
-	integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q=="
+<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" id="leafletjs"
+	integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
 	crossorigin=""></script>
--->
-<link href="tooltip.css" rel="stylesheet">
+<link href="tooltip.css" rel="stylesheet" id="tooltipcss">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
 <style>
 progress {
 	margin-right: 4px;
-}
-.leaflet-popup-content {
-	padding-bottom: 10px;
 }
 .blmPopup {
 	text-align: center;
@@ -102,18 +95,6 @@ progress {
 	width: 13px;
 	height: 13px;
 }
-#fitLink {
-	background-color: rgba(255,255,255,0.8);
-	border: 1px solid rgb(128,128,128);
-	border-radius: 5px;
-	margin-bottom: 3px;
-	padding: 3px 5px;
-	vertical-align: middle;
-}
-#fitLink:hover {
-	background-color: rgba(236,236,236,0.8);
-	cursor: pointer;
-}
 #layerControlIcon {
 	position: absolute;
 	top: 10px;
@@ -174,7 +155,7 @@ progress {
 <script src="pmap-lc.js"></script>
 <script>
 /* globals document, window */
-/* globals MouseEvent, XMLHttpRequest */
+/* globals MouseEvent, URL, XMLHttpRequest */
 /* globals L, BaseLayers, TileOverlays, MapServer, LayerControl */
 "use strict";
 
@@ -334,7 +315,11 @@ function getMapBounds(map, options)
 
 	return methods;
 }
-var isLocal;
+function isFileURL(url)
+{
+	var protocol = (new URL(url, window.location.href)).protocol;
+	return protocol === 'file:' || protocol === '';
+}
 function loadJSON(url, onSuccess, onFailure, progressBar)
 {
 	var xhr = new XMLHttpRequest();
@@ -343,7 +328,7 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4)
 		{
-			if (xhr.status === 200 || isLocal && xhr.status === 0)
+			if (xhr.status === 200 || isFileURL(url) && xhr.status === 0)
 				onSuccess(xhr.response);
 			else if (onFailure)
 				onFailure();
@@ -365,8 +350,9 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 }
 function createMap(options)
 {
+	var defaultBaseLayer = L.mapbox ? 'o' : 'esri_usatopo';
 	var queryString = {
-		baseLayer: L.mapbox ? 'o' : 'esri_usatopo',
+		baseLayer: defaultBaseLayer,
 		clickCenter: false,
 		geometryQueries: [],
 		overlays: [],
@@ -384,10 +370,12 @@ function createMap(options)
 			var id = 'mapbox.' + item.name.toLowerCase().replace(/ /g, '-');
 			return L.mapbox.tileLayer(id, options);
 		};
-	else
+	else {
 		BaseLayers.order.splice(0, 1); // Remove 'mapbox'
+		delete BaseLayers.items.mapbox;
+	}
 
-	layerControl.addBaseLayers(BaseLayers, queryString.baseLayer);
+	layerControl.addBaseLayers(BaseLayers, queryString.baseLayer, defaultBaseLayer);
 	layerControl.addTileOverlays(TileOverlays, queryString.tileOverlays);
 	MapServer.initPointQueries(map);
 	layerControl.addPointQueries(TileOverlays, queryString.pointQueries, queryString.geometryQueries);
@@ -405,6 +393,7 @@ function createMap(options)
 	if (queryString.ll) {
 		var minZoom = map.getMinZoom();
 		var maxZoom = map.getMaxZoom();
+		if (maxZoom === Infinity) maxZoom = 20;
 
 		var zoom = queryString.zoom || (maxZoom - 5);
 
@@ -449,17 +438,50 @@ function createMap(options)
 	}
 	loadJSON('pmap_lcd.json', addOverlayMenu);
 }
-function init()
+(function()
 {
-	if (!L.mapbox) { createMap(); return; }
+	var path = window.location.pathname;
+	path = path.substring(path.lastIndexOf('/') + 1);
 
-	var protocol = window.location.protocol;
-	isLocal = protocol === 'file:' || protocol === '';
-	var suffix = isLocal ? 'json' : 'cgi';
+	if (path !== 'pmapmb.html') {
+		window.addEventListener('DOMContentLoaded', createMap);
+		return;
+	}
 
-	loadJSON('mapbox.' + suffix, createMap);
-}
-window.addEventListener('DOMContentLoaded', init, false);
+	var domLoaded = false;
+	var jsLoaded = false;
+	var cssLoaded = false;
+
+	function init()
+	{
+		if (!domLoaded || !jsLoaded || !cssLoaded) return;
+
+		var protocol = window.location.protocol;
+		var suffix = protocol === 'file:' || protocol === '' ? 'json' : 'cgi';
+
+		loadJSON('mapbox.' + suffix, createMap);
+	}
+
+	var nextNode = document.getElementById('tooltipcss');
+	var head = nextNode.parentNode;
+
+	delete window.L;
+	head.removeChild(document.getElementById('leafletjs'));
+	head.removeChild(document.getElementById('leafletcss'));
+
+	var js = document.createElement('script');
+	js.onload = function() {jsLoaded = true; init();};
+	head.insertBefore(js, nextNode);
+	js.src = 'https://api.mapbox.com/mapbox.js/v3.2.0/mapbox.js';
+
+	var css = document.createElement('link');
+	css.onload = function() {cssLoaded = true; init();};
+	head.insertBefore(css, nextNode);
+	css.href = 'https://api.mapbox.com/mapbox.js/v3.2.0/mapbox.css';
+	css.rel = 'stylesheet';
+
+	window.addEventListener('DOMContentLoaded', function() {domLoaded = true; init();});
+})();
 </script>
 </head>
 <body>
