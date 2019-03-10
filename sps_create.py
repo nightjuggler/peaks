@@ -665,6 +665,8 @@ class PeakPb(TablePeak):
 		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
 		('Peak 9980', 9980):                    'Sirretta Peak North',
 		('The Sisters', 10153):                 'The Sisters East',
+		('White Mountain', 12057):              'White Mountain (South)',
+		('White Mountain', 11398):              'White Mountain (North)',
 	# Other California Peaks:
 		('Maguire Peak', 1688):                 'Maguire Peaks West',
 		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
@@ -1382,6 +1384,8 @@ class PeakLoJ(TablePeak):
 		('Peak 9980', 9980):                            'Sirretta Peak North',
 		('Peak 13074', 13074):                          'Rosco Peak',
 		('Peak 13464', 13464):                          'Northwest Lamarck',
+		('White Mountain', 12057):                      'White Mountain (South)',
+		('White Mountain', 11398):                      'White Mountain (North)',
 	# Other California Peaks:
 		('East Peak', 2571):                            'Mount Tamalpais East Peak',
 		('Maguire Peaks, East', 1660):                  'Maguire Peaks East',

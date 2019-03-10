@@ -76,7 +76,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 41,
+		'numPeaks': 45,
 		'numSections': 26,
 	},
 	'owp': {
@@ -2046,11 +2046,9 @@ def writeHTML(pl):
 	htmlFile.close()
 
 def writePeakJSON(f, peak):
-	f('{\n')
-	f('"type":"Feature",\n"geometry":{"type":"Point","coordinates":')
+	f('{\n"type":"Feature",\n"geometry":{"type":"Point","coordinates":')
 	f('[{},{}]'.format(peak.longitude, peak.latitude))
-	f('},\n')
-	f('"properties":{\n')
+	f('},\n"properties":{\n')
 	f('"id":{},\n'.format(peak.jsonId()))
 
 	p = [('name', peak.name)]
