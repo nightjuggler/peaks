@@ -232,7 +232,7 @@ class BLM_WSA_Query(Query):
 
 class USGS_CountyQuery(Query):
 	name = "County (The National Map)"
-	home = "https://services.nationalmap.gov/arcgis/rest/services" # 10.41
+	home = "https://services.nationalmap.gov/arcgis/rest/services" # 10.61
 	service = "WFS/govunits"
 	layer = 3 # sr = 4326
 	fields = [
@@ -246,9 +246,9 @@ class USGS_CountyQuery(Query):
 
 class USGS_TopoQuery(Query):
 	name = "USGS 7.5' Topo"
-	home = "https://services.nationalmap.gov/arcgis/rest/services" # 10.41
-	service = "US_Topo_Availability"
-	layer = 0 # sr = 4326
+	home = "https://index.nationalmap.gov/arcgis/rest/services" # 10.61
+	service = "USTopoAvailability"
+	layer = 0 # sr = 102100 (3857)
 	fields = [
 		("CELL_NAME", "cell"),
 		("STATE_ALPHA", "state"),
