@@ -66,7 +66,7 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 69,
+		'numPeaks': 78,
 		'numSections': 12,
 	},
 	'odp': {
@@ -1829,6 +1829,7 @@ def readHTML(pl):
 			m = RE.peakbagger.match(line)
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
+					('OCAP','11.7'), # Kandlbinder Peak
 					('OSP', '17.4'), # Ruby Mesa
 				):
 					badLine()
