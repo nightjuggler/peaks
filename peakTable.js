@@ -133,6 +133,7 @@ var globalPeakInfo = {
 	flags: {
 		country_US: true,
 		state_CA: true,
+		BigSur: false,
 		CC: false,
 	},
 };
@@ -321,6 +322,11 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'q=select+col0+from+1oAUIuqAirzAY_wkouZLdM4nRYyZ1p4TAg3p6aD2T' +
 		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
 		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG');
+
+	if (peakFlags.BigSur)
+		addMapLink(listNode, 'Big Sur Trailmap',
+			'http://bigsurtrailmap.net/interactivemap.html?mode=trailmap&latlon=' +
+			latCommaLong + '&zoom=15&bkgmap=USGS+Quad');
 
 	addMapLink(listNode, 'BLM National Data',
 		'https://blm-egis.maps.arcgis.com/apps/webappviewer/index.html?' +

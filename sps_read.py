@@ -1175,7 +1175,7 @@ class RE(object):
 
 	dataCountry = re.compile('^[A-Z]{2}(?:/[A-Z]{2})*$')
 	dataState = re.compile('^[A-Z]{2}(?:-[A-Z]{2,3})?(?:/[A-Z]{2}(?:-[A-Z]{2,3})?)*$')
-	dataFlags = re.compile('^[A-Z]+(?:,[A-Z]+)*$')
+	dataFlags = re.compile('^[A-Za-z]+(?:,[A-Za-z]+)*$')
 	dataFrom = re.compile('(' + listId + ')(' + number + ')\\.(' + number + '[ab]?)[ds]?')
 	dataAlso = re.compile(fromId + '(?: ' + fromId + ')*')
 
@@ -1678,7 +1678,7 @@ def getCommonDataAttributes(row, parent):
 	dataEnable = []
 	dataDisable = []
 
-	for flag in ("CC",):
+	for flag in ("BigSur", "CC"):
 		if flag in row.flags:
 			if flag not in parent.flags:
 				dataEnable.append(flag)
