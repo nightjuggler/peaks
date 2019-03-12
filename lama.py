@@ -389,6 +389,32 @@ class SLO_OpenSpaceQuery(Query):
 	serverType = "Feature"
 	layer = 0 # sr = 2874
 
+class SCC_ParksQuery(Query):
+	name = "Santa Clara County Parks"
+	home = "https://services1.arcgis.com/4QPaqCJqF1UIaPbN/arcgis/rest/services" # 10.61
+	service = "SCCParks_SantaClaraCountyParks"
+	serverType = "Feature"
+	layer = 0 # sr = 102100
+	fields = [
+		("PARK_NAME", "name"),
+		("PARK_SUFFIX", "suffix"),
+		("ACRES", "acres"),
+	]
+	printSpec = "{name} {suffix} ({acres:,.1f} acres)"
+
+class SCC_ProtectedLandsQuery(Query):
+	name = "Santa Clara County Protected Lands"
+	home = "https://services1.arcgis.com/4QPaqCJqF1UIaPbN/arcgis/rest/services" # 10.61
+	service = "SCCParks_ProtectedLands"
+	serverType = "Feature"
+	layer = 0 # sr = 102643
+	fields = [
+		("Operator", "operator"),
+		("Park_Name", "name"),
+		("Acres", "acres"),
+	]
+	printSpec = "{name} ({operator}) ({acres:,.1f} acres)"
+
 def checkDegrees(degrees, minValue, maxValue):
 	try:
 		degrees = float(degrees)
@@ -445,6 +471,8 @@ def main():
 		"nps": NPS_Query,
 		"nwr": NWR_Query,
 		"rd": USFS_RangerDistrictQuery,
+		"scc_parks": SCC_ParksQuery,
+		"scc_protected": SCC_ProtectedLandsQuery,
 		"slo": SLO_OpenSpaceQuery,
 		"sma": BLM_SMA_Query,
 		"state": TigerStateQuery,
