@@ -113,6 +113,7 @@ var mapLinkHash = {};
 var extraRow = {};
 var landColumnArray = [];
 var climbedColumnArray = [];
+var activePopup;
 var globalPeakInfo = {
 	pathPrefix: '',
 	peakListId: '',
@@ -480,6 +481,7 @@ function showMapLinkBox(event)
 		mapLinkBox.style.bottom = 'auto';
 		mapLinkSpan.firstChild.nodeValue = mapLinkIconDown;
 	}
+	setActivePopup(mapLinkBox);
 }
 function showMapLinkIcon(event)
 {
@@ -575,7 +577,7 @@ function addListLink(row)
 }
 function peakTableFirstRow()
 {
-	return document.getElementById('header').parentNode;
+	return document.getElementById('firstRow');
 }
 function decorateTable()
 {
@@ -589,14 +591,16 @@ function decorateTable()
 		if (a.hostname === 'caltopo.com' && a.href.substring(a.href.length - 4) === '&b=t')
 			a.href += '&o=r&n=0.2';
 
-	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
+	const firstRow = peakTableFirstRow();
+
+	for (var row = firstRow; row !== null; row = nextNode(row.nextSibling, 'TR'))
 	{
 		var firstColumn = row.children[0];
 		if (firstColumn.colSpan !== 1) {
 			if (row.className === 'section') {
 				setRowFlags(row, g.flags);
 				sectionFlags = row.peakFlags;
-				if (firstColumn.id === 'header')
+				if (row === firstRow)
 					g.flags = sectionFlags;
 			}
 			continue;
@@ -663,12 +667,63 @@ function decorateTable()
 	updateClimbedCount();
 	setCount('delistedCountSpan', g.numDelisted);
 	setCount('suspendedCountSpan', g.numSuspended);
-	addClickHandlers();
+	addClickHandlers(firstRow);
 
 	if (window.location.hash)
 		window.location.replace(window.location.href);
 
 	window.removeEventListener('DOMContentLoaded', decorateTable, false);
+}
+function closeActivePopup(event)
+{
+	if (!activePopup) return;
+
+	for (var node = event.target; node; node = node.parentNode)
+		if (node === activePopup) return;
+
+	activePopup.style.display = 'none';
+	activePopup.parentNode.className = 'mapLink';
+	activePopup = null;
+
+	document.body.removeEventListener('mousedown', closeActivePopup);
+}
+function setActivePopup(element)
+{
+	activePopup = element;
+	document.body.addEventListener('mousedown', closeActivePopup);
+}
+function clickMobile()
+{
+	let elem = document.getElementById('headerRight');
+	if (!elem) return;
+
+	elem = elem.firstChild; // the div containing the text node
+	if (!elem) return;
+
+	elem = elem.firstChild; // the text node
+	if (!elem) return;
+
+	if (elem.nodeValue === 'MOBILE')
+	{
+		Object.values(mapLinkHash).forEach(mapLinkSpan => {
+			const parent = mapLinkSpan.parentNode;
+			parent.removeEventListener('mouseenter', showMapLinkIcon, false);
+			parent.removeEventListener('mouseleave', hideMapLinkIcon, false);
+			mapLinkSpan.className = 'mapLink';
+		});
+		elem.nodeValue = 'DESKTOP';
+	}
+	else if (elem.nodeValue === 'DESKTOP')
+	{
+		closeActivePopup();
+		Object.values(mapLinkHash).forEach(mapLinkSpan => {
+			const parent = mapLinkSpan.parentNode;
+			parent.addEventListener('mouseenter', showMapLinkIcon, false);
+			parent.addEventListener('mouseleave', hideMapLinkIcon, false);
+			mapLinkSpan.className = 'mapLinkHidden';
+		});
+		elem.nodeValue = 'MOBILE';
+	}
 }
 function removeLandColumn(row)
 {
@@ -824,7 +879,7 @@ function changeColors()
 	var colorMenu = document.getElementById('colorMenu');
 	setPeakTableClass(0, colorMenu.options[colorMenu.selectedIndex].value);
 }
-function addClickHandlers()
+function addClickHandlers(firstRow)
 {
 	var checkbox = document.getElementById('toggleLandColumn');
 	if (checkbox) {
@@ -861,9 +916,37 @@ function addClickHandlers()
 		colorMenu.addEventListener('change', changeColors, false);
 	}
 
-	var legendLink = document.getElementById('legendLink');
-	if (legendLink)
-		legendLink.addEventListener('click', showLegend, false);
+	function createHeaderLink(label, callback)
+	{
+		const div = document.createElement('div');
+		div.className = 'headerLink';
+		div.appendChild(document.createTextNode(label));
+		div.addEventListener('click', callback, false);
+		return div;
+	}
+
+	const tableHeader = firstRow.firstElementChild;
+	const headerGrid = document.createElement('div');
+	const headerLeft = document.createElement('div');
+	const headerCenter = document.createElement('div');
+	const headerRight = document.createElement('div');
+
+	headerGrid.id = 'headerGrid';
+	headerLeft.id = 'headerLeft';
+	headerCenter.id = 'headerCenter';
+	headerRight.id = 'headerRight';
+
+	headerRight.appendChild(createHeaderLink('MOBILE', clickMobile));
+	headerRight.appendChild(createHeaderLink('LEGEND', showLegend));
+
+	while (tableHeader.firstChild)
+		headerCenter.appendChild(tableHeader.firstChild);
+
+	headerGrid.appendChild(headerLeft);
+	headerGrid.appendChild(headerCenter);
+	headerGrid.appendChild(headerRight);
+
+	tableHeader.appendChild(headerGrid);
 
 	var closeLegend = document.getElementById('closeLegend');
 	if (closeLegend)

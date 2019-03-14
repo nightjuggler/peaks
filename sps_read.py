@@ -1180,7 +1180,7 @@ class RE(object):
 	dataAlso = re.compile(fromId + '(?: ' + fromId + ')*')
 
 	firstRow = re.compile(
-		'^<tr class="section"' + dataAttributes + '><td id="header" colspan="1[0-9]">'
+		'^<tr id="firstRow" class="section"' + dataAttributes + '><td colspan="1[0-9]">'
 	)
 	sectionRow = re.compile(
 		'^<tr class="section"' + dataAttributes + '>'

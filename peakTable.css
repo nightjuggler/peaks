@@ -151,20 +151,32 @@ select {
 	vertical-align: top;
 	width: 50%;
 }
-#header {
-	position: relative;
+#headerGrid {
+	display: grid;
+	grid-template-columns: 1fr 3fr 1fr;
 }
-#legendLink {
+#headerCenter {
+	margin-top: 1px;
+}
+#headerRight {
+	text-align: right;
+}
+.headerLink {
+	background-color: rgb(238,238,238);
+	border: 1px solid rgb(0,0,238);
+	border-radius: 4px;
 	color: rgb(0,0,238);
 	cursor: pointer;
 	display: inline-block;
 	font-size: 8pt;
-	position: absolute;
-	right: 10px;
-	bottom: 3px;
+	margin-left: 2px;
+	padding: 2px 4px;
 }
-#legendLink:active {
+.headerLink:active {
 	color: rgb(255,0,0);
+}
+.headerLink:hover {
+	background-color: rgb(255,255,255);
 }
 #legend {
 	background-color: rgb(240,255,255);
