@@ -285,12 +285,6 @@ function initPeakListMenu()
 		}, false);
 	}
 }
-function nextNode(node, nodeName)
-{
-	while (node !== null && node.nodeName !== nodeName)
-		node = node.nextSibling;
-	return node;
-}
 function totalOffsetTop(element)
 {
 	var top = 0;
@@ -456,7 +450,7 @@ function addMapLinkBox(mapLinkSpan)
 	var secondColumn = mapLinkSpan.parentNode;
 	var peakFlags = secondColumn.parentNode.peakFlags;
 
-	var mapLink = nextNode(secondColumn.firstChild, 'A');
+	var mapLink = secondColumn.firstElementChild;
 	var latCommaLong = mapLink.href.split('#')[1].split('&')[0].split('=')[1];
 
 	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakFlags));
@@ -500,7 +494,7 @@ function clickFirstColumn(event)
 	var firstColumn = event.currentTarget;
 	var row = firstColumn.parentNode;
 	var peakTable = row.parentNode;
-	var nextRow = nextNode(row.nextSibling, 'TR');
+	var nextRow = row.nextElementSibling;
 	row = extraRow[firstColumn.id];
 	if (row.parentNode === null) {
 		peakTable.insertBefore(row, nextRow);
@@ -532,8 +526,8 @@ function addListLink(row)
 	if (row.dataset.from)
 		refArray.unshift(row.dataset.from);
 
-	var spanElement = document.createElement('SPAN');
-	spanElement.className = 'pll';
+	const pll = document.createElement('DIV');
+	pll.className = 'pll';
 
 	for (var ref of refArray)
 	{
@@ -565,15 +559,12 @@ function addListLink(row)
 		listLink.href = globalPeakInfo.pathPrefix + linkHref + '#' + htmlId + sectionNumber;
 		listLink.appendChild(document.createTextNode(linkText));
 
-		if (spanElement.children.length !== 0)
-			spanElement.appendChild(document.createTextNode(' '));
-		spanElement.appendChild(listLink);
+		if (pll.children.length !== 0)
+			pll.appendChild(document.createTextNode(' '));
+		pll.appendChild(listLink);
 	}
 
-	var firstColumn = row.children[0];
-	var secondColumn = nextNode(firstColumn.nextSibling, 'TD');
-	secondColumn.appendChild(document.createElement('BR'));
-	secondColumn.appendChild(spanElement);
+	row.children[1].appendChild(pll);
 }
 function peakTableFirstRow()
 {
@@ -593,7 +584,7 @@ function decorateTable()
 
 	const firstRow = peakTableFirstRow();
 
-	for (var row = firstRow; row !== null; row = nextNode(row.nextSibling, 'TR'))
+	for (var row = firstRow; row !== null; row = row.nextElementSibling)
 	{
 		var firstColumn = row.children[0];
 		if (firstColumn.colSpan !== 1) {
@@ -633,13 +624,13 @@ function decorateTable()
 			firstColumn.style.cursor = 'pointer';
 			firstColumn.rowSpan = 1;
 
-			var nextRow = nextNode(row.nextSibling, 'TR');
+			var nextRow = row.nextElementSibling;
 			extraRow[firstColumn.id] = nextRow.parentNode.removeChild(nextRow);
 		}
 		if (row.peakFlags.country_US)
 		{
-			var secondColumn = nextNode(firstColumn.nextSibling, 'TD');
-			var lineBreak = nextNode(secondColumn.firstChild, 'BR');
+			var secondColumn = firstColumn.nextElementSibling;
+			var lineBreak = secondColumn.firstElementChild.nextElementSibling;
 			var mapLinkSpan = document.createElement('SPAN');
 			mapLinkSpan.className = 'mapLinkHidden';
 			mapLinkSpan.appendChild(document.createTextNode(mapLinkIconUp));
@@ -685,12 +676,19 @@ function closeActivePopup(event)
 	activePopup.parentNode.className = 'mapLink';
 	activePopup = null;
 
-	document.body.removeEventListener('mousedown', closeActivePopup);
+	const body = document.body;
+	body.removeEventListener('touchstart', closeActivePopup);
+	body.removeEventListener('mousedown', closeActivePopup);
 }
 function setActivePopup(element)
 {
+	if (activePopup === undefined) return;
+
 	activePopup = element;
-	document.body.addEventListener('mousedown', closeActivePopup);
+
+	const body = document.body;
+	body.addEventListener('touchstart', closeActivePopup);
+	body.addEventListener('mousedown', closeActivePopup);
 }
 function clickMobile()
 {
@@ -712,6 +710,7 @@ function clickMobile()
 			mapLinkSpan.className = 'mapLink';
 		});
 		elem.nodeValue = 'DESKTOP';
+		activePopup = null;
 	}
 	else if (elem.nodeValue === 'DESKTOP')
 	{
@@ -723,6 +722,7 @@ function clickMobile()
 			mapLinkSpan.className = 'mapLinkHidden';
 		});
 		elem.nodeValue = 'MOBILE';
+		activePopup = undefined;
 	}
 }
 function removeLandColumn(row)
@@ -751,7 +751,7 @@ function addRemoveColumn(addRemoveFunction, colDiff)
 	var addRemoveSuspended = hiddenRows(suspendedPeaks);
 	if (addRemoveSuspended) addRows(suspendedPeaks);
 
-	for (var row = peakTableFirstRow(); row !== null; row = nextNode(row.nextSibling, 'TR'))
+	for (var row = peakTableFirstRow(); row !== null; row = row.nextElementSibling)
 	{
 		var firstColumn = row.children[0];
 		if (firstColumn.colSpan === 1) {

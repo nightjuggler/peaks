@@ -2,12 +2,16 @@ body {
 	background-color: white;
 	font-family: verdana;
 	font-size: 10pt;
+
+	-webkit-text-size-adjust: none;
+	text-size-adjust: none;
 }
 a {
 	text-decoration: none;
 }
 ul {
-	margin: 0px 0px 0px 0px;
+	margin: 0;
+	padding: 0 2em;
 }
 table {
 	border-collapse: collapse;
@@ -155,9 +159,6 @@ select {
 	display: grid;
 	grid-template-columns: 1fr 3fr 1fr;
 }
-#headerCenter {
-	margin-top: 1px;
-}
 #headerRight {
 	text-align: right;
 }
@@ -169,7 +170,7 @@ select {
 	cursor: pointer;
 	display: inline-block;
 	font-size: 8pt;
-	margin-left: 2px;
+	margin-left: 4px;
 	padding: 2px 4px;
 }
 .headerLink:active {
@@ -222,6 +223,8 @@ select {
 }
 .pll { /* Peak List Link(s) */
 	font-size: 7pt;
+	margin-top: 2px;
+	margin-bottom: 2px;
 }
 .pll a {
 	color: black;
