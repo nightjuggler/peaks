@@ -2,13 +2,12 @@
 /* globals console, document, Image, window */
 /* globals L */
 /* globals enableTooltips */
-/* globals popupHTML, setPopupGlobals */
+/* globals popupHTML, setPopupGlobals, weatherLink */
 /* globals loadJSON */
 
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 var USFS_Prefix = 'https://www.fs.usda.gov/';
 var USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
-var Weather_Prefix = 'https://forecast.weather.gov/MapClick.php';
 var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
 var Wilderness_Prefix = 'https://www.wilderness.net/NWPS/wildView?WID=';
 
@@ -79,16 +78,14 @@ function lowerLink(layer)
 	a.addEventListener('click', bringToBack, false);
 	return a;
 }
-function weatherLink(layer)
+function dynamicWeatherLink(layer)
 {
 	var a = document.createElement('a');
 
 	function setWxLink()
 	{
 		var ll = layer.getPopup().getLatLng();
-		a.href = Weather_Prefix +
-			'?lon=' + ll.lng.toFixed(6) +
-			'&lat=' + ll.lat.toFixed(6);
+		a.href = weatherLink(ll.lng.toFixed(6), ll.lat.toFixed(6));
 	}
 
 	a.href = '#';
@@ -102,7 +99,7 @@ function bindPopup(popupDiv, map, layer)
 {
 	popupDiv.appendChild(document.createElement('br'));
 	popupDiv.appendChild(popupFitLink(map, layer));
-	popupDiv.appendChild(weatherLink(layer));
+	popupDiv.appendChild(dynamicWeatherLink(layer));
 	popupDiv.appendChild(lowerLink(layer));
 	popupDiv.appendChild(raiseLink(layer));
 	layer.bindPopup(popupDiv, {maxWidth: 600});
