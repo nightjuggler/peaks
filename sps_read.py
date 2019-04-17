@@ -446,12 +446,12 @@ landNameLookup = {
 	"Sibley Volcanic Regional Preserve":    'landEBRPD',
 	"Sunol Regional Wilderness":            'landEBRPD',
 
-	# Marin County Open Space District
-	"Loma Alta Open Space Preserve":        'landCounty',
-	"Lucas Valley Open Space Preserve":     'landCounty',
-	"Mount Burdell Open Space Preserve":    'landCounty',
-	"Ring Mountain Open Space Preserve":    'landCounty',
-	"White Hill Open Space Preserve":       'landCounty',
+	# Marin County Parks
+	"Loma Alta Preserve":                   'landCounty',
+	"Lucas Valley Preserve":                'landCounty',
+	"Mount Burdell Preserve":               'landCounty',
+	"Ring Mountain Preserve":               'landCounty',
+	"White Hill Preserve":                  'landCounty',
 
 	# Midpeninsula Regional Open Space District
 	"Monte Bello Open Space Preserve":      'landMROSD',
