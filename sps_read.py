@@ -66,8 +66,8 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 78,
-		'numSections': 12,
+		'numPeaks': 79,
+		'numSections': 13,
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
@@ -439,6 +439,7 @@ landNameLookup = {
 	"Steens Mountain CMPA":                 'landBLM',
 	"Tohono O'odham Indian Reservation":    'landRez',
 	"Twin Peaks Natural Area":              'landCity',
+	"Wind Wolves Preserve":                 'landTWC',
 
 	# East Bay Regional Park District
 	"Mission Peak Regional Preserve":       'landEBRPD',
@@ -481,6 +482,7 @@ landLinkPattern = {
 }
 landOrder = {landClass: i for i, landClass in enumerate((
 	'landPrivate',
+	'landTWC',      # The Wildlands Conservancy - https://www.wildlandsconservancy.org/
 	'landCity',
 	'landCounty',
 	'landEBRPD',    # East Bay Regional Park District - https://www.ebparks.org/
@@ -1196,7 +1198,7 @@ class RE(object):
 	column2 = re.compile(
 		'^<td><a href="https://caltopo\\.com/map\\.html#'
 		'll=([34][0-9]\\.[0-9]{1,5}),(-1[012][0-9]\\.[0-9]{1,5})&z=(1[0-9])&b=(t|oo)">'
-		'([ #&\'().0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?'
+		'([ #&\'()+.0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?'
 		'(?:<br>\\(([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: (?:HP|[1-9][0-9]+|VOR))?)\\))?</td>$'
 	)
 	grade = re.compile(
@@ -1808,6 +1810,7 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or pl.id not in ('OWP',) and (pl.id, peak.id) not in (
 					('OCAP', '4.4'), # Mount Saint Helena Southeast
+					('OCAP','13.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 				):
 					badLine()
@@ -1819,6 +1822,7 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
 					('OCAP', '4.4'), # Mount Saint Helena Southeast
+					('OCAP','13.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 				):
 					badLine()
@@ -1830,6 +1834,7 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
 					('OCAP','11.7'), # Kandlbinder Peak
+					('OCAP','13.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 				):
 					badLine()
