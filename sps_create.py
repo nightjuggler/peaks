@@ -887,8 +887,8 @@ class PeakPb(TablePeak):
 	#   both downward-sloping sides (east and west) of the saddle at 1390'. LoJ also uses 1395' for
 	#   the average saddle elevation.
 
-		('Billy Goat Peak',               896, 'min'):   879, # 1748m - 1480m           ODP
-		('Billy Goat Peak',               896, 'max'):   912, # 1748m - 1470m           ODP
+		('Billy Goat Peak',               896, 'min'):   879, # 1748m - 1480m           OWP
+		('Billy Goat Peak',               896, 'max'):   912, # 1748m - 1470m           OWP
 		('Duffer Peak',                    40, 'min'):     0, #                         GBP
 		('Duffer Peak',                   120, 'max'):    80, #                         GBP
 		('East Ord Mountain',            1508, 'max'):  1528, #                         DPS
@@ -1555,7 +1555,7 @@ class PeakLoJ(TablePeak):
 	#    Elevation [11,077'] is interpolation of spot elevation and next higher contour [11,080']."
 	#   [https://listsofjohn.com/peak/40725]
 
-		('Billy Goat Peak',      5735):  1748.0,        # ODP -- LoJ didn't round down
+		('Billy Goat Peak',      5735):  1748.0,        # OWP -- LoJ didn't round down
 		('Eagle Peak',           9900):  9892,          # GBP
 		('Kumiva Peak',          8238):  8237,          # GBP
 		('Verdi Peak',          11077): 11074,          # NPC

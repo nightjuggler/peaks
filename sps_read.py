@@ -71,8 +71,8 @@ peakListParams = {
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
-		'numPeaks': 7,
-		'numSections': 8,
+		'numPeaks': 6,
+		'numSections': 5,
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
@@ -81,7 +81,7 @@ peakListParams = {
 	},
 	'owp': {
 		'geojsonTitle': 'Other Western Peaks',
-		'numPeaks': 4,
+		'numPeaks': 5,
 		'numSections': 10,
 	},
 }
