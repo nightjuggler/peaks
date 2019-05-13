@@ -133,9 +133,7 @@ function popupHTML(lng, lat, p)
 	const topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&z=' + z + '&b=' + b;
 
 	let name = makeLink(topoLink, p.name);
-	if (p.HP)
-		name += ' HP';
-	else if (p.emblem)
+	if (p.emblem)
 		name += ' **';
 	else if (p.mtneer)
 		name += ' *';

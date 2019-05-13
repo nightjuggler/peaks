@@ -2102,9 +2102,7 @@ class MatchByName(object):
 		for section in pl.sections:
 			for peak in section.peaks:
 				name = peak.name
-				if peak.isHighPoint:
-					name += " HP"
-				elif name.startswith("&quot;"):
+				if name.startswith("&quot;"):
 					assert name.endswith("&quot;")
 					name = name[6:-6]
 				peak.matchName = name

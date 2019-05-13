@@ -191,7 +191,6 @@ class Peak(object):
 		self.isClimbed = False
 		self.isEmblem = False
 		self.isMtneer = False
-		self.isHighPoint = False
 		self.landClass = None
 		self.landManagement = None
 		self.delisted = False
@@ -1007,8 +1006,6 @@ def printElevationStats(pl):
 	for stationID, src in sorted(NGSDataSheet.sources.iteritems()):
 		peak = src.peak
 		print stationID, "({})".format(src.name), peak.name,
-		if peak.isHighPoint:
-			print "HP",
 		if peak.otherName is not None:
 			print "({})".format(peak.otherName),
 		print
@@ -1198,8 +1195,16 @@ class RE(object):
 	column2 = re.compile(
 		'^<td><a href="https://caltopo\\.com/map\\.html#'
 		'll=([34][0-9]\\.[0-9]{1,5}),(-1[012][0-9]\\.[0-9]{1,5})&z=(1[0-9])&b=(t|oo)">'
-		'([ #&\'()+.0-9;A-Za-z]+)</a>( \\*{1,2}| HP)?'
+		'([ #&\'()+.0-9;A-Za-z]+)</a>( \\*{1,2})?'
 		'(?:<br>\\(([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: (?:HP|[1-9][0-9]+|VOR))?)\\))?</td>$'
+	)
+	peakName = (
+		re.compile('^(?:Mc)?[A-Z][a-z]+(?:\'s)?(?: (?:Mc|Le)?[A-Z][a-z]+)*(?: #[1-9])?$'),
+		re.compile('^[A-Z][a-z]+(?: [A-Z][a-z]+)? (?:Mountains|Range|Wilderness|Buttes) HP$'),
+		re.compile('^[A-Z][a-z]+(?: [A-Z][a-z]+)* \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\)$'),
+		re.compile('^[A-Z][a-z]+(?: [A-Z][a-z]+)* (?:[A-Z]\\.|St\\.|del|in the|of the|and)(?: [A-Z][a-z]+)+$'),
+		re.compile('^&quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*&quot;$'),
+		re.compile('^Peak [1-9][0-9]{2,4}\\+?$'),
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
@@ -1768,7 +1773,13 @@ def readHTML(pl):
 				if not peak.isEmblem:
 					badSuffix()
 			else:
-				peak.isHighPoint = True
+				badSuffix()
+
+			for pattern in RE.peakName:
+				if pattern.match(peak.name):
+					break
+			else:
+				raise FormatError("Peak name doesn't match expected pattern")
 
 			parseLandManagement(htmlFile, peak)
 			parseElevation(htmlFile, peak)
@@ -1943,9 +1954,7 @@ def writeHTML(pl):
 
 			if peak.isClimbed:
 				classNames.append('climbed')
-			if peak.isHighPoint:
-				suffix = ' HP'
-			elif peak.isMtneer:
+			if peak.isMtneer:
 				suffix = ' *'
 				classNames.append('mtneer')
 			elif peak.isEmblem:
@@ -2084,9 +2093,7 @@ def writePeakJSON(f, peak):
 
 	if peak.zoom != '15':
 		f('"z":{},\n'.format(peak.zoom))
-	if peak.isHighPoint:
-		f('"HP":true,\n')
-	elif peak.isEmblem:
+	if peak.isEmblem:
 		f('"emblem":true,\n')
 	elif peak.isMtneer:
 		f('"mtneer":true,\n')
