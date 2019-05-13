@@ -667,6 +667,8 @@ class PeakPb(TablePeak):
 		('The Sisters', 10153):                 'The Sisters East',
 		('White Mountain', 12057):              'White Mountain (South)',
 		('White Mountain', 11398):              'White Mountain (North)',
+	# Other Desert Peaks:
+		('Antelope Buttes HP', 3040):           'Antelope Buttes',
 	# Other California Peaks:
 		('Maguire Peak', 1688):                 'Maguire Peaks West',
 		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
