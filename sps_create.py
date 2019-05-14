@@ -2343,7 +2343,8 @@ def checkData(pl, setProm=False, setVR=False):
 					checkLandManagement(peak, peak2)
 
 					haveFlag = "CC" in peak.flags
-					wantFlag = peak2.rangeList[2] == ("126", "Sierra Nevada")
+					wantFlag = (peak2.rangeList[2] == ("126", "Sierra Nevada") and
+						float(peak.latitude) > 35.36)
 
 					if haveFlag != wantFlag:
 						print "{} Should {}able CC flag".format(peak.fmtIdName,
