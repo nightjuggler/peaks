@@ -28,6 +28,10 @@ class TopoView(object):
 		('gnis_cell_id',        '[1-9][0-9]{1,5}'),
 	)
 	CORRECTIONS = {
+		'41ca50103299307242779c6e5b2f70f1': (
+			# The map name is "Caliente Mtn." - not "Caliente Mountain".
+			('map_name', 'Caliente Mtn'),
+		),
 		'9ea38c139f448a1f2dd697b449f1d328': (
 			# I don't see 1976 (or any imprint year) anywhere on this map. So I'm going to
 			# use the most recent year printed on the map (1969).
