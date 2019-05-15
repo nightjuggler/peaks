@@ -424,7 +424,7 @@ landMap = {
 	"Indian Peak State Game Management Area":       "Indian Peak WMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
-	"Mono Basin NSA":                               "Mono Basin Scenic Area",
+	"Mono Basin NSA":                               "Mono Basin National Forest Scenic Area",
 	"Mount Saint Helens National Volcanic Monument":"Mount St. Helens National Volcanic Monument",
 	"Mount Saint Helens NVM":                       "Mount St. Helens National Volcanic Monument",
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",

@@ -424,7 +424,7 @@ landNameLookup = {
 	"Lake Mead NRA":                                'landNPS',
 	"Lake Tahoe Basin Management Unit":             'landFS',
 	"Marin Municipal Water District":               'landCounty',
-	"Mono Basin Scenic Area":                       'Inyo National Forest',
+	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
 	"Mount Davidson Park":                          'landCity',
 	"Mount St. Helens National Volcanic Monument":  'Gifford Pinchot National Forest',
 	"Navajo Nation":                                'landRez',
