@@ -46,7 +46,7 @@ peakListParams = {
 	},
 	'hps': {
 		'geojsonTitle': 'Hundred Peaks Section',
-		'numPeaks': 26,
+		'numPeaks': 34,
 		'numSections': 32,
 	},
 	'lpc': {
@@ -814,7 +814,7 @@ class Elevation(object):
 			elevationMax = int(elevationMax)
 			interval = elevationMax - elevationMin + 1
 			if self.source.series == '7.5':
-				contourIntervals = (10, 20) if inMeters else (20, 25, 40)
+				contourIntervals = (10, 20) if inMeters else (20, 25, 40, 50)
 			else:
 				contourIntervals = (80, 50, 25)
 			if interval not in contourIntervals or elevationMin % interval != 0:
