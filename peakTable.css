@@ -69,25 +69,35 @@ td {
 	-----------------------
 	BLM = Bureau of Land Management
 	BLMW = BLM Wilderness
+	CNRA = California Natural Resources Agency
 	DOD = Department of Defense
+	EBRPD = East Bay Regional Park District
 	FS = U.S. Forest Service (National Forest)
 	FSW = Forest Service Wilderness
 	FWS = U.S. Fish & Wildlife Service
+	MROSD = Midpeninsula Regional Open Space District
 	NPS = National Park Service
 	Rez = Indian Reservation
 	SP = California State Park
+	TWC = The Wildlands Conservancy
 	UDWR = Utah Division of Wildlife Resources
 */
-.land .landBLM  {background-color: rgb(240,248,255);}
-.land .landBLMW {background-color: rgb(224,255,255);}
-.land .landDOD  {background-color: rgb(200,220,245);}
-.land .landFS   {background-color: rgb(255,240,240);}
-.land .landFSW  {background-color: rgb(255,220,220);}
-.land .landFWS  {background-color: rgb(230,200,160);}
-.land .landNPS  {background-color: rgb(255,255,128);}
-.land .landRez  {background-color: rgb(255,222,173);}
-.land .landSP   {background-color: rgb(250,250,210);}
-.land .landUDWR {background-color: rgb(250,250,210);}
+.land .landBLM    {background-color: rgb(240,248,255);} /* AliceBlue */
+.land .landBLMW   {background-color: rgb(224,255,255);} /* LightCyan */
+.land .landCity   {background-color: rgb(250,230,250);}
+.land .landCNRA   {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
+.land .landCounty {background-color: rgb(255,240,245);} /* LavenderBlush */
+.land .landDOD    {background-color: rgb(200,220,245);}
+.land .landEBRPD  {background-color: rgb(255,255,224);} /* LightYellow */
+.land .landFS     {background-color: rgb(255,240,240);}
+.land .landFSW    {background-color: rgb(255,220,220);}
+.land .landFWS    {background-color: rgb(230,200,160);}
+.land .landMROSD  {background-color: rgb(255,255,224);} /* LightYellow */
+.land .landNPS    {background-color: rgb(255,255,128);}
+.land .landRez    {background-color: rgb(255,222,173);} /* NavajoWhite */
+.land .landSP     {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
+.land .landTWC    {background-color: rgb(230,255,230);}
+.land .landUDWR   {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
 
 .land tr.climbed > td:nth-child(5) {
 	background-image: linear-gradient(to right, rgba(173,255,47,0.0), rgba(173,255,47,0.2));
