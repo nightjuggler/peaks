@@ -315,6 +315,20 @@ class CA_ZIP_Code_Query(Query):
 	]
 	printSpec = "{name}, {state} {zip} / Population: {pop:,} (2014) / {area:,.2f} square miles"
 
+class CNRA_ConservancyQuery(Query):
+	name = "CNRA Conservancy"
+	home = "https://gis.cnra.ca.gov/arcgis/rest/services" # 10.3
+	service = "Boundaries/CNRA_Conservancy_Boundaries"
+	layer = 0 # sr = 102100 (3857)
+	fields = [("Name", "name")]
+	printSpec = "{name}"
+
+class CPAD_HoldingsQuery(Query):
+	name = "CPAD (California Protected Areas Database)"
+	home = "https://gis.cnra.ca.gov/arcgis/rest/services" # 10.3
+	service = "Boundaries/CPAD_AgencyClassification"
+	layer = 0 # sr = 102100 (3857)
+
 class AIANNH_Query(Query):
 	name = "American Indian, Alaska Native, and Native Hawaiian Areas"
 	home = "https://tigerweb.geo.census.gov/arcgis/rest/services" # 10.51
@@ -457,10 +471,12 @@ def main():
 		"aiannh": AIANNH_Query,
 		"blm": BLM_Query,
 		"ca_parks": CA_StateParksQuery,
+		"cnra_conservancy": CNRA_ConservancyQuery,
 		"county": TigerCountyQuery,
 		"county_census": CensusCountyQuery,
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
+		"cpad_holdings": CPAD_HoldingsQuery,
 		"fs": USFS_Query,
 		"geomac_cp": GeoMAC_CurrentPerimetersQuery,
 		"geomac_dd83": GeoMAC_PerimetersDD83_Query,

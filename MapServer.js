@@ -23,23 +23,23 @@ items: {
 			topo: {
 		name: 'Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
-		attribution: '&copy; [USGS The National Map]; U.S. Census Bureau; HERE Road Data',
+		attribution: '[USGS The National Map]',
 			},
 			imgtopo: {
 		name: 'Imagery Topo',
 		url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer',
 		maxZoom: 19,
-		attribution: '&copy; [USGS The National Map]',
+		attribution: '[USGS The National Map]',
 			},
 			naip: {
 		name: 'NAIP Imagery',
 		url: 'https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer',
-		attribution: '&copy; [USGS The National Map]',
+		attribution: '[USGS The National Map]',
 			},
 			naipplus: {
 		name: 'NAIP Plus',
 		url: 'https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/MapServer',
-		attribution: '&copy; [USGS The National Map]',
+		attribution: '[USGS The National Map]',
 			},
 		},
 		order: ['topo', 'imgtopo', 'naip', 'naipplus'],
@@ -299,6 +299,14 @@ items: {
 		opacity: 0.4,
 		attribution: '[services.gis.ca.gov]',
 			},
+			cpad: {
+		name: 'CPAD Holdings',
+		url: 'https://gis.cnra.ca.gov/arcgis/rest/services' +
+			'/Boundaries/CPAD_AgencyClassification/MapServer',
+		opacity: 0.5,
+		queryFields: ['OBJECTID', 'AGNCY_NAME'],
+		attribution: '[GreenInfo Network]',
+			},
 			parks: {
 		name: 'State Parks',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_State_Parks/MapServer',
@@ -313,7 +321,7 @@ items: {
 		attribution: '[USPS]',
 			},
 		},
-		order: ['counties', 'parks', 'zip'],
+		order: ['counties', 'cpad', 'parks', 'zip'],
 	},
 	geomac: 'us',
 	w: 'us',
@@ -419,6 +427,7 @@ var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
 var caZipSpec = TileOverlays.items.ca.items.zip;
 var countySpec = TileOverlays.items.us.items.counties;
+var cpadSpec = TileOverlays.items.ca.items.cpad;
 var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
@@ -758,6 +767,18 @@ countySpec.popup = {
 		return '#A52A2A';
 	},
 };
+cpadSpec.popup = {
+	init: function(div)
+	{
+		div.appendChild(this.textNode = document.createTextNode(''));
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode.nodeValue = attr.AGNCY_NAME;
+		return '#C71585';
+	},
+};
 stateSpec.popup = {
 	init: function(div)
 	{
@@ -842,6 +863,7 @@ var querySpecs = [
 	caParkSpec,
 	caZipSpec,
 	countySpec,
+	cpadSpec,
 	stateSpec,
 	blmSpec,
 	fireSpec,
