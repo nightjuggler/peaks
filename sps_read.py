@@ -411,6 +411,7 @@ landNameLookup = {
 	"Basin and Range National Monument":            'landBLM',
 	"Berryessa Snow Mountain National Monument":    'landBLM',
 	"Bishop Peak Natural Reserve":                  'City of San Luis Obispo',
+	"California Tahoe Conservancy":                 'landCNRA',
 	"Carrizo Plain National Monument":              'landBLM',
 	"Giant Sequoia National Monument":              'Sequoia National Forest',
 	"Gold Butte National Monument":                 'landBLM',
@@ -494,6 +495,7 @@ landOrder = {landClass: i for i, landClass in enumerate((
 	'landFS',
 	'landBLMW',
 	'landFSW',
+	'landCNRA',     # California Natural Resources Agency (other than Department of Parks and Recreation)
 	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
 	'landUDWR',     # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
 	'landNPS',
