@@ -1244,7 +1244,7 @@ class RE(object):
 	climbedDate = re.compile('^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}')
 	climbedLink = re.compile('^/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">')
 	climbedWithLink = re.compile('^(https?://[-\\./0-9A-Za-z]+)">')
-	climbedWithName = re.compile('^[A-Z][a-z]+(?: [A-Z][a-z]+)*')
+	climbedWithName = re.compile('^[A-Z](?:[a-z]+|[A-Z]{1,2})(?: [A-Z][a-z]+)*')
 
 def parseClimbedWith(line):
 	climbedWith = []
