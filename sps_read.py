@@ -81,7 +81,7 @@ peakListParams = {
 	},
 	'owp': {
 		'geojsonTitle': 'Other Western Peaks',
-		'numPeaks': 5,
+		'numPeaks': 6,
 		'numSections': 10,
 	},
 }

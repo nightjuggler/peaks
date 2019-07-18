@@ -1655,7 +1655,7 @@ class PeakLoJ(TablePeak):
 		),
 		"Saddle": (
 			re.compile(
-				"^<a href=\"/qmap\\?"
+				"^<a href=\"/(?:qmap|mapf)\\?"
 				"lat=(-?[0-9]{1,2}\\.[0-9]{1,4})&"
 				"lon=(-?[0-9]{1,3}\\.[0-9]{1,4})&z=15\">([,0-9]+)'</a>$"
 			),
@@ -2287,7 +2287,7 @@ def checkLandManagement(peak, peak2):
 		print "{} '{}' not in table".format(peak.fmtIdName, name)
 
 def checkData(pl, setProm=False, setVR=False):
-	verbose = pl.id not in ('HPS', 'NPC')
+	verbose = pl.id not in ('HPS',)
 
 	peakClasses = [PeakLoJ, PeakPb]
 	if pl.id in ('SPS', 'OSP'):
