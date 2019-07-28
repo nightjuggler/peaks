@@ -664,6 +664,7 @@ class PeakPb(TablePeak):
 		('Mount Lamarck-North Peak', 13464):    'Northwest Lamarck',
 		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
 		('Peak 9980', 9980):                    'Sirretta Peak North',
+		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
 		('The Sisters', 10153):                 'The Sisters East',
 		('White Mountain', 12057):              'White Mountain (South)',
 		('White Mountain', 11398):              'White Mountain (North)',

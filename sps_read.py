@@ -76,7 +76,7 @@ peakListParams = {
 	},
 	'osp': {
 		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 47,
+		'numPeaks': 48,
 		'numSections': 26,
 	},
 	'owp': {
@@ -1826,6 +1826,7 @@ def readHTML(pl):
 					('OCAP', '4.4'), # Mount Saint Helena Southeast
 					('OCAP','13.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
+					('OSP', '26.2'), # Snow Valley Peak East
 				):
 					badLine()
 			else:
@@ -1838,6 +1839,7 @@ def readHTML(pl):
 					('OCAP', '4.4'), # Mount Saint Helena Southeast
 					('OCAP','13.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
+					('OSP', '26.2'), # Snow Valley Peak East
 				):
 					badLine()
 			else:
