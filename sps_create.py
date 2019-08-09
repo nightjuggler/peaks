@@ -1561,6 +1561,7 @@ class PeakLoJ(TablePeak):
 		('Billy Goat Peak',      5735):  1748.0,        # OWP -- LoJ didn't round down
 		('Eagle Peak',           9900):  9892,          # GBP
 		('Kumiva Peak',          8238):  8237,          # GBP
+		('Mount Ian Campbell',  10615): 10616,          # OSP
 		('Verdi Peak',          11077): 11074,          # NPC
 	}
 	saddleElevationMap = {
