@@ -1448,14 +1448,6 @@ class PeakLoJ(TablePeak):
 	#   The 1:125,000 maps show a spot elevation of 13,275'
 	#   The 1:250,000 maps don't show a spot elevation, nor do they label Deerhorn Mountain.
 	#
-	# - Mount Hitchcock
-	#   It seems that LoJ didn't round down.
-	#   The 1993 Mount Whitney 7.5' quad shows a spot elevation of 4019m = 13185.7'
-	#
-	# - Joe Devel Peak
-	#   It seems that LoJ didn't round down.
-	#   The 1993 Mount Whitney 7.5' quad shows a spot elevation of 4062m = 13326.8'
-	#
 	# - Mount Morrison (12,296) vs 12,277 (3742m) (topo):
 	#   Perhaps the 3742m spot elevation was misread as 3748m? The 3600m contour passes through
 	#   the 2 in such a way that it may look like an 8 at first glance.
@@ -1464,10 +1456,6 @@ class PeakLoJ(TablePeak):
 	#   and then 20 feet (half of a typical 40-foot contour interval) were added because the more
 	#   recent 1994 topo doesn't show the spot elevation (even though the contour interval is 20
 	#   meters, not 40 feet, and, of course, the highest contour is 3740m, not 3742m).
-	#
-	# - Mount Newcomb
-	#   It seems that LoJ didn't round down.
-	#   The 1993 Mount Whitney 7.5' quad shows a spot elevation of 4091m = 13421.9'
 	#
 	# - Seven Gables (13,074) vs 13,075 (15' topo)
 	#   "13,080+40' contour on map is erroneous. NW summit is highest and shown as 3,985m on 1:100k map."
@@ -1496,11 +1484,14 @@ class PeakLoJ(TablePeak):
 		('Basin Mountain', 13190): 13181,
 		('Mount Baxter', 13140): 4004.0,
 		('Deerhorn Mountain', 13281): 4048.0,
-		('Mount Hitchcock', 13186): 4019.0,
-		('Joe Devel Peak', 13327): 4062.0,
+		('Mount Hitchcock', 13186): 4019.0, # didn't round down: 4019m = 13185.7' (1993 Mount Whitney 7.5')
+		('Joe Devel Peak', 13327): 4062.0, # didn't round down: 4062m = 13326.8' (1993 Mount Whitney 7.5')
 		('Mount Morrison', 12296): 3742.0,
-		('Mount Newcomb', 13422): 4091.0,
+		('Mount Newcomb', 13422): 4091.0, # didn't round down: 4091m = 13421.9' (1993 Mount Whitney 7.5')
+		('Mount Russell', 14088): 4294.0, # didn't round down: 4294m = 14087.9' (1993 Mount Whitney 7.5')
 		('Seven Gables', 13074): 13075,
+		('Trojan Peak', 13947): 4251.0, # didn't round down: 4251m = 13946.85' (1993 Mt. Williamson 7.5')
+		('Tunnabora Peak', 13563): 4134.0, # didn't round down: 4134m = 13562.99' (1993 Mount Whitney 7.5')
 
 	# LoJ DPS Elevation Adjustments:
 	#

@@ -824,7 +824,10 @@ class Elevation(object):
 			self.source.setContourInterval(interval)
 		if inMeters:
 			self.elevationMeters = float(elevation) if '.' in elevation else int(elevation)
-			elevation = toSurveyFeet(self.elevationMeters)
+			if isinstance(self.source, NGSDataSheet):
+				elevation = toSurveyFeet(self.elevationMeters)
+			else:
+				elevation = toFeet(self.elevationMeters)
 		else:
 			elevation = int(elevation)
 
