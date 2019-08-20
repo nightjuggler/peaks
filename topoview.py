@@ -32,6 +32,11 @@ class TopoView(object):
 			# The map name is "Caliente Mtn." - not "Caliente Mountain".
 			('map_name', 'Caliente Mtn'),
 		),
+		'9e236a7476167474e5b4a0451734a852': (
+			# The pdf (CA_Robbs Peak_298788_1952_62500_geo.pdf) clearly shows 1978 (not 1976)
+			# for the imprint year.
+			('imprint_year', '1978'),
+		),
 		'9ea38c139f448a1f2dd697b449f1d328': (
 			# I don't see 1976 (or any imprint year) anywhere on this map. So I'm going to
 			# use the most recent year printed on the map (1969).
