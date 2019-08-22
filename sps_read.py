@@ -981,12 +981,26 @@ def parseElevation(htmlFile, peak):
 		if line[:4] != '<br>':
 			badLine()
 
+	same = None
 	e1 = peak.elevations[0]
 	k1 = e1.sortkey()
 	for e2 in peak.elevations[1:]:
 		k2 = e2.sortkey()
 		if k2 > k1:
 			raise FormatError("Elevations are not in the expected order")
+		if k2 == k1:
+			if not isinstance(e2.source, USGSTopo):
+				raise FormatError("Duplicate elevation")
+			if e2.elevationFeet > e1.elevationFeet:
+				raise FormatError("Elevations are not in the expected order")
+			if same is None:
+				same = []
+			same.append(e1)
+			for e1 in same:
+				if e1.extraLines == e2.extraLines:
+					raise FormatError("Duplicate topo elevation")
+		elif same is not None:
+			same = None
 		e1 = e2
 		k1 = k2
 
