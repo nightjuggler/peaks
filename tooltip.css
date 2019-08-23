@@ -7,6 +7,7 @@
 	box-shadow: 0 0 6px 0 rgb(128,0,128); /* offset-x offset-y blur-radius spread-radius color */
 	padding: 4px 10px 4px 10px; /* top right bottom left */
 	text-align: center;
+	z-index: 1020;
 }
 .ttbq { /* ToolTip BlockQuote */
 	text-align: justify;
