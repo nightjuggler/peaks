@@ -656,8 +656,8 @@ class PeakPb(TablePeak):
 		('Sawtooth Peak', 12343):               'Sawtooth Peak (North)',
 		('Sierra Buttes Lookout', 8590):        'Sierra Buttes',
 	# Tahoe Ogul Peaks:
-		('Silver Peak', 8930):                  'Silver Peak (North)',
-		('Silver Peak-Southwest Summit', 10772):'Silver Peak (South)',
+		('Silver Peak', 8930):                  'Silver Peak (Desolation)',
+		('Silver Peak-Southwest Summit', 10772):'Silver Peak Southwest',
 	# Other Sierra Peaks:
 		("Gambler's Special", 12927):           'Gamblers Special Peak',
 		('Maggies Peaks-South Summit', 8699):   'Maggies Peaks South',
@@ -666,8 +666,8 @@ class PeakPb(TablePeak):
 		('Peak 9980', 9980):                    'Sirretta Peak North',
 		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
 		('The Sisters', 10153):                 'The Sisters East',
-		('White Mountain', 12057):              'White Mountain (South)',
-		('White Mountain', 11398):              'White Mountain (North)',
+		('White Mountain', 12057):              'White Mountain (Tioga Pass)',
+		('White Mountain', 11398):              'White Mountain (Sonora Pass)',
 	# Other Desert Peaks:
 		('Antelope Buttes HP', 3040):           'Antelope Buttes',
 	# Other California Peaks:
@@ -1378,8 +1378,8 @@ class PeakLoJ(TablePeak):
 		('Sierra Buttes, North', 8591): 'Sierra Buttes',
 		('Three Sisters, East', 10612): 'Three Sisters',
 	# Tahoe Ogul Peaks:
-		('Silver Peak', 8930):                          'Silver Peak (North)',
-		('Silver Peak', 10772):                         'Silver Peak (South)',
+		('Silver Peak', 8930):                          'Silver Peak (Desolation)',
+		('Silver Peak', 10772):                         'Silver Peak Southwest',
 		('Twin Peaks, East', 8878):                     'Twin Peaks',
 	# Other Sierra Peaks:
 		('Maggies Peaks, South', 8699):                 'Maggies Peaks South',
@@ -1387,8 +1387,8 @@ class PeakLoJ(TablePeak):
 		('Peak 9980', 9980):                            'Sirretta Peak North',
 		('Peak 13074', 13074):                          'Rosco Peak',
 		('Peak 13464', 13464):                          'Northwest Lamarck',
-		('White Mountain', 12057):                      'White Mountain (South)',
-		('White Mountain', 11398):                      'White Mountain (North)',
+		('White Mountain', 12057):                      'White Mountain (Tioga Pass)',
+		('White Mountain', 11398):                      'White Mountain (Sonora Pass)',
 	# Other California Peaks:
 		('East Peak', 2571):                            'Mount Tamalpais East Peak',
 		('Maguire Peaks, East', 1660):                  'Maguire Peaks East',
