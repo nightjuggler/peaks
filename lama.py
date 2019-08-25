@@ -109,9 +109,16 @@ class WildernessQuery(Query):
 
 class NPS_Query(Query):
 	name = "National Park Service Unit"
-	home = "https://mapservices.nps.gov/arcgis/rest/services" # 10.22
-	service = "LandResourcesDivisionTractAndBoundaryService"
-	layer = 2 # sr = 102100 (3857)
+
+#	home = "https://irmaservices.nps.gov/arcgis/rest/services" # 10.41
+#	service = "IMDData/IMD_Boundaries_WebMercator"
+#	layer = 0 # sr = 102100 (3857)
+
+	home = "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services" # 10.7
+	service = "NPS_Park_Boundaries"
+	serverType = "Feature"
+	layer = 0 # sr = 102100
+
 	fields = [
 #		("OBJECTID", "id"),
 		("UNIT_NAME", "name"),
@@ -396,6 +403,14 @@ class GeoMAC_VIIRS_Query(Query):
 	service = "geomac_dyn"
 	layer = 5 # sr = 102100 (3857)
 
+class NV_StateParksQuery(Query):
+	name = "Nevada State Parks"
+	home = "http://arcgis.dcnr.nv.gov/arcgis/rest/services" # 10.51
+	service = "NV_StateManagedLands"
+	layer = 52 # sr = 102100 (3857)
+	fields = [("LandName", "name"), ("Acres", "acres")]
+	printSpec = "{name} ({acres:,.0f} acres)"
+
 class SLO_OpenSpaceQuery(Query):
 	name = "City of San Luis Obispo Open Space"
 	home = "https://services.arcgis.com/yygmGNIVQrHqSELP/arcgis/rest/services" # 10.61
@@ -485,6 +500,7 @@ def main():
 		"geomac_viirs": GeoMAC_VIIRS_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
+		"nv_parks": NV_StateParksQuery,
 		"nwr": NWR_Query,
 		"rd": USFS_RangerDistrictQuery,
 		"scc_parks": SCC_ParksQuery,

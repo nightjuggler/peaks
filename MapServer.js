@@ -192,9 +192,7 @@ items: {
 			},
 			nps: {
 		name: 'National Parks',
-		url: 'https://mapservices.nps.gov/arcgis/rest/services' +
-			'/LandResourcesDivisionTractAndBoundaryService/MapServer',
-		exportLayers: '2',
+		url: 'https://irmaservices.nps.gov/arcgis/rest/services/IMDData/IMD_Boundaries_WebMercator/MapServer',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 		attribution: '[National Park Service]',
 			},
@@ -323,10 +321,25 @@ items: {
 		},
 		order: ['counties', 'cpad', 'parks', 'zip'],
 	},
+/*
+	nv: {
+		name: 'Nevada',
+		items: {
+			parks: {
+		name: 'State Parks',
+		url: 'http://arcgis.dcnr.nv.gov/arcgis/rest/services/NV_StateManagedLands/MapServer',
+		exportLayers: '52',
+		queryFields: ['LandName', 'Acres'],
+		attribution: '[Nevada Department of Conservation &amp; Natural Resources]',
+			},
+		},
+		order: ['parks'],
+	},
+*/
 	geomac: 'us',
 	w: 'us',
 },
-order: ['us', 'ca'],
+order: ['us', 'ca'/*, 'nv'*/],
 };
 
 var MapServer = (function() {
@@ -432,6 +445,7 @@ var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
+//var nvParkSpec = TileOverlays.items.nv.items.parks;
 var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
 var viirsSpec = TileOverlays.items.us.items.geomac.items.viirs;
@@ -470,7 +484,7 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 	};
 	fsrdSpec.order = ['custom'];
 
-	npsSpec.dynamicLayers = dynamicLayer(101, 2, {
+	npsSpec.dynamicLayers = dynamicLayer(101, 0, {
 		type: 'simple',
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
@@ -741,6 +755,26 @@ caParkSpec.popup = {
 		return '#70A800';
 	},
 };
+/*
+nvParkSpec.popup = {
+	init: function(div)
+	{
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		div.appendChild(this.textNode1);
+		div.appendChild(this.ztf);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr.LandName;
+		this.textNode2.nodeValue = '(' + Math.round(attr.Acres).toLocaleString() + ' acres)';
+		return '#70A800';
+	},
+};
+*/
 caZipSpec.popup = {
 	init: function(div)
 	{
@@ -861,6 +895,7 @@ var querySpecs = [
 	wildernessSpec,
 	wsaSpec,
 	caParkSpec,
+//	nvParkSpec,
 	caZipSpec,
 	countySpec,
 	cpadSpec,
