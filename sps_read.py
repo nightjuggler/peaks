@@ -473,7 +473,7 @@ landNameSuffixes = [
 ]
 landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &.;A-Za-z]+)</a>( HP)?)|([- \'.A-Za-z]+)')
 landLinkPattern = {
-	'landWild':     re.compile('^https://www\\.wilderness\\.net/NWPS/wildView\\?WID=[0-9]+$'),
+	'landWild':     re.compile('^https://wilderness\\.net/visit-wilderness/\\?ID=[0-9]+$'),
 	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[_a-z]+/$'),
 	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/[-a-z]+$'),
 	'landFWS':      re.compile('^https://www\\.fws\\.gov/refuge/[_a-z]+/$'),

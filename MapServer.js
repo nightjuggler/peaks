@@ -707,7 +707,7 @@ wildernessSpec.popup = {
 		var agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
-		this.linkNode.href = 'https://www.wilderness.net/NWPS/wildView?WID=' + attr.WID;
+		this.linkNode.href = 'https://wilderness.net/visit-wilderness/?ID=' + attr.WID;
 		this.nameNode.nodeValue = attr.NAME;
 		this.textNode1.nodeValue = ' (' + agency + ')';
 		this.textNode2.nodeValue = '(' + attr.YearDesignated + ') (' +
