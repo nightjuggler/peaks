@@ -665,6 +665,7 @@ class PeakPb(TablePeak):
 		('Mount Lamarck-North Peak', 13464):    'Northwest Lamarck',
 		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
 		('Peak 9980', 9980):                    'Sirretta Peak North',
+		('Shepherd Crest', 12040):              'Shepherd Crest East',
 		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
 		('The Sisters', 10153):                 'The Sisters East',
 		('White Mountain', 12057):              'White Mountain (Tioga Pass)',
@@ -845,6 +846,8 @@ class PeakPb(TablePeak):
 	#    approximately five feet higher and thus the summit of this peak."
 	#   [https://peakbagger.com/peak.aspx?pid=2660]
 
+		('Shepherd Crest East', 12040, 'min'): 12000,
+		('Shepherd Crest East', 12080, 'max'): 12040,
 		('Mount Starr', 12840, 'min'): 12835,
 		('Mount Starr', 12840, 'max'): 12835,
 
@@ -1388,6 +1391,7 @@ class PeakLoJ(TablePeak):
 		('Peak 9980', 9980):                            'Sirretta Peak North',
 		('Peak 13074', 13074):                          'Rosco Peak',
 		('Peak 13464', 13464):                          'Northwest Lamarck',
+		('Shepherd Crest, East', 12020):                'Shepherd Crest East',
 		('Silver Peak', 10820):                         'Silver Peak Northeast',
 		('White Mountain', 12057):                      'White Mountain (Tioga Pass)',
 		('White Mountain', 11398):                      'White Mountain (Sonora Pass)',
