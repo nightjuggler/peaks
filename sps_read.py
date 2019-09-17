@@ -66,7 +66,7 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 79,
+		'numPeaks': 80,
 		'numSections': 13,
 	},
 	'odp': {
