@@ -1839,11 +1839,12 @@ def readHTML(pl):
 			line = htmlFile.next()
 			m = RE.bobBurd.match(line)
 			if m is None:
-				if line != emptyCell or pl.id not in ('OWP',) and (pl.id, peak.id) not in (
+				if line != emptyCell or (pl.id, peak.id) not in (
 					('OCAP', '4.4'), # Mount Saint Helena Southeast
 					('OCAP','13.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
+					('OWP',  '3.1'), # Borah Peak
 				):
 					badLine()
 			else:
