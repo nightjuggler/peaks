@@ -321,25 +321,23 @@ items: {
 		},
 		order: ['counties', 'cpad', 'parks', 'zip'],
 	},
-/*
 	nv: {
 		name: 'Nevada',
 		items: {
 			parks: {
 		name: 'State Parks',
-		url: 'http://arcgis.dcnr.nv.gov/arcgis/rest/services/NV_StateManagedLands/MapServer',
+		url: 'https://arcgis.shpo.nv.gov/arcgis/rest/services/NV_StateManagedLands/MapServer',
 		exportLayers: '52',
-		queryFields: ['LandName', 'Acres'],
+		queryFields: ['OBJECTID', 'LandName', 'Acres'],
 		attribution: '[Nevada Department of Conservation &amp; Natural Resources]',
 			},
 		},
 		order: ['parks'],
 	},
-*/
 	geomac: 'us',
 	w: 'us',
 },
-order: ['us', 'ca'/*, 'nv'*/],
+order: ['us', 'ca', 'nv'],
 };
 
 var MapServer = (function() {
@@ -445,7 +443,7 @@ var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
-//var nvParkSpec = TileOverlays.items.nv.items.parks;
+var nvParkSpec = TileOverlays.items.nv.items.parks;
 var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
 var viirsSpec = TileOverlays.items.us.items.geomac.items.viirs;
@@ -755,7 +753,6 @@ caParkSpec.popup = {
 		return '#70A800';
 	},
 };
-/*
 nvParkSpec.popup = {
 	init: function(div)
 	{
@@ -774,7 +771,6 @@ nvParkSpec.popup = {
 		return '#70A800';
 	},
 };
-*/
 caZipSpec.popup = {
 	init: function(div)
 	{
@@ -895,7 +891,7 @@ var querySpecs = [
 	wildernessSpec,
 	wsaSpec,
 	caParkSpec,
-//	nvParkSpec,
+	nvParkSpec,
 	caZipSpec,
 	countySpec,
 	cpadSpec,
