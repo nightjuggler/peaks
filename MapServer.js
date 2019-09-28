@@ -81,14 +81,20 @@ items: {
 		},
 		order: ['imagery', 'clarity', 'firefly', 'usatopo'],
 	},
-
+	osm: {
+		name: 'OpenStreetMap',
+		url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+		// For example: https://a.tile.openstreetmap.org/4/2/2.png
+		maxZoom: 19,
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+	},
 	o: 'mapbox',
 	rbh: 'mapbox',
 	s: 'mapbox',
 	sts: 'mapbox',
 	st: 'mapbox',
 },
-order: ['mapbox', 'natmap', 'esri'],
+order: ['mapbox', 'natmap', 'esri', 'osm'],
 };
 var TileOverlays = {
 name: 'Tile Overlays',
@@ -263,7 +269,7 @@ items: {
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
-		url: 'http://www.glims.org/mapservice',
+		url: 'https://www.glims.org/mapservice',
 		layers: 'GLIMS_GLACIERS',
 		attribution: '<a href="https://www.glims.org/">GLIMS</a> and NSIDC',
 			},
@@ -989,12 +995,14 @@ BaseLayers.makeLayer = function(spec)
 {
 	var options = {
 		minZoom: 0,
-		maxZoom: 23,
+		maxZoom: spec.maxZoom || 23,
 	};
+	if (spec.url.endsWith('.png')) {
+		options.attribution = spec.attribution;
+		return L.tileLayer(spec.url, options);
+	}
 	if (spec.attribution)
 		options.attribution = getAttribution(spec);
-	if (spec.maxZoom)
-		options.maxZoom = spec.maxZoom;
 	if (spec.tile)
 		return L.tileLayer(spec.url + '/tile/{z}/{y}/{x}', options);
 
