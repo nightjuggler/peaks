@@ -66,8 +66,8 @@ peakListParams = {
 	},
 	'ocap': {
 		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 83,
-		'numSections': 13,
+		'numPeaks': 84,
+		'numSections': 14,
 	},
 	'odp': {
 		'geojsonTitle': 'Other Desert Peaks',
@@ -1235,7 +1235,7 @@ class RE(object):
 	prominence = re.compile('^[,0-9]+')
 	prominenceTooltip = re.compile(
 		'^(?:\\(([,0-9]+m?) \\+ (10m?|20m?|25|40)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
-		' - (?:\\(([,0-9]+m?) - (10m?|20m?|25|40)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
+		' - (?:\\(([,0-9]+m?) - (10m?|20m?|25|40|80)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
 		'(?: \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\))?(<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
@@ -1469,7 +1469,7 @@ def elevStr2Int(e):
 
 class SimpleElevation(object):
 	def __init__(self, baseElevation, contourInterval=0, inMeters=False, saddle=False):
-		assert contourInterval in (0, 10, 20, 25, 40)
+		assert contourInterval in (0, 10, 20, 25, 40, 80)
 		assert contourInterval == 0 and inMeters or isinstance(baseElevation, int)
 
 		if saddle:
@@ -1840,8 +1840,8 @@ def readHTML(pl):
 			m = RE.bobBurd.match(line)
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
-					('OCAP', '4.4'), # Mount Saint Helena Southeast
-					('OCAP','13.1'), # Peak 2440+
+					('OCAP', '5.4'), # Mount Saint Helena Southeast
+					('OCAP','14.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OWP',  '3.1'), # Borah Peak
@@ -1854,8 +1854,8 @@ def readHTML(pl):
 			m = RE.listsOfJohn.match(line)
 			if m is None:
 				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
-					('OCAP', '4.4'), # Mount Saint Helena Southeast
-					('OCAP','13.1'), # Peak 2440+
+					('OCAP', '5.4'), # Mount Saint Helena Southeast
+					('OCAP','14.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 				):
@@ -1868,8 +1868,8 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
 					('OCAP', '2.3'), # Peak 7905
-					('OCAP','11.7'), # Kandlbinder Peak
-					('OCAP','13.1'), # Peak 2440+
+					('OCAP','12.7'), # Kandlbinder Peak
+					('OCAP','14.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 				):
 					badLine()

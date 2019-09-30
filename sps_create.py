@@ -1404,6 +1404,7 @@ class PeakLoJ(TablePeak):
 		('North Peak', 1898):                           'Montara Mountain',
 		('Peak 2620', 2620):                            'Monument Peak',
 		('South Peak', 4003):                           'Mount Saint Helena South',
+		('South Yolla Bolly', 8093):                    'South Yolla Bolly Mountain',
 		('Twin Peaks, South', 922):                     'Twin Peaks',
 	# Other Western Peaks:
 		('Mount Saint Helens', 8333):                   'Mount St. Helens',
