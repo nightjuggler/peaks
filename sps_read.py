@@ -589,7 +589,8 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([1-9][0-9]{2,3}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: [23])?(?: VABM)?(?: [1-9][0-9]{3})?(?: Reset)?)'
+		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*'
+		'(?: RM)?(?: [23])?(?: VABM)?(?: [1-9][0-9]{3})?(?: Reset)?)'
 		'|[1-9][0-9]{3,4})&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, stationID):
