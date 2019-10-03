@@ -28,68 +28,19 @@ def int2str(n):
 	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
 
 peakLists = {}
-peakListParams = {
-	'sps': {
-		'geojsonTitle': 'Sierra Peaks Section',
-		'numPeaks': 248,
-		'numSections': 24,
-	},
-	'dps': {
-		'geojsonTitle': 'Desert Peaks Section',
-		'numPeaks': 99,
-		'numSections': 9,
-	},
-	'gbp': {
-		'geojsonTitle': 'Great Basin Peaks',
-		'numPeaks': 120,
-		'numSections': 14,
-	},
-	'hps': {
-		'geojsonTitle': 'Hundred Peaks Section',
-		'numPeaks': 34,
-		'numSections': 32,
-	},
-	'lpc': {
-		'geojsonTitle': 'Lower Peaks Committee',
-		'numPeaks': 5,
-		'numSections': 16,
-	},
-	'npc': {
-		'geojsonTitle': 'Nevada Peaks Club',
-		'numPeaks': 76,
-		'numSections': 6,
-	},
-	'ogul': {
-		'geojsonTitle': 'Tahoe Ogul Peaks',
-		'numPeaks': 63,
-		'numSections': 15,
-	},
-	'ocap': {
-		'geojsonTitle': 'Other California Peaks',
-		'numPeaks': 84,
-		'numSections': 14,
-	},
-	'odp': {
-		'geojsonTitle': 'Other Desert Peaks',
-		'numPeaks': 7,
-		'numSections': 6,
-	},
-	'osp': {
-		'geojsonTitle': 'Other Sierra Peaks',
-		'numPeaks': 56,
-		'numSections': 27,
-	},
-	'owp': {
-		'geojsonTitle': 'Other Western Peaks',
-		'numPeaks': 7,
-		'numSections': 10,
-	},
-}
-def addPeakListSortKey():
-	for i, peakListId in enumerate(('dps', 'sps', 'hps', 'ogul', 'lpc', 'gbp', 'npc',
-		'odp', 'osp', 'ocap', 'owp')):
-		peakListParams[peakListId]['sortkey'] = i
-addPeakListSortKey()
+peakListsOrdered = [
+	('dps', 'Desert Peaks Section', 99, 9),
+	('sps', 'Sierra Peaks Section', 248, 24),
+	('hps', 'Hundred Peaks Section', 34, 32),
+	('ogul','Tahoe Ogul Peaks', 63, 15),
+	('lpc', 'Lower Peaks Committee', 5, 16),
+	('gbp', 'Great Basin Peaks', 120, 14),
+	('npc', 'Nevada Peaks Club', 76, 6),
+	('odp', 'Other Desert Peaks', 7, 6),
+	('osp', 'Other Sierra Peaks', 56, 27),
+	('ocap','Other California Peaks', 84, 14),
+	('owp', 'Other Western Peaks', 7, 10),
+]
 
 def html2ListId(htmlId):
 	if htmlId[0] == 'x':
@@ -106,10 +57,11 @@ def listId2Html(listId):
 	return listId
 
 class PeakList(object):
-	def __init__(self, lowerCaseId):
-		self.__dict__.update(peakListParams[lowerCaseId])
-
+	def __init__(self, lowerCaseId, name, numPeaks, numSections):
 		self.id = lowerCaseId.upper()
+		self.name = name
+		self.numPeaks = numPeaks
+		self.numSections = numSections
 		self.htmlId = listId2Html(self.id)
 		self.htmlFilename = lowerCaseId + '.html'
 		self.column12 = globals().get('column12_' + self.id)
@@ -126,6 +78,16 @@ class PeakList(object):
 			readHTML(self)
 		except FormatError as e:
 			err("[{}:{}] {}!", self.htmlFilename, self.htmlFile.lineNumber, e.message)
+
+def initPeakLists():
+	for i, params in enumerate(peakListsOrdered):
+		pl = PeakList(*params)
+		pl.sortkey = i
+		peakListsOrdered[i] = pl
+
+def readAllHTML():
+	for pl in peakListsOrdered:
+		pl.readHTML()
 
 class Section(object):
 	def __init__(self, peakList, name):
@@ -1005,22 +967,23 @@ def parseElevation(htmlFile, peak):
 		e1 = e2
 		k1 = k2
 
-def printElevationStats(pl):
-	numAllSourced = 0
-	numSomeSourced = 0
-	for section in pl.sections:
-		for peak in section.peaks:
-			numSources = 0
-			for e in peak.elevations:
-				if e.source is not None:
-					numSources += 1
-			if numSources == len(peak.elevations):
-				numAllSourced += 1
-			elif numSources > 0:
-				numSomeSourced += 1
+def printElevationStats():
+	print '====== Number of peaks with some/all elevations sourced\n'
 
-	print "Number of peaks with all elevations sourced: {}/{}".format(numAllSourced, pl.numPeaks)
-	print "Number of peaks with some elevations sourced: {}/{}".format(numSomeSourced, pl.numPeaks)
+	for pl in peakListsOrdered:
+		numAllSourced = 0
+		numSomeSourced = 0
+		for section in pl.sections:
+			for peak in section.peaks:
+				numSources = 0
+				for e in peak.elevations:
+					if e.source is not None:
+						numSources += 1
+				if numSources == len(peak.elevations):
+					numAllSourced += 1
+				elif numSources > 0:
+					numSomeSourced += 1
+		print "{:4}: {:3}/{:3}/{:3}".format(pl.id, numSomeSourced, numAllSourced, pl.numPeaks)
 
 	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
 
@@ -1937,8 +1900,7 @@ def readHTML(pl):
 		pl2Id, sectionNumber, peakNumber = peak.dataFromInfo
 		pl2 = peakLists.get(pl2Id)
 		if pl2 is None:
-			pl2 = PeakList(pl2Id)
-			pl2.readHTML()
+			raise FormatError("Peak list '{}' doesn't exist", pl2Id)
 		section = pl2.sections[sectionNumber - 1]
 		if section.id2Peak is None:
 			section.id2Peak = {p.id[p.id.find(".")+1:]: p for p in section.peaks}
@@ -2144,7 +2106,7 @@ def writeJSON(pl):
 
 	f('{\n')
 	f('"id":"{}",\n'.format(pl.id))
-	f('"name":"{}",\n'.format(pl.geojsonTitle))
+	f('"name":"{}",\n'.format(pl.name))
 	f('"type":"FeatureCollection",\n')
 	f('"features":[')
 	for section in pl.sections:
@@ -2164,7 +2126,7 @@ def checkData(pl):
 	import sps_create
 	sps_create.checkData(pl)
 
-def compareTopoMetadata(pl):
+def compareTopoMetadata():
 	import topoview
 	topoview.compare(USGSTopo.sources)
 
@@ -2182,7 +2144,7 @@ def loadPeakFiles(pl):
 	import sps_create
 	sps_create.loadFiles(pl)
 
-def loadTopoMetadata(pl):
+def loadTopoMetadata():
 	import topoview
 	topoview.load(USGSTopo.sources)
 
@@ -2207,7 +2169,7 @@ def createList(pl):
 
 	writeHTML(pl)
 
-def printStats(pl):
+def printStats():
 	climbedElevs = []
 	climbedProms = []
 	for pl in peakLists.itervalues():
@@ -2248,34 +2210,55 @@ def printStats(pl):
 
 	print "P-Index:", pIndex
 
-def readAllHTML():
-	for plId in peakListParams:
-		if plId not in peakLists:
-			PeakList(plId).readHTML()
+def checkPeakListArg(args):
+	if len(args) < 1:
+		err("Please specify the peak list abbreviation after the command.")
+	if len(args) > 1:
+		err("Please specify only the peak list abbreviation after the command.")
+	pl = peakLists.get(args[0])
+	if pl is None:
+		err("Please specify a valid peak list abbreviation.")
+	return pl
+
+def checkNoArgs(args):
+	if len(args) != 0:
+		err("Unexpected command-line argument after the command!")
+	return None
 
 def main():
-	outputFunction = {
-		'check': checkData,
-		'cmptopo': compareTopoMetadata,
-		'create': createList,
-		'elev': printElevationStats,
-		'html': writeHTML,
-		'json': writeJSON,
-		'land': printLandManagementAreas,
-		'load': loadPeakFiles,
-		'loadtopo': loadTopoMetadata,
-		'setprom': setProm,
-		'setvr': setVR,
-		'stats': printStats,
+	initPeakLists()
+
+	commandMap = {
+		'check': (checkData, checkPeakListArg),
+		'cmptopo': (compareTopoMetadata, checkNoArgs),
+		'create': (createList, checkPeakListArg),
+		'elev': (printElevationStats, checkNoArgs),
+		'html': (writeHTML, checkPeakListArg),
+		'json': (writeJSON, checkPeakListArg),
+		'land': (printLandManagementAreas, checkNoArgs),
+		'load': (loadPeakFiles, checkPeakListArg),
+		'loadtopo': (loadTopoMetadata, checkNoArgs),
+		'stats': (printStats, checkNoArgs),
 	}
-	import argparse
-	parser = argparse.ArgumentParser()
-	parser.add_argument('inputMode', nargs='?', default='sps', choices=sorted(peakListParams))
-	parser.add_argument('outputMode', nargs='?', default='html', choices=sorted(outputFunction))
-	args = parser.parse_args()
+
+	if len(sys.argv) < 2:
+		err("Please specify a command, e.g. 'html' or 'json'.")
+
+	command, args = sys.argv[1], sys.argv[2:]
+
+	info = commandMap.get(command)
+	if info is None:
+		err("Please specify a valid command, e.g. 'html' or 'json'.")
+
+	commandFunction, checkArgs = info
+	args = checkArgs(args)
 
 	readAllHTML()
-	outputFunction[args.outputMode](peakLists[args.inputMode])
+
+	if args is None:
+		commandFunction()
+	else:
+		commandFunction(args)
 
 if __name__ == '__main__':
 	main()
