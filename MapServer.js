@@ -81,6 +81,13 @@ items: {
 		},
 		order: ['imagery', 'clarity', 'firefly', 'usatopo'],
 	},
+	canvec: {
+		name: 'Canada Topo',
+		url: 'https://maps.geogratis.gc.ca/wms/canvec_en',
+		wms: {layers: 'canvec'},
+		attribution: '<a href="https://open.canada.ca/en/open-government-licence-canada">' +
+			'Natural Resources Canada</a>',
+	},
 	osm: {
 		name: 'OpenStreetMap',
 		url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -94,7 +101,7 @@ items: {
 	sts: 'mapbox',
 	st: 'mapbox',
 },
-order: ['mapbox', 'natmap', 'esri', 'osm'],
+order: ['mapbox', 'natmap', 'esri', 'canvec', 'osm'],
 };
 var TileOverlays = {
 name: 'Tile Overlays',
@@ -270,8 +277,8 @@ items: {
 			glims: {
 		name: 'GLIMS Glaciers',
 		url: 'https://www.glims.org/mapservice',
-		layers: 'GLIMS_GLACIERS',
-		attribution: '<a href="https://www.glims.org/">GLIMS</a> and NSIDC',
+		wms: {layers: 'GLIMS_GLACIERS'},
+		attribution: '<a href="https://www.glims.org/">GLIMS</a> and <a href="https://nsidc.org/">NSIDC</a>',
 			},
 		},
 		order: [
@@ -961,29 +968,31 @@ function getAttribution(spec)
 		url += '?f=pjson';
 	return spec.attribution.replace(/\[([- &,\.\/:;A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
 }
-function makeLayerWMS(spec)
+function makeLayerWMS(spec, options)
 {
-	var options = {
-		layers: spec.layers,
-		format: 'image/png',
-		transparent: true,
-		minZoom: 0,
-		maxZoom: 23,
-		zIndex: 210,
-	};
+	options.format = 'image/png';
+	options.version = '1.3.0';
+
+	let wms_options = spec.wms;
+	for (let prop in wms_options)
+		options[prop] = wms_options[prop];
+
 	if (spec.attribution)
 		options.attribution = spec.attribution;
 
 	return L.tileLayer.wms(spec.url, options);
 }
-TileOverlays.items.us.items.glims.makeLayer = makeLayerWMS;
 TileOverlays.makeLayer = function(spec)
 {
 	var options = {
 		minZoom: 0,
-		maxZoom: 23,
+		maxZoom: spec.maxZoom || 23,
 		zIndex: 210,
 	};
+	if (spec.wms) {
+		options.transparent = true;
+		return makeLayerWMS(spec, options);
+	}
 	if (spec.attribution)
 		options.attribution = getAttribution(spec);
 	if (spec.opacity)
@@ -997,6 +1006,9 @@ BaseLayers.makeLayer = function(spec)
 		minZoom: 0,
 		maxZoom: spec.maxZoom || 23,
 	};
+	if (spec.wms) {
+		return makeLayerWMS(spec, options);
+	}
 	if (spec.url.endsWith('.png')) {
 		options.attribution = spec.attribution;
 		return L.tileLayer(spec.url, options);
