@@ -683,7 +683,9 @@ class PeakPb(TablePeak):
 		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
 		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
 	# Other Western Peaks:
+		('Mount Evans-West Peak', 14256):       'West Evans',
 		('Mount Saint Helens', 8333):           'Mount St. Helens',
+		('Trail Canyon Saddle Peak', 11325):    'Trail Canyon Peak',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
