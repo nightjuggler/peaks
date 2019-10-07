@@ -2319,8 +2319,40 @@ def checkPeakListArg(args):
 
 def checkNoArgs(args):
 	if len(args) != 0:
-		err("Unexpected command-line argument after the command!")
+		err("Too many command-line arguments!")
 	return None
+
+def checkSumArgs(args):
+	elev, elevInMeters = 3000, True
+	prom, promInMeters =  100, True
+
+	if len(args) > 2:
+		err("Too many command-line arguments!")
+	if len(args) > 0:
+		elev = args[0]
+		if elev[-1] == 'm':
+			elev = elev[:-1]
+		else:
+			elevInMeters = False
+		try:
+			elev = int(elev)
+		except ValueError:
+			err("Please specify an integer elevation threshold.")
+
+		if len(args) > 1:
+			prom = args[1]
+			if prom[-1] == 'm':
+				prom = prom[:-1]
+			else:
+				promInMeters = False
+			try:
+				prom = int(prom)
+			except ValueError:
+				err("Please specify a non-negative prominence threshold.")
+			if prom < 0:
+				err("Please specify a non-negative prominence threshold.")
+
+	return (elev, elevInMeters, prom, promInMeters)
 
 def main():
 	initPeakLists()
@@ -2336,7 +2368,7 @@ def main():
 		'load': (loadPeakFiles, checkPeakListArg),
 		'loadtopo': (loadTopoMetadata, checkNoArgs),
 		'stats': (printStats, checkNoArgs),
-		'sum': (printSummary, checkNoArgs),
+		'sum': (printSummary, checkSumArgs),
 	}
 
 	if len(sys.argv) < 2:
@@ -2355,6 +2387,8 @@ def main():
 
 	if args is None:
 		commandFunction()
+	elif isinstance(args, tuple):
+		commandFunction(*args)
 	else:
 		commandFunction(args)
 
