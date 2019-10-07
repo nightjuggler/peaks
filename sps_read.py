@@ -210,6 +210,21 @@ class Peak(object):
 
 		return exactMatches, otherMatches
 
+	def getElevForStats(self):
+		e_best = self.elevations[0]
+		k_best = e_best.sortkeyForStats()
+		for e in self.elevations[1:]:
+			k = e.sortkeyForStats()
+			if k > k_best:
+				e_best = e
+				k_best = k
+
+		return e_best.elevationFeet
+
+	def getPromForStats(self):
+		return max([prom if isinstance(prom, int)
+			else prom.avgFeet() for prom in self.prominences])
+
 	def copyFrom(self, other):
 		doNotCopy = {'id', 'peakList', 'column12', 'dataFrom', 'dataAlso',
 			'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended'}
@@ -722,12 +737,21 @@ class Elevation(object):
 	def sortkey(self):
 		src = self.source
 		if src is None:
-			return (80, not self.isRange, self.elevationFeet)
+			return (2, not self.isRange, self.elevationFeet)
 		if isinstance(src, NGSDataSheet):
-			return (90, self.elevationFeet, src.id)
+			return (3, self.elevationFeet, src.id)
 		if isinstance(src, USGSTopo):
-			scale = int(src.scale[-3:]) + int(src.scale[:-4]) * 1000
-			return (60, -scale, not self.isRange, src.year, src.id)
+			return (1, -src.seriesID, not self.isRange, src.year)
+		return (0,)
+
+	def sortkeyForStats(self):
+		src = self.source
+		if src is None:
+			return (3, not self.isRange, self.elevationFeet)
+		if isinstance(src, NGSDataSheet):
+			return (1, self.elevationFeet, src.id)
+		if isinstance(src, USGSTopo):
+			return (2, -src.seriesID, not self.isRange, src.year, self.elevationFeet)
 		return (0,)
 
 	def getTooltip(self):
@@ -2172,22 +2196,18 @@ def createList(pl):
 def printStats():
 	climbedElevs = []
 	climbedProms = []
-	for pl in peakLists.itervalues():
+	for pl in peakListsOrdered:
 		for section in pl.sections:
 			for peak in section.peaks:
 				if peak.dataFrom is None and peak.isClimbed:
 					name = peak.name.replace('&quot;', '"')
 
-					maxProm = toMeters(max([prom if isinstance(prom, int)
-						else prom.avgFeet() for prom in peak.prominences]))
+					prom = toMeters(peak.getPromForStats())
+					climbedProms.append((prom, name))
 
-					climbedProms.append((maxProm, name))
-
-					if maxProm >= 100:
-						minElev = toMeters(min([elev.elevationFeet
-							for elev in peak.elevations]))
-
-						climbedElevs.append((minElev, name))
+					if prom >= 100:
+						elev = toMeters(peak.getElevForStats())
+						climbedElevs.append((elev, name))
 
 	n = len(climbedElevs)
 	eIndex = 0
@@ -2209,6 +2229,83 @@ def printStats():
 		n -= 1
 
 	print "P-Index:", pIndex
+
+class RegionInfo(object):
+	def __init__(self, peak, elev, prom):
+		self.count = 1
+		self.minElev = elev
+		self.maxElev = elev
+		self.minProm = prom
+		self.maxProm = prom
+		self.minElevPeaks = [peak]
+		self.maxElevPeaks = [peak]
+		self.minPromPeaks = [peak]
+		self.maxPromPeaks = [peak]
+
+	def update(self, peak, elev, prom):
+		self.count += 1
+
+		if elev < self.minElev:
+			self.minElev = elev
+			self.minElevPeaks[:] = [peak]
+		elif elev == self.minElev:
+			self.minElevPeaks.append(peak)
+		if elev > self.maxElev:
+			self.maxElev = elev
+			self.maxElevPeaks[:] = [peak]
+		elif elev == self.maxElev:
+			self.maxElevPeaks.append(peak)
+
+		if prom < self.minProm:
+			self.minProm = prom
+			self.minPromPeaks[:] = [peak]
+		elif prom == self.minProm:
+			self.minPromPeaks.append(peak)
+		if prom > self.maxProm:
+			self.maxProm = prom
+			self.maxPromPeaks[:] = [peak]
+		elif prom == self.maxProm:
+			self.maxPromPeaks.append(peak)
+
+	def printInfo(self, region):
+		def peakNames(peaks):
+			return ', '.join([peak.name.replace('&quot;', '"') for peak in peaks])
+
+		country, state = region
+		print "{}/{}: {}".format(country, state, self.count)
+		print "\tMin Elev: {} ({})".format(self.minElev, peakNames(self.minElevPeaks))
+		print "\tMax Elev: {} ({})".format(self.maxElev, peakNames(self.maxElevPeaks))
+		print "\tMin Prom: {} ({})".format(self.minProm, peakNames(self.minPromPeaks))
+		print "\tMax Prom: {} ({})".format(self.maxProm, peakNames(self.maxPromPeaks))
+
+def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promInMeters=True):
+	regionInfoMap = {}
+
+	for pl in peakListsOrdered:
+		for section in pl.sections:
+			for peak in section.peaks:
+				if peak.dataFrom is None and peak.isClimbed:
+					prom = peak.getPromForStats()
+					if promInMeters:
+						prom = toMeters(prom)
+					if prom < promThreshold:
+						continue
+
+					elev = peak.getElevForStats()
+					if elevInMeters:
+						elev = toMeters(elev)
+					if elev < elevThreshold:
+						continue
+
+					region = (peak.country[0], peak.state[0])
+					info = regionInfoMap.get(region)
+					if info is None:
+						regionInfoMap[region] = RegionInfo(peak, elev, prom)
+					else:
+						info.update(peak, elev, prom)
+
+	for region, info in sorted(regionInfoMap.iteritems()):
+		info.printInfo(region)
 
 def checkPeakListArg(args):
 	if len(args) < 1:
@@ -2239,6 +2336,7 @@ def main():
 		'load': (loadPeakFiles, checkPeakListArg),
 		'loadtopo': (loadTopoMetadata, checkNoArgs),
 		'stats': (printStats, checkNoArgs),
+		'sum': (printSummary, checkNoArgs),
 	}
 
 	if len(sys.argv) < 2:
