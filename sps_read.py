@@ -2267,17 +2267,6 @@ class RegionInfo(object):
 		elif prom == self.maxProm:
 			self.maxPromPeaks.append(peak)
 
-	def printInfo(self, region):
-		def peakNames(peaks):
-			return ', '.join([peak.name.replace('&quot;', '"') for peak in peaks])
-
-		country, state = region
-		print "{}/{}: {}".format(country, state, self.count)
-		print "\tMin Elev: {} ({})".format(self.minElev, peakNames(self.minElevPeaks))
-		print "\tMax Elev: {} ({})".format(self.maxElev, peakNames(self.maxElevPeaks))
-		print "\tMin Prom: {} ({})".format(self.minProm, peakNames(self.minPromPeaks))
-		print "\tMax Prom: {} ({})".format(self.maxProm, peakNames(self.maxPromPeaks))
-
 def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promInMeters=True):
 	regionInfoMap = {}
 
@@ -2304,8 +2293,21 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 					else:
 						info.update(peak, elev, prom)
 
+	def peakNames(peaks):
+		return ', '.join([peak.name.replace('&quot;', '"') for peak in peaks])
+
+	int2StrMeters = lambda(n): "{}m".format(n)
+	int2StrFeet = lambda(n): "{:,}'".format(n)
+	elev2Str = int2StrMeters if elevInMeters else int2StrFeet
+	prom2Str = int2StrMeters if promInMeters else int2StrFeet
+
 	for region, info in sorted(regionInfoMap.iteritems()):
-		info.printInfo(region)
+		country, state = region
+		print "{}/{}: {}".format(country, state, info.count)
+		print "\tMin Elev: {} ({})".format(elev2Str(info.minElev), peakNames(info.minElevPeaks))
+		print "\tMax Elev: {} ({})".format(elev2Str(info.maxElev), peakNames(info.maxElevPeaks))
+		print "\tMin Prom: {} ({})".format(prom2Str(info.minProm), peakNames(info.minPromPeaks))
+		print "\tMax Prom: {} ({})".format(prom2Str(info.maxProm), peakNames(info.maxPromPeaks))
 
 def checkPeakListArg(args):
 	if len(args) < 1:
