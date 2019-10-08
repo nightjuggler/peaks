@@ -1437,9 +1437,6 @@ class PeakLoJ(TablePeak):
 	#   "East Summit determined higher than west by 2 feet using photo pixel analysis."
 	#   [https://listsofjohn.com/peak/17460]
 	#
-	# - Mount Agassiz (13,892) vs 13,893 (7.5' topo) or 13,891 (15' topo)
-	#   Perhaps the average between the 7.5' and 15' topo spot elevations was taken?
-	#
 	# - Basin Mountain (13,190) vs 13,181 (topo):
 	#   "East Summit is higher. Elevation is interpolation of spot 13181 and next highest contour at 13200."
 	#   [https://listsofjohn.com/peak/32365]
@@ -1449,13 +1446,10 @@ class PeakLoJ(TablePeak):
 	#    photographs. Elevation is estimated."
 	#   [https://listsofjohn.com/peak/32376]
 	#
-	# - Deerhorn Mountain
-	#   It seems like LoJ didn't round down.
-	#   The Mt. Brewer 7.5' topos show a spot elevation of 4048m = 13280.8'
-	#   The 15' topos show a spot elevation of 13,265'
-	#   The 1:100:000 map shows a spot elevation of 4043m (13,265' rounded to the nearest meter)
-	#   The 1:125,000 maps show a spot elevation of 13,275'
-	#   The 1:250,000 maps don't show a spot elevation, nor do they label Deerhorn Mountain.
+	# - Mount Mills (13,460) vs 13,451 (topo):
+	#   "This summit observed higher than location to the north with spot elevation 13,451' -
+	#    contour missing from map."
+	#   [https://listsofjohn.com/peak/32310]
 	#
 	# - Mount Morrison (12,296) vs 12,277 (3742m) (topo):
 	#   Perhaps the 3742m spot elevation was misread as 3748m? The 3600m contour passes through
@@ -1489,12 +1483,12 @@ class PeakLoJ(TablePeak):
 	#   I added support for 30' quads so I don't have to make an adjustment for this peak.
 
 		('Adams Peak', 8199): 8197,
-		('Mount Agassiz', 13892): 13893,
 		('Basin Mountain', 13190): 13181,
 		('Mount Baxter', 13140): 4004.0,
-		('Deerhorn Mountain', 13281): 4048.0,
+		('Deerhorn Mountain', 13281): 4048.0, # didn't round down: 4048m = 13280.8' (Mt. Brewer 7.5')
 		('Mount Hitchcock', 13186): 4019.0, # didn't round down: 4019m = 13185.7' (1993 Mount Whitney 7.5')
 		('Joe Devel Peak', 13327): 4062.0, # didn't round down: 4062m = 13326.8' (1993 Mount Whitney 7.5')
+		('Mount Mills', 13460): 13451,
 		('Mount Morrison', 12296): 3742.0,
 		('Mount Newcomb', 13422): 4091.0, # didn't round down: 4091m = 13421.9' (1993 Mount Whitney 7.5')
 		('Mount Russell', 14088): 4294.0, # didn't round down: 4294m = 14087.9' (1993 Mount Whitney 7.5')
