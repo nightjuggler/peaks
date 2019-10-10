@@ -1493,6 +1493,7 @@ class PeakLoJ(TablePeak):
 		('Mount Newcomb', 13422): 4091.0, # didn't round down: 4091m = 13421.9' (1993 Mount Whitney 7.5')
 		('Mount Russell', 14088): 4294.0, # didn't round down: 4294m = 14087.9' (1993 Mount Whitney 7.5')
 		('Seven Gables', 13074): 13075,
+		('Temple Crag', 12976): 3955.0, # didn't round down: 3955m = 12975.7' (1990 Split Mtn. 7.5')
 		('Trojan Peak', 13947): 4251.0, # didn't round down: 4251m = 13946.85' (1993 Mt. Williamson 7.5')
 		('Tunnabora Peak', 13563): 4134.0, # didn't round down: 4134m = 13562.99' (1993 Mount Whitney 7.5')
 
