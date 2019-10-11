@@ -320,7 +320,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	if (peakFlags.BigSur)
 		addMapLink(listNode, 'Big Sur Trailmap',
-			'http://bigsurtrailmap.net/interactivemap.html?mode=trailmap&latlon=' +
+			'https://bigsurtrailmap.net/interactivemap.html?mode=trailmap&latlon=' +
 			latCommaLong + '&zoom=15&bkgmap=USGS+Quad');
 
 	addMapLink(listNode, 'BLM National Data',
@@ -659,6 +659,8 @@ function decorateTable()
 	setCount('delistedCountSpan', g.numDelisted);
 	setCount('suspendedCountSpan', g.numSuspended);
 	addClickHandlers(firstRow);
+	if (window.matchMedia('(hover: none)').matches)
+		clickMobile();
 
 	if (window.location.hash)
 		window.location.replace(window.location.href);
@@ -669,11 +671,15 @@ function closeActivePopup(event)
 {
 	if (!activePopup) return;
 
-	for (var node = event.target; node; node = node.parentNode)
-		if (node === activePopup) return;
+	const mapLinkSpan = activePopup.parentNode;
+
+	if (event)
+		for (let node = event.target; node; node = node.parentNode)
+			if (node === mapLinkSpan) return;
 
 	activePopup.style.display = 'none';
-	activePopup.parentNode.className = 'mapLink';
+	mapLinkSpan.className = 'mapLink';
+	mapLinkSpan.addEventListener('click', showMapLinkBox, false);
 	activePopup = null;
 
 	const body = document.body;
@@ -685,6 +691,7 @@ function setActivePopup(element)
 	if (activePopup === undefined) return;
 
 	activePopup = element;
+	activePopup.parentNode.removeEventListener('click', showMapLinkBox, false);
 
 	const body = document.body;
 	body.addEventListener('touchstart', closeActivePopup);
