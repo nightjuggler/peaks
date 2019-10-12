@@ -478,18 +478,34 @@ function showMapLinkBox(event)
 	}
 	setActivePopup(mapLinkBox);
 }
+function showMapLinkBoxOnEnter(event)
+{
+	if (event.key !== 'Enter')
+		return true;
+
+	let mapLinkSpan = event.currentTarget;
+	if (mapLinkSpan.lastChild === activePopup)
+		closeActivePopup();
+	else
+		showMapLinkBox(event);
+
+	return false;
+}
 function showMapLinkIcon(event)
 {
 	var mapLinkSpan = mapLinkHash[event.currentTarget.id];
-	mapLinkSpan.className = 'mapLink';
+
+	if (mapLinkSpan.lastChild !== activePopup)
+		mapLinkSpan.className = 'mapLink';
 }
 function hideMapLinkIcon(event)
 {
 	var mapLinkSpan = mapLinkHash[event.currentTarget.id];
 
-	if (mapLinkSpan.lastChild === activePopup) { closeActivePopup(); return; }
-
-	mapLinkSpan.className = 'mapLinkHidden';
+	if (mapLinkSpan.lastChild === activePopup)
+		closeActivePopup();
+	else
+		mapLinkSpan.className = 'mapLinkHidden';
 }
 function clickFirstColumn(event)
 {
@@ -636,12 +652,14 @@ function decorateTable()
 			var mapLinkSpan = document.createElement('SPAN');
 			mapLinkSpan.className = 'mapLinkHidden';
 			mapLinkSpan.appendChild(document.createTextNode(mapLinkIconUp));
+			mapLinkSpan.tabIndex = 0;
 			secondColumn.id = 'm' + g.numPeaks;
 			secondColumn.insertBefore(mapLinkSpan, lineBreak);
 			secondColumn.addEventListener('mouseenter', showMapLinkIcon, false);
 			secondColumn.addEventListener('mouseleave', hideMapLinkIcon, false);
 			mapLinkHash[secondColumn.id] = mapLinkSpan;
 			mapLinkSpan.addEventListener('click', showMapLinkBox, false);
+			mapLinkSpan.addEventListener('keydown', showMapLinkBoxOnEnter, false);
 		}
 		if (delisted) {
 			g.numDelisted += 1;

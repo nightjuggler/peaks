@@ -33,6 +33,7 @@ td {
 .mapLinkHidden {
 	color: transparent;
 }
+.mapLinkHidden:focus,
 .mapLink {
 	color: rgb(140,140,140);
 	cursor: pointer;
