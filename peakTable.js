@@ -113,7 +113,8 @@ var mapLinkHash = {};
 var extraRow = {};
 var landColumnArray = [];
 var climbedColumnArray = [];
-var activePopup;
+var activePopup = null;
+var mobileMode = false;
 var globalPeakInfo = {
 	pathPrefix: '',
 	peakListId: '',
@@ -485,8 +486,9 @@ function showMapLinkIcon(event)
 function hideMapLinkIcon(event)
 {
 	var mapLinkSpan = mapLinkHash[event.currentTarget.id];
-	if (mapLinkSpan.lastChild !== mapLinkSpan.firstChild)
-		mapLinkSpan.lastChild.style.display = 'none';
+
+	if (mapLinkSpan.lastChild === activePopup) { closeActivePopup(); return; }
+
 	mapLinkSpan.className = 'mapLinkHidden';
 }
 function clickFirstColumn(event)
@@ -678,24 +680,28 @@ function closeActivePopup(event)
 			if (node === mapLinkSpan) return;
 
 	activePopup.style.display = 'none';
-	mapLinkSpan.className = 'mapLink';
+	mapLinkSpan.className = mobileMode ? 'mapLink' : 'mapLinkHidden';
 	mapLinkSpan.addEventListener('click', showMapLinkBox, false);
 	activePopup = null;
 
-	const body = document.body;
-	body.removeEventListener('touchstart', closeActivePopup);
-	body.removeEventListener('mousedown', closeActivePopup);
+	if (mobileMode) {
+		const body = document.body;
+		body.removeEventListener('touchstart', closeActivePopup);
+		body.removeEventListener('mousedown', closeActivePopup);
+	}
 }
 function setActivePopup(element)
 {
-	if (activePopup === undefined) return;
+	closeActivePopup();
 
 	activePopup = element;
 	activePopup.parentNode.removeEventListener('click', showMapLinkBox, false);
 
-	const body = document.body;
-	body.addEventListener('touchstart', closeActivePopup);
-	body.addEventListener('mousedown', closeActivePopup);
+	if (mobileMode) {
+		const body = document.body;
+		body.addEventListener('touchstart', closeActivePopup);
+		body.addEventListener('mousedown', closeActivePopup);
+	}
 }
 function clickMobile()
 {
@@ -708,6 +714,8 @@ function clickMobile()
 	elem = elem.firstChild; // the text node
 	if (!elem) return;
 
+	closeActivePopup();
+
 	if (elem.nodeValue === 'MOBILE')
 	{
 		Object.values(mapLinkHash).forEach(mapLinkSpan => {
@@ -717,11 +725,10 @@ function clickMobile()
 			mapLinkSpan.className = 'mapLink';
 		});
 		elem.nodeValue = 'DESKTOP';
-		activePopup = null;
+		mobileMode = true;
 	}
 	else if (elem.nodeValue === 'DESKTOP')
 	{
-		closeActivePopup();
 		Object.values(mapLinkHash).forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
 			parent.addEventListener('mouseenter', showMapLinkIcon, false);
@@ -729,7 +736,7 @@ function clickMobile()
 			mapLinkSpan.className = 'mapLinkHidden';
 		});
 		elem.nodeValue = 'MOBILE';
-		activePopup = undefined;
+		mobileMode = false;
 	}
 }
 function removeLandColumn(row)
@@ -925,11 +932,12 @@ function addClickHandlers(firstRow)
 
 	function createHeaderLink(label, callback)
 	{
-		const div = document.createElement('div');
-		div.className = 'headerLink';
-		div.appendChild(document.createTextNode(label));
-		div.addEventListener('click', callback, false);
-		return div;
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'headerLink';
+		button.appendChild(document.createTextNode(label));
+		button.addEventListener('click', callback, false);
+		return button;
 	}
 
 	const tableHeader = firstRow.firstElementChild;
