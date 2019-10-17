@@ -664,6 +664,7 @@ class PeakPb(TablePeak):
 		('Maggies Peaks-South Summit', 8699):   'Maggies Peaks South',
 		('Mount Lamarck-North Peak', 13464):    'Northwest Lamarck',
 		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
+		('Peak 3560', 11680):                   'Peak 3560m+',
 		('Peak 9980', 9980):                    'Sirretta Peak North',
 		('Shepherd Crest', 12040):              'Shepherd Crest East',
 		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
@@ -852,6 +853,7 @@ class PeakPb(TablePeak):
 		('Shepherd Crest East', 12080, 'max'): 12040,
 		('Mount Starr', 12840, 'min'): 12835,
 		('Mount Starr', 12840, 'max'): 12835,
+		('Peak 3560m+', 11680, 'max'): 11745, # 3580m
 
 	# Pb Elevation Adjustments for Other California Peaks:
 
@@ -1391,6 +1393,7 @@ class PeakLoJ(TablePeak):
 		('Maggies Peaks, South', 8699):                 'Maggies Peaks South',
 		('Peak 9970', 9970):                            'Mariuolumne Dome',
 		('Peak 9980', 9980):                            'Sirretta Peak North',
+		('Peak 11712', 11712):                          'Peak 3560m+',
 		('Peak 13074', 13074):                          'Rosco Peak',
 		('Peak 13464', 13464):                          'Northwest Lamarck',
 		('Shepherd Crest, East', 12020):                'Shepherd Crest East',

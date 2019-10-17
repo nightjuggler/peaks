@@ -37,7 +37,7 @@ peakListsOrdered = [
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 7, 6),
-	('osp', 'Other Sierra Peaks', 56, 27),
+	('osp', 'Other Sierra Peaks', 57, 27),
 	('ocap','Other California Peaks', 84, 14),
 	('owp', 'Other Western Peaks', 8, 10),
 ]
@@ -1212,7 +1212,7 @@ class RE(object):
 		re.compile('^(?:[A-Z][a-z]+ )+\\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\)$'),
 		re.compile('^(?:[A-Z][a-z]+ )+(?:[A-Z]\\.|St\\.|del|in the|of the|and)(?: [A-Z][a-z]+)+$'),
 		re.compile('^&quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*&quot;$'),
-		re.compile('^Peak [1-9][0-9]{2,4}\\+?$'),
+		re.compile('^Peak [1-9][0-9]{2,4}m?\\+?$'),
 	)
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
