@@ -849,6 +849,8 @@ class PeakPb(TablePeak):
 	#    approximately five feet higher and thus the summit of this peak."
 	#   [https://peakbagger.com/peak.aspx?pid=2660]
 
+		('Duck Lake Peak', 12051, 'min'): 12077, # 3681m
+		('Duck Lake Peak', 12051, 'max'): 12077, # 3681m
 		('Shepherd Crest East', 12040, 'min'): 12000,
 		('Shepherd Crest East', 12080, 'max'): 12040,
 		('Mount Starr', 12840, 'min'): 12835,
@@ -1394,6 +1396,7 @@ class PeakLoJ(TablePeak):
 		('Peak 9970', 9970):                            'Mariuolumne Dome',
 		('Peak 9980', 9980):                            'Sirretta Peak North',
 		('Peak 11712', 11712):                          'Peak 3560m+',
+		('Peak 12076', 12076):                          'Duck Lake Peak',
 		('Peak 13074', 13074):                          'Rosco Peak',
 		('Peak 13464', 13464):                          'Northwest Lamarck',
 		('Shepherd Crest, East', 12020):                'Shepherd Crest East',

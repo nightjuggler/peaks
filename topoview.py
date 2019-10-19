@@ -47,6 +47,10 @@ class TopoView(object):
 			# for the imprint year.
 			('imprint_year', '1983'),
 		),
+		'f9e6dfd5c5c62f4970246ca6c81033f6': (
+			# The map name is "Bloody Mtn." - not "Bloody Mountain".
+			('map_name', 'Bloody Mtn'),
+		),
 	}
 	def __init__(self, values):
 		for (name, pattern), value in zip(self.FIELDS, values):
