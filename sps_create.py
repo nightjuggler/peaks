@@ -851,6 +851,7 @@ class PeakPb(TablePeak):
 
 		('Duck Lake Peak', 12051, 'min'): 12077, # 3681m
 		('Duck Lake Peak', 12051, 'max'): 12077, # 3681m
+		('Grouse Mountain', 8123, 'max'): 8083,
 		('Lost World Peak', 11353, 'min'): 11447, # 3489m
 		('Lost World Peak', 11353, 'max'): 11447, # 3489m
 		('Shepherd Crest East', 12040, 'min'): 12000,
