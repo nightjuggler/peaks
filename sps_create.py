@@ -666,6 +666,8 @@ class PeakPb(TablePeak):
 		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
 		('Peak 3560', 11680):                   'Peak 3560m+',
 		('Peak 9980', 9980):                    'Sirretta Peak North',
+		('Peak 10570', 10570):                  'Peak 3222m',
+		('Pk 10597', 10597):                    'Peak 3230m',
 		('Shepherd Crest', 12040):              'Shepherd Crest East',
 		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
 		('The Sisters', 10153):                 'The Sisters East',
@@ -858,6 +860,8 @@ class PeakPb(TablePeak):
 		('Shepherd Crest East', 12080, 'max'): 12040,
 		('Mount Starr', 12840, 'min'): 12835,
 		('Mount Starr', 12840, 'max'): 12835,
+		('Peak 3222m', 10570, 'min'): 10571, # 3222m
+		('Peak 3222m', 10570, 'max'): 10571, # 3222m
 		('Peak 3560m+', 11680, 'max'): 11745, # 3580m
 
 	# Pb Elevation Adjustments for Other California Peaks:
@@ -912,6 +916,10 @@ class PeakPb(TablePeak):
 		('Gamblers Special Peak',         393, 'max'):   394, # 120m                    OSP
 		('Mount Williamson',             None, 'min'):  1568, # 8248' - 6680'           HPS
 		('Mount Williamson',             None, 'max'):  1608, # 8248' - 6640'           HPS
+		('Peak 3222m',                    431, 'min'):   399, # 10570' - 3100m          OSP
+		('Peak 3222m',                    431, 'max'):   465, # 10570' - 3080m          OSP
+		('Peak 3230m',                    394, 'min'):   361, # 3230m - 3120m           OSP
+		('Peak 3230m',                    394, 'max'):   427, # 3230m - 3100m           OSP
 		('Peak 5196',                     376, 'min'):   356, #                         ODP
 		('Peak 5196',                     376, 'max'):   396, #                         ODP
 		('Pilot Knob (South)',            720, 'min'):   680, #                         SPS
@@ -1398,6 +1406,8 @@ class PeakLoJ(TablePeak):
 		('Maggies Peaks, South', 8699):                 'Maggies Peaks South',
 		('Peak 9970', 9970):                            'Mariuolumne Dome',
 		('Peak 9980', 9980):                            'Sirretta Peak North',
+		('Peak 10570', 10570):                          'Peak 3222m',
+		('Peak 10597', 10597):                          'Peak 3230m',
 		('Peak 11446', 11446):                          'Lost World Peak',
 		('Peak 11712', 11712):                          'Peak 3560m+',
 		('Peak 12076', 12076):                          'Duck Lake Peak',
@@ -1574,6 +1584,7 @@ class PeakLoJ(TablePeak):
 		('Humphreys Peak', 6580): 6590, # LoJ seems to have used 6600'-40'/2, but the interval is only 20'
 		('Joe Devel Peak', 12894): 3930.0, # LoJ didn't round down
 		('Kingston Peak', 3582): 1092.1, # LoJ seems to have used 1092m
+		('Peak 3222m', 10138): 3090.0, # LoJ didn't round down
 		('Ring Mountain', 189): 140, # The saddle is between the 120' and 160' contours
 		('Slacker Hill', 663): 662, # The saddle is between the 650' and 675' contours
 	}

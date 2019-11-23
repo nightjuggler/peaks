@@ -32,6 +32,10 @@ class TopoView(object):
 			# The map name is "Caliente Mtn." - not "Caliente Mountain".
 			('map_name', 'Caliente Mtn'),
 		),
+		'8d63467aa1ab293bb57d21e43139d83b': (
+			# The map name is "Mount Ritter" - not "Mt Ritter".
+			('map_name', 'Mount Ritter'),
+		),
 		'9e236a7476167474e5b4a0451734a852': (
 			# The pdf (CA_Robbs Peak_298788_1952_62500_geo.pdf) clearly shows 1978 (not 1976)
 			# for the imprint year.
