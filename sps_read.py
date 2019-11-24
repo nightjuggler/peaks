@@ -37,7 +37,7 @@ peakListsOrdered = [
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
-	('osp', 'Other Sierra Peaks', 77, 27),
+	('osp', 'Other Sierra Peaks', 79, 27),
 	('ocap','Other California Peaks', 84, 14),
 	('owp', 'Other Western Peaks', 8, 10),
 ]
@@ -545,7 +545,7 @@ def parseLandManagement(htmlFile, peak):
 	if peak.landClass != getLandClass(landList):
 		raise FormatError("Land management column doesn't match class")
 
-def printLandManagementAreas(pl):
+def printLandManagementAreas():
 	for name, area in sorted(LandMgmtArea.name2area.iteritems()):
 		print '{:35}{:4}  {:22} {}'.format(name,
 			area.count,
