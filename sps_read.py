@@ -37,7 +37,7 @@ peakListsOrdered = [
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
-	('osp', 'Other Sierra Peaks', 79, 27),
+	('osp', 'Other Sierra Peaks', 82, 27),
 	('ocap','Other California Peaks', 84, 14),
 	('owp', 'Other Western Peaks', 8, 10),
 ]
@@ -1858,6 +1858,8 @@ def readHTML(pl):
 					('OCAP','12.7'), # Kandlbinder Peak
 					('OCAP','14.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
+					('OSP', '19.2'), # Peak 3113m
+					('OSP', '19.5'), # Volcanic Ridge East
 				):
 					badLine()
 			else:

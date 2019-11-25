@@ -671,6 +671,7 @@ class PeakPb(TablePeak):
 		('Shepherd Crest', 12040):              'Shepherd Crest East',
 		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
 		('The Sisters', 10153):                 'The Sisters East',
+		('Volcanic Ridge', 11501):              'Volcanic Ridge West',
 		('White Mountain', 12057):              'White Mountain (Tioga Pass)',
 		('White Mountain', 11398):              'White Mountain (Sonora Pass)',
 	# Other Desert Peaks:
@@ -1406,6 +1407,7 @@ class PeakLoJ(TablePeak):
 		('Maggies Peaks, South', 8699):                 'Maggies Peaks South',
 		('Peak 9970', 9970):                            'Mariuolumne Dome',
 		('Peak 9980', 9980):                            'Sirretta Peak North',
+		('Peak 10213', 10213):                          'Peak 3113m',
 		('Peak 10570', 10570):                          'Peak 3222m',
 		('Peak 10597', 10597):                          'Peak 3230m',
 		('Peak 11446', 11446):                          'Lost World Peak',
@@ -1415,6 +1417,8 @@ class PeakLoJ(TablePeak):
 		('Peak 13464', 13464):                          'Northwest Lamarck',
 		('Shepherd Crest, East', 12020):                'Shepherd Crest East',
 		('Silver Peak', 10820):                         'Silver Peak Northeast',
+		('Volcanic Ridge, East', 11207):                'Volcanic Ridge East',
+		('Volcanic Ridge, West', 11486):                'Volcanic Ridge West',
 		('White Mountain', 12057):                      'White Mountain (Tioga Pass)',
 		('White Mountain', 11398):                      'White Mountain (Sonora Pass)',
 	# Other California Peaks:
