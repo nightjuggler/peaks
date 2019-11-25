@@ -545,12 +545,79 @@ def parseLandManagement(htmlFile, peak):
 	if peak.landClass != getLandClass(landList):
 		raise FormatError("Land management column doesn't match class")
 
+class LandMgmtSummary(object):
+	def __init__(self, title):
+		self.title = title
+		self.areas = []
+		self.numPeaks = 0
+		self.maxNumPeaks = 0
+		self.maxLenAreaName = 0
+		self.maxLenPeakName = 0
+
+	def add(self, area):
+		self.areas.append(area)
+		self.numPeaks += area.count
+
+		nameLen = len(area.name)
+		if nameLen > self.maxLenAreaName:
+			self.maxLenAreaName = nameLen
+
+		nameLen = len(area.highPoint.name if area.highPoint else '-')
+		if nameLen > self.maxLenPeakName:
+			self.maxLenPeakName = nameLen
+
+		if area.count > self.maxNumPeaks:
+			self.maxNumPeaks = area.count
+
+	def printSummary(self):
+		len1 = len(str(self.maxNumPeaks))
+		len2 = self.maxLenAreaName
+		len3 = self.maxLenPeakName
+
+		maxLineLen = 119
+		lineFormat = '| {{:{}}} | {{:{}}} | {{:{}}} | {{}}'.format(len1, len2, len3)
+
+		maxLenURL = maxLineLen - len1 - len2 - len3 - 11
+		if maxLenURL < 3:
+			maxLenURL = 3
+
+		titleBar = '+-{}-+-{}-+-{}-+-{}'.format('-'*len1, '-'*len2, '-'*len3, '-'*maxLenURL)
+
+		print '+{}'.format('-'*(maxLineLen - 1))
+		print '| {} ({} peaks)'.format(self.title, self.numPeaks)
+		print titleBar
+
+		for area in self.areas:
+			hp = area.highPoint.name if area.highPoint else '-'
+
+			url = area.link if area.link else '-'
+			if len(url) > maxLenURL:
+				url = url[:url.rfind('/', 0, maxLenURL - 3) + 1] + '...'
+
+			print lineFormat.format(area.count, area.name, hp, url)
+
+		print titleBar
+
 def printLandManagementAreas():
+	summaryLookup = {
+		'landBLM':      LandMgmtSummary('BLM'),
+		'landEBRPD':    LandMgmtSummary('East Bay Regional Park District'),
+		'landFS':       LandMgmtSummary('U.S. Forest Service'),
+		'landFWS':      LandMgmtSummary('U.S. Fish & Wildlife Service'),
+		'landNPS':      LandMgmtSummary('National Park Service'),
+		'landSP':       LandMgmtSummary('California State Parks'),
+		'landWild':     LandMgmtSummary('National Wilderness'),
+	}
+	miscSummary = LandMgmtSummary('Miscellaneous')
+
 	for name, area in sorted(LandMgmtArea.name2area.iteritems()):
-		print '{:35}{:4}  {:22} {}'.format(name,
-			area.count,
-			area.highPoint.name if area.highPoint else '-',
-			area.link if area.link else '-')
+		(summaryLookup.get(area.landClass) or miscSummary).add(area)
+
+	for summary in summaryLookup.itervalues():
+		summary.printSummary()
+		print
+
+	miscSummary.printSummary()
 
 def toSurveyFeet(meters, delta=0.5):
 	return int(meters * 39.37/12 + delta)
