@@ -140,6 +140,13 @@ items: {
 		],
 		attribution: '[Bureau of Land Management]',
 			},
+			blmw: {
+		name: 'Wilderness Areas (BLM)',
+		url: 'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_NLCS_WLD_WSA/MapServer',
+		exportLayers: '0',
+		opacity: 0.5,
+		attribution: '[Bureau of Land Management]',
+			},
 			wsa: {
 		name: 'Wilderness Study Areas',
 		url: 'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_NLCS_WLD_WSA/MapServer',
@@ -203,19 +210,71 @@ items: {
 		queryFields: ['OBJECTID', 'FORESTNAME', 'DISTRICTNAME'],
 		attribution: '[U.S. Forest Service]',
 			},
+			fsw: {
+		name: 'Wilderness Areas (USFS)',
+		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer',
+		queryFields: ['OBJECTID', 'WILDERNESSNAME', 'GIS_ACRES', 'WID'],
+		attribution: '[U.S. Forest Service]',
+			},
+			fsonda: {
+		name: 'USFS Other National|Designated Areas',
+		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_OtherNationalDesignatedArea_01/MapServer',
+		queryFields: ['OBJECTID', 'AREANAME', 'AREATYPE'],
+		attribution: '[U.S. Forest Service]',
+			},
+			fssima: {
+		name: 'USFS Special Interest|Management Areas',
+		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer',
+		queryFields: ['OBJECTID', 'AREANAME', 'AREATYPE', 'GIS_ACRES'],
+		attribution: '[U.S. Forest Service]',
+			},
 			nps: {
 		name: 'National Parks',
 		url: 'https://irmaservices.nps.gov/arcgis/rest/services/IMDData/IMD_Boundaries_WebMercator/MapServer',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 		attribution: '[National Park Service]',
 			},
+			govunits: {
+				name: 'USGS National Map',
+				items: {
+					blm: {
+		name: 'BLM Lands',
+		url: 'https://carto.nationalmap.gov/arcgis/rest/services/govunits/MapServer',
+		exportLayers: '33',
+		opacity: 0.5,
+		attribution: '[USGS The National Map: National Boundaries Dataset]',
+					},
+					nps: {
+		name: 'National Parks',
+		url: 'https://carto.nationalmap.gov/arcgis/rest/services/govunits/MapServer',
+		exportLayers: '23',
+		opacity: 0.5,
+		attribution: '[USGS The National Map: National Boundaries Dataset]',
+					},
+					usfs: {
+		name: 'National Forests',
+		url: 'https://carto.nationalmap.gov/arcgis/rest/services/govunits/MapServer',
+		exportLayers: '24',
+		opacity: 0.5,
+		attribution: '[USGS The National Map: National Boundaries Dataset]',
+					},
+					w: {
+		name: 'Wilderness Areas',
+		url: 'https://carto.nationalmap.gov/arcgis/rest/services/govunits/MapServer',
+		exportLayers: '25',
+		opacity: 0.5,
+		attribution: '[USGS The National Map: National Boundaries Dataset]',
+					},
+				},
+				order: ['blm', 'nps', 'usfs', 'w'],
+			},
 			w: {
 		name: 'Wilderness Areas',
-		url: 'https://gisservices.cfc.umt.edu/arcgis/rest/services' +
-			'/ProtectedAreas/National_Wilderness_Preservation_System/MapServer',
+		url: 'https://tiles.arcgis.com/tiles/ERdCHt0sNM6dENSD/arcgis/rest/services' +
+			'/Wilderness_in_the_United_States_103019/MapServer',
+		tile: true,
 		opacity: 0.5,
-		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
-		attribution: '[Wilderness Institute], College of Forestry and Conservation, University of Montana',
+		attribution: 'Wilderness Institute',
 			},
 			zip: {
 		name: 'ZIP Codes',
@@ -289,14 +348,19 @@ items: {
 			'countylabels',
 			'nwr',
 			'nwrlabels',
-			'fs',
-			'fsrd',
 			'geomac',
 			'geomacperims',
 			'glims',
+			'fs',
+			'fsrd',
 			'nps',
 			'states',
+			'fsonda',
+			'fssima',
+			'govunits',
 			'w',
+			'blmw',
+			'fsw',
 			'wsa',
 			'zip',
 		],
@@ -453,6 +517,8 @@ var caZipSpec = TileOverlays.items.ca.items.zip;
 var countySpec = TileOverlays.items.us.items.counties;
 var cpadSpec = TileOverlays.items.ca.items.cpad;
 var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
+var fsondaSpec = TileOverlays.items.us.items.fsonda;
+var fssimaSpec = TileOverlays.items.us.items.fssima;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
@@ -460,7 +526,7 @@ var nvParkSpec = TileOverlays.items.nv.items.parks;
 var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
 var viirsSpec = TileOverlays.items.us.items.geomac.items.viirs;
-var wildernessSpec = TileOverlays.items.us.items.w;
+var wildernessSpec = {};
 var wsaSpec = TileOverlays.items.us.items.wsa;
 
 (function() {
@@ -474,6 +540,18 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 		},
 	};
 	blmSpec.order = ['custom'];
+
+	fsondaSpec.dynamicLayers = dynamicLayer(101, 0, {
+		type: 'simple',
+		symbol: simpleFillSymbol([255, 105, 180, 255])
+	});
+	fsondaSpec.opacity = 0.5;
+
+	fssimaSpec.dynamicLayers = dynamicLayer(101, 0, {
+		type: 'simple',
+		symbol: simpleFillSymbol([255, 140, 0, 255])
+	});
+	fssimaSpec.opacity = 0.5;
 
 	var renderer = {
 		type: 'simple',
@@ -646,6 +724,10 @@ nlcsSpec.popup = {
 			this.linkNode.protocol = 'https:';
 		if (this.linkNode.host !== 'www.blm.gov')
 			this.linkNode.host = 'www.blm.gov';
+		if (!this.linkNode.href.startsWith('https://www.blm.gov/programs/') &&
+			!(this.linkNode.href.startsWith('https://www.blm.gov/nlcs_web/') &&
+			this.linkNode.href.endsWith('.html')))
+			this.linkNode.href = 'https://www.blm.gov/';
 
 		this.nameNode.nodeValue = name;
 		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
@@ -673,6 +755,46 @@ fsrdSpec.popup = {
 		return '#008080';
 	},
 };
+fsondaSpec.popup = {
+	init: function(div)
+	{
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+
+		div.appendChild(this.textNode1);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr.AREANAME;
+		this.textNode2.nodeValue = attr.AREATYPE;
+		return '#0000CD';
+	},
+};
+fssimaSpec.popup = {
+	init: function(div)
+	{
+		this.textNode1 = document.createTextNode('');
+		this.textNode2 = document.createTextNode('');
+		this.textNode3 = document.createTextNode('');
+
+		div.appendChild(this.textNode1);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2);
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode3);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode1.nodeValue = attr.AREANAME;
+		this.textNode2.nodeValue = attr.AREATYPE;
+		this.textNode3.nodeValue = '(' + Math.round(attr.GIS_ACRES).toLocaleString() + ' acres)';
+		return '#CD0000';
+	},
+};
 nwrSpec.popup = {
 	init: function(div)
 	{
@@ -690,6 +812,12 @@ nwrSpec.popup = {
 		this.textNode2.nodeValue = '(' + Math.round(attr.SUM_GISACRES).toLocaleString() + ' acres)';
 		return '#FFA07A';
 	},
+};
+wildernessSpec = {
+	name: 'Wilderness Areas',
+	url: 'https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services' +
+		'/Wilderness_Areas_in_the_United_States/FeatureServer',
+	queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
 };
 wildernessSpec.popup = {
 	outlineColor: {
@@ -718,11 +846,13 @@ wildernessSpec.popup = {
 		var agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
+		let year = (new Date(attr.YearDesignated)).getUTCFullYear();
+		let acres = attr.Acreage.toLocaleString();
+
 		this.linkNode.href = 'https://wilderness.net/visit-wilderness/?ID=' + attr.WID;
 		this.nameNode.nodeValue = attr.NAME;
 		this.textNode1.nodeValue = ' (' + agency + ')';
-		this.textNode2.nodeValue = '(' + attr.YearDesignated + ') (' +
-			attr.Acreage.toLocaleString() + ' acres)';
+		this.textNode2.nodeValue = '(' + year + ') (' + acres + ' acres)';
 
 		return this.outlineColor[agency] || '#000000';
 	},
@@ -903,6 +1033,8 @@ var querySpecs = [
 	nwrSpec,
 	wildernessSpec,
 	wsaSpec,
+	fsondaSpec,
+	fssimaSpec,
 	caParkSpec,
 	nvParkSpec,
 	caZipSpec,
@@ -997,6 +1129,8 @@ TileOverlays.makeLayer = function(spec)
 		options.attribution = getAttribution(spec);
 	if (spec.opacity)
 		options.opacity = spec.opacity;
+	if (spec.tile)
+		return L.tileLayer(spec.url + '/tile/{z}/{y}/{x}', options);
 
 	return new (exportLayer(spec, true))(options);
 };
@@ -1175,6 +1309,8 @@ MapServer.initPointQueries = function(map)
 		}
 		firstResponse = false;
 	}
+
+	TileOverlays.items.us.items.w = wildernessSpec;
 
 	let queryOrder = 0;
 	for (let spec of querySpecs)

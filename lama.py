@@ -90,13 +90,12 @@ class Query(object):
 
 class WildernessQuery(Query):
 	name = "Wilderness Areas"
-	home = "https://gisservices.cfc.umt.edu/arcgis/rest/services" # 10.51
-	service = "ProtectedAreas/National_Wilderness_Preservation_System"
-	layer = 0 # sr = 102113 (3785)
+	home = "https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services"
+	service = "Wilderness_Areas_in_the_United_States"
+	serverType = "Feature"
+	layer = 0
 	fields = [
-#		("OBJECTID_1", "id"),
 		("NAME", "name"),
-#		("URL", "url"),
 		("Agency", "agency"),
 		("YearDesignated", "year"),
 	]
@@ -106,24 +105,23 @@ class WildernessQuery(Query):
 	def processFields(self, fields):
 		if fields["agency"] == "FS":
 			fields["agency"] = "USFS"
+		fields["year"] = time.gmtime(fields["year"] / 1000)[0]
 
 class NPS_Query(Query):
 	name = "National Park Service Unit"
-
-#	home = "https://irmaservices.nps.gov/arcgis/rest/services" # 10.41
-#	service = "IMDData/IMD_Boundaries_WebMercator"
-#	layer = 0 # sr = 102100 (3857)
-
-	home = "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services" # 10.7
+	home = "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services"
 	service = "NPS_Park_Boundaries"
 	serverType = "Feature"
-	layer = 0 # sr = 102100
+	layer = 0
+	fields = [("UNIT_NAME", "name")]
+	printSpec = "{name}"
 
-	fields = [
-#		("OBJECTID", "id"),
-		("UNIT_NAME", "name"),
-#		("UNIT_CODE", "code"),
-	]
+class NPS_IRMA_Query(Query):
+	name = "National Park Service Unit (IRMA)"
+	home = "https://irmaservices.nps.gov/arcgis/rest/services"
+	service = "IMDData/IMD_Boundaries_WebMercator"
+	layer = 0
+	fields = [("UNIT_NAME", "name")]
 	printSpec = "{name}"
 
 class NWR_Query(Query):
@@ -172,6 +170,35 @@ class USFS_RangerDistrictQuery(Query):
 		("DISTRICTNAME", "district"),
 	]
 	printSpec = "{forest} ({district})"
+
+class USFS_OtherNationalDesignatedArea_Query(Query):
+	name = "USFS Other National Designated Area"
+	home = "https://apps.fs.usda.gov/arcx/rest/services"
+	service = "EDW/EDW_OtherNationalDesignatedArea_01" # e.g. National Scenic Area
+	layer = 0
+	fields = [("FULLNAME", "name")]
+	printSpec = "{name}"
+
+class USFS_SpecialInterestManagementArea_Query(Query):
+	name = "USFS Special Interest Management Area"
+	home = "https://apps.fs.usda.gov/arcx/rest/services"
+	service = "EDW/EDW_SpecialInterestManagementArea_01" # e.g. Research Natural Area
+	layer = 0
+	fields = [("AREANAME", "name"), ("AREATYPE", "type"), ("GIS_ACRES", "acres")]
+	printSpec = "{name} {type} ({acres:,.0f} acres)"
+
+	@classmethod
+	def processFields(self, fields):
+		if fields["type"] == "RESEARCH NATURAL AREA":
+			fields["type"] = "RNA"
+
+class USFS_Wilderness_Query(Query):
+	name = "USFS National Wilderness Areas"
+	home = "https://apps.fs.usda.gov/arcx/rest/services"
+	service = "EDW/EDW_Wilderness_01"
+	layer = 0
+	fields = [("WILDERNESSNAME", "name"), ("GIS_ACRES", "acres"), ("WID", "wid")]
+	printSpec = "{name} ({acres:,.0f} acres) https://wilderness.net/visit-wilderness/?ID={wid}"
 
 class BLM_Query(Query):
 	name = "BLM Administrative Unit"
@@ -444,6 +471,52 @@ class SCC_ProtectedLandsQuery(Query):
 	]
 	printSpec = "{name} ({operator}) ({acres:,.1f} acres)"
 
+GovUnits_AgencyLookup = {
+	# See https://carto.nationalmap.gov/arcgis/rest/services/govunits/MapServer/25?f=pjson
+	3: "BLM",
+	10: "FWS",
+	11: "USFS",
+	13: "NPS",
+}
+
+class GovUnits_BLM_Query(Query):
+	name = "GovUnits - BLM"
+	home = "https://carto.nationalmap.gov/arcgis/rest/services"
+	service = "govunits"
+	layer = 33
+	fields = [("NAME", "name")]
+	printSpec = "{name}"
+
+class GovUnits_NPS_Query(Query):
+	name = "GovUnits - National Park"
+	home = "https://carto.nationalmap.gov/arcgis/rest/services"
+	service = "govunits"
+	layer = 23
+	fields = [("NAME", "name")]
+	printSpec = "{name}"
+
+class GovUnits_USFS_Query(Query):
+	name = "GovUnits - National Forest"
+	home = "https://carto.nationalmap.gov/arcgis/rest/services"
+	service = "govunits"
+	layer = 24
+	fields = [("NAME", "name")]
+	printSpec = "{name}"
+
+class GovUnits_Wilderness_Query(Query):
+	name = "GovUnits - National Wilderness"
+	home = "https://carto.nationalmap.gov/arcgis/rest/services"
+	service = "govunits"
+	layer = 25
+	fields = [("NAME", "name"), ("OWNERORMANAGINGAGENCY", "agency")]
+	printSpec = "{name} ({agency})"
+
+	@classmethod
+	def processFields(self, fields):
+		agency = GovUnits_AgencyLookup.get(fields["agency"])
+		if agency:
+			fields["agency"] = agency
+
 def checkDegrees(degrees, minValue, maxValue):
 	try:
 		degrees = float(degrees)
@@ -498,8 +571,13 @@ def main():
 		"geomac_lp": GeoMAC_LatestPerimetersQuery,
 		"geomac_modis": GeoMAC_MODIS_Query,
 		"geomac_viirs": GeoMAC_VIIRS_Query,
+		"govunits_blm": GovUnits_BLM_Query,
+		"govunits_nps": GovUnits_NPS_Query,
+		"govunits_usfs": GovUnits_USFS_Query,
+		"govunits_w": GovUnits_Wilderness_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
+		"nps_irma": NPS_IRMA_Query,
 		"nv_parks": NV_StateParksQuery,
 		"nwr": NWR_Query,
 		"rd": USFS_RangerDistrictQuery,
@@ -510,6 +588,9 @@ def main():
 		"state": TigerStateQuery,
 		"topo": USGS_TopoQuery,
 		"topoview": USGS_TopoViewQuery,
+		"usfs_onda": USFS_OtherNationalDesignatedArea_Query,
+		"usfs_sima": USFS_SpecialInterestManagementArea_Query,
+		"usfs_w": USFS_Wilderness_Query,
 		"w": WildernessQuery,
 		"wsa": BLM_WSA_Query,
 		"zip_ca": CA_ZIP_Code_Query,
@@ -524,8 +605,12 @@ def main():
 		"where":                args.where,
 	}
 
-	for q in [queryMap[k] for k in queries]:
-		q.query(geometry, **kwargs)
+	for k in queries:
+		q = queryMap.get(k)
+		if q:
+			q.query(geometry, **kwargs)
+		else:
+			print("Unknown query: \"{}\"".format(k))
 
 if __name__ == "__main__":
 	main()
