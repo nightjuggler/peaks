@@ -87,8 +87,11 @@ def prettyPrint(o):
 
 	objType = type(o)
 
-	if objType in (str, unicode):
+	if objType is str:
 		write('"{}"'.format(o))
+
+	elif objType is unicode:
+		write('"{}"'.format(o.encode(errors='replace')))
 
 	elif objType in (bool, float, int, long):
 		write(str(o))
