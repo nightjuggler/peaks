@@ -1,8 +1,11 @@
 import os
 import os.path
+import random
 import re
 import stat
+import subprocess
 import sys
+import time
 import HTMLParser
 
 def log(message, *args, **kwargs):
@@ -416,7 +419,77 @@ stateNameMap = {
 	"Washington":     "WA",
 	"Wyoming":        "WY",
 }
-landMap = {
+class LandMgmtArea(object):
+	npsWilderness = {
+		"Death Valley":         "National Park",
+		"Joshua Tree":          "National Park",
+		"Lassen Volcanic":      "National Park",
+		"Mojave":               "National Preserve",
+		"Organ Pipe Cactus":    "NM",
+		"Pinnacles":            "National Park",
+		"Sequoia-Kings Canyon": ("Kings Canyon National Park", "Sequoia National Park"),
+		"Yosemite":             "National Park",
+		"Zion":                 "National Park",
+	}
+
+	def __init__(self, name):
+		self.count = 0
+		self.name = name
+		self.highPoint = None
+		self.nps = None
+
+		if name.endswith(" Wilderness"):
+			park = self.npsWilderness.get(name[:-11])
+			if park is not None:
+				self.nps = name[:-11] + " " + park if isinstance(park, str) else park
+
+	@classmethod
+	def add(self, name, peak, isHighPoint=False):
+		area = self.areaLookup.get(name)
+		if area is None:
+			self.areaLookup[name] = area = self(name)
+
+		area.count += 1
+		if isHighPoint:
+			hp = area.highPoint
+			if hp is None:
+				area.highPoint = peak
+			elif peak.elevation.feet > hp.elevation.feet:
+				print "{} Overriding HP for {} (> {})".format(peak.fmtIdName, name, hp.name)
+				area.highPoint = peak
+			elif peak.elevation.feet < hp.elevation.feet:
+				print "{} Ignoring HP for {} (< {})".format(peak.fmtIdName, name, hp.name)
+			else:
+				print "{} Ignoring HP for {} (= {})".format(peak.fmtIdName, name, hp.name)
+
+		return area
+
+	@classmethod
+	def addAll(self, peak):
+		landAreas = []
+		highPointSuffix = self.highPointSuffix
+		highPointSuffixLen = len(highPointSuffix)
+
+		for name in peak.landManagement:
+			isHighPoint = name.endswith(highPointSuffix)
+			if isHighPoint:
+				name = name[:-highPointSuffixLen]
+			name = self.normalizeName(name, peak)
+			area = self.add(name, peak, isHighPoint)
+			if area in landAreas:
+				print "{} Duplicate land \"{}\"".format(peak.fmtIdName, name)
+			elif area.nps:
+				landAreas.insert(0, area)
+			else:
+				landAreas.append(area)
+
+		peak.landManagement = landAreas
+
+class LandMgmtAreaPb(LandMgmtArea):
+	highPointSuffix = " (Highest Point)"
+
+	areaLookup = {}
+	nameLookup = {
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
 	"Giant Sequoia NM":                             "Giant Sequoia National Monument",
 	"Hart Mountain National Antelope Refuge":       "Hart Mountain NAR",
@@ -431,61 +504,74 @@ landMap = {
 	"Red Rock Canyon National Conservation Area":   "Red Rock Canyon NCA",
 	"Steens Mountain National Recreation Lands":    "Steens Mountain CMPA",
 	"Tohono O'odham Nation":                        "Tohono O'odham Indian Reservation",
-}
-class LandMgmtArea(object):
-	name2area = {}
-
-	def __init__(self, name):
-		self.count = 0
-		self.name = name
-		self.highPoint = None
+	}
 
 	@classmethod
-	def add(self, name, peak, isHighPoint=False):
-		name = landMap.get(name, name)
-		area = self.name2area.get(name)
-		if area is None:
-			self.name2area[name] = area = self(name)
+	def normalizeName(self, name, peak):
+		if name.endswith(" Wilderness Area"):
+			name = name[:-5]
+		return self.nameLookup.get(name, name)
 
-		area.count += 1
-		if isHighPoint:
-			hp = area.highPoint
-			if hp is None:
-				area.highPoint = peak
-			elif peak.elevation > hp.elevation.feet:
-				print "{} Overriding HP for {} (> {})".format(peak.fmtIdName, name, hp.name)
-				area.highPoint = peak
-			elif peak.elevation < hp.elevation.feet:
-				print "{} Ignoring HP for {} (< {})".format(peak.fmtIdName, name, hp.name)
-			else:
-				print "{} Ignoring HP for {} (= {})".format(peak.fmtIdName, name, hp.name)
+class LandMgmtAreaLoJ(LandMgmtArea):
+	highPointSuffix = " Highpoint"
 
-		return area
+	areaLookup = {}
+	nameLookup = {
+	"Arapaho National Forest":                      "Arapaho and Roosevelt National Forest",
+	"Challis National Forest":                      "Salmon-Challis National Forest",
+	"Humboldt National Forest":                     "Humboldt-Toiyabe National Forest",
+	"Palen/McCoy Wilderness":                       "Palen-McCoy Wilderness",
+	"Pike National Forest":                         "Pike and San Isabel National Forest",
+	"Shasta National Forest":                       "Shasta-Trinity National Forest",
+	"Toiyabe National Forest":                      "Humboldt-Toiyabe National Forest",
+	"Trinity National Forest":                      "Shasta-Trinity National Forest",
+	"Wasatch National Forest":                      "Uinta-Wasatch-Cache National Forest",
+	"Winema National Forest":                       "Fremont-Winema National Forest",
+	}
+
+	@classmethod
+	def normalizeName(self, name, peak):
+		if not name.endswith((" Wilderness", " National Forest", " National Park")):
+			err("{} Unexpected land \"{}\"", peak.fmtIdName, name)
+		return self.nameLookup.get(name, name)
 
 # Doesn't work with https URLs on my system:
 # import urllib
 # filename, headers = urllib.urlretrieve(url, filename)
 
-def loadURLs(loadLists):
-	import random
-	import time
+def formatTime(timestamp):
+	ymdhms = time.localtime(timestamp)[0:6]
+	return "{}-{:02}-{:02} {:02}:{:02}:{:02}".format(*ymdhms)
 
+def loadURLs(loadLists):
 	random.seed()
 	for loadList in loadLists:
 		random.shuffle(loadList)
 
 	listLengths = "/".join([str(len(loadList)) for loadList in loadLists])
 
-	for i, loadList in enumerate(map(lambda *a: filter(None, a), *loadLists), start=1):
-		for url, filename in loadList:
-			command = "/usr/local/opt/curl/bin/curl -o '{}' '{}'".format(filename, url)
-			log(command)
-			os.system(command)
-			os.chmod(filename, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+	mode444 = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+	mode644 = stat.S_IWUSR | mode444
 
-		sleepTime = int(random.random() * 7 + 7.5)
-		log("{}/{} Sleeping for {} seconds", i, listLengths, sleepTime)
-		time.sleep(sleepTime)
+	for i, loadList in enumerate(map(lambda *a: filter(None, a), *loadLists)):
+		if i != 0:
+			sleepTime = int(random.random() * 7 + 7.5)
+			log("{}/{} Sleeping for {} seconds", i, listLengths, sleepTime)
+			time.sleep(sleepTime)
+
+		for url, filename in loadList:
+			if os.path.exists(filename):
+				os.chmod(filename, mode644)
+
+			command = ["/usr/local/opt/curl/bin/curl", "-o", filename, url]
+			print " ".join(command)
+
+			rc = subprocess.call(command)
+			if rc != 0:
+				print "Exit code", rc
+				return
+
+			os.chmod(filename, mode444)
 
 def getLoadLists(pl):
 	loadLists = []
@@ -502,6 +588,8 @@ def getLoadLists(pl):
 
 def getLoadListsFromTable(pl):
 	loadLists = []
+	cutoffTime = time.time() - 180 * 24 * 60 * 60
+	cutoffTimeStr = formatTime(cutoffTime)
 
 	for peakClass in (PeakLoJ, PeakPb):
 		loadList = []
@@ -510,10 +598,21 @@ def getLoadListsFromTable(pl):
 		for section in pl.sections:
 			for peak in section.peaks:
 				peakId = getattr(peak, peakClass.classAttrId, None)
-				if not (peakId is None or peakId[0] == "-"):
-					filename = peakClass.getPeakFileName(peakId)
-					if not os.path.exists(filename):
-						loadList.append((peakClass.getPeakURL(peakId), filename))
+				if peakId is None or peakId[0] == "-":
+					continue
+				filename = peakClass.getPeakFileName(peakId)
+				if os.path.exists(filename):
+					modTime = os.stat(filename).st_mtime
+					if modTime > cutoffTime:
+						continue
+					print "{:5} {:24} {} Last mod ({}) > 180 days ago ({})".format(
+						peak.id,
+						peak.name.replace('&quot;', '"'),
+						peakClass.classId,
+						formatTime(modTime),
+						cutoffTimeStr)
+
+				loadList.append((peakClass.getPeakURL(peakId), filename))
 	return loadLists
 
 class TablePeak(object):
@@ -567,6 +666,38 @@ class TablePeak(object):
 			return None
 		return getattr(peak2, attr, None)
 
+	def checkLand(self, peak):
+		land1 = peak.landManagement
+		land1 = {} if land1 is None else {area1.name: area1 for area1 in land1}
+
+		def parkName(park):
+			if isinstance(park, str):
+				return park
+			for name in park:
+				if name in land1:
+					return name
+			return park[0]
+
+		for area2 in self.landManagement:
+			if area2.nps:
+				name = parkName(area2.nps)
+				pop = not self.expectLandNPS(name)
+			else:
+				name = area2.name
+				pop = True
+			if pop:
+				area1 = land1.pop(name, None)
+			else:
+				area1 = land1.get(name)
+			if area1 is None:
+				print "{} '{}' not in table".format(peak.fmtIdName, area2.name)
+			elif area1.isHighPoint(peak) != (area2.highPoint is self):
+				print "{} High Point mismatch ({})".format(peak.fmtIdName, area2.name)
+
+		for name, area1 in sorted(land1.iteritems()):
+			if self.expectLand(area1):
+				print "{} '{}' not on {}".format(peak.fmtIdName, name, self.classTitle)
+
 class PeakPb(TablePeak):
 	classId = 'Pb'
 	classTitle = 'Peakbagger'
@@ -579,6 +710,12 @@ class PeakPb(TablePeak):
 	@classmethod
 	def getPeakURL(self, peakId):
 		return "https://peakbagger.com/peak.aspx?pid={}".format(peakId)
+	@classmethod
+	def expectLand(self, area):
+		return not (area.name.startswith("BLM ") or area.landClass in ("landCity", "landEBRPD", "landMROSD"))
+	@classmethod
+	def expectLandNPS(self, name):
+		return True
 
 	tableReaderArgs = dict(tableAttributes='class="gray"')
 	columnMap = {
@@ -605,6 +742,10 @@ class PeakPb(TablePeak):
 		'Prom-Ft': (
 			re.compile('^((?:[1-9][0-9],[0-9]{3})|(?:[1-9][0-9]{0,3})|0|)$'),
 			('prominence',)
+		),
+		'Ascents': (
+			re.compile('^[1-9][0-9]*$'),
+			None
 		),
 	}
 	columnMap['Elev-Ft(Opt)'] = columnMap['Elev-Ft']
@@ -643,6 +784,7 @@ class PeakPb(TablePeak):
 		('Mount Jefferson-North Summit', 11814):'Mount Jefferson North',
 		('Petersen Mountains HP', 7841):        'Petersen Mountain',
 	# Sierra Peaks Section:
+		('Adams Peak-West Peak', 8197):         'Adams Peak',
 		('Devils Crags', 12400):                'Devil\'s Crag #1',
 		('Mount Morgan', 13748):                'Mount Morgan (South)',
 		('Mount Morgan', 12992):                'Mount Morgan (North)',
@@ -677,6 +819,7 @@ class PeakPb(TablePeak):
 	# Other Desert Peaks:
 		('Antelope Buttes HP', 3040):           'Antelope Buttes',
 	# Other California Peaks:
+		('Peak 1380', 1380):                    'Peak 1390',
 		('Maguire Peak', 1688):                 'Maguire Peaks West',
 		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
 		('Monument Peak North', 2600):          'Monument Peak',
@@ -879,6 +1022,8 @@ class PeakPb(TablePeak):
 		('Mount Tamalpais Middle Peak', 2520, 'max'): 2520,
 		('Mount Tamalpais West Peak', 2576, 'min'): 2560,
 		('Mount Tamalpais West Peak', 2578, 'max'): 2600,
+		('Peak 1390', 1380, 'min'): 1390,
+		('Peak 1390', 1400, 'max'): 1390,
 		('Point Reyes Hill', 1342, 'min'): 1336,
 		('Point Reyes Hill', 1344, 'max'): 1336,
 		('Post Summit', 3456, 'min'): 3455,
@@ -986,37 +1131,6 @@ class PeakPb(TablePeak):
 
 		return minPeaks
 
-	npsWilderness = {
-		"Death Valley":         "National Park",
-		"Joshua Tree":          "National Park",
-		"Lassen Volcanic":      "National Park",
-		"Mojave":               "National Preserve",
-		"Organ Pipe Cactus":    "NM",
-		"Pinnacles":            "National Park",
-		"Sequoia-Kings Canyon": ("Kings Canyon National Park", "Sequoia National Park"),
-		"Yosemite":             "National Park",
-		"Zion":                 "National Park",
-	}
-	def checkNPSWilderness(self, name):
-		park = self.npsWilderness.get(name)
-		if park is None:
-			return False
-
-		landNames = [area.name for area in self.landManagement]
-		if isinstance(park, str):
-			park = name + " " + park
-			if park in landNames:
-				return True
-		else:
-			for parkName in park:
-				if parkName in landNames:
-					return True
-			park = park[0]
-
-		print "{} Inserting {} for {} Wilderness".format(self.fmtIdName, park, name)
-		self.landManagement.insert(0, LandMgmtArea.add(park, self))
-		return True
-
 	landPattern = re.compile(
 		"^(?:Land: ([- '()./A-Za-z]+))?(?:<br/>)?"
 		"(?:Wilderness/Special Area: ([- ()/A-Za-z]+))?$"
@@ -1029,25 +1143,9 @@ class PeakPb(TablePeak):
 			err("{} Land doesn't match pattern:\n{}", self.fmtIdName, land)
 		land, wilderness = m.groups()
 		if land is not None:
-			for area in land.split("/"):
-				if area == "Bureau of Land Management Land":
-					continue
-				highPoint = False
-				if area.endswith(" (Highest Point)"):
-					highPoint = True
-					area = area[:-16]
-				self.landManagement.append(LandMgmtArea.add(area, self, highPoint))
+			self.landManagement.extend(land.split("/"))
 		if wilderness is not None:
-			for area in wilderness.split("/"):
-				highPoint = False
-				if area.endswith(" (Highest Point)"):
-					highPoint = True
-					area = area[:-16]
-				if area.endswith(" Wilderness Area"):
-					area = area[:-5]
-					if self.checkNPSWilderness(area[:-11]):
-						continue
-				self.landManagement.append(LandMgmtArea.add(area, self, highPoint))
+			self.landManagement.extend(wilderness.split("/"))
 
 	elevationPattern1 = re.compile(
 		"^<h2>Elevation: ([1-9][0-9]{2,3}|[1-9][0-9],[0-9]{3})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
@@ -1233,6 +1331,7 @@ class PeakPb(TablePeak):
 				self.readName(row[0][18:])
 
 		self.postProcess2(maxPeak)
+		LandMgmtAreaPb.addAll(self)
 
 	def compare(self, other):
 		for attr in ("id", "name", "elevation", "rangeId", "rangeName"):
@@ -1264,6 +1363,14 @@ class PeakLoJ(TablePeak):
 	@classmethod
 	def getPeakURL(self, peakId):
 		return "https://listsofjohn.com/peak/{}".format(peakId)
+	@classmethod
+	def expectLand(self, area):
+		name = area.name
+		return (name.endswith((" National Forest", " National Park")) or
+			name.endswith(" Wilderness") and not name.endswith(" Regional", 0, -11))
+	@classmethod
+	def expectLandNPS(self, name):
+		return name.endswith(" National Park")
 
 	peakNamePattern = (' *('
 		'(?:[A-Z][- \\.0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
@@ -1446,7 +1553,7 @@ class PeakLoJ(TablePeak):
 		if i > 0:
 			if i + 7 == len(name):
 				name = 'Mount ' + name[:-7]
-			elif name[i + 7] in ' -':
+			elif name[i + 7] == '-':
 				name = 'Mount ' + name[:i] + name[i + 7:]
 		elif name.endswith(', The'):
 			name = 'The ' + name[:-5]
@@ -1721,15 +1828,38 @@ class PeakLoJ(TablePeak):
 		self.state = self.state.split(", ")
 		self.country = ["US"]
 		self.ydsClass = None
+		self.landManagement = []
+		getLand = False
 
 		for line in lines:
+			if getLand:
+				if line.startswith("YDS Class:"):
+					getLand = False
+				else:
+					line = RE.htmlTag.sub("", line)
+					if line == "Submit YDS Class Rating":
+						getLand = False
+						break
+					if line.startswith("US Steepness Rank:"):
+						getLand = False
+					else:
+						if line.endswith((" County Highpoint", " City Highpoint")):
+							continue
+						self.landManagement.append(line)
+						continue
 			if ":" not in line:
+				line = RE.htmlTag.sub("", line)
+				if line == "Submit YDS Class Rating":
+					break
 				continue
 			label, value = line.split(":", 1)
 			label = label.replace(" ", "")
 			m = self.peakFileLabelPattern.match(label)
 			if m is None:
+				log("{} Skipping label \"{}\"", self.fmtIdName, label)
 				continue
+			if label == "Isolation":
+				getLand = True
 			pattern = self.peakFilePatterns.get(label)
 			if pattern is None:
 				if label == "Counties":
@@ -1748,8 +1878,11 @@ class PeakLoJ(TablePeak):
 			assert len(attributes) == len(values)
 			for attr, value in zip(attributes, values):
 				setattr(self, attr, value)
+			if label == "YDSClass":
+				break
 
 		self.postProcess()
+		LandMgmtAreaLoJ.addAll(self)
 
 	def compare(self, other):
 		for attr in ("id", "name", "elevation", "prominence", "saddleLat", "saddleLng", "saddleElev",
@@ -2288,26 +2421,6 @@ def checkThirteeners(pl, setVR=False):
 						print "{} VR rank/link {}/{} doesn't match {}/{}".format(
 							peak.fmtIdName, colVR.rank, colVR.name, vr.rank, vr.linkName)
 
-def checkLandManagement(peak, peak2):
-	land1 = peak.landManagement
-	land2 = {area.name: peak2 is area.highPoint for area in peak2.landManagement}
-
-	if land1 is None:
-		land1 = []
-	elif land1[0].name.startswith("BLM "):
-		land1 = land1[1:]
-
-	for area in land1:
-		hp = land2.pop(area.name, None)
-		if hp is None:
-			print "{} '{}' not on Peakbagger".format(peak.fmtIdName, area.name)
-			continue
-		if hp != area.isHighPoint(peak):
-			print "{} High Point mismatch ({})".format(peak.fmtIdName, area.name)
-
-	for name in land2:
-		print "{} '{}' not in table".format(peak.fmtIdName, name)
-
 def checkData(pl, setProm=False, setVR=False):
 	verbose = pl.id not in ('HPS',)
 
@@ -2361,9 +2474,9 @@ def checkData(pl, setProm=False, setVR=False):
 				else:
 					peak2.compare(peak3)
 
-				if peakClass is PeakPb:
-					checkLandManagement(peak, peak2)
+				peak2.checkLand(peak)
 
+				if peakClass is PeakPb:
 					haveFlag = "CC" in peak.flags
 					wantFlag = (peak2.rangeList[2] == ("126", "Sierra Nevada") and
 						float(peak.latitude) > 35.36)
@@ -2390,7 +2503,7 @@ def checkData(pl, setProm=False, setVR=False):
 
 def loadFiles(pl):
 	loadURLs(getLoadListsFromTable(pl))
-	loadURLs(getLoadLists(pl))
+#	loadURLs(getLoadLists(pl))
 
 PeakAttributes = {
 	"GBP": {
