@@ -668,34 +668,29 @@ class TablePeak(object):
 
 	def checkLand(self, peak):
 		land1 = peak.landManagement
-		land1 = {} if land1 is None else {area1.name: area1 for area1 in land1}
+		land1 = {} if land1 is None else {area.name: area for area in land1}
 
-		def parkName(park):
-			if isinstance(park, str):
-				return park
-			for name in park:
-				if name in land1:
-					return name
-			return park[0]
+		def getArea(name):
+			return land1.get(name) if self.expectLandNPS(name) else land1.pop(name, None)
+
+		def getAreaNPS(nps):
+			if isinstance(nps, str):
+				return getArea(nps)
+			for name in nps:
+				area = getArea(name)
+				if area:
+					return area
+			return None
 
 		for area2 in self.landManagement:
-			if area2.nps:
-				name = parkName(area2.nps)
-				pop = not self.expectLandNPS(name)
-			else:
-				name = area2.name
-				pop = True
-			if pop:
-				area1 = land1.pop(name, None)
-			else:
-				area1 = land1.get(name)
+			area1 = getAreaNPS(area2.nps) if area2.nps else land1.pop(area2.name, None)
 			if area1 is None:
 				print "{} '{}' not in table".format(peak.fmtIdName, area2.name)
 			elif area1.isHighPoint(peak) != (area2.highPoint is self):
 				print "{} High Point mismatch ({})".format(peak.fmtIdName, area2.name)
 
-		for name, area1 in sorted(land1.iteritems()):
-			if self.expectLand(area1):
+		for name, area in sorted(land1.iteritems()):
+			if self.expectLand(area):
 				print "{} '{}' not on {}".format(peak.fmtIdName, name, self.classTitle)
 
 class PeakPb(TablePeak):
@@ -1042,10 +1037,6 @@ class PeakPb(TablePeak):
 	#   The contour interval at the saddle is 40', not 20'. So the saddle range is 4680'-4640', not
 	#   4680'-4660'. Thus the maximum prominence is raised by 20'. LoJ also uses 4660' for the saddle.
 	#
-	# - Mount Williamson (HPS)
-	#   Pb should list https://peakbagger.com/peak.aspx?pid=47494 (Peak 8248)
-	#   instead of https://peakbagger.com/peak.aspx?pid=1309
-	#
 	# - Signal Peak (DPS)
 	#   The minimum saddle elevation can be raised from 1380' to 1390', thus reducing the maximum
 	#   prominence by 10' to 3487'. The main contour interval on the 7.5' quad (Lone Mountain, AZ)
@@ -1060,8 +1051,6 @@ class PeakPb(TablePeak):
 		('East Ord Mountain',            1508, 'max'):  1528, #                         DPS
 		('Gamblers Special Peak',         263, 'min'):   262, # 80m                     OSP
 		('Gamblers Special Peak',         393, 'max'):   394, # 120m                    OSP
-		('Mount Williamson',             None, 'min'):  1568, # 8248' - 6680'           HPS
-		('Mount Williamson',             None, 'max'):  1608, # 8248' - 6640'           HPS
 		('Peak 3222m',                    431, 'min'):   399, # 10570' - 3100m          OSP
 		('Peak 3222m',                    431, 'max'):   465, # 10570' - 3080m          OSP
 		('Peak 3230m',                    394, 'min'):   361, # 3230m - 3120m           OSP
