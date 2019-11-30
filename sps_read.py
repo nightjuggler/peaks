@@ -2335,13 +2335,14 @@ class RegionInfo(object):
 		elif prom == self.maxProm:
 			self.maxPromPeaks.append(peak)
 
-def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promInMeters=True):
+def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promInMeters=True, allPeaks=False):
 	regionInfoMap = {}
+	total = None
 
 	for pl in peakListsOrdered:
 		for section in pl.sections:
 			for peak in section.peaks:
-				if peak.dataFrom is None and peak.isClimbed:
+				if peak.dataFrom is None and (allPeaks or peak.isClimbed):
 					prom = peak.getPromForStats()
 					if promInMeters:
 						prom = toMeters(prom)
@@ -2361,6 +2362,11 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 					else:
 						info.update(peak, elev, prom)
 
+					if total is None:
+						total = RegionInfo(peak, elev, prom)
+					else:
+						total.update(peak, elev, prom)
+
 	def peakNames(peaks):
 		return ', '.join([peak.name.replace('&quot;', '"') for peak in peaks])
 
@@ -2369,13 +2375,17 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 	elev2Str = int2StrMeters if elevInMeters else int2StrFeet
 	prom2Str = int2StrMeters if promInMeters else int2StrFeet
 
-	for region, info in sorted(regionInfoMap.iteritems()):
-		country, state = region
-		print "{}/{}: {}".format(country, state, info.count)
+	def printInfo(info, label):
+		print "{}: {}".format(label, info.count)
 		print "\tMin Elev: {} ({})".format(elev2Str(info.minElev), peakNames(info.minElevPeaks))
 		print "\tMax Elev: {} ({})".format(elev2Str(info.maxElev), peakNames(info.maxElevPeaks))
 		print "\tMin Prom: {} ({})".format(prom2Str(info.minProm), peakNames(info.minPromPeaks))
 		print "\tMax Prom: {} ({})".format(prom2Str(info.maxProm), peakNames(info.maxPromPeaks))
+
+	for region, info in sorted(regionInfoMap.iteritems()):
+		printInfo(info, "/".join(region))
+
+	printInfo(total, "Total")
 
 def checkPeakListArg(args):
 	if len(args) < 1:
@@ -2395,6 +2405,10 @@ def checkNoArgs(args):
 def checkSumArgs(args):
 	elev, elevInMeters = 3000, True
 	prom, promInMeters =  100, True
+
+	allPeaks = len(args) > 0 and args[0] == "all"
+	if allPeaks:
+		args.pop(0)
 
 	if len(args) > 2:
 		err("Too many command-line arguments!")
@@ -2422,7 +2436,7 @@ def checkSumArgs(args):
 			if prom < 0:
 				err("Please specify a non-negative prominence threshold.")
 
-	return (elev, elevInMeters, prom, promInMeters)
+	return (elev, elevInMeters, prom, promInMeters, allPeaks)
 
 def main():
 	initPeakLists()
