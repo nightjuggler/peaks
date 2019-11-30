@@ -519,6 +519,7 @@ var cpadSpec = TileOverlays.items.ca.items.cpad;
 var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
 var fsondaSpec = TileOverlays.items.us.items.fsonda;
 var fssimaSpec = TileOverlays.items.us.items.fssima;
+var fsSpec = TileOverlays.items.us.items.fs;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
@@ -572,6 +573,15 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 		},
 	};
 	fsrdSpec.order = ['custom'];
+
+	fsSpec.items = {
+		custom: {
+			name: 'Custom Rendering',
+			dynamicLayers: fsrdSpec.items.custom.dynamicLayers,
+			opacity: 0.5,
+		},
+	};
+	fsSpec.order = ['custom'];
 
 	npsSpec.dynamicLayers = dynamicLayer(101, 0, {
 		type: 'simple',
@@ -733,6 +743,22 @@ nlcsSpec.popup = {
 		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
 
 		return '#800000';
+	},
+};
+fsSpec.popup = {
+	init: function(div)
+	{
+		var boldNode = document.createElement('b');
+		this.textNode = document.createTextNode('');
+
+		boldNode.appendChild(this.textNode);
+		div.appendChild(boldNode);
+		div.appendChild(this.ztf);
+	},
+	show: function(attr)
+	{
+		this.textNode.nodeValue = attr.FORESTNAME;
+		return '#FFFF00';
 	},
 };
 fsrdSpec.popup = {
@@ -1029,6 +1055,7 @@ var querySpecs = [
 	aiannhSpec,
 	npsSpec,
 	nlcsSpec,
+	fsSpec,
 	fsrdSpec,
 	nwrSpec,
 	wildernessSpec,
