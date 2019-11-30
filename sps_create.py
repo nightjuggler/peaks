@@ -814,7 +814,6 @@ class PeakPb(TablePeak):
 	# Other Desert Peaks:
 		('Antelope Buttes HP', 3040):           'Antelope Buttes',
 	# Other California Peaks:
-		('Peak 1380', 1380):                    'Peak 1390',
 		('Maguire Peak', 1688):                 'Maguire Peaks West',
 		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
 		('Monument Peak North', 2600):          'Monument Peak',
@@ -824,6 +823,8 @@ class PeakPb(TablePeak):
 		('Mount Tamalpais-East Peak', 2572):    'Mount Tamalpais East Peak',
 		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
 		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
+		('Peak 1380', 1380):                    'Peak 1390',
+		('Snow Mountain', 7056):                'Snow Mountain East',
 	# Other Western Peaks:
 		('Mount Evans-West Peak', 14256):       'West Evans',
 		('Mount Saint Helens', 8333):           'Mount St. Helens',
