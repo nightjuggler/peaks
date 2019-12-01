@@ -372,7 +372,7 @@ class LandMgmtArea(object):
 			return area
 
 		if peak in area.peaks:
-			raise FormatError("Duplicate land management area: {}", area.name)
+			raise FormatError("Duplicate land management area: {}", name)
 		area.peaks.add(peak)
 
 		if link is not None and link != area.link:
@@ -470,14 +470,14 @@ landOrder = {landClass: i for i, landClass in enumerate((
 	'landMROSD',    # Midpeninsula Regional Open Space District - https://www.openspace.org/
 	'landDOD',
 	'landRez',
-	'landFWS',
-	'landBLM',
-	'landFS',
-	'landBLMW',
-	'landFSW',
 	'landCNRA',     # California Natural Resources Agency (other than Department of Parks and Recreation)
 	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
 	'landUDWR',     # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
+	'landBLM',
+	'landFS',
+	'landFWS',
+	'landBLMW',
+	'landFSW',
 	'landNPS',
 ))}
 
