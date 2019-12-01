@@ -304,8 +304,8 @@ class LandMgmtArea(object):
 	name2link = {
 	}
 	def __init__(self, name, link):
-		self.count = 0
 		self.name = name
+		self.peaks = set()
 		self.landClass = self.getLandClass(name)
 		self.setLink(link)
 		self.highPoint = None
@@ -371,7 +371,10 @@ class LandMgmtArea(object):
 		if peak.dataFrom is not None:
 			return area
 
-		area.count += 1
+		if peak in area.peaks:
+			raise FormatError("Duplicate land management area: {}", area.name)
+		area.peaks.add(peak)
+
 		if link is not None and link != area.link:
 			if area.link is not None:
 				area.err("URL doesn't match previous URL")
@@ -415,7 +418,7 @@ landNameLookup = {
 	"Reservoir Canyon Natural Reserve":             'City of San Luis Obispo',
 	"Spring Mountains NRA":                         'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                         'landBLM',
-	"Tohono O'odham Indian Reservation":            'landRez',
+	"Tohono O'odham Nation":                        'landRez',
 	"Twin Peaks Natural Area":                      'landCity',
 	"Wind Wolves Preserve":                         'landTWC',
 
@@ -448,7 +451,7 @@ landNameSuffixes = [
 	(' WSA',                        'landBLM'),
 	(' County Park',                'landCounty'),
 ]
-landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &.;A-Za-z]+)</a>( HP)?)|([- \'.A-Za-z]+)')
+landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &\'.;A-Za-z]+)</a>( HP)?)|([- \'.A-Za-z]+)')
 landLinkPattern = {
 	'landWild':     re.compile('^https://wilderness\\.net/visit-wilderness/\\?ID=[0-9]+$'),
 	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[_a-z]+/$'),
@@ -489,6 +492,8 @@ def getLandClass(landList):
 				landClass = "landFSW"
 			elif landClass is None or landClass == "landBLM":
 				landClass = "landBLMW"
+			elif landClass not in ("landBLMW", "landFSW", "landFWS", "landNPS"):
+				raise FormatError("Wilderness must be BLM, NPS, USFS, or USFWS")
 
 		elif currentClass.startswith("land"):
 			if landClass is None:
@@ -549,14 +554,14 @@ class LandMgmtSummary(object):
 	def __init__(self, title):
 		self.title = title
 		self.areas = []
-		self.numPeaks = 0
+		self.peaks = set()
 		self.maxNumPeaks = 0
 		self.maxLenAreaName = 0
 		self.maxLenPeakName = 0
 
 	def add(self, area):
 		self.areas.append(area)
-		self.numPeaks += area.count
+		self.peaks.update(area.peaks)
 
 		nameLen = len(area.name)
 		if nameLen > self.maxLenAreaName:
@@ -566,8 +571,9 @@ class LandMgmtSummary(object):
 		if nameLen > self.maxLenPeakName:
 			self.maxLenPeakName = nameLen
 
-		if area.count > self.maxNumPeaks:
-			self.maxNumPeaks = area.count
+		numPeaks = len(area.peaks)
+		if numPeaks > self.maxNumPeaks:
+			self.maxNumPeaks = numPeaks
 
 	def printSummary(self):
 		len1 = len(str(self.maxNumPeaks))
@@ -584,7 +590,7 @@ class LandMgmtSummary(object):
 		titleBar = '+-{}-+-{}-+-{}-+-{}'.format('-'*len1, '-'*len2, '-'*len3, '-'*maxLenURL)
 
 		print '+{}'.format('-'*(maxLineLen - 1))
-		print '| {} ({} peaks)'.format(self.title, self.numPeaks)
+		print '| {} ({} peaks)'.format(self.title, len(self.peaks))
 		print titleBar
 
 		for area in self.areas:
@@ -594,7 +600,7 @@ class LandMgmtSummary(object):
 			if len(url) > maxLenURL:
 				url = url[:url.rfind('/', 0, maxLenURL - 3) + 1] + '...'
 
-			print lineFormat.format(area.count, area.name, hp, url)
+			print lineFormat.format(len(area.peaks), area.name, hp, url)
 
 		print titleBar
 

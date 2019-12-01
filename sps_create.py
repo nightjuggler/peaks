@@ -503,7 +503,6 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",
 	"Red Rock Canyon National Conservation Area":   "Red Rock Canyon NCA",
 	"Steens Mountain National Recreation Lands":    "Steens Mountain CMPA",
-	"Tohono O'odham Nation":                        "Tohono O'odham Indian Reservation",
 	}
 
 	@classmethod
