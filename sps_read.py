@@ -634,7 +634,8 @@ class NGSDataSheet(object):
 	tooltipPattern = re.compile(
 		'^([1-9][0-9]{2,3}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
 		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*'
-		'(?: RM)?(?: [123])?(?: VABM)?(?: [1-9][0-9]{3})?(?: Reset)?)'
+		'(?: [23])?(?:(?: 1[89][0-9]{2})|(?: VABM [1-9][0-9]{3}))?'
+		'(?:(?: Reset)|(?: RM(?: [12345])?))?)'
 		'|(?:[1-9][0-9]{3,4}(?: VA)?))&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, stationID):
