@@ -1000,6 +1000,47 @@ class Elevation(object):
 
 		return self.elevationFeet <= feet < maxFeet
 
+def checkElevationOrder(peak):
+	same = None
+	e1 = peak.elevations[0]
+	k1 = e1.sortkey()
+	for e2 in peak.elevations[1:]:
+		k2 = e2.sortkey()
+		if k2 > k1:
+			raise FormatError("Elevations are not in the expected order")
+		if k2 == k1:
+			if not isinstance(e2.source, USGSTopo):
+				raise FormatError("Duplicate elevation")
+			if e2.elevationFeet > e1.elevationFeet:
+				raise FormatError("Elevations are not in the expected order")
+			if same is None:
+				same = []
+			same.append(e1)
+			for e1 in same:
+				if e1.extraLines == e2.extraLines:
+					raise FormatError("Duplicate topo elevation")
+		elif same is not None:
+			same = None
+		e1 = e2
+		k1 = k2
+
+def checkElevationTypes(peak):
+	if isinstance(peak.elevations[-1].source, NGSDataSheet):
+		raise FormatError("Expected at least one elevation not from an NGS Data Sheet")
+
+	haveTopo1 = False
+	haveTopo2 = False
+
+	for e in peak.elevations:
+		if isinstance(e.source, USGSTopo):
+			if e.source.seriesID < 2:
+				haveTopo1 = True
+			else:
+				haveTopo2 = True
+
+	if haveTopo2 and not haveTopo1:
+		raise FormatError("Expected 7.5' topo")
+
 def parseElevation(htmlFile, peak):
 	line = htmlFile.next()
 
@@ -1042,28 +1083,9 @@ def parseElevation(htmlFile, peak):
 		if line[:4] != '<br>':
 			badLine()
 
-	same = None
-	e1 = peak.elevations[0]
-	k1 = e1.sortkey()
-	for e2 in peak.elevations[1:]:
-		k2 = e2.sortkey()
-		if k2 > k1:
-			raise FormatError("Elevations are not in the expected order")
-		if k2 == k1:
-			if not isinstance(e2.source, USGSTopo):
-				raise FormatError("Duplicate elevation")
-			if e2.elevationFeet > e1.elevationFeet:
-				raise FormatError("Elevations are not in the expected order")
-			if same is None:
-				same = []
-			same.append(e1)
-			for e1 in same:
-				if e1.extraLines == e2.extraLines:
-					raise FormatError("Duplicate topo elevation")
-		elif same is not None:
-			same = None
-		e1 = e2
-		k1 = k2
+	checkElevationOrder(peak)
+	if peak.countryUS:
+		checkElevationTypes(peak)
 
 def printElevationStats():
 	print '====== Number of peaks with some/all elevations sourced\n'
