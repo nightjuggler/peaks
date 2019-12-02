@@ -379,7 +379,7 @@ items: {
 		url: 'https://gis.cnra.ca.gov/arcgis/rest/services' +
 			'/Boundaries/CPAD_AgencyClassification/MapServer',
 		opacity: 0.5,
-		queryFields: ['OBJECTID', 'AGNCY_NAME'],
+		queryFields: ['OBJECTID', 'MNG_AGNCY', 'SITE_NAME'],
 		attribution: '[GreenInfo Network]',
 			},
 			parks: {
@@ -955,9 +955,7 @@ caZipSpec.popup = {
 countySpec.popup = {
 	init: function(div)
 	{
-		this.nameNode = document.createTextNode('');
-
-		div.appendChild(this.nameNode);
+		div.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -969,12 +967,15 @@ countySpec.popup = {
 cpadSpec.popup = {
 	init: function(div)
 	{
-		div.appendChild(this.textNode = document.createTextNode(''));
+		div.appendChild(this.textNode1 = document.createTextNode(''));
+		div.appendChild(document.createElement('br'));
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
 	{
-		this.textNode.nodeValue = attr.AGNCY_NAME;
+		this.textNode1.nodeValue = attr.SITE_NAME;
+		this.textNode2.nodeValue = '(' + attr.MNG_AGNCY + ')';
 		return '#C71585';
 	},
 };
