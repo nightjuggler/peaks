@@ -1025,21 +1025,18 @@ def checkElevationOrder(peak):
 		k1 = k2
 
 def checkElevationTypes(peak):
-	if isinstance(peak.elevations[-1].source, NGSDataSheet):
+	src = peak.elevations[-1].source
+
+	if isinstance(src, NGSDataSheet):
 		raise FormatError("Expected at least one elevation not from an NGS Data Sheet")
 
-	haveTopo1 = False
-	haveTopo2 = False
-
-	for e in peak.elevations:
-		if isinstance(e.source, USGSTopo):
-			if e.source.seriesID < 2:
-				haveTopo1 = True
-			else:
-				haveTopo2 = True
-
-	if haveTopo2 and not haveTopo1:
-		raise FormatError("Expected 7.5' topo")
+	if isinstance(src, USGSTopo) and src.seriesID > 1:
+		for e in peak.elevations[:-1]:
+			src = e.source
+			if isinstance(src, USGSTopo) and src.seriesID <= 1:
+				break
+		else:
+			raise FormatError("Expected 7.5' topo")
 
 def parseElevation(htmlFile, peak):
 	line = htmlFile.next()
