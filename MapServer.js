@@ -81,6 +81,12 @@ items: {
 		},
 		order: ['imagery', 'clarity', 'firefly', 'usatopo'],
 	},
+	caltopo: {
+		name: 'CalTopo',
+		url: 'https://caltopo.s3.amazonaws.com/topo/{z}/{x}/{y}.png',
+		maxZoom: 16,
+		attribution: '<a href="https://caltopo.com/">CalTopo</a>',
+	},
 	canvec: {
 		name: 'Canada Topo',
 		url: 'https://maps.geogratis.gc.ca/wms/canvec_en',
@@ -101,7 +107,7 @@ items: {
 	sts: 'mapbox',
 	st: 'mapbox',
 },
-order: ['mapbox', 'natmap', 'esri', 'canvec', 'osm'],
+order: ['mapbox', 'natmap', 'esri', 'caltopo', 'canvec', 'osm'],
 };
 var TileOverlays = {
 name: 'Tile Overlays',
