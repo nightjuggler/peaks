@@ -2346,8 +2346,10 @@ class RegionInfo(object):
 		self.count = 1
 		self.minElev = elev
 		self.maxElev = elev
+		self.sumElev = elev
 		self.minProm = prom
 		self.maxProm = prom
+		self.sumProm = prom
 		self.minElevPeaks = [peak]
 		self.maxElevPeaks = [peak]
 		self.minPromPeaks = [peak]
@@ -2355,6 +2357,8 @@ class RegionInfo(object):
 
 	def update(self, peak, elev, prom):
 		self.count += 1
+		self.sumElev += elev
+		self.sumProm += prom
 
 		if elev < self.minElev:
 			self.minElev = elev
@@ -2422,8 +2426,10 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 		print "{}: {}".format(label, info.count)
 		print "\tMin Elev: {} ({})".format(elev2Str(info.minElev), peakNames(info.minElevPeaks))
 		print "\tMax Elev: {} ({})".format(elev2Str(info.maxElev), peakNames(info.maxElevPeaks))
+		print "\tAvg Elev: {}".format(elev2Str(int(float(info.sumElev) / info.count + 0.5)))
 		print "\tMin Prom: {} ({})".format(prom2Str(info.minProm), peakNames(info.minPromPeaks))
 		print "\tMax Prom: {} ({})".format(prom2Str(info.maxProm), peakNames(info.maxPromPeaks))
+		print "\tAvg Prom: {}".format(elev2Str(int(float(info.sumProm) / info.count + 0.5)))
 
 	for region, info in sorted(regionInfoMap.iteritems()):
 		printInfo(info, "/".join(region))
