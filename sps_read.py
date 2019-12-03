@@ -1114,7 +1114,7 @@ def printElevationStats():
 	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
 
 	for src in sorted(USGSTopo.sources.itervalues(), key=lambda topo:
-		(int(topo.scale[:-4]) * 1000 + int(topo.scale[-3:]), topo.state, topo.name, topo.year)):
+		(topo.seriesID, topo.state, topo.name, topo.year, topo.id)):
 
 		numRefs = len(src.peaks)
 		numPeaks = len(set(src.peaks))
