@@ -1113,15 +1113,32 @@ def printElevationStats():
 
 	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
 
+	sameMap = []
+	lastLine = ""
+
 	for src in sorted(USGSTopo.sources.itervalues(), key=lambda topo:
 		(topo.seriesID, topo.state, topo.name, topo.year, topo.id)):
 
 		numRefs = len(src.peaks)
 		numPeaks = len(set(src.peaks))
 
-		print '{}  {:>6}  {:>7}  {} {:24} {:9}  {}/{}{}'.format(src.id,
+		line = "{}  {:>6}  {:>7}  {} {:24} {:9}  {}/{}{}".format(src.id,
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
+
+		print line
+
+		if line[34:88] == lastLine[34:88]:
+			if not (sameMap and lastLine is sameMap[-1]):
+				sameMap.append(lastLine)
+			sameMap.append(line)
+
+		lastLine = line
+
+	print '\n====== Different Scans of the Same Map\n'
+
+	for line in sameMap:
+		print line
 
 RE_Escape = re.compile('[\\' + '\\'.join('$()*+.?[]^') + ']')
 
