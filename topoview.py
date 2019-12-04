@@ -51,6 +51,14 @@ class TopoView(object):
 			# for the imprint year.
 			('imprint_year', '1983'),
 		),
+		'e09ff1e263c0f9f682feb777a0b1e6b2': (
+			# These are more accurate bounds for the 1992/1994 Carson Pass, CA 7.5' map.
+			# The summit of Round Top is right on the western edge of this map.
+			('min_longitude', '-120.001'),
+			('min_latitude', '38.6249'),
+			('max_longitude', '-119.87598'),
+			('max_latitude', '38.74992'),
+		),
 		'f9e6dfd5c5c62f4970246ca6c81033f6': (
 			# The map name is "Bloody Mtn." - not "Bloody Mountain".
 			('map_name', 'Bloody Mtn'),
@@ -254,3 +262,17 @@ def compare(sources):
 
 			for diff in diffs:
 				print(url, '{:42}'.format(diff), num_peaks, peak_lists, sep='  ')
+
+		min_lng = float(topoview.min_longitude)
+		max_lng = float(topoview.max_longitude)
+		min_lat = float(topoview.min_latitude)
+		max_lat = float(topoview.max_latitude)
+
+		for peak in topo.peaks:
+			lng = float(peak.longitude)
+			lat = float(peak.latitude)
+
+			if not (min_lng <= lng <= max_lng and min_lat <= lat <= max_lat):
+				print('{} {} {},{} not in {},{},{},{}'.format(topo_id,
+					peak.name.replace('&quot;', '"'),
+					lng, lat, min_lng, min_lat, max_lng, max_lat))
