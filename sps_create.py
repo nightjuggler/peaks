@@ -1252,6 +1252,15 @@ class PeakPb(TablePeak):
 		self.rangeId, self.rangeName = rangeList[4]
 		self.rangeList = rangeList
 
+	quadPattern = re.compile(
+		'^([A-Za-z]+(?: [A-Za-z]+)*)  O[34][0-9]1[0-9][0-9][a-h][1-8]  1:24,000$'
+	)
+	def readQuad(self, html):
+		m = self.quadPattern.match(html)
+		if m is None:
+			err("{} Topo Map doesn't match pattern:\n{}", self.fmtIdName, html)
+		self.quadName = m.group(1)
+
 	def readName(self, html):
 		if html[:34] != "\n<br/><iframe></iframe>\n<br/><img>":
 			err("{} Maps HTML doesn't match pattern:\n{}", self.fmtIdName, html)
@@ -1314,8 +1323,9 @@ class PeakPb(TablePeak):
 			elif row[0] == "Ownership":
 				self.readLandManagement(row[1])
 
-			elif row[0].startswith("<b>Google Maps Dynamic Map</b>"):
-				self.readName(row[0][30:])
+			elif row[0] == "Topo Map":
+				self.readQuad(row[1])
+
 			elif row[0].startswith("<b>Dynamic Map</b>"):
 				self.readName(row[0][18:])
 
@@ -2473,6 +2483,11 @@ def checkData(pl, setProm=False, setVR=False):
 					if haveFlag != wantFlag:
 						print "{} Should {}able CC flag".format(peak.fmtIdName,
 							"en" if wantFlag else "dis")
+
+				if peak.quad is not None:
+					if peak.quad != peak2.quadName:
+						print "{} Quad '{}' != '{}'".format(peak.fmtIdName,
+							peak2.quadName, peak.quad)
 
 				if peak.country != peak2.country:
 					print '{} data-country should be "{}" instead of "{}"'.format(

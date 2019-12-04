@@ -127,6 +127,7 @@ class Peak(object):
 		self.name = ''
 		self.otherName = None
 		self.peakList = section.peakList
+		self.quad = None
 		self.latitude = ''
 		self.longitude = ''
 		self.zoom = '16'
@@ -731,7 +732,7 @@ class USGSTopo(object):
 			self.series, self.scale, self.name, self.state, self.year)
 
 	def setUnits(self, inMeters):
-		if inMeters and self.series not in ('7.5', '7.5x15'):
+		if inMeters and self.seriesID > 1:
 			raise FormatError("Unexpected elevation in meters on {}' quad", self.series)
 		self.inMeters = inMeters
 
@@ -740,7 +741,29 @@ class USGSTopo(object):
 			raise FormatError("Unexpected elevation range on {}' quad", self.series)
 		self.contourInterval = interval
 
+	def setPeakQuad(self, peak):
+		name = (self.name
+				.replace(" Mtn. ", " Mountain ")
+				.replace(" Mts. ", " Mountains ")
+				.replace(" St. ", " Saint "))
+		if name[:4] == "Mt. ":
+			name = "Mount " + name[4:]
+		elif name[:3] == "Mt ":
+			name = "Mount " + name[3:]
+		elif name[-5:] == " Mtn.":
+			name = name[:-5] + " Mountain"
+		elif name[-4:] == " Mtn":
+			name = name[:-4] + " Mountain"
+
+		if peak.quad is None:
+			peak.quad = name
+		elif peak.quad != name:
+			raise FormatError("Expected '{}' quad instead of '{}'", peak.quad, self.name)
+
 	def addPeak(self, peak):
+		if self.seriesID <= 1:
+			self.setPeakQuad(peak)
+
 		src = self.sources.setdefault(self.id, self)
 		if src is self:
 			self.peaks = [peak]
@@ -876,7 +899,7 @@ class Elevation(object):
 			elevationMin = int(elevation)
 			elevationMax = int(elevationMax)
 			interval = elevationMax - elevationMin + 1
-			if self.source.series == '7.5':
+			if self.source.seriesID == 0:
 				contourIntervals = (10, 20) if inMeters else (20, 25, 40, 50)
 			else:
 				contourIntervals = (80, 50, 25)
