@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.0/mapbox-gl.js"></script>
-<link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
@@ -73,14 +73,13 @@
 /* globals mapboxgl */
 /* globals enableTooltips, popupHTML, setPopupGlobals */
 "use strict";
-function isValidId(s)
+function validKey(key)
 {
-	return s.length <= 8 && s.match(/^[a-z][0-9a-z]*$/) !== null;
+	return key.length <= 8 && /^[a-z][0-9a-z]*$/.test(key);
 }
 function parseLatLng(q, v)
 {
 	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
-
 	if (m === null) return;
 
 	var lat = parseFloat(m[1]);
@@ -93,7 +92,7 @@ function parseLatLng(q, v)
 }
 function parseZoom(q, v)
 {
-	if (v.match(/^[1-9][0-9]?$/) === null) return;
+	if (!/^[1-9][0-9]?$/.test(v)) return;
 
 	var zoom = parseInt(v, 10);
 	if (zoom < 1 || zoom > 22) return;
@@ -102,7 +101,7 @@ function parseZoom(q, v)
 }
 function parseBearing(q, v)
 {
-	if (v.match(/^[0-9]{1,3}$/) === null) return;
+	if (!/^[1-9][0-9]{0,2}$/.test(v)) return;
 
 	var bearing = parseInt(v, 10);
 	if (bearing > 359) return;
@@ -111,36 +110,37 @@ function parseBearing(q, v)
 }
 function parsePitch(q, v)
 {
-	if (v.match(/^[0-9]{1,2}$/) === null) return;
+	if (!/^[1-9][0-9]?$/.test(v)) return;
 
 	var pitch = parseInt(v, 10);
 	if (pitch > 60) return;
 
 	q.pitch = pitch;
 }
-var validOverlays = {};
 function parseOverlay(q, v)
 {
-	if (isValidId(v) && validOverlays[v])
-	{
-		q.overlays.push(validOverlays[v]);
-		delete validOverlays[v];
-	}
+	if (validKey(v) && q.peakListLookup.has(v))
+		q.peakLists.add(v);
 }
-var baseLayers = {};
 function parseBaseLayer(q, v)
 {
-	if (isValidId(v) && baseLayers[v])
+	if (validKey(v) && (v = q.baseLayerLookup.get(v)))
 		q.baseLayer = v;
+}
+function parseFeatureLayer(q, v)
+{
+	if (validKey(v) && q.featureLayerLookup.has(v))
+		q.featureLayers.add(v);
 }
 function parseQueryString(queryString)
 {
-	var q = window.location.search;
+	const q = window.location.search;
 
 	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
 
-	var handlers = {
+	const handlers = {
 		b: parseBaseLayer,
+		f: parseFeatureLayer,
 		ll: parseLatLng,
 		o: parseOverlay,
 		rx: parsePitch,
@@ -148,18 +148,18 @@ function parseQueryString(queryString)
 		z: parseZoom,
 	};
 
-	for (var s of q.substr(1).split('&'))
+	for (const s of q.substring(1).split('&'))
 	{
-		var i = s.indexOf('=');
+		const i = s.indexOf('=');
 		if (i < 1 || i === s.length - 1) continue;
-		var k = s.substr(0, i);
-		var v = s.substr(i + 1);
+		const k = s.substring(0, i);
+		const v = s.substring(i + 1);
 
-		if (isValidId(k) && handlers[k])
+		if (validKey(k) && handlers.hasOwnProperty(k))
 			handlers[k](queryString, v);
 	}
 }
-var svgNS = 'http://www.w3.org/2000/svg';
+const svgNS = 'http://www.w3.org/2000/svg';
 function peakIcon(p)
 {
 	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
@@ -225,7 +225,7 @@ function LayerControl(map, currentLayer)
 
 	this.map = map;
 	this.div = div;
-	this.currentLayer = baseLayers[currentLayer];
+	this.currentLayer = currentLayer;
 }
 LayerControl.prototype.addLayer = function(layer)
 {
@@ -263,12 +263,7 @@ LayerControl.prototype.addOverlay = function(name, markers)
 
 	function toggleMarkers()
 	{
-		var m;
-		if (input.checked) {
-			for (m of markers) m.addTo(ctrl.map);
-		} else {
-			for (m of markers) m.remove();
-		}
+		markers.forEach(input.checked ? m => m.addTo(ctrl.map) : m => m.remove());
 	}
 	function clickInput(event)
 	{
@@ -301,37 +296,106 @@ function loadJSON(url, onSuccess, onFailure)
 	xhr.open('GET', url);
 	xhr.send();
 }
+function addFeatureLayer(layerId, map)
+{
+	function mapLink(lat, lng)
+	{
+		const ll = lat.toFixed(4) + ',' + lng.toFixed(4);
+
+		return lng > -124.4 && lng < -114.1 && lat > 32.5 && lat < 42 ?
+			'<a href="https://caltopo.com/map.html#ll=' + ll + '&z=15&b=t">' + ll + '</a>' :
+			'<a href="https://www.google.com/maps/@' + ll + ',15z">' + ll + '</a>';
+	}
+
+	const unit = layerId.charAt(0) === 'm' ? 'm' : '\'';
+
+	map.addLayer({
+		"id": layerId,
+		"type": "circle",
+		"source": {
+			"type": "geojson",
+			"data": "json/peaks/" + layerId + ".json"
+		},
+		"paint": {
+			"circle-color": ["step", ["get", "p"], "#FFA500",
+				399, "#FFFF00",
+				599, "#00BFFF",
+				799, "#FF00FF",
+				999, "#4B0082"],
+			"circle-radius": ["step", ["get", "p"], 5, 399, 6, 599, 7, 799, 8, 999, 9],
+			"circle-stroke-color": "#FF0000",
+			"circle-stroke-width": ["step", ["get", "p"], 1, 399, 2],
+		}
+	});
+	map.on('click', layerId, function(e) {
+		const p = e.features[0].properties;
+		let lng = p.x;
+		let lat = p.y;
+
+		const html = [
+			'<div class="peakDiv">Peak: ',       mapLink(lat, lng),          '</div>',
+			'<div class="peakDiv">Elevation: ',  p.e.toLocaleString(), unit, '</div>',
+			'<div class="peakDiv">Saddle: ',     mapLink(p.sy, p.sx),        '</div>',
+			'<div class="peakDiv">Prominence: ', p.p.toLocaleString(), unit, '</div>',
+		].join("");
+
+		while (Math.abs(e.lngLat.lng - lng) > 180)
+			lng += e.lngLat.lng > lng ? 360 : -360;
+
+		new mapboxgl.Popup({className: 'popupDiv'}).setLngLat([lng, lat]).setHTML(html).addTo(map);
+	});
+	map.on('mouseenter', layerId, function() {
+		map.getCanvas().style.cursor = 'pointer';
+	});
+	map.on('mouseleave', layerId, function() {
+		map.getCanvas().style.cursor = '';
+	});
+}
 function createMap(options)
 {
-	var queryString = {
-		baseLayer: 'o',
+	const baseLayers = [
+		['o',  {name: 'Outdoors',          style: 'mapbox://styles/mapbox/outdoors-v11'              }],
+		['s',  {name: 'Satellite',         style: 'mapbox://styles/mapbox/satellite-v9'              }],
+		['sts',{name: 'Satellite Streets', style: 'mapbox://styles/mapbox/satellite-streets-v11'     }],
+		['st', {name: 'Streets',           style: 'mapbox://styles/mapbox/streets-v11'               }],
+		['np', {name: 'Nav Preview',       style: 'mapbox://styles/mapbox/navigation-preview-day-v4' }],
+		['ng', {name: 'Nav Guidance',      style: 'mapbox://styles/mapbox/navigation-guidance-day-v4'}],
+	];
+	const featureLayers = [
+		['mp200me', {name: 'Montenegro P200m'}],
+		['p5k',     {name: 'World P5K'       }],
+	];
+	const peakLists = [
+		['dps', {name: 'Desert Peaks Section'  }],
+		['gbp', {name: 'Great Basin Peaks List'}],
+		['hps', {name: 'Hundred Peaks Section' }],
+		['lpc', {name: 'Lower Peaks Committee' }],
+		['npc', {name: 'Nevada Peaks Club'     }],
+		['sps', {name: 'Sierra Peaks Section'  }],
+		['ogul',{name: 'Tahoe Ogul Peaks List' }],
+		['odp', {name: 'Other Desert Peaks'    }],
+		['osp', {name: 'Other Sierra Peaks'    }],
+		['ocap',{name: 'Other California Peaks'}],
+		['owp', {name: 'Other Western Peaks'   }],
+	];
+	const queryString = {
+		baseLayer: baseLayers[0][1],
+		baseLayerLookup: new Map(baseLayers),
 		bearing: 0,
-		overlays: [],
+		featureLayers: new Set(),
+		featureLayerLookup: new Map(featureLayers),
+		peakLists: new Set(),
+		peakListLookup: new Map(peakLists),
 		pitch: 0,
 	};
-	function BaseLayer(name, abbr, style)
-	{
-		this.name = name;
-		this.style = 'mapbox://styles/mapbox/' + style;
-		baseLayers[abbr] = this;
-	}
-	var layers = [
-		new BaseLayer('Outdoors', 'o', 'outdoors-v11'),
-		new BaseLayer('Satellite', 's', 'satellite-v9'),
-		new BaseLayer('Satellite Streets', 'sts', 'satellite-streets-v11'),
-		new BaseLayer('Streets', 'st', 'streets-v11'),
-		new BaseLayer('Nav Preview', 'np', 'navigation-preview-day-v4'),
-		new BaseLayer('Nav Guidance', 'ng', 'navigation-guidance-day-v4'),
-	];
-	for (var pl of ['dps', 'sps', 'gbp', 'hps', 'lpc', 'npc', 'ogul', 'odp', 'osp', 'ocap', 'owp'])
-		validOverlays[pl] = 'json/peaks/' + pl + '.json';
+
 	parseQueryString(queryString);
 
 	mapboxgl.accessToken = options.accessToken;
 
 	options.center = [-119.25, 37.4];
 	options.container = 'map';
-	options.style = baseLayers[queryString.baseLayer].style;
+	options.style = queryString.baseLayer.style;
 	options.bearing = queryString.bearing;
 	options.pitch = queryString.pitch;
 	options.zoom = 6;
@@ -341,13 +405,12 @@ function createMap(options)
 	map.addControl(new mapboxgl.NavigationControl(), 'top-left');
 	map.addControl(new mapboxgl.ScaleControl({unit: 'imperial'}), 'bottom-left');
 
-	var layerControl = new LayerControl(map, queryString.baseLayer);
-	for (var layer of layers)
-		layerControl.addLayer(layer);
+	const layerControl = new LayerControl(map, queryString.baseLayer);
+	baseLayers.forEach(([, baseLayer]) => layerControl.addLayer(baseLayer));
 
 	var mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
 	var mapBoundsFromOverlay = false;
-	var overlaysToLoad = queryString.overlays.length;
+	var overlaysToLoad = queryString.peakLists.size;
 
 	if (queryString.ll) {
 		var minZoom = map.getMinZoom();
@@ -377,7 +440,7 @@ function createMap(options)
 		return center;
 	}
 
-	var centerMarker = new mapboxgl.Marker(centerIcon())
+	var centerMarker = new mapboxgl.Marker({element: centerIcon()})
 		.setLngLat(updateCenter())
 		.addTo(map);
 
@@ -425,7 +488,7 @@ function createMap(options)
 	bearingSpan.addEventListener('dblclick', resetBearing, false);
 	pitchSpan.addEventListener('dblclick', resetPitch, false);
 
-	function addOverlay(geojson)
+	function addPeakList(geojson)
 	{
 		if (geojson.features.length === 0) return;
 
@@ -448,7 +511,7 @@ function createMap(options)
 				.setLngLat(ll)
 				.setHTML(popupHTML(ll[0], ll[1], p));
 
-			return new mapboxgl.Marker(icon)
+			return new mapboxgl.Marker({element: icon})
 				.setLngLat(ll)
 				.setPopup(popup)
 				.addTo(map);
@@ -489,8 +552,12 @@ function createMap(options)
 		layerControl.addOverlay(geojson.name, markers);
 	}
 
-	for (var url of queryString.overlays)
-		loadJSON(url, addOverlay);
+	queryString.peakLists.forEach(peakListId =>
+		loadJSON('json/peaks/' + peakListId + '.json', addPeakList));
+
+	map.on('load', function() {
+		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
+	});
 }
 function init()
 {
