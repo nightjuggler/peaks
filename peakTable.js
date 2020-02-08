@@ -346,6 +346,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		addMapLink(listNode, 'Closed Contour',
 			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
 
+	// GeoMAC will be decommissioned on April 30, 2020.
 	addMapLink(listNode, 'GeoMAC Wildfire Viewer',
 		'https://nifc.maps.arcgis.com/apps/webappviewer/index.html?' +
 		'id=fa067b6b21534df283a87acc3ae3227c&extent=' + extent);
@@ -358,6 +359,12 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	addMapLink(listNode, 'Interagency Elevation Inventory',
 		'https://coast.noaa.gov/inventory/index.html?layers=1&zoom=14&center=' +
 		latLong[1] + ',' + latLong[0] + '&basemap=esristreet');
+
+	addMapLink(listNode, 'Lists of John',
+		'https://listsofjohn.com/mapf?lat=' + latLong[0] + '&lon=' + latLong[1] + '&z=15&d=y');
+
+	addMapLink(listNode, 'National Fire Situational Awareness',
+		'https://maps.nwcg.gov/sa/#/%3F/' + latLong[0] + '/' + latLong[1] + '/12');
 
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
 		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl'
