@@ -139,36 +139,33 @@ var globalPeakInfo = {
 		CC: false,
 	},
 };
-function isValidParam(s)
-{
-	return s.length <= 16 && s.match(/^[a-z][_0-9A-Za-z]*$/) !== null;
-}
 function parseQueryString()
 {
-	var q = window.location.search;
+	const q = window.location.search;
 
 	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
 
-	var flags = {
+	const flags = {
 		showDelisted: 'showDelisted',
 		showSuspended: 'showSuspended',
 	};
-	var handlers = {
+	const handlers = {
 	};
 
-	for (var s of q.substring(1).split('&'))
-	{
-		var i = s.indexOf('=');
-		if (i < 0 && isValidParam(s) && flags[s]) {
-			globalPeakInfo[flags[s]] = true;
-			continue;
-		}
-		if (i < 1 || i === s.length - 1) continue;
-		var k = s.substring(0, i);
-		var v = s.substring(i + 1);
+	const validKey = (key) => key.length <= 16 && /^[a-z][A-Za-z]*$/.test(key);
 
-		if (isValidParam(k) && handlers[k])
-			handlers[k](v);
+	for (const s of q.substring(1).split('&'))
+	{
+		const i = s.indexOf('=');
+		if (i < 0) {
+			if (validKey(s) && flags.hasOwnProperty(s))
+				globalPeakInfo[flags[s]] = true;
+		} else {
+			const [k, v] = [s.substring(0, i), s.substring(i + 1)];
+
+			if (validKey(k) && handlers.hasOwnProperty(k))
+				handlers[k](v);
+		}
 	}
 }
 function newPeakFlags(parentFlags)
