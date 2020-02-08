@@ -1,21 +1,22 @@
 /* globals document, Option, window */
+(function() {
 'use strict';
 
-var radiansPerDegree = Math.PI / 180.0; // 0.017453292519943295
-var degreesPerRadian = 180.0 / Math.PI;
-var earthRadius = 6378137.0; // WGS 84 equatorial radius in meters
+const radiansPerDegree = Math.PI / 180;
+const degreesPerRadian = 180 / Math.PI;
+const earthRadius = 6378137.0; // WGS 84 equatorial radius in meters
 
 function deltaLatForDistanceNorth(distance)
 {
 	// Derived from solving the Haversine formula for lat2 when long1 == long2
 
-	return (distance / earthRadius) * degreesPerRadian;
+	return distance / earthRadius * degreesPerRadian;
 }
 function deltaLongForDistanceEast(lat1, distance)
 {
 	// Derived from solving the Haversine formula for long2 when lat1 == lat2
 
-	return 2.0 * Math.asin(Math.sin(distance / (2.0 * earthRadius)) /
+	return 2 * Math.asin(Math.sin(distance / (2 * earthRadius)) /
 		Math.cos(lat1 * radiansPerDegree)) * degreesPerRadian;
 }
 function latitudeToWebMercatorY(latitude)
@@ -24,7 +25,7 @@ function latitudeToWebMercatorY(latitude)
 
 	var y = Math.sin(latitude * radiansPerDegree);
 
-	return (earthRadius / 2.0 * Math.log((1.0 + y) / (1.0 - y))).toFixed(4);
+	return (earthRadius / 2 * Math.log((1 + y) / (1 - y))).toFixed(4);
 }
 function longitudeToWebMercatorX(longitude)
 {
@@ -292,8 +293,8 @@ function totalOffsetTop(element)
 }
 function addMapLink(listNode, linkText, url)
 {
-	var listItem = document.createElement('LI');
-	var linkNode = document.createElement('A');
+	var listItem = document.createElement('li');
+	var linkNode = document.createElement('a');
 	linkNode.href = url;
 	linkNode.appendChild(document.createTextNode(linkText));
 	listItem.appendChild(linkNode);
@@ -308,7 +309,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	var pathPrefix = globalPeakInfo.pathPrefix;
 	var peakListId = globalPeakInfo.peakListId;
 
-	var listNode = document.createElement('UL');
+	var listNode = document.createElement('ul');
 
 	addMapLink(listNode, 'Andrew Kirmse P300 Peaks',
 		'https://fusiontables.googleusercontent.com/embedviz?' +
@@ -364,17 +365,17 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://maps.nwcg.gov/sa/#/%3F/' + latLong[0] + '/' + latLong[1] + '/12');
 
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
-		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl'
-		+ '?FormatBox=Decimal%20Degrees'
-		+ '&selectedFormat=Decimal%20Degrees'
-		+ '&DLatBox=' + latLong[0]
-		+ '&DLonBox=' + latLong[1].substring(1)
-		+ '&RadBox=1'
-		+ '&TypeSelected=X-0'
-		+ '&StabilSelected=0'
-		+ '&SubmitBtn=Submit'
-		+ '&dump_app_trace=false'
-		+ '&db_debug=false');
+		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl' +
+		'?FormatBox=Decimal%20Degrees' +
+		'&selectedFormat=Decimal%20Degrees' +
+		'&DLatBox=' + latLong[0] +
+		'&DLonBox=' + latLong[1].substring(1) +
+		'&RadBox=1' +
+		'&TypeSelected=X-0' +
+		'&StabilSelected=0' +
+		'&SubmitBtn=Submit' +
+		'&dump_app_trace=false' +
+		'&db_debug=false');
 
 	addMapLink(listNode, 'OpenStreetMap',
 		'https://www.openstreetmap.org/#map=16/' + latLong[0] + '/' + latLong[1] + '&layers=C');
@@ -398,23 +399,22 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');
 
 	addMapLink(listNode, 'USGS Elevation Point Query',
-		'https://nationalmap.gov/epqs/pqs.php'
-		+ '?x=' + latLong[1]
-		+ '&y=' + latLong[0] + '&units=Feet&output=json');
+		'https://nationalmap.gov/epqs/pqs.php' +
+		'?x=' + latLong[1] + '&y=' + latLong[0] + '&units=Feet&output=json');
 
 	addMapLink(listNode, 'USGS National Map (Basic)',
-		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=15&bbox='
-		+ latLong[1] + ',' + latLong[0] + ','
-		+ latLong[1] + ',' + latLong[0]);
+		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=15&bbox=' +
+		latLong[1] + ',' + latLong[0] + ',' +
+		latLong[1] + ',' + latLong[0]);
 
 	addMapLink(listNode, 'USGS National Map (Advanced)',
-		'https://viewer.nationalmap.gov/advanced-viewer/viewer/index.html?center='
-		+ longitudeToWebMercatorX(longitude) + ','
-		+ latitudeToWebMercatorY(latitude) + ',102100&level=15');
+		'https://viewer.nationalmap.gov/advanced-viewer/viewer/index.html?center=' +
+		longitudeToWebMercatorX(longitude) + ',' +
+		latitudeToWebMercatorY(latitude) + ',102100&level=15');
 
 	addMapLink(listNode, 'USGS Protected Areas Database',
-		'https://maps.usgs.gov/padus/#start='
-		+ encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude))));
+		'https://maps.usgs.gov/padus/#start=' +
+		encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude))));
 
 	addMapLink(listNode, 'USGS TopoView',
 		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
@@ -425,7 +425,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://umontana.maps.arcgis.com/apps/webappviewer/index.html?' +
 		'id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=' + extent);
 
-	var llSpan = document.createElement('SPAN');
+	var llSpan = document.createElement('span');
 	llSpan.style.color = 'black';
 	llSpan.style.cursor = 'pointer';
 	var deg = '\u00B0';
@@ -439,12 +439,12 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		llSpan.firstChild.nodeValue = llText;
 	});
 
-	var llDiv = document.createElement('DIV');
+	var llDiv = document.createElement('div');
 	llDiv.style.textAlign = 'center';
 	llDiv.style.paddingBottom = '2px';
 	llDiv.appendChild(llSpan);
 
-	var mapLinkBox = document.createElement('DIV');
+	var mapLinkBox = document.createElement('div');
 	mapLinkBox.className = 'mapLinkBox';
 	mapLinkBox.appendChild(llDiv);
 	mapLinkBox.appendChild(listNode);
@@ -548,7 +548,7 @@ function addListLink(row)
 	if (row.dataset.from)
 		refArray.unshift(row.dataset.from);
 
-	const pll = document.createElement('DIV');
+	const pll = document.createElement('div');
 	pll.className = 'pll';
 
 	for (var ref of refArray)
@@ -577,7 +577,7 @@ function addListLink(row)
 			linkText = '(' + listId + ')';
 		}
 
-		var listLink = document.createElement('A');
+		var listLink = document.createElement('a');
 		listLink.href = globalPeakInfo.pathPrefix + linkHref + '#' + htmlId + sectionNumber;
 		listLink.appendChild(document.createTextNode(linkText));
 
@@ -636,7 +636,7 @@ function decorateTable()
 			addListLink(row);
 		if (firstColumn.rowSpan === 2)
 		{
-			var spanElement = document.createElement('SPAN');
+			var spanElement = document.createElement('span');
 			spanElement.className = 'expandCollapse';
 			spanElement.appendChild(document.createTextNode(rowCollapsedIcon));
 			firstColumn.appendChild(spanElement);
@@ -653,7 +653,7 @@ function decorateTable()
 		{
 			var secondColumn = firstColumn.nextElementSibling;
 			var lineBreak = secondColumn.firstElementChild.nextElementSibling;
-			var mapLinkSpan = document.createElement('SPAN');
+			var mapLinkSpan = document.createElement('span');
 			mapLinkSpan.className = 'mapLinkHidden';
 			mapLinkSpan.appendChild(document.createTextNode(mapLinkIconUp));
 			mapLinkSpan.tabIndex = 0;
@@ -1000,3 +1000,4 @@ function hideLegend()
 	legend.style.display = 'none';
 }
 window.addEventListener('DOMContentLoaded', decorateTable, false);
+})();
