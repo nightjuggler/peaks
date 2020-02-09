@@ -187,7 +187,7 @@ function assignLayer(item, namePath, layer, featureProperties)
 	}
 	item.layer = layer;
 }
-addFunctions.default = function(geojson, map, lcItem)
+addFunctions.default = function(geojson)
 {
 	return L.geoJSON(geojson, {style: {color: '#FF4500'/* OrangeRed */}});
 };
@@ -223,16 +223,13 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 };
 function officeIcon()
 {
-	var fill = 'cyan';
-	var stroke = 'blue';
-
 	var o = {iconSize: [26, 20], className: 'officeIcon', popupAnchor: [0, -4]};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" viewBox="0 0 26 20">'
-		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="2" '
-		+ 'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>';
+	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" viewBox="0 0 26 20">' +
+		'<path fill="cyan" stroke="blue" stroke-width="2" ' +
+		'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>';
 	return L.divIcon(o);
 }
-addFunctions.add_BLM_Offices = function(geojson, map, lcItem)
+addFunctions.add_BLM_Offices = function(geojson, map)
 {
 	function addPopup(feature, latlng)
 	{
@@ -469,12 +466,12 @@ function peakIcon(p)
 	var stroke = p.climbed ? 'green' : 'red';
 
 	var o = {iconSize: [20, 26], className: 'peakIcon', popupAnchor: [0, -8]};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">'
-		+ '<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" '
-		+ 'd="M 10,2 L 1,19 19,19 Z" /></svg>';
+	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">' +
+		'<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" ' +
+		'd="M 10,2 L 1,19 19,19 Z" /></svg>';
 	return L.divIcon(o);
 }
-addFunctions.addPeakOverlay = function(geojson, map, lcItem)
+addFunctions.addPeakOverlay = function(geojson, map)
 {
 	setPopupGlobals(geojson);
 
@@ -491,7 +488,7 @@ addFunctions.addPeakOverlay = function(geojson, map, lcItem)
 
 	return L.geoJSON(geojson, {pointToLayer: addPeak});
 };
-addFunctions.add_UC_Reserve = function(geojson, map, lcItem)
+addFunctions.add_UC_Reserve = function(geojson, map)
 {
 	function addPopup(feature, layer)
 	{
@@ -510,7 +507,6 @@ addFunctions.add_UC_Reserve = function(geojson, map, lcItem)
 		popupDiv.appendChild(document.createTextNode('(' + p.campus + ')'));
 
 		bindPopup(popupDiv, map, layer);
-//		assignLayer(lcItem, [p.name], layer);
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FF00FF'/* Magenta */}});
@@ -1216,19 +1212,19 @@ LayerControl.prototype.addPointQueries = function(rootLCD, pointQueries, geometr
 	this.div.appendChild(document.createElement('hr'));
 	this._addPointQueries(rootLCD, this.div);
 
-	for (var q of pointQueries)
+	for (const [id, color] of geometryQueries)
 	{
-		let item = getItem(q.split('_'), rootLCD);
-		if (item && item.queryToggle && !item.queryToggle.checked)
-			item.toggleQuery();
-	}
-	for (var a of geometryQueries)
-	{
-		let item = getItem(a[0].split('_'), rootLCD);
+		const item = getItem(id.split('_'), rootLCD);
 		if (item && item.popup) {
 			item.popup.runGeometryQuery = true;
-			if (a.length > 1)
-				item.popup.color = '#' + a[1].toLowerCase();
+			if (color)
+				item.popup.color = '#' + color.toLowerCase();
 		}
+	}
+	for (const id of pointQueries)
+	{
+		const item = getItem(id.split('_'), rootLCD);
+		if (item && item.queryToggle && !item.queryToggle.checked)
+			item.toggleQuery();
 	}
 };
