@@ -161,12 +161,11 @@ progress {
 
 function isValidId(s, n)
 {
-	return s.length <= n && s.match(/^[a-z][_0-9a-z]*$/) !== null;
+	return s.length <= n && /^[a-z][_0-9a-z]*$/.test(s);
 }
 function parseLL(q, v, latIndex, lngIndex)
 {
 	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
-
 	if (m === null) return;
 
 	var lat = parseFloat(m[latIndex]);
@@ -181,10 +180,12 @@ function parseLatLng(q, v) { parseLL(q, v, 1, 2); }
 function parseLngLat(q, v) { parseLL(q, v, 2, 1); }
 function parseZoom(q, v)
 {
-	if (v.match(/^[12][0-9]?$/))
-		q.zoom = parseInt(v, 10);
-	else if (v === '0')
-		q.zoom = 0;
+	if (!/^[1-9][0-9]?$/.test(v)) return;
+
+	var zoom = parseInt(v, 10);
+	if (zoom < 1 || zoom > 22) return;
+
+	q.zoom = zoom;
 }
 function parseOverlay(q, v)
 {
@@ -203,17 +204,12 @@ function parsePointQuery(q, v)
 }
 function parseGeometryQuery(q, v)
 {
-	var a = [];
-	v = v.split(':');
+	if ((v = v.split(':')).length > 2) return;
 
-	if (v.length > 0 && isValidId(v[0], 48))
-		a.push(v[0]);
-	if (v.length > 1 && v[1].match(/^[0-9A-Fa-f]{6}$/))
-		a.push(v[1]);
-	if (v.length > 2)
-		return;
+	const [id, color = ''] = v;
 
-	q.geometryQueries.push(a);
+	if (isValidId(id, 48))
+		q.geometryQueries.push(/^[0-9A-Fa-f]{6}$/.test(color) ? [id, color] : [id]);
 }
 function parseBaseLayer(q, v)
 {
@@ -222,14 +218,14 @@ function parseBaseLayer(q, v)
 }
 function parseQueryString(queryString)
 {
-	var q = window.location.search;
+	const q = window.location.search;
 
 	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
 
-	var flags = {
+	const flags = {
 		clk: 'clickCenter',
 	};
-	var handlers = {
+	const handlers = {
 		b: parseBaseLayer,
 		ll: parseLatLng,
 		o: parseOverlay,
@@ -240,18 +236,18 @@ function parseQueryString(queryString)
 		z: parseZoom,
 	};
 
-	for (var s of q.substr(1).split('&'))
+	for (const s of q.substring(1).split('&'))
 	{
-		var i = s.indexOf('=');
-		if (i < 0 && isValidId(s, 3) && flags[s]) {
+		const i = s.indexOf('=');
+		if (i < 0 && isValidId(s, 3) && flags.hasOwnProperty(s)) {
 			queryString[flags[s]] = true;
 			continue;
 		}
 		if (i < 1 || i === s.length - 1) continue;
-		var k = s.substr(0, i);
-		var v = s.substr(i + 1);
+		const k = s.substring(0, i);
+		const v = s.substring(i + 1);
 
-		if (isValidId(k, 3) && handlers[k])
+		if (isValidId(k, 3) && handlers.hasOwnProperty(k))
 			handlers[k](queryString, v);
 	}
 }
