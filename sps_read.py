@@ -1364,7 +1364,7 @@ class RE(object):
 		'^<td><a href="https://www\\.summitpost\\.org/([-0-9a-z]+)/([0-9]+)">SP</a></td>$'
 	)
 	wikipedia = re.compile(
-		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([%(),.0-9A-Z_a-z]+)">W</a></td>$'
+		'^<td><a href="https://en\\.wikipedia\\.org/wiki/([-%(),.0-9A-Z_a-z]+)">W</a></td>$'
 	)
 	bobBurd = re.compile(
 		'^<td><a href="https://www\\.snwburd\\.com/dayhikes/peak/([0-9]+)">BB</a></td>$'
@@ -2438,8 +2438,8 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 	def peakNames(peaks):
 		return "({})".format(", ".join([peak.name.replace('&quot;', '"') for peak in peaks]))
 
-	int2StrMeters = lambda(n): "{:6,}m".format(n)
-	int2StrFeet = lambda(n): "{:6,}'".format(n)
+	int2StrMeters = lambda n: "{:6,}m".format(n)
+	int2StrFeet = lambda n: "{:6,}'".format(n)
 	elev2Str = int2StrMeters if elevInMeters else int2StrFeet
 	prom2Str = int2StrMeters if promInMeters else int2StrFeet
 
