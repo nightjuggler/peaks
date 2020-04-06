@@ -226,6 +226,17 @@ class Peak(object):
 		return max([prom if isinstance(prom, int)
 			else prom.avgFeet() for prom in self.prominences])
 
+	def getDataSheets(self):
+		dataSheets = []
+		for e in self.elevations:
+			if isinstance(e.source, NGSDataSheet):
+				dataSheets.append(e.source.id)
+			else:
+				break
+		if not dataSheets and self.elevations[-1].source is None:
+			return None
+		return dataSheets
+
 	def copyFrom(self, other):
 		doNotCopy = {'id', 'peakList', 'column12', 'dataFrom', 'dataAlso',
 			'hasHtmlId', 'isEmblem', 'isMtneer', 'delisted', 'suspended'}
@@ -839,7 +850,7 @@ class Elevation(object):
 			return (3, self.elevationFeet, src.id)
 		if isinstance(src, USGSTopo):
 			return (1, -src.seriesID, not self.isRange, src.year)
-		return (0,)
+		raise FormatError("Elevation source must be None, NGSDataSheet, or USGSTopo")
 
 	def sortkeyForStats(self):
 		src = self.source
@@ -849,7 +860,7 @@ class Elevation(object):
 			return (1, self.elevationFeet, src.id)
 		if isinstance(src, USGSTopo):
 			return (2, -src.seriesID, not self.isRange, src.year, self.elevationFeet)
-		return (0,)
+		raise FormatError("Elevation source must be None, NGSDataSheet, or USGSTopo")
 
 	def getTooltip(self):
 		src = self.source

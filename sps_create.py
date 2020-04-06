@@ -692,6 +692,19 @@ class TablePeak(object):
 			if self.expectLand(area):
 				print "{} '{}' not on {}".format(peak.fmtIdName, name, self.classTitle)
 
+	def checkDataSheet(self, peak):
+		dataSheets = peak.getDataSheets()
+		if dataSheets is None:
+			return
+
+		ds = self.dataSheet
+		if ds is None:
+			if dataSheets:
+				print self.fmtIdName, "Datasheet not on", self.classTitle
+		else:
+			if ds not in dataSheets:
+				print self.fmtIdName, "Datasheet", ds, "not in table"
+
 class PeakPb(TablePeak):
 	classId = 'Pb'
 	classTitle = 'Peakbagger'
@@ -1800,6 +1813,8 @@ class PeakLoJ(TablePeak):
 	peakFilePatterns["City"] = peakFilePatterns["County"]
 	peakFileLine1Pattern = re.compile("^<b>" + peakNamePattern + "</b> <b>([A-Z]{2}(?:, [A-Z]{2})*)</b>")
 	peakFileLabelPattern = re.compile("^[A-Z][A-Za-z]+$")
+	dataSheetPattern = re.compile("<a href=\"http://www\\.ngs\\.noaa\\.gov/cgi-bin/ds_mark\\.prl\\?"
+		"PidBox=([A-Z]{2}[0-9]{4})\">Datasheet</a>")
 
 	def readPeakFile_Counties(self, line):
 		self.counties = []
@@ -1829,6 +1844,14 @@ class PeakLoJ(TablePeak):
 		self.ydsClass = None
 		self.landManagement = []
 		getLand = False
+
+		if "Datasheet" in line:
+			m = self.dataSheetPattern.search(line)
+			if m is None:
+				err("{} Datasheet pattern doesn't match: {}", self.fmtIdName, line)
+			self.dataSheet = m.group(1)
+		else:
+			self.dataSheet = None
 
 		for line in lines:
 			if getLand:
@@ -2483,6 +2506,8 @@ def checkData(pl, setProm=False, setVR=False):
 					if haveFlag != wantFlag:
 						print "{} Should {}able CC flag".format(peak.fmtIdName,
 							"en" if wantFlag else "dis")
+				else:
+					peak2.checkDataSheet(peak)
 
 				if peak.quad is not None:
 					if peak.quad != peak2.quadName:
