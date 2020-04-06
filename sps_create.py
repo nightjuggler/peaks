@@ -1816,6 +1816,20 @@ class PeakLoJ(TablePeak):
 	dataSheetPattern = re.compile("<a href=\"http://www\\.ngs\\.noaa\\.gov/cgi-bin/ds_mark\\.prl\\?"
 		"PidBox=([A-Z]{2}[0-9]{4})\">Datasheet</a>")
 
+	def readPeakFile_DataSheet(self, line):
+		if "Datasheet" not in line:
+			return
+		if "(No Datasheet)" in line:
+			return
+		if self.dataSheet is not None:
+			err("{} More than one datasheet!", self.fmtIdName)
+
+		m = self.dataSheetPattern.search(line)
+		if m is None:
+			err("{} Datasheet pattern doesn't match: {}", self.fmtIdName, line)
+
+		self.dataSheet = m.group(1)
+
 	def readPeakFile_Counties(self, line):
 		self.counties = []
 		regExp = self.peakFilePatterns["County"][0]
@@ -1842,16 +1856,11 @@ class PeakLoJ(TablePeak):
 		self.state = self.state.split(", ")
 		self.country = ["US"]
 		self.ydsClass = None
+		self.dataSheet = None
 		self.landManagement = []
 		getLand = False
 
-		if "Datasheet" in line:
-			m = self.dataSheetPattern.search(line)
-			if m is None:
-				err("{} Datasheet pattern doesn't match: {}", self.fmtIdName, line)
-			self.dataSheet = m.group(1)
-		else:
-			self.dataSheet = None
+		self.readPeakFile_DataSheet(line)
 
 		for line in lines:
 			if getLand:
@@ -1886,6 +1895,8 @@ class PeakLoJ(TablePeak):
 			if pattern is None:
 				if label == "Counties":
 					self.readPeakFile_Counties(value)
+				elif label == "AlternateNames":
+					self.readPeakFile_DataSheet(value)
 				continue
 			pattern, attributes = pattern
 			m = pattern.match(value)
