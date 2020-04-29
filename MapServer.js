@@ -7,15 +7,12 @@ items: {
 	mapbox: {
 		name: 'Mapbox',
 		items: {
-			o: {name: 'Outdoors'},
-			rbh: {name: 'Run Bike Hike'},
-			s: {name: 'Satellite'},
-			sts: {name: 'Streets Satellite'},
-			st: {name: 'Streets'},
-			pencil: {name: 'Pencil'},
-			emerald: {name: 'Emerald'},
+			o: {name: 'Outdoors', style: 'outdoors-v11', classic: 'outdoors'},
+			s: {name: 'Satellite', style: 'satellite-v9', classic: 'satellite'},
+			sts: {name: 'Satellite Streets', style: 'satellite-streets-v11', classic: 'streets-satellite'},
+			st: {name: 'Streets', style: 'streets-v11', classic: 'streets'},
 		},
-		order: ['o', 'rbh', 's', 'sts', 'st', 'pencil', 'emerald'],
+		order: ['o', 's', 'sts', 'st'],
 	},
 	natmap: {
 		name: 'National Map',
@@ -102,7 +99,6 @@ items: {
 		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 	},
 	o: 'mapbox',
-	rbh: 'mapbox',
 	s: 'mapbox',
 	sts: 'mapbox',
 	st: 'mapbox',

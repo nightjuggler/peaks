@@ -367,10 +367,9 @@ function createMap(options)
 	var layerControl = new LayerControl(map);
 
 	if (L.mapbox)
-		BaseLayers.items.mapbox.makeLayer = function(item) {
-			var id = 'mapbox.' + item.name.toLowerCase().replace(/ /g, '-');
-			return L.mapbox.tileLayer(id, options);
-		};
+		BaseLayers.items.mapbox.makeLayer = item =>
+			L.mapbox.tileLayer('mapbox.' + item.classic, options);
+//			L.mapbox.styleLayer('mapbox://styles/mapbox/' + item.style, options);
 	else {
 		BaseLayers.order.splice(0, 1); // Remove 'mapbox'
 		delete BaseLayers.items.mapbox;
