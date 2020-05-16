@@ -7,10 +7,10 @@ items: {
 	mapbox: {
 		name: 'Mapbox',
 		items: {
-			o: {name: 'Outdoors', style: 'outdoors-v11', classic: 'outdoors'},
-			s: {name: 'Satellite', style: 'satellite-v9', classic: 'satellite'},
-			sts: {name: 'Satellite Streets', style: 'satellite-streets-v11', classic: 'streets-satellite'},
-			st: {name: 'Streets', style: 'streets-v11', classic: 'streets'},
+			o:   {name: 'Outdoors',          style: 'outdoors-v11'},
+			s:   {name: 'Satellite',         style: 'satellite-v9'},
+			sts: {name: 'Satellite Streets', style: 'satellite-streets-v11'},
+			st:  {name: 'Streets',           style: 'streets-v11'},
 		},
 		order: ['o', 's', 'sts', 'st'],
 	},

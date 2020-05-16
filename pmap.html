@@ -368,8 +368,7 @@ function createMap(options)
 
 	if (L.mapbox)
 		BaseLayers.items.mapbox.makeLayer = item =>
-			L.mapbox.tileLayer('mapbox.' + item.classic, options);
-//			L.mapbox.styleLayer('mapbox://styles/mapbox/' + item.style, options);
+			L.mapbox.styleLayer('mapbox://styles/mapbox/' + item.style, options);
 	else {
 		BaseLayers.order.splice(0, 1); // Remove 'mapbox'
 		delete BaseLayers.items.mapbox;
@@ -472,12 +471,12 @@ function createMap(options)
 	var js = document.createElement('script');
 	js.onload = function() {jsLoaded = true; init();};
 	head.insertBefore(js, nextNode);
-	js.src = 'https://api.mapbox.com/mapbox.js/v3.3.0/mapbox.js';
+	js.src = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js';
 
 	var css = document.createElement('link');
 	css.onload = function() {cssLoaded = true; init();};
 	head.insertBefore(css, nextNode);
-	css.href = 'https://api.mapbox.com/mapbox.js/v3.3.0/mapbox.css';
+	css.href = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css';
 	css.rel = 'stylesheet';
 
 	window.addEventListener('DOMContentLoaded', function() {domLoaded = true; init();});
