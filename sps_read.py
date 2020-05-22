@@ -413,7 +413,7 @@ landNameLookup = {
 	"Harvey Monroe Hall RNA":                       'Hoover Wilderness',
 	"Hawthorne Army Depot":                         'landDOD',
 	"Hood Mountain Regional Park":                  'landCounty',
-	"Indian Peak WMA":                              'landUDWR',
+	"Indian Peaks WMA":                             'landUDWR',
 	"Lake Mead NRA":                                'landNPS',
 	"Lake Tahoe Basin Management Unit":             'landFS',
 	"Marin Municipal Water District":               'landCounty',

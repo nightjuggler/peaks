@@ -494,7 +494,7 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Giant Sequoia NM":                             "Giant Sequoia National Monument",
 	"Hart Mountain National Antelope Refuge":       "Hart Mountain NAR",
 	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
-	"Indian Peak State Game Management Area":       "Indian Peak WMA",
+	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
 	"Mono Basin NSA":                               "Mono Basin National Forest Scenic Area",
