@@ -1092,7 +1092,7 @@ function exportLayer(spec, transparent)
 		if (transparent)
 			baseURL.push('transparent=true');
 		if (spec.dynamicLayers)
-			baseURL.push('dynamicLayers=' + spec.dynamicLayers);
+			baseURL.push('dynamicLayers=' + encodeURIComponent(spec.dynamicLayers));
 		else if (spec.exportLayers)
 			baseURL.push('layers=show:' + spec.exportLayers);
 	}
