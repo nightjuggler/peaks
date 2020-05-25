@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function zipall {
-	local br="/usr/local/bin/brotli --best --keep"
+	local br="/usr/local/bin/brotli --best --keep --force"
 	local gz="/usr/local/bin/zopfli"
 
 	local infile insize oldsize newsize maxlen prefix
@@ -46,10 +46,7 @@ function print_info {
 	fi
 
 	printf "$1: %7u = %5.2f%%" $newsize $percent
-	if test "$oldsize"
-	then
-		printf " (%+d)" $((newsize - oldsize))
-	fi
+	test "$oldsize" && printf " (%+d)" $((newsize - oldsize))
 	printf "\n"
 }
 function process {
@@ -72,7 +69,7 @@ function process {
 	then
 		echo $command $infile
 		$command $infile
-		/bin/mv "$infile.$x" $outfile
+		test "$prefix" && /bin/mv "$infile.$x" $outfile
 		newsize=`/usr/bin/stat -f "%z" $outfile`
 		print_info $x
 	fi
