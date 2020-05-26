@@ -5,13 +5,14 @@ function zipall {
 	local gz="/usr/local/bin/zopfli"
 
 	local infile insize oldsize newsize maxlen prefix
-	local arg do_info=0 do_html=0 do_json=0 rezip=0 info_calc=0
+	local arg do_info=0 do_html=0 do_json=0 do_code=0 do_none=1 rezip=0 info_calc=0
 
 	for arg in $*
 	do
 		if test "$arg" == info; then do_info=1
-		elif test "$arg" == html; then do_html=1
-		elif test "$arg" == json; then do_json=1
+		elif test "$arg" == html; then do_html=1; do_none=0
+		elif test "$arg" == json; then do_json=1; do_none=0
+		elif test "$arg" == code; then do_code=1; do_none=0
 		elif test "$arg" == rezip; then rezip=1
 		elif test "$arg" == gzip; then gz="/usr/bin/gzip --best --keep --no-name"
 		elif [[ "$arg" == infocalc=[01234] ]]; then info_calc=${arg:9}
@@ -75,22 +76,17 @@ function process {
 	fi
 }
 function ziphtml {
-	local peaklist
-
 	maxlen=10
 	prefix=zipped/
 
-	for peaklist in dps sps hps ogul lpc gbp npc odp osp ocap owp
+	for infile in {dps,sps,hps,ogul,lpc,gbp,npc,odp,osp,ocap,owp}.html
 	do
-		infile="$peaklist.html"
 		insize=`/usr/bin/stat -f "%z" $infile`
-
 		process br
 		process gz
 	done
 }
 function zipjson {
-
 	maxlen=18
 	prefix=""
 
@@ -101,13 +97,24 @@ function zipjson {
 		pmap/*.json
 	do
 		insize=`/usr/bin/stat -f "%z" $infile`
-
 		process br
 		process gz
 	done
 }
-	test $do_html == 1 -o $do_json == 0 && ziphtml
-	test $do_json == 1 && { cd json; zipjson; cd ..; }
+function zipcode {
+	maxlen=14
+	prefix=zipped/
+
+	for infile in MapServer.js peakTable.{css,js} pmap{,gl,mb}.html pmap-lc.js
+	do
+		insize=`/usr/bin/stat -f "%z" $infile`
+		process br
+		process gz
+	done
+}
+	((do_html || do_none)) && ziphtml
+	((do_json || do_none)) && { cd json; zipjson; cd ..; }
+	((do_code || do_none)) && zipcode
 }
 zipall $*
-unset zipall print_info process ziphtml zipjson
+unset zipall print_info process ziphtml zipjson zipcode
