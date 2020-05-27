@@ -490,6 +490,8 @@ class LandMgmtAreaPb(LandMgmtArea):
 
 	areaLookup = {}
 	nameLookup = {
+	"Antelope Valley California Poppy Reserve "
+	"State Natural Reserve":                        "Antelope Valley California Poppy Reserve",
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
 	"Giant Sequoia NM":                             "Giant Sequoia National Monument",
 	"Hart Mountain National Antelope Refuge":       "Hart Mountain NAR",
@@ -497,7 +499,6 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
-	"Mono Basin NSA":                               "Mono Basin National Forest Scenic Area",
 	"Mount Saint Helens National Volcanic Monument":"Mount St. Helens National Volcanic Monument",
 	"Mount Saint Helens NVM":                       "Mount St. Helens National Volcanic Monument",
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",
@@ -1068,8 +1069,6 @@ class PeakPb(TablePeak):
 		('Peak 3222m',                    431, 'max'):   465, # 10570' - 3080m          OSP
 		('Peak 3230m',                    394, 'min'):   361, # 3230m - 3120m           OSP
 		('Peak 3230m',                    394, 'max'):   427, # 3230m - 3100m           OSP
-		('Peak 5196',                     376, 'min'):   356, #                         ODP
-		('Peak 5196',                     376, 'max'):   396, #                         ODP
 		('Pilot Knob (South)',            720, 'min'):   680, #                         SPS
 		('Pilot Knob (South)',            800, 'max'):   760, #                         SPS
 		('Ring Mountain',                 402, 'min'):   442, # 602'-160'               OCAP
