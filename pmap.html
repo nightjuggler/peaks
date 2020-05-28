@@ -10,10 +10,10 @@
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" id="leafletjs"
 	integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
 	crossorigin=""></script>
+<script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js" id="esrileaflet"></script>
 <link href="tooltip.css" rel="stylesheet" id="tooltipcss">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
-<script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js"></script>
 <style>
 progress {
 	margin-right: 4px;
@@ -468,9 +468,16 @@ function createMap(options)
 	delete window.L;
 	head.removeChild(document.getElementById('leafletjs'));
 	head.removeChild(document.getElementById('leafletcss'));
+	const esriLeaflet = document.getElementById('esrileaflet');
+	head.removeChild(esriLeaflet);
 
 	var js = document.createElement('script');
-	js.onload = function() {jsLoaded = true; init();};
+	js.onload = function() {
+		const js = document.createElement('script');
+		js.onload = function() {jsLoaded = true; init();};
+		head.insertBefore(js, nextNode);
+		js.src = esriLeaflet.src;
+	};
 	head.insertBefore(js, nextNode);
 	js.src = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js';
 
