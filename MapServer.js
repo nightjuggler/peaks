@@ -273,7 +273,7 @@ items: {
 			w: {
 		name: 'Wilderness Areas',
 		url: 'https://tiles.arcgis.com/tiles/ERdCHt0sNM6dENSD/arcgis/rest/services' +
-			'/Wilderness_in_the_United_States_103019/MapServer',
+			'/Wilderness_Areas_of_the_United_States_010920/MapServer',
 		tile: true,
 		opacity: 0.5,
 		attribution: 'Wilderness Institute',
@@ -284,56 +284,27 @@ items: {
 		exportLayers: '0',
 		attribution: '[USPS]',
 			},
-			geomac: {
-				name: 'GeoMAC (_dyn)',
+			fires: {
+				name: 'Wildfires',
 				items: {
-					cp: {
+					current: {
 		name: 'Current Perimeters',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
-		exportLayers: '2',
-		queryField0: 'objectid',
-		attribution: '[GeoMAC]',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/Public_Wildfire_Perimeters_View/FeatureServer',
+		queryFields: ['OBJECTID', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
+			'National Interagency Fire Center</a>',
 					},
-					lp: {
-		name: 'Latest Perimeters',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
-		exportLayers: '3',
-		queryField0: 'objectid',
-		attribution: '[GeoMAC]',
-					},
-					modis: {
-		name: 'MODIS Fire Detection',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
-		exportLayers: '4',
-		attribution: '[GeoMAC]',
-					},
-					viirs: {
-		name: 'VIIRS Fire Detection',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_dyn/MapServer',
-		exportLayers: '5',
-		attribution: '[GeoMAC]',
+					archived: {
+		name: 'Archived Perimeters',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/Archived_Wildfire_Perimeters/FeatureServer',
+		queryFields: ['OBJECTID', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
+			'National Interagency Fire Center</a>',
 					},
 				},
-				order: ['cp', 'lp', 'modis', 'viirs'],
-			},
-			geomacperims: {
-				name: 'GeoMAC (_perims)',
-				items: {
-					m: {
-		name: 'MODIS',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
-		exportLayers: '3',
-		attribution: '[GeoMAC]',
-					},
-					p: {
-		name: 'Perimeters',
-		url: 'https://rmgsc-haws1.cr.usgs.gov/arcgis/rest/services/geomac_perims/MapServer',
-		exportLayers: '4',
-		queryField0: 'objectid',
-		attribution: '[GeoMAC]',
-					},
-				},
-				order: ['m', 'p'],
+				order: ['current', 'archived'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -350,8 +321,6 @@ items: {
 			'countylabels',
 			'nwr',
 			'nwrlabels',
-			'geomac',
-			'geomacperims',
 			'glims',
 			'fs',
 			'fsrd',
@@ -364,6 +333,7 @@ items: {
 			'blmw',
 			'fsw',
 			'wsa',
+			'fires',
 			'zip',
 		],
 	}, // us
@@ -413,7 +383,6 @@ items: {
 		},
 		order: ['parks'],
 	},
-	geomac: 'us',
 	w: 'us',
 },
 order: ['us', 'ca', 'nv'],
@@ -513,12 +482,13 @@ function dynamicLayer(id, mapLayerId, renderer)
 }
 
 var aiannhSpec = TileOverlays.items.us.items.aiannh;
+var arfireSpec = TileOverlays.items.us.items.fires.items.archived;
 var blmSpec = TileOverlays.items.us.items.blm;
 var caParkSpec = TileOverlays.items.ca.items.parks;
 var caZipSpec = TileOverlays.items.ca.items.zip;
 var countySpec = TileOverlays.items.us.items.counties;
 var cpadSpec = TileOverlays.items.ca.items.cpad;
-var fireSpec = TileOverlays.items.us.items.geomac.items.lp;
+var fireSpec = TileOverlays.items.us.items.fires.items.current;
 var fsondaSpec = TileOverlays.items.us.items.fsonda;
 var fssimaSpec = TileOverlays.items.us.items.fssima;
 var fsSpec = TileOverlays.items.us.items.fs;
@@ -528,7 +498,6 @@ var npsSpec = TileOverlays.items.us.items.nps;
 var nvParkSpec = TileOverlays.items.nv.items.parks;
 var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
-var viirsSpec = TileOverlays.items.us.items.geomac.items.viirs;
 var wildernessSpec = {};
 var wsaSpec = TileOverlays.items.us.items.wsa;
 
@@ -590,29 +559,6 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
 	npsSpec.opacity = 0.5;
-
-	viirsSpec.items = {
-		custom: {
-			name: 'Custom Rendering',
-			dynamicLayers: JSON.stringify([{
-				id: 101, source: {type: 'mapLayer', mapLayerId: 5},
-				definitionExpression: 'load_stat=\'Active Burning\'',
-				drawingInfo: {renderer: {type: 'simple',
-					symbol: simpleFillSymbol([255, 0, 0, 255])}}
-			},{
-				id: 102, source: {type: 'mapLayer', mapLayerId: 5},
-				definitionExpression: 'load_stat=\'Last 12-24 hrs\'',
-				drawingInfo: {renderer: {type: 'simple',
-					symbol: simpleFillSymbol([255, 165, 0, 255])}}
-			},{
-				id: 103, source: {type: 'mapLayer', mapLayerId: 5},
-				definitionExpression: 'load_stat=\'Last 24-48 hrs\'',
-				drawingInfo: {renderer: {type: 'simple',
-					symbol: simpleFillSymbol([0, 0, 0, 255])}}
-			}]),
-		},
-	};
-	viirsSpec.order = ['custom'];
 
 	wildernessSpec.items = {
 		dl1: {
@@ -1040,18 +986,19 @@ fireSpec.popup = {
 	},
 	show: function(attr)
 	{
-		var name = attr.incidentname + ' Fire';
-		if (attr.incomplex === 'Y')
-			name += ' (' + attr.complexname + ')';
-
-		var size = (Math.round(attr.gisacres * 100) / 100).toLocaleString();
-		var date = getDateTime(attr.perimeterdatetime);
+		var name = attr.IncidentName + ' Fire';
+		var size = (Math.round(attr.GISAcres * 100) / 100).toLocaleString();
+		var date = getDateTime(attr.DateCurrent);
 
 		this.nameNode.nodeValue = name;
 		this.textNode1.nodeValue = '(' + size + ' acres)';
 		this.textNode2.nodeValue = '(' + date + ')';
 		return '#FF0000';
 	},
+};
+arfireSpec.popup = {
+	init: fireSpec.popup.init,
+	show: fireSpec.popup.show,
 };
 
 var querySpecs = [
@@ -1073,6 +1020,7 @@ var querySpecs = [
 	stateSpec,
 	blmSpec,
 	fireSpec,
+	arfireSpec,
 ];
 
 var earthRadius = 6378137; // WGS 84 equatorial radius in meters
@@ -1161,6 +1109,12 @@ TileOverlays.makeLayer = function(spec)
 		options.opacity = spec.opacity;
 	if (spec.tile)
 		return L.tileLayer(spec.url + '/tile/{z}/{y}/{x}', options);
+	if (spec.url.endsWith('/FeatureServer'))
+		return L.esri.featureLayer({
+			url: spec.url + '/' + (spec.queryLayer || '0'),
+			style: spec.style || (() => ({ color: '#FF0000', weight: 2 })),
+			attribution: spec.attribution,
+		});
 
 	return new (exportLayer(spec, true))(options);
 };

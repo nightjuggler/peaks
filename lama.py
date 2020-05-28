@@ -371,6 +371,20 @@ class AIANNH_Query(Query):
 	fields = [("NAME", "name")]
 	printSpec = "{name}"
 
+class NIFC_CurrentPerimetersQuery(Query):
+	name = "NIFC Current Wildfire Perimeters"
+	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
+	service = "Public_Wildfire_Perimeters_View"
+	serverType = "Feature"
+	layer = 0 # sr = 4326
+
+class NIFC_ArchivedPerimetersQuery(Query):
+	name = "NIFC Archived Wildfire Perimeters"
+	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
+	service = "Archived_Wildfire_Perimeters"
+	serverType = "Feature"
+	layer = 0 # sr = 4326
+
 class GeoMAC_CurrentPerimetersQuery(Query):
 	name = "GeoMAC Current Fire Perimeters"
 	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
@@ -565,6 +579,8 @@ def main():
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"cpad_holdings": CPAD_HoldingsQuery,
+		"fires_current": NIFC_CurrentPerimetersQuery,
+		"fires_archived": NIFC_ArchivedPerimetersQuery,
 		"fs": USFS_Query,
 		"geomac_cp": GeoMAC_CurrentPerimetersQuery,
 		"geomac_dd83": GeoMAC_PerimetersDD83_Query,
