@@ -4,13 +4,6 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" id="leafletcss"
-	integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-	crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" id="leafletjs"
-	integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
-	crossorigin=""></script>
-<script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js" id="esrileaflet"></script>
 <link href="tooltip.css" rel="stylesheet" id="tooltipcss">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
@@ -406,49 +399,54 @@ function createMap(options)
 }
 (function()
 {
-	const path = window.location.pathname;
-
-	if (path.substring(path.lastIndexOf('/') + 1) !== 'pmapmb.html')
-	{
-		window.addEventListener('DOMContentLoaded', createMap);
-		return;
-	}
-
 	let jsLoaded = false;
-	let cssLoaded = false;
 	let domLoaded = false;
 
 	function init()
 	{
-		if (jsLoaded && cssLoaded && domLoaded) createMapboxMap(createMap);
+		if (jsLoaded && domLoaded) createMapboxMap(createMap);
 	}
 
 	const nextNode = document.getElementById('tooltipcss');
 	const head = nextNode.parentNode;
 
-	delete window.L;
-	head.removeChild(document.getElementById('leafletjs'));
-	head.removeChild(document.getElementById('leafletcss'));
-	const esriLeaflet = document.getElementById('esrileaflet');
-	head.removeChild(esriLeaflet);
+	function addElement(tagName, attributes, callback)
+	{
+		const element = document.createElement(tagName);
+		element.onload = callback;
+		head.insertBefore(element, nextNode);
+		for (const [attr, value] of attributes)
+			element.setAttribute(attr, value);
+	}
+	function addEsriLeaflet()
+	{
+		addElement('script', [['src', 'https://unpkg.com/esri-leaflet/dist/esri-leaflet.js']],
+			function() { jsLoaded = true; init(); });
+	}
 
-	const js = document.createElement('script');
-	js.onload = function() {
-		const js = document.createElement('script');
-		js.onload = function() {jsLoaded = true; init();};
-		head.insertBefore(js, nextNode);
-		js.src = esriLeaflet.src;
-	};
-	head.insertBefore(js, nextNode);
-	js.src = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js';
+	const path = window.location.pathname;
 
-	const css = document.createElement('link');
-	css.onload = function() {cssLoaded = true; init();};
-	head.insertBefore(css, nextNode);
-	css.href = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css';
-	css.rel = 'stylesheet';
+	const [tag1, attr1, tag2, attr2] = path.substring(path.lastIndexOf('/') + 1) === 'pmapmb.html' ? [
+'script',
+[['src', 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js']],
+'link',
+[['rel', 'stylesheet'],
+['href', 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css']]
+		] : [
+'link',
+[['rel', 'stylesheet'],
+['href', 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.css'],
+['integrity', 'sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=='],
+['crossorigin', '']],
+'script',
+[['src', 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.js'],
+['integrity', 'sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=='],
+['crossorigin', '']]
+		];
 
-	window.addEventListener('DOMContentLoaded', function() {domLoaded = true; init();});
+	addElement(tag1, attr1, function() { addElement(tag2, attr2, addEsriLeaflet); });
+
+	window.addEventListener('DOMContentLoaded', function() { domLoaded = true; init(); });
 })();
 })();
 </script>
