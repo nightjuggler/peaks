@@ -69,10 +69,10 @@
 </style>
 <script src="pmap-shared.js"></script>
 <script>
-/* globals document, window, XMLHttpRequest */
-/* globals mapboxgl */
-/* globals enableTooltips, popupHTML, setPopupGlobals */
-"use strict";
+/* globals document, window, mapboxgl */
+/* globals createMapboxMap, enableTooltips, loadJSON, popupHTML, setPopupGlobals */
+(function() {
+'use strict';
 function validKey(key)
 {
 	return key.length <= 8 && /^[a-z][0-9a-z]*$/.test(key);
@@ -234,7 +234,7 @@ LayerControl.prototype.addLayer = function(layer)
 	var input = document.createElement('input');
 	input.type = 'radio';
 	input.name = 'style';
-	input.checked = (layer === ctrl.currentLayer);
+	input.checked = layer === ctrl.currentLayer;
 
 	function changeStyle()
 	{
@@ -280,22 +280,6 @@ LayerControl.prototype.addOverlay = function(name, markers)
 
 	ctrl.div.appendChild(div);
 };
-function loadJSON(url, onSuccess, onFailure)
-{
-	var xhr = new XMLHttpRequest();
-
-	xhr.responseType = 'json';
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState === 4)
-			if (xhr.status === 200)
-				onSuccess(xhr.response);
-			else if (onFailure)
-				onFailure();
-	};
-
-	xhr.open('GET', url);
-	xhr.send();
-}
 function addFeatureLayer(layerId, map)
 {
 	function mapLink(lat, lng)
@@ -416,7 +400,7 @@ function createMap(options)
 		var minZoom = map.getMinZoom();
 		var maxZoom = map.getMaxZoom();
 
-		var zoom = queryString.zoom || (maxZoom - 5);
+		var zoom = queryString.zoom || maxZoom - 5;
 
 		if (zoom < minZoom) zoom = minZoom; else
 		if (zoom > maxZoom) zoom = maxZoom;
@@ -559,14 +543,8 @@ function createMap(options)
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
 	});
 }
-function init()
-{
-	var protocol = window.location.protocol;
-	var suffix = (protocol === 'file:' || protocol === '') ? 'json' : 'cgi';
-
-	loadJSON('mapbox.' + suffix, createMap);
-}
-window.addEventListener('DOMContentLoaded', init, false);
+window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createMap); }, false);
+})();
 </script>
 </head>
 <body>

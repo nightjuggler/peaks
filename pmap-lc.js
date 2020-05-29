@@ -1,9 +1,6 @@
 "use strict";
-/* globals console, document, Image, window */
-/* globals L */
-/* globals enableTooltips */
-/* globals popupHTML, setPopupGlobals, weatherLink */
-/* globals loadJSON */
+/* globals console, document, Image, window, L */
+/* globals enableTooltips, loadJSON, popupHTML, setPopupGlobals, weatherLink */
 
 var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 var USFS_Prefix = 'https://www.fs.usda.gov/';

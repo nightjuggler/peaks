@@ -1,4 +1,5 @@
-/* exported popupHTML, setPopupGlobals */
+/* globals document, window, URL, XMLHttpRequest, mapbox */
+/* exported createMapboxMap, loadJSON, popupHTML, setPopupGlobals */
 'use strict';
 
 var defaultPeakList;
@@ -40,7 +41,7 @@ function elevationHTML(elevations)
 	const a = [];
 	const f = ['<span><a href="', '', '">', '', '</a><div class="tooltip">', '', '</div></span>'];
 
-	for (var e of elevations)
+	for (const e of elevations)
 	{
 		if (typeof e === 'string') { a.push(e); continue; }
 
@@ -99,15 +100,10 @@ function getPLL(peakID) // PLL = Peak List Link(s)
 	if (typeof peakID === 'string')
 		return makePLL(defaultPeakList, peakID);
 
-	const links = [];
-
-	for (var id of peakID)
-	{
-		var i = id.indexOf('.');
-		links.push(makePLL(id.substring(0, i), id.substring(i + 1)));
-	}
-
-	return links.join(' ');
+	return peakID.map(id => {
+		const i = id.indexOf('.');
+		return makePLL(id.substring(0, i), id.substring(i + 1));
+	}).join(' ');
 }
 function weatherLink(lng, lat)
 {
@@ -162,4 +158,48 @@ function popupHTML(lng, lat, p)
 		html += makeDiv('peakDiv', inlineDiv('Climbed', p.climbed));
 
 	return makeDiv('popupDiv', html);
+}
+function isFileURL(url)
+{
+	const protocol = (new URL(url, window.location.href)).protocol;
+	return protocol === 'file:' || protocol === '';
+}
+function loadJSON(url, onSuccess, onFailure, progressBar)
+{
+	const xhr = new XMLHttpRequest();
+
+	xhr.responseType = 'json';
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4)
+		{
+			if (xhr.status === 200 || isFileURL(url) && xhr.status === 0)
+				onSuccess(xhr.response);
+			else if (onFailure)
+				onFailure();
+			if (progressBar)
+				progressBar.parentNode.removeChild(progressBar);
+		}
+	};
+	if (progressBar)
+		xhr.addEventListener('progress', function(event) {
+			if (event.lengthComputable) {
+				progressBar.max = event.total;
+				progressBar.value = event.loaded;
+			}
+		});
+
+	xhr.open('GET', url);
+	xhr.send();
+	return xhr;
+}
+function createMapboxMap(createMap)
+{
+	if (isFileURL('mapbox')) {
+		const head = document.head;
+		const script = document.createElement('script');
+		script.onload = function() { createMap(mapbox()); };
+		head.insertBefore(script, head.lastElementChild);
+		script.src = 'mapbox.js';
+	} else
+		loadJSON('mapbox.cgi', createMap);
 }

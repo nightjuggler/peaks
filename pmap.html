@@ -155,11 +155,10 @@ progress {
 <script src="pmap-shared.js"></script>
 <script src="pmap-lc.js"></script>
 <script>
-/* globals document, window */
-/* globals MouseEvent, URL, XMLHttpRequest */
-/* globals L, BaseLayers, TileOverlays, MapServer, LayerControl */
-"use strict";
-
+/* globals document, window, MouseEvent */
+/* globals L, BaseLayers, TileOverlays, MapServer, LayerControl, createMapboxMap, loadJSON */
+(function() {
+'use strict';
 function isValidId(s, n)
 {
 	return s.length <= n && /^[a-z][_0-9a-z]*$/.test(s);
@@ -312,39 +311,6 @@ function getMapBounds(map, options)
 
 	return methods;
 }
-function isFileURL(url)
-{
-	var protocol = (new URL(url, window.location.href)).protocol;
-	return protocol === 'file:' || protocol === '';
-}
-function loadJSON(url, onSuccess, onFailure, progressBar)
-{
-	var xhr = new XMLHttpRequest();
-
-	xhr.responseType = 'json';
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState === 4)
-		{
-			if (xhr.status === 200 || isFileURL(url) && xhr.status === 0)
-				onSuccess(xhr.response);
-			else if (onFailure)
-				onFailure();
-			if (progressBar)
-				progressBar.parentNode.removeChild(progressBar);
-		}
-	};
-	if (progressBar)
-		xhr.addEventListener('progress', function(event) {
-			if (event.lengthComputable) {
-				progressBar.max = event.total;
-				progressBar.value = event.loaded;
-			}
-		});
-
-	xhr.open('GET', url);
-	xhr.send();
-	return xhr;
-}
 function createMap(options)
 {
 	var defaultBaseLayer = L.mapbox ? 'o' : 'esri_usatopo';
@@ -395,7 +361,7 @@ function createMap(options)
 		var maxZoom = map.getMaxZoom();
 		if (maxZoom === Infinity) maxZoom = 20;
 
-		var zoom = queryString.zoom || (maxZoom - 5);
+		var zoom = queryString.zoom || maxZoom - 5;
 
 		if (zoom < minZoom) zoom = minZoom; else
 		if (zoom > maxZoom) zoom = maxZoom;
@@ -440,30 +406,25 @@ function createMap(options)
 }
 (function()
 {
-	var path = window.location.pathname;
-	path = path.substring(path.lastIndexOf('/') + 1);
+	const path = window.location.pathname;
 
-	if (path !== 'pmapmb.html') {
+	if (path.substring(path.lastIndexOf('/') + 1) !== 'pmapmb.html')
+	{
 		window.addEventListener('DOMContentLoaded', createMap);
 		return;
 	}
 
-	var domLoaded = false;
-	var jsLoaded = false;
-	var cssLoaded = false;
+	let jsLoaded = false;
+	let cssLoaded = false;
+	let domLoaded = false;
 
 	function init()
 	{
-		if (!domLoaded || !jsLoaded || !cssLoaded) return;
-
-		var protocol = window.location.protocol;
-		var suffix = protocol === 'file:' || protocol === '' ? 'json' : 'cgi';
-
-		loadJSON('mapbox.' + suffix, createMap);
+		if (jsLoaded && cssLoaded && domLoaded) createMapboxMap(createMap);
 	}
 
-	var nextNode = document.getElementById('tooltipcss');
-	var head = nextNode.parentNode;
+	const nextNode = document.getElementById('tooltipcss');
+	const head = nextNode.parentNode;
 
 	delete window.L;
 	head.removeChild(document.getElementById('leafletjs'));
@@ -471,7 +432,7 @@ function createMap(options)
 	const esriLeaflet = document.getElementById('esrileaflet');
 	head.removeChild(esriLeaflet);
 
-	var js = document.createElement('script');
+	const js = document.createElement('script');
 	js.onload = function() {
 		const js = document.createElement('script');
 		js.onload = function() {jsLoaded = true; init();};
@@ -481,13 +442,14 @@ function createMap(options)
 	head.insertBefore(js, nextNode);
 	js.src = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js';
 
-	var css = document.createElement('link');
+	const css = document.createElement('link');
 	css.onload = function() {cssLoaded = true; init();};
 	head.insertBefore(css, nextNode);
 	css.href = 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css';
 	css.rel = 'stylesheet';
 
 	window.addEventListener('DOMContentLoaded', function() {domLoaded = true; init();});
+})();
 })();
 </script>
 </head>
