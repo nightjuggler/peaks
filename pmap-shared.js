@@ -172,7 +172,7 @@ function loadJSON(url, onSuccess, onFailure, progressBar)
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4)
 		{
-			if (xhr.status === 200 || isFileURL(url) && xhr.status === 0)
+			if (xhr.status === 200 || isFileURL(url) && xhr.status === 0 && xhr.response !== null)
 				onSuccess(xhr.response);
 			else if (onFailure)
 				onFailure();
