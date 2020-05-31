@@ -420,7 +420,10 @@ function createMap(options)
 	}
 	function addEsriLeaflet()
 	{
-		addElement('script', [['src', 'https://unpkg.com/esri-leaflet/dist/esri-leaflet.js']],
+		addElement('script',
+[['src', 'https://unpkg.com/esri-leaflet@2.4.1/dist/esri-leaflet.js'],
+['integrity', 'sha512-xY2smLIHKirD03vHKDJ2u4pqeHA7OQZZ27EjtqmuhDguxiUvdsOuXMwkg16PQrm9cgTmXtoxA6kwr8KBy3cdcw=='],
+['crossorigin', '']],
 			function() { jsLoaded = true; init(); });
 	}
 
