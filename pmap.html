@@ -407,47 +407,44 @@ function createMap(options)
 		if (jsLoaded && domLoaded) createMapboxMap(createMap);
 	}
 
-	const nextNode = document.getElementById('tooltipcss');
-	const head = nextNode.parentNode;
-
-	function addElement(tagName, attributes, callback)
-	{
-		const element = document.createElement(tagName);
-		element.onload = callback;
-		head.insertBefore(element, nextNode);
-		for (const [attr, value] of attributes)
-			element.setAttribute(attr, value);
-	}
-	function addEsriLeaflet()
-	{
-		addElement('script',
-[['src', 'https://unpkg.com/esri-leaflet@2.4.1/dist/esri-leaflet.js'],
-['integrity', 'sha512-xY2smLIHKirD03vHKDJ2u4pqeHA7OQZZ27EjtqmuhDguxiUvdsOuXMwkg16PQrm9cgTmXtoxA6kwr8KBy3cdcw=='],
-['crossorigin', '']],
-			function() { jsLoaded = true; init(); });
-	}
-
 	const path = window.location.pathname;
-
-	const [tag1, attr1, tag2, attr2] = path.substring(path.lastIndexOf('/') + 1) === 'pmapmb.html' ? [
-'script',
-[['src', 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js']],
-'link',
+	const elements = path.substring(path.lastIndexOf('/') + 1) === 'pmapmb.html' ? [
+['script',
+[['src', 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js']]],
+['link',
 [['rel', 'stylesheet'],
-['href', 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css']]
+['href', 'https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css']]]
 		] : [
-'link',
+['link',
 [['rel', 'stylesheet'],
 ['href', 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.css'],
 ['integrity', 'sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=='],
-['crossorigin', '']],
-'script',
+['crossorigin', '']]],
+['script',
 [['src', 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.js'],
 ['integrity', 'sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=='],
-['crossorigin', '']]
+['crossorigin', '']]]
 		];
+	elements.push(
+['script',
+[['src', 'https://unpkg.com/esri-leaflet@2.4.1/dist/esri-leaflet.js'],
+['integrity', 'sha512-xY2smLIHKirD03vHKDJ2u4pqeHA7OQZZ27EjtqmuhDguxiUvdsOuXMwkg16PQrm9cgTmXtoxA6kwr8KBy3cdcw=='],
+['crossorigin', '']]]);
 
-	addElement(tag1, attr1, function() { addElement(tag2, attr2, addEsriLeaflet); });
+	const nextNode = document.getElementById('tooltipcss');
+	const head = nextNode.parentNode;
+
+	(function addNextElement()
+	{
+		if (elements.length === 0) { jsLoaded = true; init(); return; }
+
+		const [tagName, attributes] = elements.shift();
+		const element = document.createElement(tagName);
+		element.onload = addNextElement;
+		head.insertBefore(element, nextNode);
+		for (const [attr, value] of attributes)
+			element.setAttribute(attr, value);
+	})();
 
 	window.addEventListener('DOMContentLoaded', function() { domLoaded = true; init(); });
 })();
