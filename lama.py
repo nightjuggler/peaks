@@ -47,7 +47,6 @@ class Query(object):
 
 		command = ["/usr/local/opt/curl/bin/curl",
 			"-o", fileName,
-#			"--user-agent", "Mozilla/5.0",
 			"--connect-timeout", "6",
 			"--max-time", "12",
 			"--retry", "2",
@@ -444,6 +443,20 @@ class GeoMAC_VIIRS_Query(Query):
 	service = "geomac_dyn"
 	layer = 5 # sr = 102100 (3857)
 
+class NASA_MODIS_Query(Query):
+	name = "MODIS"
+	home = "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services"
+	service = "MODIS_Thermal_v1"
+	serverType = "Feature"
+	layer = 0 # sr = 102100
+
+class NASA_VIIRS_Query(Query):
+	name = "VIIRS"
+	home = "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services"
+	service = "Satellite_VIIRS_Thermal_Hotspots_and_Fire_Activity"
+	serverType = "Feature"
+	layer = 0 # sr = 102100
+
 class NV_StateParksQuery(Query):
 	name = "Nevada State Parks"
 	home = "https://arcgis.shpo.nv.gov/arcgis/rest/services" # 10.51
@@ -591,6 +604,8 @@ def main():
 		"govunits_nps": GovUnits_NPS_Query,
 		"govunits_usfs": GovUnits_USFS_Query,
 		"govunits_w": GovUnits_Wilderness_Query,
+		"nasa_modis": NASA_MODIS_Query,
+		"nasa_viirs": NASA_VIIRS_Query,
 		"nlcs": BLM_NLCS_Query,
 		"nps": NPS_Query,
 		"nps_irma": NPS_IRMA_Query,

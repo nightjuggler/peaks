@@ -303,8 +303,22 @@ items: {
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
 			'National Interagency Fire Center</a>',
 					},
+					modis: {
+		name: 'MODIS',
+		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
+			'/MODIS_Thermal_v1/FeatureServer',
+		attribution: '<a href="https://www.arcgis.com/home/item.html?id=b8f4033069f141729ffb298b7418b653">' +
+			'NASA</a>',
+					},
+					viirs: {
+		name: 'VIIRS',
+		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
+			'/Satellite_VIIRS_Thermal_Hotspots_and_Fire_Activity/FeatureServer',
+		attribution: '<a href="https://www.arcgis.com/home/item.html?id=dece90af1a0242dcbf0ca36d30276aa3">' +
+			'NASA</a>',
+					},
 				},
-				order: ['current', 'archived'],
+				order: ['current', 'archived', 'modis', 'viirs'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -1023,9 +1037,99 @@ var querySpecs = [
 	arfireSpec,
 ];
 
-var earthRadius = 6378137; // WGS 84 equatorial radius in meters
-var earthCircumference = 2 * Math.PI * earthRadius;
-var tileOrigin = -(Math.PI * earthRadius);
+function esriFeatureLayer(spec)
+{
+	const options = {
+		attribution: spec.attribution,
+		url: spec.url + '/' + (spec.queryLayer || '0'),
+	};
+	if (spec.pointToLayer) options.pointToLayer = spec.pointToLayer;
+	if (spec.style) options.style = spec.style;
+
+	return L.esri.featureLayer(options);
+}
+
+const modisSpec = TileOverlays.items.us.items.fires.items.modis;
+const viirsSpec = TileOverlays.items.us.items.fires.items.viirs;
+
+modisSpec.pointToLayer = function(feature, latlng) {
+	const p = feature.properties;
+	const frp = p.FRP;
+
+	return L.circleMarker(latlng, {
+		color:
+			frp <   1 ? '#8B0000' :
+			frp <  10 ? '#FF0000' :
+			frp < 100 ? '#FFD700' : '#FFFF00',
+		fillOpacity: 0.5,
+	});
+};
+viirsSpec.pointToLayer = function(feature, latlng) {
+	const p = feature.properties;
+	const frp = p.frp;
+
+	return L.circleMarker(latlng, {
+		color:
+			frp <   1 ? '#8B0000' :
+			frp <  10 ? '#FF0000' :
+			frp < 100 ? '#FFD700' : '#FFFF00',
+		fillOpacity: 0.5,
+	});
+};
+modisSpec.makeLayer = function(spec) {
+	const daynight = dn => dn === 'D' ? 'Day' : 'Night';
+	const satellite = sat => sat === 'T' ?
+		'<a href="https://en.wikipedia.org/wiki/Terra_(satellite)">Terra</a>' : sat === 'A' ?
+		'<a href="https://en.wikipedia.org/wiki/Aqua_(satellite)">Aqua</a>' : sat;
+
+	const layer = esriFeatureLayer(spec);
+
+	layer.bindPopup(function(e) {
+		const p = e.feature.properties;
+		const [lng, lat] = e.feature.geometry.coordinates;
+		return [
+			'<div class="peakDiv">' + daynight(p.DAYNIGHT) + ' Fire</div>',
+			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + ' UTC</div>',
+			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
+			'<div class="peakDiv">Fire Radiative Power: ' + p.FRP + ' MW</div>',
+			'<div class="peakDiv">Brightness 21: ' + p.BRIGHTNESS + '&deg;K</div>',
+			'<div class="peakDiv">Brightness 31: ' + p.BRIGHT_T31 + '&deg;K</div>',
+			'<div class="peakDiv">Confidence: ' + p.CONFIDENCE + '%</div>',
+			'<div class="peakDiv">Version: ' + p.VERSION + '</div>',
+			'<div class="peakDiv">Scan / Track: ' + p.SCAN + ' / ' + p.TRACK + '</div>',
+			'<div class="peakDiv">Satellite: ' + satellite(p.SATELLITE) + '</div>',
+		].join('');
+	}, {className: 'popupDiv'});
+
+	return layer;
+};
+viirsSpec.makeLayer = function(spec) {
+	const daynight = dn => dn === 'D' ? 'Day' : 'Night';
+	const satellite = sat => sat === 'N' ?
+		'<a href="https://en.wikipedia.org/wiki/Suomi_NPP">Suomi NPP</a>' : sat === '1' ?
+		'<a href="https://en.wikipedia.org/wiki/NOAA-20">NOAA-20</a>' : sat;
+
+	const layer = esriFeatureLayer(spec);
+
+	layer.bindPopup(function(e) {
+		const p = e.feature.properties;
+		const [lng, lat] = e.feature.geometry.coordinates;
+		return [
+			'<div class="peakDiv">' + daynight(p.daynight) + ' Fire</div>',
+			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + ' UTC</div>',
+			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
+			'<div class="peakDiv">Fire Radiative Power: ' + p.frp + ' MW</div>',
+			'<div class="peakDiv">Confidence: ' + p.confidence + '</div>',
+			'<div class="peakDiv">Satellite: ' + satellite(p.satellite) + '</div>',
+		].join('');
+	}, {className: 'popupDiv'});
+
+	return layer;
+};
+
+const earthRadius = 6378137; // WGS 84 equatorial radius in meters
+const earthCircumference = 2 * Math.PI * earthRadius;
+const tileOrigin = -(Math.PI * earthRadius);
 
 function exportLayer(spec, transparent)
 {
@@ -1083,8 +1187,8 @@ function makeLayerWMS(spec, options)
 	options.format = 'image/png';
 	options.version = '1.3.0';
 
-	let wms_options = spec.wms;
-	for (let prop in wms_options)
+	const wms_options = spec.wms;
+	for (const prop in wms_options)
 		options[prop] = wms_options[prop];
 
 	if (spec.attribution)
@@ -1094,7 +1198,9 @@ function makeLayerWMS(spec, options)
 }
 TileOverlays.makeLayer = function(spec)
 {
-	var options = {
+	if (spec.url.endsWith('/FeatureServer'))
+		return esriFeatureLayer(spec);
+	const options = {
 		minZoom: 0,
 		maxZoom: spec.maxZoom || 23,
 		zIndex: 210,
@@ -1109,12 +1215,6 @@ TileOverlays.makeLayer = function(spec)
 		options.opacity = spec.opacity;
 	if (spec.tile)
 		return L.tileLayer(spec.url + '/tile/{z}/{y}/{x}', options);
-	if (spec.url.endsWith('/FeatureServer'))
-		return L.esri.featureLayer({
-			url: spec.url + '/' + (spec.queryLayer || '0'),
-			style: spec.style || (() => ({ color: '#FF0000', weight: 2 })),
-			attribution: spec.attribution,
-		});
 
 	return new (exportLayer(spec, true))(options);
 };
