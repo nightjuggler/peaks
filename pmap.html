@@ -158,13 +158,13 @@ function isValidId(s, n)
 }
 function parseLL(q, v, latIndex, lngIndex)
 {
-	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
+	const m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
 	if (m === null) return;
 
-	var lat = parseFloat(m[latIndex]);
+	const lat = parseFloat(m[latIndex]);
 	if (lat < -90 || lat > 90) return;
 
-	var lng = parseFloat(m[lngIndex]);
+	const lng = parseFloat(m[lngIndex]);
 	if (lng < -180 || lng > 180) return;
 
 	q.ll = [lat, lng];
@@ -175,7 +175,7 @@ function parseZoom(q, v)
 {
 	if (!/^[1-9][0-9]?$/.test(v)) return;
 
-	var zoom = parseInt(v, 10);
+	const zoom = parseInt(v, 10);
 	if (zoom < 1 || zoom > 22) return;
 
 	q.zoom = zoom;
@@ -267,8 +267,8 @@ function getMapBounds(map, options)
 	function click() {
 		if (options.fitWhenDoneSetting && !init)
 			map.off('moveend', click);
-		var center = map.latLngToContainerPoint(map.getCenter());
-		var element = document.elementFromPoint(center.x, center.y);
+		const center = map.latLngToContainerPoint(map.getCenter());
+		const element = document.elementFromPoint(center.x, center.y);
 		element.dispatchEvent(
 			new MouseEvent('click', {
 				bubbles: true,
@@ -306,8 +306,8 @@ function getMapBounds(map, options)
 }
 function createMap(options)
 {
-	var defaultBaseLayer = L.mapbox ? 'o' : 'esri_usatopo';
-	var queryString = {
+	const defaultBaseLayer = L.mapbox ? 'o' : 'esri_usatopo';
+	const queryString = {
 		baseLayer: defaultBaseLayer,
 		clickCenter: false,
 		geometryQueries: [],
@@ -317,14 +317,14 @@ function createMap(options)
 	};
 	parseQueryString(queryString);
 
-	var mapOptions = {
+	const mapOptions = {
 		minZoom: 2,
 		scrollWheelZoom: false,
 		worldCopyJump: true,
 		zoomControl: false,
 	};
-	var map = L.mapbox ? L.mapbox.map('map', null, mapOptions) : L.map('map', mapOptions);
-	var layerControl = new LayerControl(map);
+	const map = L.mapbox ? L.mapbox.map('map', null, mapOptions) : L.map('map', mapOptions);
+	const layerControl = new LayerControl(map);
 
 	if (L.mapbox)
 		BaseLayers.items.mapbox.makeLayer = item =>
@@ -340,11 +340,9 @@ function createMap(options)
 	layerControl.addPointQueries(TileOverlays, queryString.pointQueries, queryString.geometryQueries);
 
 	L.control.zoom({position: 'topright'}).addTo(map);
+	L.control.scale().addTo(map).getContainer().id = 'scaleControl';
 
-	var scaleControl = L.control.scale().addTo(map);
-	scaleControl.getContainer().id = 'scaleControl';
-
-	var mapBounds = getMapBounds(map, {
+	const mapBounds = getMapBounds(map, {
 		fitWhenDoneSetting: !queryString.ll,
 		clickWhenDoneSetting: queryString.clickCenter,
 	});
@@ -365,20 +363,20 @@ function createMap(options)
 
 	document.getElementById('fitLink').addEventListener('click', mapBounds.fit, false);
 
-	var llSpan = document.getElementById('llText');
-	var llText = llSpan.firstChild;
+	const llSpan = document.getElementById('llText');
+	const llText = llSpan.firstChild;
 	llSpan.addEventListener('click', function() {
 		window.getSelection().selectAllChildren(llSpan);
 		document.execCommand('copy');
 	});
 	function updateCenter()
 	{
-		var center = map.getCenter();
+		const center = map.getCenter();
 		llText.nodeValue = center.lat.toFixed(6) + ',' + center.lng.toFixed(6);
 		return center;
 	}
 
-	var centerMarker = L.marker(updateCenter(), {
+	const centerMarker = L.marker(updateCenter(), {
 		keyboard: false,
 		interactive: false,
 		zIndexOffset: 1000,
