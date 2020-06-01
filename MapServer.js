@@ -1088,10 +1088,10 @@ modisSpec.makeLayer = function(spec) {
 		const p = e.feature.properties;
 		const [lng, lat] = e.feature.geometry.coordinates;
 		return [
-			'<div class="peakDiv">' + daynight(p.DAYNIGHT) + ' Fire</div>',
+			'<div>' + daynight(p.DAYNIGHT) + ' Fire</div>',
 			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + ' UTC</div>',
 			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
-			'<div class="peakDiv">Fire Radiative Power: ' + p.FRP + ' MW</div>',
+			'<div class="peakDiv">Radiative Power: ' + p.FRP + ' MW</div>',
 			'<div class="peakDiv">Brightness 21: ' + p.BRIGHTNESS + '&deg;K</div>',
 			'<div class="peakDiv">Brightness 31: ' + p.BRIGHT_T31 + '&deg;K</div>',
 			'<div class="peakDiv">Confidence: ' + p.CONFIDENCE + '%</div>',
@@ -1115,10 +1115,10 @@ viirsSpec.makeLayer = function(spec) {
 		const p = e.feature.properties;
 		const [lng, lat] = e.feature.geometry.coordinates;
 		return [
-			'<div class="peakDiv">' + daynight(p.daynight) + ' Fire</div>',
+			'<div>' + daynight(p.daynight) + ' Fire</div>',
 			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + ' UTC</div>',
 			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
-			'<div class="peakDiv">Fire Radiative Power: ' + p.frp + ' MW</div>',
+			'<div class="peakDiv">Radiative Power: ' + p.frp + ' MW</div>',
 			'<div class="peakDiv">Confidence: ' + p.confidence + '</div>',
 			'<div class="peakDiv">Satellite: ' + satellite(p.satellite) + '</div>',
 		].join('');
