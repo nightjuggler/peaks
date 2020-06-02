@@ -498,10 +498,10 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
 	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
-	"Mitchell Caverns State Park":                  "Providence Mountains SRA",
 	"Mount Saint Helens National Volcanic Monument":"Mount St. Helens National Volcanic Monument",
 	"Mount Saint Helens NVM":                       "Mount St. Helens National Volcanic Monument",
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",
+	"Providence Mountains State Recreation Area":   "Providence Mountains SRA",
 	"Red Rock Canyon National Conservation Area":   "Red Rock Canyon NCA",
 	"Steens Mountain National Recreation Lands":    "Steens Mountain CMPA",
 	}
@@ -768,7 +768,7 @@ class PeakPb(TablePeak):
 	}
 	nameMap = {
 	# Desert Peaks Section:
-		('Chuckwalla Mountains HP', 3446):      'Bunch Benchmark',
+		('Chuckwalla Peak', 3446):              'Bunch Benchmark',
 		('Eagle Mountain', 5350):               'Eagle Mountains HP',
 		('Granite Mountain', 6762):             'Granite Peak',
 		('Granite Mountain', 4331):             'Granite Benchmark',
@@ -990,6 +990,8 @@ class PeakPb(TablePeak):
 		('Green Mountain', 10688, 'max'): 10680,
 		('Hays Canyon Peak', 7920, 'min'): 7916,
 		('Hays Canyon Peak', 7920, 'max'): 7916,
+		('Morey Peak North', 10248, 'min'): 10240,
+		('Morey Peak North', 10248, 'max'): 10280,
 
 	# Pb Elevation Adjustments for Other Desert Peaks:
 
@@ -1179,7 +1181,9 @@ class PeakPb(TablePeak):
 	def readElevationInfo(self, maxPeak, html):
 		m = self.elevationRangePattern.match(html)
 		if m is None:
-			err("{} Elevation Info doesn't match pattern:\n{}", self.fmtIdName, html)
+			print self.fmtIdName, "Elevation Info doesn't match pattern"
+			maxPeak.elevation = self.elevation
+			return
 
 		minElev, maxElev, elevUnit = m.groups()
 		minElev = str2IntPb(minElev, "Minimum elevation", self)
