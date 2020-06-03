@@ -1156,13 +1156,13 @@ def printElevationStats():
 		numRefs = len(src.peaks)
 		numPeaks = len(set(src.peaks))
 
-		line = "{}  {:>6}  {:>7}  {} {:24} {:9}  {}/{}{}".format(src.id,
+		line = "{}  {:>6}  {:>7}  {} {:28} {:9}  {}/{}{}".format(src.id,
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
 		print line
 
-		if line[34:88] == lastLine[34:88]:
+		if line[34:92] == lastLine[34:92]:
 			if not (sameMap and lastLine is sameMap[-1]):
 				sameMap.append(lastLine)
 			sameMap.append(line)
