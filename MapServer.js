@@ -1049,6 +1049,9 @@ function esriFeatureLayer(spec)
 	return L.esri.featureLayer(options);
 }
 
+fireSpec.style = () => ({color: '#FF0000', weight: 2});
+arfireSpec.style = () => ({color: '#FFD700', weight: 2});
+
 const modisSpec = TileOverlays.items.us.items.fires.items.modis;
 const viirsSpec = TileOverlays.items.us.items.fires.items.viirs;
 
@@ -1089,7 +1092,7 @@ modisSpec.makeLayer = function(spec) {
 		const [lng, lat] = e.feature.geometry.coordinates;
 		return [
 			'<div>' + daynight(p.DAYNIGHT) + ' Fire</div>',
-			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + ' UTC</div>',
+			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + '</div>',
 			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
 			'<div class="peakDiv">Radiative Power: ' + p.FRP + ' MW</div>',
 			'<div class="peakDiv">Brightness 21: ' + p.BRIGHTNESS + '&deg;K</div>',
@@ -1116,7 +1119,7 @@ viirsSpec.makeLayer = function(spec) {
 		const [lng, lat] = e.feature.geometry.coordinates;
 		return [
 			'<div>' + daynight(p.daynight) + ' Fire</div>',
-			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + ' UTC</div>',
+			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + '</div>',
 			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
 			'<div class="peakDiv">Radiative Power: ' + p.frp + ' MW</div>',
 			'<div class="peakDiv">Confidence: ' + p.confidence + '</div>',
