@@ -37,7 +37,7 @@ peakListsOrdered = [
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
-	('osp', 'Other Sierra Peaks', 84, 27),
+	('osp', 'Other Sierra Peaks', 86, 27),
 	('ocap','Other California Peaks', 85, 14),
 	('owp', 'Other Western Peaks', 8, 10),
 ]
@@ -1976,6 +1976,7 @@ def readHTML(pl):
 					('OCAP','14.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
+					('OSP', '27.3'), # Herlan Peak South
 				):
 					badLine()
 			else:
@@ -1989,6 +1990,7 @@ def readHTML(pl):
 					('OCAP','14.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
+					('OSP', '27.3'), # Herlan Peak South
 				):
 					badLine()
 			else:
