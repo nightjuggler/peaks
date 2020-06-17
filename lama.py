@@ -460,7 +460,7 @@ class NASA_VIIRS_Query(Query):
 class NV_StateParksQuery(Query):
 	name = "Nevada State Parks"
 	home = "https://arcgis.shpo.nv.gov/arcgis/rest/services" # 10.51
-	service = "NV_StateManagedLands"
+	service = "State_Lands/StateLands_PublicMap"
 	layer = 52 # sr = 102100 (3857)
 	fields = [("LandName", "name"), ("Acres", "acres")]
 	printSpec = "{name} ({acres:,.0f} acres)"

@@ -389,10 +389,10 @@ items: {
 		items: {
 			parks: {
 		name: 'State Parks',
-		url: 'https://arcgis.shpo.nv.gov/arcgis/rest/services/NV_StateManagedLands/MapServer',
+		url: 'https://arcgis.shpo.nv.gov/arcgis/rest/services/State_Lands/StateLands_PublicMap/MapServer',
 		exportLayers: '52',
 		queryFields: ['OBJECTID', 'LandName', 'Acres'],
-		attribution: '[Nevada Department of Conservation &amp; Natural Resources]',
+		attribution: '[Nevada Division of State Lands]',
 			},
 		},
 		order: ['parks'],
