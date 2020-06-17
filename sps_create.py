@@ -498,6 +498,7 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
 	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
+	"Lake Tahoe State Park":                        "Lake Tahoe Nevada State Park",
 	"Mount Saint Helens National Volcanic Monument":"Mount St. Helens National Volcanic Monument",
 	"Mount Saint Helens NVM":                       "Mount St. Helens National Volcanic Monument",
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",

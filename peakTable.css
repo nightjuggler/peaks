@@ -78,6 +78,7 @@ td {
 	FWS = U.S. Fish & Wildlife Service
 	MROSD = Midpeninsula Regional Open Space District
 	NPS = National Park Service
+	NVSP = Nevada State Park
 	Rez = Indian Reservation
 	SP = California State Park
 	TWC = The Wildlands Conservancy
@@ -95,6 +96,7 @@ td {
 .land .landFWS    {background-color: rgb(230,200,160);}
 .land .landMROSD  {background-color: rgb(255,255,224);} /* LightYellow */
 .land .landNPS    {background-color: rgb(255,255,128);}
+.land .landNVSP   {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
 .land .landRez    {background-color: rgb(255,222,173);} /* NavajoWhite */
 .land .landSP     {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
 .land .landTWC    {background-color: rgb(230,255,230);}

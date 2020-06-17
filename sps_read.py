@@ -416,6 +416,7 @@ landNameLookup = {
 	"Indian Peaks WMA":                             'landUDWR',
 	"Lake Mead NRA":                                'landNPS',
 	"Lake Tahoe Basin Management Unit":             'landFS',
+	"Lake Tahoe Nevada State Park":                 'landNVSP',
 	"Marin Municipal Water District":               'landCounty',
 	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
 	"Mount Davidson Park":                          'landCity',
@@ -484,6 +485,7 @@ landOrder = {landClass: i for i, landClass in enumerate((
 	'landRez',
 	'landCNRA',     # California Natural Resources Agency (other than Department of Parks and Recreation)
 	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
+	'landNVSP',     # Nevada Division of State Parks
 	'landUDWR',     # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
 	'landBLM',
 	'landFS',
