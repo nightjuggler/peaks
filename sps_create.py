@@ -827,6 +827,7 @@ class PeakPb(TablePeak):
 		('White Mountain', 11398):              'White Mountain (Sonora Pass)',
 	# Other Desert Peaks:
 		('Antelope Buttes HP', 3040):           'Antelope Buttes',
+		('Ruby Dome-East Peak', 11360):         'Ruby Pyramid',
 	# Other California Peaks:
 		('Maguire Peak', 1688):                 'Maguire Peaks West',
 		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
