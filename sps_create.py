@@ -780,6 +780,7 @@ class PeakPb(TablePeak):
 	# Hundred Peaks Section:
 		('Black Mountain', 7438):               'Black Mountain #5',
 		('Cannell Point', 8314):                'Cannel Point',
+		('Granite Mountain', 5633):             'Granite Mountain #2',
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Baker Peak', 12305):                  'Baker Peak East',
 		('Baker Peak-West Summit', 12298):      'Baker Peak',
@@ -1496,6 +1497,7 @@ class PeakLoJ(TablePeak):
 	# Hundred Peaks Section:
 		('Black Mountain', 7438):                       'Black Mountain #5',
 		('Cannel Benchmark', 8314):                     'Cannel Point',
+		('Granite Mountain', 5633):                     'Granite Mountain #2',
 		('Inspiration Benchmark', 5580):                'Mount Inspiration',
 		('Little Berdoo Benchmark', 5460):              'Little Berdoo Peak',
 		('Warren Benchmark', 5103):                     'Warren Point',

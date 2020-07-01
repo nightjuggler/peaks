@@ -31,7 +31,7 @@ peakLists = {}
 peakListsOrdered = [
 	('dps', 'Desert Peaks Section', 99, 9),
 	('sps', 'Sierra Peaks Section', 248, 24),
-	('hps', 'Hundred Peaks Section', 34, 32),
+	('hps', 'Hundred Peaks Section', 44, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
 	('lpc', 'Lower Peaks Committee', 5, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
@@ -417,6 +417,7 @@ landNameLookup = {
 	"Lake Mead NRA":                                'landNPS',
 	"Lake Tahoe Basin Management Unit":             'landFS',
 	"Lake Tahoe Nevada State Park":                 'landNVSP',
+	"Los Coyotes Indian Reservation":               'landRez',
 	"Marin Municipal Water District":               'landCounty',
 	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
 	"Mount Davidson Park":                          'landCity',
