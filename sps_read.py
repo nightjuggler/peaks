@@ -31,7 +31,7 @@ peakLists = {}
 peakListsOrdered = [
 	('dps', 'Desert Peaks Section', 99, 9),
 	('sps', 'Sierra Peaks Section', 248, 24),
-	('hps', 'Hundred Peaks Section', 44, 32),
+	('hps', 'Hundred Peaks Section', 52, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
 	('lpc', 'Lower Peaks Committee', 5, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
@@ -399,6 +399,7 @@ class LandMgmtArea(object):
 		return area
 
 landNameLookup = {
+	"Agua Tibia Research Natural Area":             'Agua Tibia Wilderness',
 	"Antelope Valley California Poppy Reserve":     'landSP',
 	"Basin and Range National Monument":            'landBLM',
 	"Berryessa Snow Mountain National Monument":    'landBLM',
