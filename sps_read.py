@@ -31,7 +31,7 @@ peakLists = {}
 peakListsOrdered = [
 	('dps', 'Desert Peaks Section', 99, 9),
 	('sps', 'Sierra Peaks Section', 248, 24),
-	('hps', 'Hundred Peaks Section', 60, 32),
+	('hps', 'Hundred Peaks Section', 61, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
 	('lpc', 'Lower Peaks Committee', 5, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
@@ -431,6 +431,7 @@ landNameLookup = {
 	"Providence Mountains SRA":                     'landSP',
 	"Pyramid Lake Indian Reservation":              'landRez',
 	"Reservoir Canyon Natural Reserve":             'City of San Luis Obispo',
+	"San Gabriel Mountains NM":                     'landFS',
 	"Santa Rosa and San Jacinto Mountains NM":      'landBLM',
 	"Spring Mountains NRA":                         'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                         'landBLM',
@@ -471,7 +472,7 @@ landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &\'.;A-Za-z]+)</a>( HP)?
 landLinkPattern = {
 	'landWild':     re.compile('^https://wilderness\\.net/visit-wilderness/\\?ID=[0-9]+$'),
 	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[_a-z]+/$'),
-	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/[-a-z]+$'),
+	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/(?:visit/)?[-a-z]+$'),
 	'landFWS':      re.compile('^https://www\\.fws\\.gov/refuge/[_a-z]+/$'),
 	'landMROSD':    re.compile('^https://www\\.openspace\\.org/preserves/[-a-z]+$'),
 	'landNPS':      re.compile('^https://www\\.nps\\.gov/[a-z]{4}/index\\.htm$'),
@@ -1352,7 +1353,7 @@ class RE(object):
 	column2 = re.compile(
 		'^<td><a href="https://caltopo\\.com/map\\.html#'
 		'll=([34][0-9]\\.[0-9]{1,5}),(-1[012][0-9]\\.[0-9]{1,5})&z=(1[0-9])&b=(t|oo)">'
-		'([ #&\'()+.0-9;A-Za-z]+)</a>( \\*{1,2})?'
+		'([- #&\'()+.0-9;A-Za-z]+)</a>( \\*{1,2})?'
 		'(?:<br>\\(([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: (?:HP|[1-9][0-9]+|VOR))?)\\))?</td>$'
 	)
 	peakName = (
@@ -1360,6 +1361,7 @@ class RE(object):
 		re.compile('^(?:[A-Z][a-z]+ )+(?:Mountains|Range|Wilderness) HP$'),
 		re.compile('^(?:[A-Z][a-z]+ )+\\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\)$'),
 		re.compile('^(?:[A-Z][a-z]+ )+(?:[A-Z]\\.|St\\.|del|in the|of the|and)(?: [A-Z][a-z]+)+$'),
+		re.compile('^Mount [A-Z][a-z]+-[A-Z][a-z]+$'),
 		re.compile('^&quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*&quot;$'),
 		re.compile('^Peak [1-9][0-9]{2,4}m?\\+?$'),
 	)
