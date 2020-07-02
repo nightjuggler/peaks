@@ -31,7 +31,7 @@ peakLists = {}
 peakListsOrdered = [
 	('dps', 'Desert Peaks Section', 99, 9),
 	('sps', 'Sierra Peaks Section', 248, 24),
-	('hps', 'Hundred Peaks Section', 52, 32),
+	('hps', 'Hundred Peaks Section', 60, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
 	('lpc', 'Lower Peaks Committee', 5, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
@@ -431,6 +431,7 @@ landNameLookup = {
 	"Providence Mountains SRA":                     'landSP',
 	"Pyramid Lake Indian Reservation":              'landRez',
 	"Reservoir Canyon Natural Reserve":             'City of San Luis Obispo',
+	"Santa Rosa and San Jacinto Mountains NM":      'landBLM',
 	"Spring Mountains NRA":                         'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                         'landBLM',
 	"Tohono O'odham Nation":                        'landRez',

@@ -782,6 +782,8 @@ class PeakPb(TablePeak):
 		('Cannell Point', 8314):                'Cannel Point',
 		('Granite Mountain', 5633):             'Granite Mountain #2',
 		('Monument Peak', 6271):                'Monument Peak #1',
+		('Rabbit Peak', 6640):                  'Rabbit Peak #2',
+		('Toro Peak-West Peak', 8316):          'Toro Peak West',
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Baker Peak', 12305):                  'Baker Peak East',
 		('Baker Peak-West Summit', 12298):      'Baker Peak',
@@ -1502,6 +1504,8 @@ class PeakLoJ(TablePeak):
 		('Inspiration Benchmark', 5580):                'Mount Inspiration',
 		('Little Berdoo Benchmark', 5460):              'Little Berdoo Peak',
 		('Monument Peak', 6271):                        'Monument Peak #1',
+		('Rabbit Peak', 6660):                          'Rabbit Peak #2',
+		('Toro West Peak', 8316):                       'Toro Peak West',
 		('Warren Benchmark', 5103):                     'Warren Point',
 	# Great Basin Peaks / Nevada Peaks Club:
 		('Granite Peak', 8980):                         'Granite Peak (Washoe)',
