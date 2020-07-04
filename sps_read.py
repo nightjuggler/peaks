@@ -488,11 +488,11 @@ landOrder = {landClass: i for i, landClass in enumerate((
 	'landMROSD',    # Midpeninsula Regional Open Space District - https://www.openspace.org/
 	'landDOD',
 	'landRez',
-	'landCNRA',     # California Natural Resources Agency (other than Department of Parks and Recreation)
-	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
 	'landNVSP',     # Nevada Division of State Parks
 	'landUDWR',     # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
 	'landBLM',
+	'landCNRA',     # California Natural Resources Agency (other than Department of Parks and Recreation)
+	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
 	'landFS',
 	'landFWS',
 	'landBLMW',
