@@ -28,6 +28,11 @@ class TopoView(object):
 		('gnis_cell_id',        '[1-9][0-9]{1,5}'),
 	)
 	CORRECTIONS = {
+		'37ee6fadbdf1cb98d54214a695c3c7e7': (
+			# The pdf (CA_Borrego_296876_1959_62500_geo.pdf) clearly shows 1978 (not 1976)
+			# for the imprint year.
+			('imprint_year', '1978'),
+		),
 		'41ca50103299307242779c6e5b2f70f1': (
 			# The map name is "Caliente Mtn." - not "Caliente Mountain".
 			('map_name', 'Caliente Mtn'),

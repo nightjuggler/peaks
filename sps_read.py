@@ -33,7 +33,7 @@ peakListsOrdered = [
 	('sps', 'Sierra Peaks Section', 248, 24),
 	('hps', 'Hundred Peaks Section', 63, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
-	('lpc', 'Lower Peaks Committee', 5, 16),
+	('lpc', 'Lower Peaks Committee', 7, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
