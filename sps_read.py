@@ -31,7 +31,7 @@ peakLists = {}
 peakListsOrdered = [
 	('dps', 'Desert Peaks Section', 99, 9),
 	('sps', 'Sierra Peaks Section', 248, 24),
-	('hps', 'Hundred Peaks Section', 63, 32),
+	('hps', 'Hundred Peaks Section', 67, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
 	('lpc', 'Lower Peaks Committee', 7, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
@@ -776,6 +776,8 @@ class USGSTopo(object):
 		if peak.quad is None:
 			peak.quad = name
 		elif peak.quad != name:
+			if peak.quad == "San Guillermo Mountain" and name == "San Guillermo":
+				return
 			raise FormatError("Expected '{}' quad instead of '{}'", peak.quad, self.name)
 
 	def addPeak(self, peak):
