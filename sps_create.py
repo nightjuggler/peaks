@@ -1084,6 +1084,8 @@ class PeakPb(TablePeak):
 		('Signal Peak',                  3497, 'max'):  3487, #                         DPS
 		('Slacker Hill',                  274, 'min'):   262, # 937' - 675'             OCAP
 		('Slacker Hill',                  274, 'max'):   287, # 937' - 650'             OCAP
+		('Trail Peak',                    885, 'min'):   845, # 11605' - 10760'         OSP
+		('Trail Peak',                    925, 'max'):   885, # 11605' - 10720'         OSP
 		('Two Teats',                     132, 'min'):   131, # 40m                     OSP
 		('White Hill',                    308, 'min'):   314, # 1434' - 1120'           OCAP
 		('White Hill',                    310, 'max'):   354, # 1434' - 1080'           OCAP
