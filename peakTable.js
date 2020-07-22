@@ -258,6 +258,7 @@ function initPeakListMenu()
 		{id: 'osp', name: 'Other Sierra Peaks'},
 		{id: 'ocap',name: 'Other California Peaks'},
 		{id: 'owp', name: 'Other Western Peaks'},
+		{id: 'SierraPasses', name: 'Sierra Passes'},
 	];
 
 	var menu = document.getElementById('peakListMenu');
@@ -358,6 +359,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	addMapLink(listNode, 'National Fire Situational Awareness',
 		'https://maps.nwcg.gov/sa/#/%3F/' + latLong[0] + '/' + latLong[1] + '/12');
+
+	addMapLink(listNode, 'National Weather Service',
+		'https://forecast.weather.gov/MapClick.php?lon=' + latLong[1] + '&lat=' + latLong[0]);
 
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
 		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl' +
@@ -591,6 +595,8 @@ function decorateTable()
 {
 	var g = globalPeakInfo;
 	var sectionFlags = g.flags;
+	var sectionNumber = 0;
+	var sectionPeakNumber = 0;
 
 	parseQueryString();
 	initPeakListMenu();
@@ -610,10 +616,15 @@ function decorateTable()
 				sectionFlags = row.peakFlags;
 				if (row === firstRow)
 					g.flags = sectionFlags;
+				else {
+					sectionNumber += 1;
+					sectionPeakNumber = 0;
+				}
 			}
 			continue;
 		}
 
+		sectionPeakNumber += 1;
 		setRowFlags(row, sectionFlags);
 		var climbed = row.className.slice(0, 7) === 'climbed';
 		var delisted = row.className.slice(-8) === 'delisted';
@@ -629,6 +640,8 @@ function decorateTable()
 		}
 		if (row.dataset.from || row.dataset.also)
 			addListLink(row);
+		if (!firstColumn.firstChild)
+			firstColumn.appendChild(document.createTextNode(sectionNumber + '.' + sectionPeakNumber));
 		if (firstColumn.rowSpan === 2)
 		{
 			var spanElement = document.createElement('span');
@@ -797,15 +810,21 @@ function addRemoveColumn(addRemoveFunction, colDiff)
 	if (addRemoveDelisted) removeRows(delistedPeaks);
 	if (addRemoveSuspended) removeRows(suspendedPeaks);
 }
+function getPeakTable()
+{
+	var peakTable = peakTableFirstRow().parentNode;
+	if (peakTable.tagName !== 'TABLE')
+		peakTable = peakTable.parentNode;
+	return peakTable;
+}
 function getPeakTableClass(i)
 {
-	var peakTable = document.getElementById('peakTable');
-	return peakTable.className.split(' ')[i];
+	return getPeakTable().className.split(' ')[i];
 }
 function setPeakTableClass(i, className)
 {
-	var peakTable = document.getElementById('peakTable');
-	var classList = peakTable.className.split(' ');
+	const peakTable = getPeakTable();
+	const classList = peakTable.className.split(' ');
 	classList[i] = className;
 	peakTable.className = classList.join(' ');
 }

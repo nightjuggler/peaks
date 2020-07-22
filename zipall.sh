@@ -79,7 +79,7 @@ function ziphtml {
 	maxlen=10
 	prefix=zipped/
 
-	for infile in {dps,sps,hps,ogul,lpc,gbp,npc,odp,osp,ocap,owp}.html
+	for infile in {dps,sps,hps,ogul,lpc,gbp,npc,odp,osp,ocap,owp}.html SierraPasses.html
 	do
 		insize=`/usr/bin/stat -f "%z" $infile`
 		process br
