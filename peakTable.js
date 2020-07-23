@@ -509,6 +509,8 @@ function hideMapLinkIcon(event)
 		closeActivePopup();
 	else
 		mapLinkSpan.className = 'mapLinkHidden';
+
+	mapLinkSpan.blur();
 }
 function clickFirstColumn(event)
 {
