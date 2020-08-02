@@ -118,9 +118,9 @@ class NPS_Query(Query):
 class NPS_IRMA_Query(Query):
 	name = "National Park Service Unit (IRMA)"
 	home = "https://irmaservices.nps.gov/arcgis/rest/services"
-	service = "IMDData/IMD_Boundaries_WebMercator"
+	service = "IMDData/IMD_Boundaries_wgs"
 	layer = 0
-	fields = [("UNIT_NAME", "name")]
+	fields = [("UNITNAME", "name")]
 	printSpec = "{name}"
 
 class NWR_Query(Query):

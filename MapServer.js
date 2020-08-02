@@ -232,9 +232,16 @@ items: {
 			},
 			nps: {
 		name: 'National Parks',
-		url: 'https://irmaservices.nps.gov/arcgis/rest/services/IMDData/IMD_Boundaries_WebMercator/MapServer',
+		url: 'https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services' +
+			'/NPS_Park_Boundaries/FeatureServer',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 		attribution: '[National Park Service]',
+			},
+			npsimd: {
+		name: 'National Parks (IMD)',
+		url: 'https://irmaservices.nps.gov/arcgis/rest/services/IMDData/IMD_Boundaries_wgs/MapServer',
+		queryFields: ['OBJECTID', 'UNITNAME', 'UNITCODE'],
+		attribution: '[NPS Inventory and Monitoring Division]',
 			},
 			govunits: {
 				name: 'USGS National Map',
@@ -339,6 +346,7 @@ items: {
 			'fs',
 			'fsrd',
 			'nps',
+			'npsimd',
 			'states',
 			'fsonda',
 			'fssima',
@@ -473,20 +481,6 @@ function simpleFillSymbol(color, outline)
 		symbol.outline = outline;
 	return symbol;
 }
-function classBreakInfo(maxValue, fillColor)
-{
-	return {
-		classMaxValue: maxValue,
-		symbol: simpleFillSymbol(fillColor),
-	};
-}
-function uniqueValueInfo(value, fillColor)
-{
-	return {
-		value: value,
-		symbol: simpleFillSymbol(fillColor),
-	};
-}
 function dynamicLayer(id, mapLayerId, renderer)
 {
 	return JSON.stringify([{
@@ -509,10 +503,10 @@ var fsSpec = TileOverlays.items.us.items.fs;
 var fsrdSpec = TileOverlays.items.us.items.fsrd;
 var nlcsSpec = TileOverlays.items.us.items.nlcs;
 var npsSpec = TileOverlays.items.us.items.nps;
+var npsimdSpec = TileOverlays.items.us.items.npsimd;
 var nvParkSpec = TileOverlays.items.nv.items.parks;
 var nwrSpec = TileOverlays.items.us.items.nwr;
 var stateSpec = TileOverlays.items.us.items.states;
-var wildernessSpec = {};
 var wsaSpec = TileOverlays.items.us.items.wsa;
 
 (function() {
@@ -568,45 +562,13 @@ var wsaSpec = TileOverlays.items.us.items.wsa;
 	};
 	fsSpec.order = ['custom'];
 
-	npsSpec.dynamicLayers = dynamicLayer(101, 0, {
+	npsSpec.style = () => ({color: '#FFFF00', fillOpacity: 0.5, stroke: false});
+
+	npsimdSpec.dynamicLayers = dynamicLayer(101, 0, {
 		type: 'simple',
 		symbol: simpleFillSymbol([255, 255, 0, 255])
 	});
-	npsSpec.opacity = 0.5;
-
-	wildernessSpec.items = {
-		dl1: {
-			name: 'Custom Colors|(by Agency)',
-			dynamicLayers: dynamicLayer(101, 0, {
-				type: 'uniqueValue', field1: 'Agency',
-				uniqueValueInfos: [
-					uniqueValueInfo('BLM', [0, 255, 255, 255]), // Aqua
-					uniqueValueInfo('FWS', [255, 160, 122, 255]), // LightSalmon
-					uniqueValueInfo('FS', [50, 205, 50, 255]), // LimeGreen
-					uniqueValueInfo('NPS', [255, 0, 255, 255]), // Fuchsia / Magenta
-				]}),
-		},
-		dl2: {
-			name: 'Custom Colors|(by Year Designated)',
-			dynamicLayers: dynamicLayer(101, 0, {
-
-				// Visual variables (like colorInfo which could be used for a continuous
-				// color ramp) are apparently not supported in the renderer for sublayers
-				// (dynamic layers are sublayers) prior to ArcGIS Enterprise 10.6.
-
-				type: 'classBreaks', field: 'YearDesignated', minValue: 1964,
-				classBreakInfos: [
-					classBreakInfo(1969, [255, 0, 0, 255]),
-					classBreakInfo(1979, [255, 165, 0, 255]),
-					classBreakInfo(1989, [255, 255, 0, 255]),
-					classBreakInfo(1999, [0, 255, 0, 255]),
-					classBreakInfo(2009, [0, 0, 255, 255]),
-					classBreakInfo(2019, [255, 0, 255, 255]),
-				]}),
-		},
-	};
-	wildernessSpec.order = ['dl1', 'dl2'];
-	wildernessSpec.versionName = 'Default Colors|(by Agency)';
+	npsimdSpec.opacity = 0.5;
 })();
 
 aiannhSpec.popup = {
@@ -653,14 +615,20 @@ npsSpec.popup = {
 	},
 	show: function(attr)
 	{
-		var code = attr.UNIT_CODE.toLowerCase();
+		let [code, name] = this === npsSpec.popup ?
+			[attr.UNIT_CODE, attr.UNIT_NAME] : [attr.UNITCODE, attr.UNITNAME];
+		code = code.toLowerCase();
 		if (code === 'kica' || code === 'sequ') code = 'seki';
 
 		this.linkNode.href = 'https://www.nps.gov/' + code + '/index.htm';
-		this.nameNode.nodeValue = attr.UNIT_NAME;
+		this.nameNode.nodeValue = name;
 
 		return '#FFFF00';
 	},
+};
+npsimdSpec.popup = {
+	init: npsSpec.popup.init,
+	show: npsSpec.popup.show,
 };
 nlcsSpec.popup = {
 	designation: {
@@ -801,7 +769,7 @@ nwrSpec.popup = {
 		return '#FFA07A';
 	},
 };
-wildernessSpec = {
+var wildernessSpec = {
 	name: 'Wilderness Areas',
 	url: 'https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services' +
 		'/Wilderness_Areas_in_the_United_States/FeatureServer',
@@ -1018,6 +986,7 @@ arfireSpec.popup = {
 var querySpecs = [
 	aiannhSpec,
 	npsSpec,
+	npsimdSpec,
 	nlcsSpec,
 	fsSpec,
 	fsrdSpec,
@@ -1040,7 +1009,7 @@ var querySpecs = [
 function esriFeatureLayer(spec)
 {
 	const options = {
-		attribution: spec.attribution,
+		attribution: getAttribution(spec),
 		url: spec.url + '/' + (spec.queryLayer || '0'),
 	};
 	if (spec.pointToLayer) options.pointToLayer = spec.pointToLayer;
