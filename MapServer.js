@@ -481,96 +481,75 @@ function simpleFillSymbol(color, outline)
 		symbol.outline = outline;
 	return symbol;
 }
-function dynamicLayer(id, mapLayerId, renderer)
+function simpleFillLayer(mapLayerId, color, outline)
 {
 	return JSON.stringify([{
-		id: id, source: {type: 'mapLayer', mapLayerId: mapLayerId},
-		drawingInfo: {renderer: renderer}
+		id: 101, source: {type: 'mapLayer', mapLayerId: mapLayerId},
+		drawingInfo: {renderer: {type: 'simple', symbol: simpleFillSymbol(color, outline)}}
 	}]);
 }
+const {
+	us: { items: {
+		aiannh: aiannhSpec,
+		blm: blmSpec,
+		counties: countySpec,
+		fires: { items: {
+			archived: arfireSpec,
+			current: fireSpec,
+			modis: modisSpec,
+			viirs: viirsSpec,
+		}},
+		fs: fsSpec,
+		fsonda: fsondaSpec,
+		fsrd: fsrdSpec,
+		fssima: fssimaSpec,
+		nlcs: nlcsSpec,
+		nps: npsSpec,
+		npsimd: npsimdSpec,
+		nwr: nwrSpec,
+		states: stateSpec,
+		wsa: wsaSpec,
+	}},
+	ca: { items: {
+		cpad: cpadSpec,
+		parks: caParkSpec,
+		zip: caZipSpec,
+	}},
+	nv: { items: {
+		parks: nvParkSpec,
+	}},
+} = TileOverlays.items;
+{
+	const blmLayer = simpleFillLayer(3, [0, 0, 0, 0], simpleLineSymbol([138, 43, 226, 255], 2));
 
-var aiannhSpec = TileOverlays.items.us.items.aiannh;
-var arfireSpec = TileOverlays.items.us.items.fires.items.archived;
-var blmSpec = TileOverlays.items.us.items.blm;
-var caParkSpec = TileOverlays.items.ca.items.parks;
-var caZipSpec = TileOverlays.items.ca.items.zip;
-var countySpec = TileOverlays.items.us.items.counties;
-var cpadSpec = TileOverlays.items.ca.items.cpad;
-var fireSpec = TileOverlays.items.us.items.fires.items.current;
-var fsondaSpec = TileOverlays.items.us.items.fsonda;
-var fssimaSpec = TileOverlays.items.us.items.fssima;
-var fsSpec = TileOverlays.items.us.items.fs;
-var fsrdSpec = TileOverlays.items.us.items.fsrd;
-var nlcsSpec = TileOverlays.items.us.items.nlcs;
-var npsSpec = TileOverlays.items.us.items.nps;
-var npsimdSpec = TileOverlays.items.us.items.npsimd;
-var nvParkSpec = TileOverlays.items.nv.items.parks;
-var nwrSpec = TileOverlays.items.us.items.nwr;
-var stateSpec = TileOverlays.items.us.items.states;
-var wsaSpec = TileOverlays.items.us.items.wsa;
-
-(function() {
-	blmSpec.items = {
-		custom: {
-			name: 'Custom Rendering',
-			dynamicLayers: dynamicLayer(101, 3, {
-				type: 'simple',
-				symbol: simpleFillSymbol([0, 0, 0, 0], simpleLineSymbol([138, 43, 226, 255], 2))
-			}),
-		},
-	};
+	blmSpec.items = {custom: {name: 'Custom Rendering', dynamicLayers: blmLayer}};
 	blmSpec.order = ['custom'];
 
-	fsondaSpec.dynamicLayers = dynamicLayer(101, 0, {
-		type: 'simple',
-		symbol: simpleFillSymbol([255, 105, 180, 255])
-	});
-	fsondaSpec.opacity = 0.5;
+	const fsLayers = (function() {
+		const drawingInfo = {showLabels: false,
+			renderer: {type: 'simple', symbol: simpleFillSymbol([128, 128, 0, 255])}};
+		const layerInfo = (id) => ({id: 101 + id,
+			source: {type: 'mapLayer', mapLayerId: id}, drawingInfo: drawingInfo});
+		return JSON.stringify([layerInfo(0), layerInfo(1)]);
+	})();
 
-	fssimaSpec.dynamicLayers = dynamicLayer(101, 0, {
-		type: 'simple',
-		symbol: simpleFillSymbol([255, 140, 0, 255])
-	});
-	fssimaSpec.opacity = 0.5;
+	fsSpec.items = {custom: {name: 'Custom Rendering', dynamicLayers: fsLayers, opacity: 0.5}};
+	fsSpec.order = ['custom'];
 
-	var renderer = {
-		type: 'simple',
-		symbol: simpleFillSymbol([128, 128, 0, 255])
-	};
-
-	fsrdSpec.items = {
-		custom: {
-			name: 'Custom Rendering',
-			dynamicLayers: JSON.stringify([{
-				id: 101, source: {type: 'mapLayer', mapLayerId: 0},
-				drawingInfo: {showLabels: false, renderer: renderer}
-			},{
-				id: 102, source: {type: 'mapLayer', mapLayerId: 1},
-				drawingInfo: {showLabels: false, renderer: renderer}
-			}]),
-			opacity: 0.5,
-		},
-	};
+	fsrdSpec.items = {custom: {name: 'Custom Rendering', dynamicLayers: fsLayers, opacity: 0.5}};
 	fsrdSpec.order = ['custom'];
 
-	fsSpec.items = {
-		custom: {
-			name: 'Custom Rendering',
-			dynamicLayers: fsrdSpec.items.custom.dynamicLayers,
-			opacity: 0.5,
-		},
-	};
-	fsSpec.order = ['custom'];
+	fsondaSpec.dynamicLayers = simpleFillLayer(0, [255, 105, 180, 255]);
+	fsondaSpec.opacity = 0.5;
+
+	fssimaSpec.dynamicLayers = simpleFillLayer(0, [255, 140, 0, 255]);
+	fssimaSpec.opacity = 0.5;
 
 	npsSpec.style = () => ({color: '#FFFF00', fillOpacity: 0.5, stroke: false});
 
-	npsimdSpec.dynamicLayers = dynamicLayer(101, 0, {
-		type: 'simple',
-		symbol: simpleFillSymbol([255, 255, 0, 255])
-	});
+	npsimdSpec.dynamicLayers = simpleFillLayer(0, [255, 255, 0, 255]);
 	npsimdSpec.opacity = 0.5;
-})();
-
+}
 aiannhSpec.popup = {
 	init: function(div)
 	{
@@ -769,7 +748,7 @@ nwrSpec.popup = {
 		return '#FFA07A';
 	},
 };
-var wildernessSpec = {
+const wildernessSpec = {
 	name: 'Wilderness Areas',
 	url: 'https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services' +
 		'/Wilderness_Areas_in_the_United_States/FeatureServer',
@@ -956,6 +935,7 @@ blmSpec.popup = {
 		return '#0000FF';
 	},
 };
+fireSpec.style = () => ({color: '#FF0000', weight: 2});
 fireSpec.popup = {
 	init: function(div)
 	{
@@ -978,6 +958,7 @@ fireSpec.popup = {
 		return '#FF0000';
 	},
 };
+arfireSpec.style = () => ({color: '#FFD700', weight: 2});
 arfireSpec.popup = {
 	init: fireSpec.popup.init,
 	show: fireSpec.popup.show,
@@ -1017,13 +998,6 @@ function esriFeatureLayer(spec)
 
 	return L.esri.featureLayer(options);
 }
-
-fireSpec.style = () => ({color: '#FF0000', weight: 2});
-arfireSpec.style = () => ({color: '#FFD700', weight: 2});
-
-const modisSpec = TileOverlays.items.us.items.fires.items.modis;
-const viirsSpec = TileOverlays.items.us.items.fires.items.viirs;
-
 modisSpec.pointToLayer = function(feature, latlng) {
 	const p = feature.properties;
 	const frp = p.FRP;
