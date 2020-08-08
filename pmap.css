@@ -50,3 +50,14 @@ a {
 	background-color: rgba(236,236,236,0.8);
 	cursor: pointer;
 }
+.pagerNext,
+.pagerPrev {
+	color: rgb(0,0,238);
+	cursor: pointer;
+	padding-left: 2px;
+	padding-right: 2px;
+}
+.pagerText {
+	padding-left: 4px;
+	padding-right: 4px;
+}

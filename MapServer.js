@@ -472,7 +472,7 @@ function simpleLineSymbol(color, width)
 }
 function simpleFillSymbol(color, outline)
 {
-	var symbol = {
+	const symbol = {
 		type: 'esriSFS',
 		style: 'esriSFSSolid',
 		color: color,
@@ -528,7 +528,7 @@ const {
 	const fsLayers = (function() {
 		const drawingInfo = {showLabels: false,
 			renderer: {type: 'simple', symbol: simpleFillSymbol([128, 128, 0, 255])}};
-		const layerInfo = (id) => ({id: 101 + id,
+		const layerInfo = id => ({id: 101 + id,
 			source: {type: 'mapLayer', mapLayerId: id}, drawingInfo: drawingInfo});
 		return JSON.stringify([layerInfo(0), layerInfo(1)]);
 	})();
@@ -778,7 +778,7 @@ wildernessSpec.popup = {
 	},
 	show: function(attr)
 	{
-		var agency = attr.Agency;
+		let agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
 		let year = (new Date(attr.YearDesignated)).getUTCFullYear();
@@ -1166,7 +1166,7 @@ TileOverlays.makeLayer = function(spec)
 };
 BaseLayers.makeLayer = function(spec)
 {
-	var options = {
+	const options = {
 		minZoom: 0,
 		maxZoom: spec.maxZoom || 23,
 	};
@@ -1184,14 +1184,49 @@ BaseLayers.makeLayer = function(spec)
 
 	return new (exportLayer(spec, false))(options);
 };
+function addPager(spec, numPages, showPage)
+{
+	let page = 1;
+	const textSuffix = '/' + numPages;
+
+	const div = document.createElement('div');
+	const prevSpan = document.createElement('span');
+	const nextSpan = document.createElement('span');
+	const textSpan = document.createElement('span');
+	const textNode = document.createTextNode(page + textSuffix);
+
+	prevSpan.appendChild(document.createTextNode('\u25C4'));
+	nextSpan.appendChild(document.createTextNode('\u25BA'));
+	textSpan.appendChild(textNode);
+
+	div.appendChild(prevSpan).className = 'pagerPrev';
+	div.appendChild(textSpan).className = 'pagerText';
+	div.appendChild(nextSpan).className = 'pagerNext';
+
+	prevSpan.addEventListener('click', function() {
+		if (spec.toggle.checked && spec.outline)
+			spec.outline.remove();
+
+		page = page === 1 ? numPages : page - 1;
+		textNode.nodeValue = page + textSuffix;
+
+		showPage(page - 1);
+	});
+	nextSpan.addEventListener('click', function() {
+		if (spec.toggle.checked && spec.outline)
+			spec.outline.remove();
+
+		page = page === numPages ? 1 : page + 1;
+		textNode.nodeValue = page + textSuffix;
+
+		showPage(page - 1);
+	});
+	spec.div.appendChild(spec.pager = div);
+}
 function addOutlineCheckbox(spec, map)
 {
-	var nextNode = spec.ztf.nextSibling;
-
-	var input = document.createElement('input');
-	input.type = 'checkbox';
-	input.checked = spec.runGeometryQuery ? true : false;
-	input.addEventListener('click', function() {
+	function clickCheckbox()
+	{
 		if (spec.outline) {
 			if (spec.toggle.checked)
 				spec.outline.addTo(map);
@@ -1200,64 +1235,78 @@ function addOutlineCheckbox(spec, map)
 		}
 		else if (spec.toggle.checked)
 			spec.runGeometryQuery();
-	}, false);
-	spec.div.insertBefore(input, nextNode);
-	spec.toggle = input;
-
-	input = document.createElement('input');
-	input.type = 'color';
-	if (spec.color)
-		input.value = spec.color;
-	input.addEventListener('change', function() {
-		spec.style.color = spec.color = spec.colorInput.value;
+	}
+	function changeColor()
+	{
+		spec.style.color = spec.color = spec.colorPicker.value;
 		if (spec.outline)
 			spec.outline.setStyle(spec.style);
-	}, false);
-	spec.div.insertBefore(input, nextNode);
-	spec.colorInput = input;
+	}
+	const nextNode = spec.ztf.nextSibling;
+	{
+		const input = document.createElement('input');
+		input.type = 'checkbox';
+
+		// Check the checkbox if runGeometryQuery was set by AddPointQueries() in pmap-lc.js
+		input.checked = spec.runGeometryQuery ? true : false;
+
+		input.addEventListener('click', clickCheckbox);
+		spec.div.insertBefore(input, nextNode);
+		spec.toggle = input;
+	}
+	{
+		const input = document.createElement('input');
+		input.type = 'color';
+
+		if (spec.color) input.value = spec.color;
+
+		input.addEventListener('change', changeColor);
+		spec.div.insertBefore(input, nextNode);
+		spec.colorPicker = input;
+	}
 }
 var MapServer = {};
 MapServer.initPointQueries = function(map)
 {
-	var geojson = false;
-	var responseFormat = geojson ? 'geojson' : 'json';
+	const geojson = false;
+	const responseFormat = geojson ? 'geojson' : 'json';
+	const attrKey = geojson ? 'properties' : 'attributes';
 	var globalClickID = 0;
 	var popupEmpty = true;
 	var firstResponse = false;
-	var outlines = [];
 	var popupSpecs = [];
 
-	var popupDiv = document.createElement('div');
+	const popupDiv = document.createElement('div');
 	popupDiv.className = 'popupDiv blmPopup';
 
-	var llSpan = document.createElement('span');
+	const llSpan = document.createElement('span');
 	llSpan.style.cursor = 'pointer';
 	llSpan.appendChild(document.createTextNode(''));
 	llSpan.addEventListener('click', function() {
-		var llText = llSpan.firstChild.nodeValue;
+		const llText = llSpan.firstChild.nodeValue;
 		llSpan.firstChild.nodeValue = llSpan.dataset.ll;
 		window.getSelection().selectAllChildren(llSpan);
 		document.execCommand('copy');
 		llSpan.firstChild.nodeValue = llText;
 	});
 
-	var llDiv = document.createElement('div');
+	const llDiv = document.createElement('div');
 	llDiv.appendChild(llSpan);
 	popupDiv.appendChild(llDiv);
 
-	var popup = L.popup({maxWidth: 600}).setContent(popupDiv);
+	const popup = L.popup({maxWidth: 600}).setContent(popupDiv);
 
 	function queryInit(spec)
 	{
-		var popupSpec = spec.popup;
+		const popupSpec = spec.popup;
 		popupSpec.div = document.createElement('div');
 		popupSpec.ztf = fitLink(map, popupSpec);
 		popupSpec.init(popupSpec.div);
 		addOutlineCheckbox(popupSpec, map);
 		popupSpec.div.style.display = 'none';
 
-		var queryLayer = spec.queryLayer || spec.exportLayers || '0';
-		var baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
+		const queryLayer = spec.queryLayer || spec.exportLayers || '0';
+		const baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
 
 		popupSpec.queryField0 = spec.queryFields ? spec.queryFields[0] : spec.queryField0 || 'OBJECTID';
 		popupSpec.queryByLL = [baseURL,
@@ -1280,7 +1329,7 @@ MapServer.initPointQueries = function(map)
 	}
 	function queryEnable(spec)
 	{
-		let popupSpec = spec.popup;
+		const popupSpec = spec.popup;
 		if (!popupSpec.div)
 			queryInit(spec);
 
@@ -1297,19 +1346,31 @@ MapServer.initPointQueries = function(map)
 		if (popup.isOpen())
 			runQuery(globalClickID, popupSpec, null, llSpan.dataset.ll.split(',').reverse().join(','));
 	}
+	function queryReset(spec)
+	{
+		if (spec.toggle.checked && spec.outline)
+			spec.outline.remove();
+
+		spec.outline = null;
+		spec.outlineID = null;
+		spec.div.style.display = 'none';
+
+		if (spec.pager) {
+			spec.div.removeChild(spec.pager);
+			spec.pager = null;
+		}
+	}
 	function queryDisable(spec)
 	{
 		let i = querySpecs.length - 1;
 		while (i >= 0 && spec !== querySpecs[i]) --i;
 
-		let popupSpec = spec.popup;
+		const popupSpec = spec.popup;
 		popupDiv.removeChild(popupSpec.div);
 		querySpecs.splice(i, 1);
 		popupSpecs.splice(i, 1);
 
-		popupSpec.outline = null;
-		popupSpec.outlineID = null;
-		popupSpec.div.style.display = 'none';
+		queryReset(popupSpec);
 	}
 	function makeToggleQuery(spec)
 	{
@@ -1325,19 +1386,21 @@ MapServer.initPointQueries = function(map)
 	}
 	function removeOutlines()
 	{
-		if (outlines) {
-			for (var outline of outlines) outline.remove();
-			outlines.length = 0;
-		}
 		if (!popupEmpty) {
-			for (var spec of popupSpecs) {
-				spec.outline = null;
-				spec.outlineID = null;
-				spec.div.style.display = 'none';
-			}
+			popupSpecs.forEach(queryReset);
 			popupEmpty = true;
 		}
 		firstResponse = false;
+	}
+	function addOutline(spec, outline)
+	{
+		spec.outline = outline;
+		if (outline.options.color !== spec.style.color)
+			outline.setStyle(spec.style);
+		if (spec.toggle.checked)
+			outline.addTo(map);
+		spec.ztf.style.display = '';
+		popup.update();
 	}
 
 	TileOverlays.items.us.items.w = wildernessSpec;
@@ -1352,24 +1415,9 @@ MapServer.initPointQueries = function(map)
 
 	function runQuery(clickID, spec, ll, lngCommaLat)
 	{
-		function showOutline(outline)
+		function showFeature(attr)
 		{
-			spec.outline = outline;
-			outlines.push(outline);
-			if (outline.options.color !== spec.style.color)
-				outline.setStyle(spec.style);
-			if (spec.toggle.checked)
-				outline.addTo(map);
-			spec.ztf.style.display = '';
-			popup.update();
-		}
-		loadJSON(spec.queryByLL + lngCommaLat, function(json) {
-			if (clickID !== globalClickID) return;
-			if (firstResponse) removeOutlines();
-			if (json.features.length === 0) return;
-
-			var attr = json.features[0][geojson ? 'properties' : 'attributes'];
-			var style = spec.show(attr);
+			let style = spec.show(attr);
 			if (typeof style === 'string')
 				style = {color: style.toLowerCase(), fillOpacity: 0};
 
@@ -1379,14 +1427,15 @@ MapServer.initPointQueries = function(map)
 			if (spec.color)
 				style.color = spec.color;
 			else
-				spec.colorInput.value = style.color;
+				spec.colorPicker.value = style.color;
+
 			if (popupEmpty) {
 				map.openPopup(popup.setLatLng(ll));
 				popupEmpty = false;
 			} else
 				popup.update();
 
-			var outlineID = attr[spec.queryField0];
+			const outlineID = attr[spec.queryField0];
 			spec.outlineID = outlineID;
 
 			spec.runGeometryQuery = function()
@@ -1397,10 +1446,9 @@ MapServer.initPointQueries = function(map)
 				function(json) {
 					delete spec.activeQueries[outlineID];
 
-					if (!json || !json.features) return;
-					if (json.features.length === 0) return;
+					if (!(json && json.features && json.features.length)) return;
 
-					var geometry = json.features[0].geometry;
+					let geometry = json.features[0].geometry;
 					if (!geojson)
 						if (json.geometryType === 'esriGeometryPolygon')
 							geometry = {type: 'Polygon', coordinates: geometry.rings};
@@ -1409,11 +1457,11 @@ MapServer.initPointQueries = function(map)
 
 					if (clickID !== globalClickID && outlineID === spec.outlineID)
 						style = spec.style;
-					var outline = L.GeoJSON.geometryToLayer(geometry, style);
+					const outline = L.GeoJSON.geometryToLayer(geometry, style);
 					spec.outlineCache[outlineID] = outline;
 
 					if (outlineID === spec.outlineID)
-						showOutline(outline);
+						addOutline(spec, outline);
 				},
 				function() {
 					delete spec.activeQueries[outlineID];
@@ -1421,31 +1469,51 @@ MapServer.initPointQueries = function(map)
 				});
 			};
 
-			var outline = spec.outlineCache[outlineID];
+			const outline = spec.outlineCache[outlineID];
 			if (outline)
-				showOutline(outline);
+				addOutline(spec, outline);
 			else if (spec.toggle.checked)
 				spec.runGeometryQuery();
-
-		}, function() {
+		}
+		function querySuccess(json)
+		{
 			if (clickID !== globalClickID) return;
 			if (firstResponse) removeOutlines();
-		});
+			if (!json) return;
+
+			const features = json.features;
+			if (!features) return;
+
+			const numFeatures = features.length;
+			if (!Number.isInteger(numFeatures) || numFeatures < 1) return;
+
+			const showPage = i => showFeature(features[i][attrKey]);
+			if (numFeatures > 1)
+				addPager(spec, numFeatures > 99 ? 99 : numFeatures, showPage);
+
+			showPage(0);
+		}
+		function queryFailed()
+		{
+			if (clickID !== globalClickID) return;
+			if (firstResponse) removeOutlines();
+		}
+		loadJSON(spec.queryByLL + lngCommaLat, querySuccess, queryFailed);
 	}
 
 	map.on('click', function(event) {
 		globalClickID += 1;
 		firstResponse = true;
 
-		var ll = event.latlng;
-		var lng = degToStr(ll.lng);
-		var lat = degToStr(ll.lat);
-		var lngCommaLat = lng + ',' + lat;
+		const ll = event.latlng;
+		const lng = degToStr(ll.lng);
+		const lat = degToStr(ll.lat);
+		const lngCommaLat = lng + ',' + lat;
 
 		llSpan.firstChild.nodeValue = latLngToStr(lat, lng);
 		llSpan.dataset.ll = lat + ',' + lng;
 
-		for (var spec of popupSpecs)
+		for (const spec of popupSpecs)
 			runQuery(globalClickID, spec, ll, lngCommaLat);
 	});
 };
