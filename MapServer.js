@@ -1253,8 +1253,7 @@ function addOutlineCheckbox(spec, map)
 		input.addEventListener('click', clickCheckbox);
 		spec.div.insertBefore(input, nextNode);
 		spec.toggle = input;
-	}
-	{
+	}{
 		const input = document.createElement('input');
 		input.type = 'color';
 
@@ -1265,8 +1264,8 @@ function addOutlineCheckbox(spec, map)
 		spec.colorPicker = input;
 	}
 }
-var MapServer = {};
-MapServer.initPointQueries = function(map)
+return {
+initPointQueries: function(map)
 {
 	const geojson = false;
 	const responseFormat = geojson ? 'geojson' : 'json';
@@ -1372,10 +1371,11 @@ MapServer.initPointQueries = function(map)
 
 		queryReset(popupSpec);
 	}
-	function makeToggleQuery(spec)
+	function makeToggleQuery(spec, index)
 	{
-		return function(event) {
-			let checkbox = spec.queryToggle;
+		spec.queryOrder = index;
+		spec.toggleQuery = function(event) {
+			const checkbox = spec.queryToggle;
 			if (!event || event.currentTarget !== checkbox)
 				checkbox.checked = !checkbox.checked;
 			if (checkbox.checked)
@@ -1405,12 +1405,7 @@ MapServer.initPointQueries = function(map)
 
 	TileOverlays.items.us.items.w = wildernessSpec;
 
-	let queryOrder = 0;
-	for (let spec of querySpecs)
-	{
-		spec.queryOrder = ++queryOrder;
-		spec.toggleQuery = makeToggleQuery(spec);
-	}
+	querySpecs.forEach(makeToggleQuery);
 	querySpecs = [];
 
 	function runQuery(clickID, spec, ll, lngCommaLat)
@@ -1516,7 +1511,5 @@ MapServer.initPointQueries = function(map)
 		for (const spec of popupSpecs)
 			runQuery(globalClickID, spec, ll, lngCommaLat);
 	});
-};
-
-return MapServer;
+}};
 })();
