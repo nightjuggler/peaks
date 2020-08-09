@@ -47,13 +47,12 @@ function fitLink(fitBounds, className)
 	img.addEventListener('click', fitBounds, false);
 	return img;
 }
-function popupFitLink(map, layer)
+function popupFitLink(layer)
 {
 	function fitBounds(event)
 	{
 		event.preventDefault();
-		layer.closePopup();
-		map.fitBounds(layer.getBounds());
+		globalMap.fitBounds(layer.closePopup().getBounds());
 	}
 	return fitLink(fitBounds, 'popupZtf');
 }
@@ -101,10 +100,10 @@ function dynamicWeatherLink(layer)
 	a.addEventListener('click', setWxLink, false);
 	return a;
 }
-function bindPopup(popupDiv, map, layer)
+function bindPopup(popupDiv, layer)
 {
 	popupDiv.appendChild(document.createElement('br'));
-	popupDiv.appendChild(popupFitLink(map, layer));
+	popupDiv.appendChild(popupFitLink(layer));
 	popupDiv.appendChild(dynamicWeatherLink(layer));
 	popupDiv.appendChild(lowerLink(layer));
 	popupDiv.appendChild(raiseLink(layer));
@@ -193,7 +192,7 @@ addFunctions.default = function(geojson)
 {
 	return L.geoJSON(geojson, {style: {color: '#FF4500'/* OrangeRed */}});
 };
-addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
+addFunctions.add_BLM_CA_Districts = function(geojson, lcItem)
 {
 	const style = {
 		'Northern California District': {color: '#4169E1'}, // RoyalBlue
@@ -218,7 +217,7 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + parent + ')'));
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 		assignLayer(lcItem, [parent, feature.properties.name], layer);
 	}
 
@@ -235,7 +234,13 @@ function officeIcon()
 			'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>'
 	});
 }
-addFunctions.add_BLM_Offices = function(geojson, map)
+function zoomTo(ll)
+{
+	return function() {
+		globalMap.setView(ll, Math.min(globalMap.getMaxZoom(), 18));
+	};
+}
+addFunctions.add_BLM_Offices = function(geojson)
 {
 	function addPopup(feature, latlng)
 	{
@@ -243,14 +248,11 @@ addFunctions.add_BLM_Offices = function(geojson, map)
 		const html = '<div class="popupDiv blmPopup"><b>BLM ' + name + '</b></div>';
 		return L.marker(latlng, {icon: officeIcon()})
 			.bindPopup(html, {maxWidth: 600})
-			.on('dblclick', function() {
-				map.setView(latlng, map.getMaxZoom() - 5);
-			});
+			.on('dblclick', zoomTo(latlng));
 	}
-
 	return L.geoJSON(geojson, {pointToLayer: addPopup});
 };
-addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
+addFunctions.add_BLM_Lands = function(geojson, lcItem)
 {
 	const USFS_Style = {color: '#008000'}; // Green
 	const BLM_Style = {color: '#00008B'}; // DarkBlue
@@ -313,13 +315,13 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 			}
 		}
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 		assignLayer(lcItem, namePath, layer);
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
 };
-addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
+addFunctions.add_BLM_Wilderness = function(geojson, lcItem)
 {
 	const style = {
 		BLM: {color: '#FF8C00'}, // DarkOrange
@@ -351,13 +353,13 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('Designated ' + date));
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 		assignLayer(lcItem, namePath, layer);
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: getStyle});
 };
-addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
+addFunctions.add_BLM_WSA = function(geojson, lcItem)
 {
 	function addPopup(feature, layer)
 	{
@@ -373,13 +375,13 @@ addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('BLM Recommendation: ' + p.rcmnd));
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 		assignLayer(lcItem, [p.name], layer);
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#000000'}});
 };
-addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
+addFunctions.add_BLM_WSA_Released = function(geojson, lcItem)
 {
 	function addPopup(feature, layer)
 	{
@@ -393,7 +395,7 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 		assignLayer(lcItem, [p.name], layer);
 	}
 
@@ -413,7 +415,7 @@ function appendName(name, node)
 	}
 	return parts.join(' ');
 }
-addFunctions.add_NPS = function(geojson, map, lcItem)
+addFunctions.add_NPS = function(geojson, lcItem)
 {
 	function addPopup(feature, layer)
 	{
@@ -444,7 +446,7 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 			}
 		}
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 		assignLayer(lcItem, namePath, layer, p);
 	}
 
@@ -464,7 +466,7 @@ function peakIcon(p)
 			'd="M 10,2 L 1,19 19,19 Z" /></svg>'
 	});
 }
-addFunctions.addPeakOverlay = function(geojson, map)
+addFunctions.addPeakOverlay = function(geojson)
 {
 	setPopupGlobals(geojson);
 
@@ -474,14 +476,12 @@ addFunctions.addPeakOverlay = function(geojson, map)
 		return L.marker(latlng, {icon: peakIcon(p)})
 			.bindPopup(popupHTML(latlng.lng, latlng.lat, p))
 			.on('popupopen', enableTooltips)
-			.on('dblclick', function() {
-				map.setView(latlng, map.getMaxZoom() - 5);
-			});
+			.on('dblclick', zoomTo(latlng));
 	}
 
 	return L.geoJSON(geojson, {pointToLayer: addPeak});
 };
-addFunctions.add_UC_Reserve = function(geojson, map)
+addFunctions.add_UC_Reserve = function(geojson)
 {
 	function addPopup(feature, layer)
 	{
@@ -498,7 +498,7 @@ addFunctions.add_UC_Reserve = function(geojson, map)
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.campus + ')'));
 
-		bindPopup(popupDiv, map, layer);
+		bindPopup(popupDiv, layer);
 	}
 
 	return L.geoJSON(geojson, {onEachFeature: addPopup, style: {color: '#FF00FF'/* Magenta */}});
@@ -719,7 +719,7 @@ function addCheckboxClickHandler(item)
 	function addWrapper(geojson)
 	{
 		addNameMap(fileParent);
-		fileParent.featureGroup = fileParent.add(geojson, globalMap, fileParent);
+		fileParent.featureGroup = fileParent.add(geojson, fileParent);
 		delNameMap(fileParent);
 
 		const sizeSpan = fileParent.div.lastChild;
