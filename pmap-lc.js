@@ -2,15 +2,15 @@
 /* globals console, document, Image, window, L */
 /* globals enableTooltips, loadJSON, popupHTML, setPopupGlobals, weatherLink */
 
-var BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
-var USFS_Prefix = 'https://www.fs.usda.gov/';
-var USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
-var Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
-var Wilderness_Prefix = 'https://wilderness.net/visit-wilderness/?ID=';
+const BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
+const USFS_Prefix = 'https://www.fs.usda.gov/';
+const USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
+const Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
+const Wilderness_Prefix = 'https://wilderness.net/visit-wilderness/?ID=';
 
-var lcItemFitLink;
-var lcItemHoverColor = 'rgb(232, 232, 232)';
-var menuDisplayedIcon = ' \u25BC';
+let lcItemFitLink = null;
+const lcItemHoverColor = 'rgb(232, 232, 232)';
+const menuDisplayedIcon = ' \u25BC';
 /*
 	\uFE0E is a variation selector to indicate that the preceding character - the
 	black right-pointing triangle (\u25B6) - should be rendered text-style rather
@@ -18,19 +18,23 @@ var menuDisplayedIcon = ' \u25BC';
 	seem to default to text-style while mobile browsers seem to default to emoji-
 	style. [http://www.unicode.org/Public/UNIDATA/StandardizedVariants.txt]
 */
-var menuCollapsedIcon = ' \u25B6\uFE0E';
-var addFunctions = {};
+const menuCollapsedIcon = ' \u25B6\uFE0E';
+const addFunctions = {};
 
+function textLink(url, text)
+{
+	const link = document.createElement('a');
+	link.href = url;
+	link.appendChild(document.createTextNode(text));
+	return link;
+}
 function wikipediaLink(w)
 {
-	var link = document.createElement('a');
-	link.href = Wikipedia_Prefix + w;
-	link.appendChild(document.createTextNode('W'));
-	return link;
+	return textLink(Wikipedia_Prefix + w, 'W');
 }
 function fitLink(fitBounds, className)
 {
-	var img = new Image();
+	const img = new Image();
 	img.alt = 'Zoom To Fit';
 	img.src = 'ztf.svg';
 	img.className = className;
@@ -54,7 +58,7 @@ function raiseLink(layer)
 		event.preventDefault();
 		layer.closePopup().bringToFront();
 	}
-	var a = document.createElement('a');
+	const a = document.createElement('a');
 	a.href = '#';
 	a.className = 'bringToFront';
 	a.appendChild(document.createTextNode('\u2B06\uFE0F'));
@@ -68,7 +72,7 @@ function lowerLink(layer)
 		event.preventDefault();
 		layer.closePopup().bringToBack();
 	}
-	var a = document.createElement('a');
+	const a = document.createElement('a');
 	a.href = '#';
 	a.className = 'bringToBack';
 	a.appendChild(document.createTextNode('\u2B07\uFE0F'));
@@ -77,11 +81,11 @@ function lowerLink(layer)
 }
 function dynamicWeatherLink(layer)
 {
-	var a = document.createElement('a');
+	const a = document.createElement('a');
 
 	function setWxLink()
 	{
-		var ll = layer.getPopup().getLatLng();
+		const ll = layer.getPopup().getLatLng();
 		a.href = weatherLink(ll.lng.toFixed(6), ll.lat.toFixed(6));
 	}
 
@@ -89,7 +93,6 @@ function dynamicWeatherLink(layer)
 	a.className = 'wxLink';
 	a.appendChild(document.createTextNode('\u26C5'));
 	a.addEventListener('click', setWxLink, false);
-
 	return a;
 }
 function bindPopup(popupDiv, map, layer)
@@ -106,9 +109,9 @@ function addNameMap(item)
 	if (item.order)
 	{
 		item.nameMap = {};
-		for (var id of item.order)
+		for (const id of item.order)
 		{
-			var child = item.items[id];
+			const child = item.items[id];
 			item.nameMap[child.name] = child;
 			addNameMap(child);
 		}
@@ -119,13 +122,13 @@ function delNameMap(item)
 	if (item.order)
 	{
 		delete item.nameMap;
-		for (var id of item.order)
+		for (const id of item.order)
 			delNameMap(item.items[id]);
 	}
 }
 function extendBounds(item, layer)
 {
-	var bounds = layer.getBounds();
+	const bounds = layer.getBounds();
 	if (item.bounds)
 		item.bounds.extend(bounds);
 	else
@@ -133,22 +136,18 @@ function extendBounds(item, layer)
 }
 function assignLayer(item, namePath, layer, featureProperties)
 {
-	var nextItem;
-	var lastName = namePath.pop();
+	let nextItem;
+	const lastName = namePath.pop();
 
-	var setBounds = false;
-	var skipBounds = false;
-
-	if (featureProperties && featureProperties.flags) {
-		if (featureProperties.flags & 1) setBounds = true;
-		if (featureProperties.flags & 2) skipBounds = true;
-	}
+	const flags = featureProperties && featureProperties.flags || 0;
+	const setBounds = (flags & 1) !== 0;
+	const skipBounds = (flags & 2) !== 0;
 
 	if (!item.nameMap) {
 		console.log('assignLayer failed: "' + item.name + '" doesn\'t have a name map!');
 		return;
 	}
-	for (var name of namePath)
+	for (const name of namePath)
 	{
 		if (!(nextItem = item.nameMap[name])) {
 			console.log('assignLayer failed to get from "' + item.name + '" to "' + name + '"');
@@ -190,7 +189,7 @@ addFunctions.default = function(geojson)
 };
 addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 {
-	var style = {
+	const style = {
 		'Northern California District': {color: '#4169E1'}, // RoyalBlue
 		'Central California District': {color: '#1E90FF'}, // DodgerBlue
 		'California Desert District': {color: '#00BFFF'}, // DeepSkyBlue
@@ -201,13 +200,14 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 	}
 	function addPopup(feature, layer)
 	{
-		var name = feature.properties.name.slice(0, -13); // strip trailing " Field Office"
-		var parent = feature.properties.parent;
+		const name = feature.properties.name.slice(0, -13); // strip trailing " Field Office"
+		const parent = feature.properties.parent;
 
-		var popupDiv = document.createElement('div');
-		popupDiv.className = 'popupDiv blmPopup';
-		var bold = document.createElement('b');
+		const bold = document.createElement('b');
 		bold.appendChild(document.createTextNode('BLM ' + name));
+
+		const popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + parent + ')'));
@@ -220,18 +220,21 @@ addFunctions.add_BLM_CA_Districts = function(geojson, map, lcItem)
 };
 function officeIcon()
 {
-	var o = {iconSize: [26, 20], className: 'officeIcon', popupAnchor: [0, -4]};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" viewBox="0 0 26 20">' +
-		'<path fill="cyan" stroke="blue" stroke-width="2" ' +
-		'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>';
-	return L.divIcon(o);
+	return L.divIcon({
+		className: 'officeIcon',
+		iconSize: [26, 20],
+		popupAnchor: [0, -4],
+		html: '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" viewBox="0 0 26 20">' +
+			'<path fill="cyan" stroke="blue" stroke-width="2" ' +
+			'd="M 13,1 L 1,10 3,10 3,19 11,19 11,10 15,10 15,19 23,19 23,10 25,10 Z" /></svg>'
+	});
 }
 addFunctions.add_BLM_Offices = function(geojson, map)
 {
 	function addPopup(feature, latlng)
 	{
-		var name = feature.properties.name;
-		var html = '<div class="popupDiv blmPopup"><b>BLM ' + name + '</b></div>';
+		const name = feature.properties.name;
+		const html = '<div class="popupDiv blmPopup"><b>BLM ' + name + '</b></div>';
 		return L.marker(latlng, {icon: officeIcon()})
 			.bindPopup(html, {maxWidth: 600})
 			.on('dblclick', function() {
@@ -243,8 +246,8 @@ addFunctions.add_BLM_Offices = function(geojson, map)
 };
 addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 {
-	var USFS_Style = {color: '#008000'}; // Green
-	var BLM_Style = {color: '#00008B'}; // DarkBlue
+	const USFS_Style = {color: '#008000'}; // Green
+	const BLM_Style = {color: '#00008B'}; // DarkBlue
 
 	function getStyle(feature)
 	{
@@ -254,59 +257,52 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 	}
 	function addPopup(feature, layer)
 	{
-		var name = feature.properties.name;
-		var agency = feature.properties.agency;
+		const p = feature.properties;
+		const name = p.name;
+		const agency = p.agency;
 
-		var popupDiv = document.createElement('div');
-		popupDiv.className = 'popupDiv blmPopup';
-
-		var bold = document.createElement('b');
-		var link = document.createElement('a');
-
-		link.href = BLM_CA_NLCS_Prefix + feature.properties.BLM;
+		const link = document.createElement('a');
+		link.href = BLM_CA_NLCS_Prefix + p.BLM;
 		if (name.length < 23) {
-			link.appendChild(document.createTextNode(name + ' ' + feature.properties.D));
+			link.appendChild(document.createTextNode(name + ' ' + p.D));
 		} else {
 			link.appendChild(document.createTextNode(name));
 			link.appendChild(document.createElement('br'));
-			link.appendChild(document.createTextNode(feature.properties.D));
+			link.appendChild(document.createTextNode(p.D));
 		}
+
+		const bold = document.createElement('b');
 		bold.appendChild(link);
 		bold.appendChild(document.createTextNode(' ['));
-		bold.appendChild(wikipediaLink(feature.properties.W));
+		bold.appendChild(wikipediaLink(p.W));
 		bold.appendChild(document.createTextNode(']'));
+
+		const popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 
-		var namePath = [name + ' ' + feature.properties.D];
+		const namePath = [name + ' ' + p.D];
 		if (agency)
 		{
 			popupDiv.appendChild(document.createElement('br'));
 			if (agency === 'USFS')
 			{
 				namePath.push('Forest Service Lands');
-				if (feature.properties.FS)
+				if (p.FS)
 				{
 					popupDiv.appendChild(document.createTextNode(
 						'This part is managed by the '));
-					link = document.createElement('a');
-					link.href = USFS_NM_Prefix + feature.properties.FS;
-					link.appendChild(document.createTextNode('Forest Service'));
-					popupDiv.appendChild(link);
+					popupDiv.appendChild(textLink(USFS_NM_Prefix + p.FS, 'Forest Service'));
 					popupDiv.appendChild(document.createTextNode(':'));
 				}
 				else
 					popupDiv.appendChild(document.createTextNode(
 						'This part is managed by the Forest Service:'));
 
-				var forestName = feature.properties.NFW.replace(/_/g, ' ');
-				link = document.createElement('a');
-				link.href = USFS_Prefix + feature.properties.NF;
-				link.appendChild(document.createTextNode(forestName));
-
 				popupDiv.appendChild(document.createElement('br'));
-				popupDiv.appendChild(link);
+				popupDiv.appendChild(textLink(USFS_Prefix + p.NF, p.NFW.replace(/_/g, ' ')));
 				popupDiv.appendChild(document.createTextNode(' ['));
-				popupDiv.appendChild(wikipediaLink(feature.properties.NFW));
+				popupDiv.appendChild(wikipediaLink(p.NFW));
 				popupDiv.appendChild(document.createTextNode(']'));
 			} else {
 				namePath.push(agency + ' Lands');
@@ -323,7 +319,7 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 };
 addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 {
-	var style = {
+	const style = {
 		BLM: {color: '#FF8C00'}, // DarkOrange
 		FWS: {color: '#FFA07A'}, // LightSalmon
 		NPS: {color: '#FFD700'}, // Gold
@@ -335,28 +331,23 @@ addFunctions.add_BLM_Wilderness = function(geojson, map, lcItem)
 	}
 	function addPopup(feature, layer)
 	{
-		var name = feature.properties.name + ' Wilderness';
-		var agency = feature.properties.agency;
-		var date = feature.properties.D;
-		var namePath = [name];
-		if (feature.properties.m)
+		const p = feature.properties;
+		const name = p.name + ' Wilderness';
+		const agency = p.agency;
+		const date = p.D;
+		const namePath = [name];
+		if (p.m)
 			namePath.push(date + ' ' + agency);
 
-		var popupDiv = document.createElement('div');
+		const bold = document.createElement('b');
+		bold.appendChild(textLink(Wilderness_Prefix + p.id, name));
+
+		const popupDiv = document.createElement('div');
 		popupDiv.className = 'popupDiv blmPopup';
-		var bold = document.createElement('b');
-		bold.appendChild(document.createTextNode(name));
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createTextNode(' (' + agency + ')'));
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('Designated ' + date));
-		popupDiv.appendChild(document.createElement('br'));
-		popupDiv.appendChild(document.createTextNode('['));
-		var wildLink = document.createElement('a');
-		wildLink.href = Wilderness_Prefix + feature.properties.id;
-		wildLink.appendChild(document.createTextNode('Wilderness.net'));
-		popupDiv.appendChild(wildLink);
-		popupDiv.appendChild(document.createTextNode(']'));
 
 		bindPopup(popupDiv, map, layer);
 		assignLayer(lcItem, namePath, layer);
@@ -368,12 +359,12 @@ addFunctions.add_BLM_WSA = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
 	{
-		var p = feature.properties;
-
-		var popupDiv = document.createElement('div');
-		popupDiv.className = 'popupDiv blmPopup';
-		var bold = document.createElement('b');
+		const p = feature.properties;
+		const bold = document.createElement('b');
 		bold.appendChild(document.createTextNode(p.name + ' Wilderness Study Area'));
+
+		const popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
@@ -390,12 +381,12 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
 	{
-		var p = feature.properties;
-
-		var popupDiv = document.createElement('div');
-		popupDiv.className = 'popupDiv blmPopup';
-		var bold = document.createElement('b');
+		const p = feature.properties;
+		const bold = document.createElement('b');
 		bold.appendChild(document.createTextNode(p.name + ' WSA (Released)'));
+
+		const popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.code + ')'));
@@ -408,9 +399,9 @@ addFunctions.add_BLM_WSA_Released = function(geojson, map, lcItem)
 };
 function appendName(name, node)
 {
-	var parts = name.split('|');
-	var lineBreak = node.lastChild !== null;
-	for (var part of parts)
+	const parts = name.split('|');
+	let lineBreak = node.lastChild !== null;
+	for (const part of parts)
 	{
 		if (lineBreak)
 			node.appendChild(document.createElement('br'));
@@ -424,23 +415,23 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 {
 	function addPopup(feature, layer)
 	{
-		var p = feature.properties;
-		var bold = document.createElement('b');
-		var link = document.createElement('a');
-		link.href = 'https://www.nps.gov/' + p.code + '/index.htm';
+		const p = feature.properties;
 
+		const link = document.createElement('a');
+		link.href = 'https://www.nps.gov/' + p.code + '/index.htm';
 		p.name = appendName(p.name, link);
 
+		const bold = document.createElement('b');
 		bold.appendChild(link);
 		bold.appendChild(document.createTextNode(' ['));
 		bold.appendChild(wikipediaLink(p.W || p.name.replace(/ /g, '_')));
 		bold.appendChild(document.createTextNode(']'));
 
-		var popupDiv = document.createElement('div');
+		const popupDiv = document.createElement('div');
 		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 
-		var namePath = [p.name];
+		const namePath = [p.name];
 		if (p.name2) {
 			p.name2 = appendName(p.name2, popupDiv);
 			namePath.push(p.name2);
@@ -459,14 +450,17 @@ addFunctions.add_NPS = function(geojson, map, lcItem)
 };
 function peakIcon(p)
 {
-	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
-	var stroke = p.climbed ? 'green' : 'red';
+	const fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
+	const stroke = p.climbed ? 'green' : 'red';
 
-	var o = {iconSize: [20, 26], className: 'peakIcon', popupAnchor: [0, -8]};
-	o.html = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">' +
-		'<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" ' +
-		'd="M 10,2 L 1,19 19,19 Z" /></svg>';
-	return L.divIcon(o);
+	return L.divIcon({
+		className: 'peakIcon',
+		iconSize: [20, 26],
+		popupAnchor: [0, -8],
+		html: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26">' +
+			'<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="3" ' +
+			'd="M 10,2 L 1,19 19,19 Z" /></svg>'
+	});
 }
 addFunctions.addPeakOverlay = function(geojson, map)
 {
@@ -474,7 +468,7 @@ addFunctions.addPeakOverlay = function(geojson, map)
 
 	function addPeak(feature, latlng)
 	{
-		var p = feature.properties;
+		const p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
 			.bindPopup(popupHTML(latlng.lng, latlng.lat, p))
 			.on('popupopen', enableTooltips)
@@ -489,16 +483,15 @@ addFunctions.add_UC_Reserve = function(geojson, map)
 {
 	function addPopup(feature, layer)
 	{
-		var p = feature.properties;
-
-		var popupDiv = document.createElement('div');
-		popupDiv.className = 'popupDiv blmPopup';
-		var bold = document.createElement('b');
+		const p = feature.properties;
+		const bold = document.createElement('b');
 		bold.appendChild(document.createTextNode(p.name));
 		if (p.name2) {
 			bold.appendChild(document.createElement('br'));
 			bold.appendChild(document.createTextNode(p.name2));
 		}
+		const popupDiv = document.createElement('div');
+		popupDiv.className = 'popupDiv blmPopup';
 		popupDiv.appendChild(bold);
 		popupDiv.appendChild(document.createElement('br'));
 		popupDiv.appendChild(document.createTextNode('(' + p.campus + ')'));
@@ -510,7 +503,7 @@ addFunctions.add_UC_Reserve = function(geojson, map)
 };
 function getTop(div)
 {
-	var top = div.offsetTop;
+	let top = div.offsetTop;
 
 	while (div.offsetParent !== document.body)
 	{
@@ -522,15 +515,15 @@ function getTop(div)
 }
 function toggleLayerMenu(event)
 {
-	var arrowSpan = event.currentTarget;
-	var menu = arrowSpan.parentNode.nextSibling;
+	const arrowSpan = event.currentTarget;
+	const menu = arrowSpan.parentNode.nextSibling;
 
-	var lcDiv = document.getElementById('layerControl');
-	var scDiv = document.getElementById('scaleControl');
-	var lcTop = getTop(lcDiv);
-	var scTop = getTop(scDiv);
-	var maxHeight = Math.max(scTop - lcTop - 20, 100);
-	var scrollTop = lcDiv.scrollTop;
+	const lcDiv = document.getElementById('layerControl');
+	const scDiv = document.getElementById('scaleControl');
+	const lcTop = getTop(lcDiv);
+	const scTop = getTop(scDiv);
+	const maxHeight = Math.max(scTop - lcTop - 20, 100);
+	const scrollTop = lcDiv.scrollTop;
 
 	lcDiv.style.height = 'auto';
 
@@ -549,8 +542,8 @@ function toggleLayerMenu(event)
 }
 function LayerControl(map)
 {
-	var div = document.getElementById('layerControl');
-	var icon = document.getElementById('layerControlIcon');
+	const div = document.getElementById('layerControl');
+	const icon = document.getElementById('layerControlIcon');
 
 	function show()
 	{
@@ -562,7 +555,7 @@ function LayerControl(map)
 	}
 	function documentTouch(event)
 	{
-		var node = event.target;
+		let node = event.target;
 		while (node && node !== div)
 			node = node.parentNode;
 		if (!node) {
@@ -596,7 +589,7 @@ function lcItemFitBounds(map)
 	{
 		event.preventDefault();
 
-		var item = event.currentTarget.parentNode.lcItem;
+		const item = event.currentTarget.parentNode.lcItem;
 		if (item.bounds) {
 			map.fitBounds(item.bounds);
 		} else if (item.layer) {
@@ -609,7 +602,7 @@ function lcItemFitBounds(map)
 }
 function showZoomToFit(event)
 {
-	var div = event.currentTarget;
+	const div = event.currentTarget;
 	if (lcItemFitLink.parentNode !== div)
 	{
 		div.style.paddingRight = '8px';
@@ -618,7 +611,7 @@ function showZoomToFit(event)
 }
 function hideZoomToFit(event)
 {
-	var div = event.currentTarget;
+	const div = event.currentTarget;
 	if (lcItemFitLink.parentNode === div)
 	{
 		div.style.paddingRight = '23px';
@@ -627,9 +620,9 @@ function hideZoomToFit(event)
 }
 function addZoomToFitHandlers(item)
 {
-	var itemDiv = item.div;
+	const itemDiv = item.div;
 
-	var bgColor = window.getComputedStyle(itemDiv).backgroundColor;
+	const bgColor = window.getComputedStyle(itemDiv).backgroundColor;
 	if (bgColor === lcItemHoverColor)
 		itemDiv.appendChild(lcItemFitLink);
 	else
@@ -669,7 +662,7 @@ function addZoomToFitHandlers(item)
 	itemDiv.addEventListener('touchstart', showZoomToFit, false);
 
 	if (item.order)
-		for (var id of item.order)
+		for (const id of item.order)
 			addZoomToFitHandlers(item.items[id]);
 }
 function checkUpToFileParent(item)
@@ -682,9 +675,9 @@ function checkUpToFileParent(item)
 }
 function checkSubtree(topItem)
 {
-	for (var id of topItem.order)
+	for (const id of topItem.order)
 	{
-		var item = topItem.items[id];
+		const item = topItem.items[id];
 		if (item.order)
 			checkSubtree(item);
 		item.checkbox.checked = true;
@@ -708,9 +701,9 @@ function addLayersToMap(item, map, extendBounds)
 			extendBounds(item.layer.getBounds());
 	}
 	if (item.order) {
-		for (var id of item.order)
+		for (const id of item.order)
 		{
-			var child = item.items[id];
+			const child = item.items[id];
 			if (child.checkbox.checked)
 				addLayersToMap(child, map, extendBounds);
 		}
@@ -725,9 +718,9 @@ function removeLayersFromMap(item)
 	if (item.layer)
 		item.layer.remove();
 	if (item.order) {
-		for (var id of item.order)
+		for (const id of item.order)
 		{
-			var child = item.items[id];
+			const child = item.items[id];
 			if (child.checkbox.checked)
 				removeLayersFromMap(child);
 		}
@@ -736,8 +729,8 @@ function removeLayersFromMap(item)
 }
 function addCheckboxClickHandler(item, map)
 {
-	var checkbox = item.checkbox;
-	var fileParent = item.fileParent;
+	const checkbox = item.checkbox;
+	const fileParent = item.fileParent;
 
 	function addWrapper(geojson)
 	{
@@ -745,7 +738,7 @@ function addCheckboxClickHandler(item, map)
 		fileParent.featureGroup = fileParent.add(geojson, map, fileParent);
 		delNameMap(fileParent);
 
-		var sizeSpan = fileParent.div.lastChild;
+		const sizeSpan = fileParent.div.lastChild;
 		sizeSpan.parentNode.removeChild(sizeSpan);
 
 		if (!lcItemFitLink)
@@ -778,7 +771,7 @@ function addCheckboxClickHandler(item, map)
 			if (item.order)
 				checkSubtree(item);
 
-			var progressBar = document.createElement('progress');
+			const progressBar = document.createElement('progress');
 			fileParent.div.insertBefore(progressBar, fileParent.div.lastChild);
 
 			progressBar.max = 100;
@@ -796,7 +789,7 @@ function addCheckboxClickHandler(item, map)
 function getPathStr(path, id)
 {
 	path.push(id);
-	var pathStr = path.join('/');
+	const pathStr = path.join('/');
 	path.pop();
 	return pathStr;
 }
@@ -818,8 +811,8 @@ function validateItem(item, path, id)
 
 	if (item.add)
 	{
-		var funcName = 'add' + item.add;
-		var addFunc = addFunctions[funcName];
+		const funcName = 'add' + item.add;
+		const addFunc = addFunctions[funcName];
 
 		if (typeof addFunc !== 'function') {
 			console.log(getPathStr(path, id) + ': "' + funcName + '" is not a function!');
@@ -841,30 +834,30 @@ function validateItem(item, path, id)
 }
 LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 {
-	for (var id of parentItem.order)
+	for (const id of parentItem.order)
 	{
-		var item = parentItem.items[id];
+		const item = parentItem.items[id];
 		item.parent = parentItem;
 
 		if (!validateItem(item, path, id)) continue;
 
-		var nameSpan = document.createElement('span');
+		const nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
 		item.name = appendName(item.name, nameSpan);
 
-		var itemDiv = document.createElement('div');
+		const itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
 		if (item.size)
 		{
-			var sizeSpan = document.createElement('span');
+			const sizeSpan = document.createElement('span');
 			sizeSpan.appendChild(document.createTextNode('(' + item.size + ')'));
 			itemDiv.appendChild(sizeSpan);
 		}
 		if (item.fileParent)
 		{
-			var checkbox = document.createElement('input');
+			const checkbox = document.createElement('input');
 			checkbox.type = 'checkbox';
 			checkbox.checked = false;
 			itemDiv.insertBefore(checkbox, nameSpan);
@@ -883,7 +876,7 @@ LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 
 		if (item.items)
 		{
-			var childDiv = document.createElement('div');
+			const childDiv = document.createElement('div');
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
@@ -892,7 +885,7 @@ LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 
 			parentDiv.appendChild(childDiv);
 
-			var arrowSpan = document.createElement('span');
+			const arrowSpan = document.createElement('span');
 			arrowSpan.className = 'lcArrow';
 			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
 			arrowSpan.addEventListener('click', toggleLayerMenu, false);
@@ -904,17 +897,17 @@ LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 };
 function getItem(path, item)
 {
-	for (var id of path)
+	for (const id of path)
 	{
-		if (!item.items) {
+		if (!item.items)
 			return null;
-		}
-		var nextItem = item.items[id];
-		if (!nextItem) {
+
+		let nextItem = item.items[id];
+		if (!nextItem)
 			return null;
-		}
+
 		if (typeof nextItem === 'string') {
-			var subPath = nextItem.split('/');
+			const subPath = nextItem.split('/');
 			subPath.push(id);
 			nextItem = getItem(subPath, item);
 			if (!nextItem)
@@ -929,9 +922,9 @@ LayerControl.prototype.addOverlays = function(rootLCD, overlays, mapBounds)
 	this.div.appendChild(document.createElement('hr'));
 	this._addOverlays(rootLCD, this.div, []);
 
-	for (var pathStr of overlays)
+	for (const pathStr of overlays)
 	{
-		var item = getItem(pathStr.split('_'), rootLCD);
+		const item = getItem(pathStr.split('_'), rootLCD);
 		if (item && item.checkbox && !item.checkbox.checked) {
 			mapBounds.addSetter(item);
 			item.checkbox.click();
@@ -951,25 +944,25 @@ function makeChangeBaseLayer(ctrl, item)
 }
 LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, parentMakeLayer)
 {
-	for (var id of parentItem.order)
+	for (const id of parentItem.order)
 	{
-		var item = parentItem.items[id];
+		const item = parentItem.items[id];
 		if (!item) continue;
 
-		var nameSpan = document.createElement('span');
+		const nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
 		appendName(item.name, nameSpan);
 
-		var itemDiv = document.createElement('div');
+		const itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
 		parentDiv.appendChild(itemDiv);
 
-		var makeLayer = item.makeLayer || parentMakeLayer;
+		const makeLayer = item.makeLayer || parentMakeLayer;
 
 		if (item.items) {
-			var childDiv = document.createElement('div');
+			const childDiv = document.createElement('div');
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
@@ -978,7 +971,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 
 			parentDiv.appendChild(childDiv);
 
-			var arrowSpan = document.createElement('span');
+			const arrowSpan = document.createElement('span');
 			arrowSpan.className = 'lcArrow';
 			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
 			arrowSpan.addEventListener('click', toggleLayerMenu, false);
@@ -986,7 +979,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
 			nameSpan.addEventListener('click', clickArrow, false);
 		} else {
-			var input = document.createElement('input');
+			const input = document.createElement('input');
 			input.type = 'radio';
 			input.name = 'baselayer';
 			input.checked = false;
@@ -996,7 +989,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 			item.layer = makeLayer(item);
 
 			if (item.layer) {
-				var changeBaseLayer = makeChangeBaseLayer(this, item);
+				const changeBaseLayer = makeChangeBaseLayer(this, item);
 				nameSpan.addEventListener('click', changeBaseLayer);
 				input.addEventListener('click', changeBaseLayer);
 			} else {
@@ -1010,7 +1003,7 @@ LayerControl.prototype.addBaseLayers = function(rootLCD, path, defaultPath)
 {
 	this._addBaseLayers(rootLCD, this.div, [], rootLCD.makeLayer);
 
-	var item = getItem(path.split('_'), rootLCD);
+	let item = getItem(path.split('_'), rootLCD);
 	if (!item || !item.layer) {
 		item = getItem(defaultPath.split('_'), rootLCD);
 		if (!item || !item.layer) return;
@@ -1019,8 +1012,8 @@ LayerControl.prototype.addBaseLayers = function(rootLCD, path, defaultPath)
 };
 function makeVersionSpec(parent, version)
 {
-	var spec = {};
-	for (var k of ['attribution', 'dynamicLayers', 'exportLayers', 'opacity', 'url'])
+	const spec = {};
+	for (const k of ['attribution', 'dynamicLayers', 'exportLayers', 'opacity', 'url'])
 	{
 		if (version.hasOwnProperty(k))
 			spec[k] = version[k];
@@ -1043,7 +1036,7 @@ function makeChangeVersion(ctrl, parent, version)
 }
 function makeToggleTileOverlay(ctrl, item)
 {
-	var input = item.input;
+	const input = item.input;
 
 	return function(event)
 	{
@@ -1057,24 +1050,24 @@ function makeToggleTileOverlay(ctrl, item)
 }
 LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, parentMakeLayer, versionParent)
 {
-	for (var id of parentItem.order)
+	for (const id of parentItem.order)
 	{
-		var item = parentItem.items[id];
+		const item = parentItem.items[id];
 		if (!item) continue;
 
-		var nameSpan = document.createElement('span');
+		const nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
 		appendName(item.name, nameSpan);
 
-		var itemDiv = document.createElement('div');
+		const itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
-		var makeLayer = item.makeLayer || parentMakeLayer;
+		const makeLayer = item.makeLayer || parentMakeLayer;
 
 		if (versionParent) {
 			if (!item.items) {
-				let input = document.createElement('input');
+				const input = document.createElement('input');
 				input.type = 'radio';
 				input.name = versionParent.versionID;
 				item.input = input;
@@ -1086,7 +1079,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 					item.layer = makeLayer(makeVersionSpec(versionParent, item));
 				}
 
-				var changeVersion = makeChangeVersion(this, versionParent, item);
+				const changeVersion = makeChangeVersion(this, versionParent, item);
 				input.addEventListener('click', changeVersion);
 				nameSpan.addEventListener('click', changeVersion);
 
@@ -1094,13 +1087,13 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 				itemDiv.style.paddingLeft = '18px';
 			}
 		} else if (item.url) {
-			let input = document.createElement('input');
+			const input = document.createElement('input');
 			input.type = 'checkbox';
 			input.checked = false;
 			item.input = input;
 			item.layer = makeLayer(item);
 
-			let toggleOverlay = makeToggleTileOverlay(this, item);
+			const toggleOverlay = makeToggleTileOverlay(this, item);
 			input.addEventListener('click', toggleOverlay);
 
 			itemDiv.insertBefore(input, nameSpan);
@@ -1113,7 +1106,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 		parentDiv.appendChild(itemDiv);
 
 		if (item.items) {
-			var childDiv = document.createElement('div');
+			const childDiv = document.createElement('div');
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
@@ -1130,7 +1123,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 
 			parentDiv.appendChild(childDiv);
 
-			var arrowSpan = document.createElement('span');
+			const arrowSpan = document.createElement('span');
 			arrowSpan.className = 'lcArrow';
 			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
 			arrowSpan.addEventListener('click', toggleLayerMenu, false);
@@ -1145,32 +1138,32 @@ LayerControl.prototype.addTileOverlays = function(rootLCD, overlays)
 	this.div.appendChild(document.createElement('hr'));
 	this._addTileOverlays(rootLCD, this.div, [], rootLCD.makeLayer);
 
-	for (var pathStr of overlays)
+	for (const pathStr of overlays)
 	{
-		let item = getItem(pathStr.split('_'), rootLCD);
+		const item = getItem(pathStr.split('_'), rootLCD);
 		if (item && item.input && !item.input.checked)
 			item.input.click();
 	}
 };
 LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 {
-	var hasInput = false;
+	let hasInput = false;
 
-	for (var id of parentItem.order)
+	for (const id of parentItem.order)
 	{
-		var item = parentItem.items[id];
+		const item = parentItem.items[id];
 		if (!item || !item.toggleQuery && !(item.items && !item.url)) continue;
 
-		var nameSpan = document.createElement('span');
+		const nameSpan = document.createElement('span');
 		nameSpan.className = 'lcName';
 		appendName(item.name, nameSpan);
 
-		var itemDiv = document.createElement('div');
+		const itemDiv = document.createElement('div');
 		itemDiv.className = 'lcItem';
 		itemDiv.appendChild(nameSpan);
 
 		if (item.toggleQuery) {
-			var input = document.createElement('input');
+			const input = document.createElement('input');
 			input.type = 'checkbox';
 			input.checked = false;
 			item.queryToggle = input;
@@ -1183,7 +1176,7 @@ LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 			input.addEventListener('click', item.toggleQuery);
 			hasInput = true;
 		} else {
-			var childDiv = document.createElement('div');
+			const childDiv = document.createElement('div');
 			childDiv.className = 'lcMenu';
 
 			if (!this._addPointQueries(item, childDiv))
@@ -1192,7 +1185,7 @@ LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 			parentDiv.appendChild(itemDiv);
 			parentDiv.appendChild(childDiv);
 
-			var arrowSpan = document.createElement('span');
+			const arrowSpan = document.createElement('span');
 			arrowSpan.className = 'lcArrow';
 			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
 			arrowSpan.addEventListener('click', toggleLayerMenu, false);

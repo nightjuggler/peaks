@@ -2,8 +2,8 @@
 /* exported createMapboxMap, loadJSON, popupHTML, setPopupGlobals */
 'use strict';
 
-var defaultPeakList;
-var topoMaps;
+let defaultPeakList;
+let topoMaps;
 
 const verticalDatums = [' (NGVD 29)', ' (MSL)', ''];
 const topoSeries = ['7.5', '7.5x15', '15', '30', '60'];
