@@ -1,6 +1,9 @@
-"use strict";
 /* globals console, document, Image, window, L */
 /* globals enableTooltips, loadJSON, popupHTML, setPopupGlobals, weatherLink */
+/* exported pmapLayerControl */
+
+var pmapLayerControl = (function() {
+'use strict';
 
 const BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 const USFS_Prefix = 'https://www.fs.usda.gov/';
@@ -8,7 +11,10 @@ const USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
 const Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
 const Wilderness_Prefix = 'https://wilderness.net/visit-wilderness/?ID=';
 
+let globalMap = null;
+let currentBaseLayer = null;
 let lcItemFitLink = null;
+
 const lcItemHoverColor = 'rgb(255, 255, 224)';
 const menuDisplayedIcon = ' \u25BC';
 /*
@@ -282,20 +288,16 @@ addFunctions.add_BLM_Lands = function(geojson, map, lcItem)
 		popupDiv.appendChild(bold);
 
 		const namePath = [name + ' ' + p.D];
-		if (agency)
-		{
+		if (agency) {
 			popupDiv.appendChild(document.createElement('br'));
-			if (agency === 'USFS')
-			{
+			if (agency === 'USFS') {
 				namePath.push('Forest Service Lands');
-				if (p.FS)
-				{
+				if (p.FS) {
 					popupDiv.appendChild(document.createTextNode(
 						'This part is managed by the '));
 					popupDiv.appendChild(textLink(USFS_NM_Prefix + p.FS, 'Forest Service'));
 					popupDiv.appendChild(document.createTextNode(':'));
-				}
-				else
+				} else
 					popupDiv.appendChild(document.createTextNode(
 						'This part is managed by the Forest Service:'));
 
@@ -540,45 +542,6 @@ function toggleLayerMenu(event)
 		lcDiv.scrollTop = scrollTop;
 	}
 }
-function LayerControl(map)
-{
-	const div = document.getElementById('layerControl');
-	const icon = document.getElementById('layerControlIcon');
-
-	function show()
-	{
-		div.style.display = 'block';
-	}
-	function hide()
-	{
-		div.style.display = 'none';
-	}
-	function documentTouch(event)
-	{
-		let node = event.target;
-		while (node && node !== div)
-			node = node.parentNode;
-		if (!node) {
-			document.removeEventListener('touchstart', documentTouch);
-			icon.addEventListener('touchstart', iconTouch);
-			hide();
-		}
-	}
-	function iconTouch(event)
-	{
-		event.preventDefault();
-		event.stopPropagation();
-		icon.removeEventListener('touchstart', iconTouch);
-		document.addEventListener('touchstart', documentTouch);
-		show();
-	}
-	icon.addEventListener('mouseenter', show);
-	icon.addEventListener('mouseleave', hide);
-	icon.addEventListener('touchstart', iconTouch);
-
-	this.map = map;
-	this.div = div;
-}
 function clickArrow(event)
 {
 	event.currentTarget.parentNode.firstChild.click();
@@ -609,22 +572,17 @@ function menuHeader(parent, text)
 	section.className = 'lcSection';
 	return section;
 }
-function lcItemFitBounds(map)
+function lcItemFitBounds(event)
 {
-	return function(event)
-	{
-		event.preventDefault();
+	event.preventDefault();
 
-		const item = event.currentTarget.parentNode.lcItem;
-		if (item.bounds) {
-			map.fitBounds(item.bounds);
-		} else if (item.layer) {
-			item.layer.closePopup();
-			map.fitBounds(item.layer.getBounds());
-		} else if (item.featureGroup) {
-			map.fitBounds(item.featureGroup.getBounds());
-		}
-	};
+	const item = event.currentTarget.parentNode.lcItem;
+	if (item.bounds)
+		globalMap.fitBounds(item.bounds);
+	else if (item.layer)
+		globalMap.fitBounds(item.layer.closePopup().getBounds());
+	else if (item.featureGroup)
+		globalMap.fitBounds(item.featureGroup.getBounds());
 }
 function showZoomToFit(event)
 {
@@ -719,10 +677,10 @@ function isCheckedToFileParent(item)
 	}
 	return true;
 }
-function addLayersToMap(item, map, extendBounds)
+function addLayersToMap(item, extendBounds)
 {
 	if (item.layer) {
-		item.layer.addTo(map);
+		item.layer.addTo(globalMap);
 		if (extendBounds)
 			extendBounds(item.layer.getBounds());
 	}
@@ -731,10 +689,10 @@ function addLayersToMap(item, map, extendBounds)
 		{
 			const child = item.items[id];
 			if (child.checkbox.checked)
-				addLayersToMap(child, map, extendBounds);
+				addLayersToMap(child, extendBounds);
 		}
 	} else if (item.featureGroup) {
-		item.featureGroup.addTo(map);
+		item.featureGroup.addTo(globalMap);
 		if (extendBounds)
 			extendBounds(item.featureGroup.getBounds());
 	}
@@ -753,7 +711,7 @@ function removeLayersFromMap(item)
 	} else if (item.featureGroup)
 		item.featureGroup.remove();
 }
-function addCheckboxClickHandler(item, map)
+function addCheckboxClickHandler(item)
 {
 	const checkbox = item.checkbox;
 	const fileParent = item.fileParent;
@@ -761,22 +719,22 @@ function addCheckboxClickHandler(item, map)
 	function addWrapper(geojson)
 	{
 		addNameMap(fileParent);
-		fileParent.featureGroup = fileParent.add(geojson, map, fileParent);
+		fileParent.featureGroup = fileParent.add(geojson, globalMap, fileParent);
 		delNameMap(fileParent);
 
 		const sizeSpan = fileParent.div.lastChild;
 		sizeSpan.parentNode.removeChild(sizeSpan);
 
 		if (!lcItemFitLink)
-			lcItemFitLink = fitLink(lcItemFitBounds(map), 'lcZtf');
+			lcItemFitLink = fitLink(lcItemFitBounds, 'lcZtf');
 
 		addZoomToFitHandlers(fileParent);
 		if (fileParent.checkbox.checked)
 			if (item.mapBounds) {
-				addLayersToMap(fileParent, map, item.mapBounds.extend);
+				addLayersToMap(fileParent, item.mapBounds.extend);
 				item.mapBounds.delSetter(item);
 			} else
-				addLayersToMap(fileParent, map);
+				addLayersToMap(fileParent);
 	}
 	function clickHandler()
 	{
@@ -785,7 +743,7 @@ function addCheckboxClickHandler(item, map)
 			if (!isCheckedToFileParent(item))
 				return;
 			if (checkbox.checked)
-				addLayersToMap(item, map);
+				addLayersToMap(item);
 			else
 				removeLayersFromMap(item);
 		}
@@ -858,7 +816,7 @@ function validateItem(item, path, id)
 	}
 	return true;
 }
-LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
+function addOverlays(parentItem, parentDiv, path)
 {
 	for (const id of parentItem.order)
 	{
@@ -895,7 +853,7 @@ LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 			item.div = itemDiv;
 			item.checkbox = checkbox;
 
-			addCheckboxClickHandler(item, this.map);
+			addCheckboxClickHandler(item);
 		}
 
 		parentDiv.appendChild(itemDiv);
@@ -906,14 +864,14 @@ LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
-			this._addOverlays(item, childDiv, path);
+			addOverlays(item, childDiv, path);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
 			addArrow(nameSpan);
 		}
 	}
-};
+}
 function getItem(path, item)
 {
 	for (const id of path)
@@ -936,10 +894,8 @@ function getItem(path, item)
 	}
 	return item;
 }
-LayerControl.prototype.addOverlays = function(rootLCD, overlays, mapBounds)
+function selectOverlays(rootLCD, overlays, mapBounds)
 {
-	this._addOverlays(rootLCD, menuHeader(this.div, 'GeoJSON Overlays'), []);
-
 	for (const pathStr of overlays)
 	{
 		const item = getItem(pathStr.split('_'), rootLCD);
@@ -948,19 +904,19 @@ LayerControl.prototype.addOverlays = function(rootLCD, overlays, mapBounds)
 			item.checkbox.click();
 		}
 	}
-};
-function makeChangeBaseLayer(ctrl, item)
+}
+function makeChangeBaseLayer(item)
 {
 	return function() {
-		if (ctrl.currentBaseLayer === item.layer) return;
-		if (ctrl.currentBaseLayer)
-			ctrl.currentBaseLayer.remove();
-		ctrl.currentBaseLayer = item.layer.addTo(ctrl.map);
-		ctrl.map.setMaxZoom(item.maxZoom || 23);
+		if (currentBaseLayer === item.layer) return;
+		if (currentBaseLayer)
+			currentBaseLayer.remove();
+		currentBaseLayer = item.layer.addTo(globalMap);
+		globalMap.setMaxZoom(item.maxZoom || 23);
 		item.input.checked = true;
 	};
 }
-LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, parentMakeLayer)
+function addBaseLayers(parentItem, parentDiv, path, parentMakeLayer)
 {
 	for (const id of parentItem.order)
 	{
@@ -984,7 +940,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 			childDiv.className = 'lcMenu';
 
 			path.push(id);
-			this._addBaseLayers(item, childDiv, path, makeLayer);
+			addBaseLayers(item, childDiv, path, makeLayer);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
@@ -1000,7 +956,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 			item.layer = makeLayer(item);
 
 			if (item.layer) {
-				const changeBaseLayer = makeChangeBaseLayer(this, item);
+				const changeBaseLayer = makeChangeBaseLayer(item);
 				nameSpan.addEventListener('click', changeBaseLayer);
 				input.addEventListener('click', changeBaseLayer);
 			} else {
@@ -1009,18 +965,16 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 			}
 		}
 	}
-};
-LayerControl.prototype.addBaseLayers = function(rootLCD, path, defaultPath)
+}
+function selectBaseLayer(rootLCD, path, defaultPath)
 {
-	this._addBaseLayers(rootLCD, menuHeader(this.div, 'Base Layers'), [], rootLCD.makeLayer);
-
 	let item = getItem(path.split('_'), rootLCD);
 	if (!item || !item.layer) {
 		item = getItem(defaultPath.split('_'), rootLCD);
 		if (!item || !item.layer) return;
 	}
 	item.input.click();
-};
+}
 function makeVersionSpec(parent, version)
 {
 	const spec = {};
@@ -1033,19 +987,19 @@ function makeVersionSpec(parent, version)
 	}
 	return spec;
 }
-function makeChangeVersion(ctrl, parent, version)
+function makeChangeVersion(parent, version)
 {
 	return function() {
 		if (parent.layer === version.layer) return;
 		if (parent.input.checked) {
 			parent.layer.remove();
-			version.layer.addTo(ctrl.map);
+			version.layer.addTo(globalMap);
 		}
 		parent.layer = version.layer;
 		version.input.checked = true;
 	};
 }
-function makeToggleTileOverlay(ctrl, item)
+function makeToggleTileOverlay(item)
 {
 	const input = item.input;
 
@@ -1054,12 +1008,12 @@ function makeToggleTileOverlay(ctrl, item)
 		if (event.currentTarget !== input)
 			input.checked = !input.checked;
 		if (input.checked)
-			item.layer.addTo(ctrl.map);
+			item.layer.addTo(globalMap);
 		else
 			item.layer.remove();
 	};
 }
-LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, parentMakeLayer, versionParent)
+function addTileOverlays(parentItem, parentDiv, path, parentMakeLayer, versionParent)
 {
 	for (const id of parentItem.order)
 	{
@@ -1090,7 +1044,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 					item.layer = makeLayer(makeVersionSpec(versionParent, item));
 				}
 
-				const changeVersion = makeChangeVersion(this, versionParent, item);
+				const changeVersion = makeChangeVersion(versionParent, item);
 				input.addEventListener('click', changeVersion);
 				nameSpan.addEventListener('click', changeVersion);
 
@@ -1104,7 +1058,7 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 			item.input = input;
 			item.layer = makeLayer(item);
 
-			const toggleOverlay = makeToggleTileOverlay(this, item);
+			const toggleOverlay = makeToggleTileOverlay(item);
 			input.addEventListener('click', toggleOverlay);
 
 			itemDiv.insertBefore(input, nameSpan);
@@ -1122,33 +1076,31 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 
 			path.push(id);
 			if (versionParent)
-				this._addTileOverlays(item, childDiv, path, makeLayer, versionParent);
+				addTileOverlays(item, childDiv, path, makeLayer, versionParent);
 			else if (item.url) {
 				item.versionID = 'V_' + path.join('_');
 				item.items[''] = {name: item.versionName || 'Default Rendering', layer: item.layer};
 				item.order.unshift('');
-				this._addTileOverlays(item, childDiv, path, makeLayer, item);
+				addTileOverlays(item, childDiv, path, makeLayer, item);
 			} else
-				this._addTileOverlays(item, childDiv, path, makeLayer);
+				addTileOverlays(item, childDiv, path, makeLayer);
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
 			addArrow(nameSpan);
 		}
 	}
-};
-LayerControl.prototype.addTileOverlays = function(rootLCD, overlays)
+}
+function selectTileOverlays(rootLCD, overlays)
 {
-	this._addTileOverlays(rootLCD, menuHeader(this.div, 'Tile Overlays'), [], rootLCD.makeLayer);
-
 	for (const pathStr of overlays)
 	{
 		const item = getItem(pathStr.split('_'), rootLCD);
 		if (item && item.input && !item.input.checked)
 			item.input.click();
 	}
-};
-LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
+}
+function addPointQueries(parentItem, parentDiv)
 {
 	let hasInput = false;
 
@@ -1182,8 +1134,7 @@ LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 			const childDiv = document.createElement('div');
 			childDiv.className = 'lcMenu';
 
-			if (!this._addPointQueries(item, childDiv))
-				continue;
+			if (!addPointQueries(item, childDiv)) continue;
 
 			parentDiv.appendChild(itemDiv);
 			parentDiv.appendChild(childDiv);
@@ -1192,11 +1143,9 @@ LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 	}
 
 	return hasInput;
-};
-LayerControl.prototype.addPointQueries = function(rootLCD, pointQueries, geometryQueries)
+}
+function selectGeometryQueries(rootLCD, geometryQueries)
 {
-	this._addPointQueries(rootLCD, menuHeader(this.div, 'Point Queries'));
-
 	for (const [id, color] of geometryQueries)
 	{
 		const item = getItem(id.split('_'), rootLCD);
@@ -1206,10 +1155,75 @@ LayerControl.prototype.addPointQueries = function(rootLCD, pointQueries, geometr
 				item.popup.color = '#' + color.toLowerCase();
 		}
 	}
+}
+function selectPointQueries(rootLCD, pointQueries)
+{
 	for (const id of pointQueries)
 	{
 		const item = getItem(id.split('_'), rootLCD);
 		if (item && item.queryToggle && !item.queryToggle.checked)
 			item.toggleQuery();
 	}
+}
+return function(map)
+{
+	globalMap = map;
+	const div = document.getElementById('layerControl');
+	const icon = document.getElementById('layerControlIcon');
+
+	function show()
+	{
+		div.style.display = 'block';
+	}
+	function hide()
+	{
+		div.style.display = 'none';
+	}
+	function documentTouch(event)
+	{
+		let node = event.target;
+		while (node && node !== div)
+			node = node.parentNode;
+		if (!node) {
+			document.removeEventListener('touchstart', documentTouch);
+			icon.addEventListener('touchstart', iconTouch);
+			hide();
+		}
+	}
+	function iconTouch(event)
+	{
+		event.preventDefault();
+		event.stopPropagation();
+		icon.removeEventListener('touchstart', iconTouch);
+		document.addEventListener('touchstart', documentTouch);
+		show();
+	}
+	icon.addEventListener('mouseenter', show);
+	icon.addEventListener('mouseleave', hide);
+	icon.addEventListener('touchstart', iconTouch);
+
+	return {
+		addBaseLayers: function(rootLCD, path, defaultPath)
+		{
+			addBaseLayers(rootLCD, menuHeader(div, 'Base Layers'), [], rootLCD.makeLayer);
+			selectBaseLayer(rootLCD, path, defaultPath);
+		},
+		addTileOverlays: function(rootLCD, overlays)
+		{
+			addTileOverlays(rootLCD, menuHeader(div, 'Tile Overlays'), [], rootLCD.makeLayer);
+			selectTileOverlays(rootLCD, overlays);
+		},
+		addPointQueries: function(rootLCD, pointQueries, geometryQueries)
+		{
+			addPointQueries(rootLCD, menuHeader(div, 'Point Queries'));
+			selectGeometryQueries(rootLCD, geometryQueries);
+			selectPointQueries(rootLCD, pointQueries);
+		},
+		addOverlays: function(rootLCD, overlays, mapBounds)
+		{
+			addOverlays(rootLCD, menuHeader(div, 'GeoJSON Overlays'), []);
+			selectOverlays(rootLCD, overlays, mapBounds);
+		},
+	};
 };
+})();

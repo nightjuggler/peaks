@@ -160,7 +160,7 @@ progress {
 <script src="pmap-lc.js"></script>
 <script>
 /* globals document, window, MouseEvent */
-/* globals L, BaseLayers, TileOverlays, MapServer, LayerControl, createMapboxMap, loadJSON */
+/* globals L, BaseLayers, TileOverlays, MapServer, pmapLayerControl, createMapboxMap, loadJSON */
 (function() {
 'use strict';
 function isValidId(s, n)
@@ -257,10 +257,10 @@ function parseQueryString(queryString)
 }
 function getMapBounds(map, options)
 {
-	var init = true;
-	var numSetters = 0;
-	var mapBounds = [[32.5, -124.4], [42, -114.1]]; // California
-	var methods = {
+	let init = true;
+	let numSetters = 0;
+	let mapBounds = [[32.5, -124.4], [42, -114.1]]; // California
+	const methods = {
 		fit: function()
 		{
 			map.fitBounds(mapBounds);
@@ -335,7 +335,7 @@ function createMap(options)
 		zoomControl: false,
 	};
 	const map = L.mapbox ? L.mapbox.map('map', null, mapOptions) : L.map('map', mapOptions);
-	const layerControl = new LayerControl(map);
+	const layerControl = pmapLayerControl(map);
 
 	if (L.mapbox)
 		BaseLayers.items.mapbox.makeLayer = item =>
@@ -359,11 +359,11 @@ function createMap(options)
 	});
 
 	if (queryString.ll) {
-		var minZoom = map.getMinZoom();
-		var maxZoom = map.getMaxZoom();
+		let minZoom = map.getMinZoom();
+		let maxZoom = map.getMaxZoom();
 		if (maxZoom === Infinity) maxZoom = 20;
 
-		var zoom = queryString.zoom || maxZoom - 5;
+		let zoom = queryString.zoom || maxZoom - 5;
 
 		if (zoom < minZoom) zoom = minZoom; else
 		if (zoom > maxZoom) zoom = maxZoom;
