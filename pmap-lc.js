@@ -9,7 +9,7 @@ const Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
 const Wilderness_Prefix = 'https://wilderness.net/visit-wilderness/?ID=';
 
 let lcItemFitLink = null;
-const lcItemHoverColor = 'rgb(232, 232, 232)';
+const lcItemHoverColor = 'rgb(255, 255, 224)';
 const menuDisplayedIcon = ' \u25BC';
 /*
 	\uFE0E is a variation selector to indicate that the preceding character - the
@@ -515,8 +515,8 @@ function getTop(div)
 }
 function toggleLayerMenu(event)
 {
-	const arrowSpan = event.currentTarget;
-	const menu = arrowSpan.parentNode.nextSibling;
+	const arrow = event.currentTarget;
+	const menu = arrow.parentNode.nextSibling;
 
 	const lcDiv = document.getElementById('layerControl');
 	const scDiv = document.getElementById('scaleControl');
@@ -529,10 +529,10 @@ function toggleLayerMenu(event)
 
 	if (menu.style.display === 'block') {
 		menu.style.display = 'none';
-		arrowSpan.firstChild.nodeValue = menuCollapsedIcon;
+		arrow.firstChild.nodeValue = menuCollapsedIcon;
 	} else {
 		menu.style.display = 'block';
-		arrowSpan.firstChild.nodeValue = menuDisplayedIcon;
+		arrow.firstChild.nodeValue = menuDisplayedIcon;
 	}
 
 	if (lcDiv.offsetHeight > maxHeight) {
@@ -582,6 +582,32 @@ function LayerControl(map)
 function clickArrow(event)
 {
 	event.currentTarget.parentNode.firstChild.click();
+}
+function addArrow(nameSpan)
+{
+	const arrow = document.createElement('span');
+	arrow.className = 'lcArrow';
+	arrow.appendChild(document.createTextNode(menuCollapsedIcon));
+	arrow.addEventListener('click', toggleLayerMenu);
+
+	const parent = nameSpan.parentNode;
+	parent.insertBefore(arrow, parent.firstChild);
+	nameSpan.addEventListener('click', clickArrow);
+}
+function menuHeader(parent, text)
+{
+	const span = document.createElement('span');
+	span.className = 'lcName';
+	span.appendChild(document.createTextNode(text));
+
+	const header = parent.appendChild(document.createElement('div'));
+	header.className = 'lcHeader lcItem';
+	header.appendChild(span);
+	addArrow(span);
+
+	const section = parent.appendChild(document.createElement('div'));
+	section.className = 'lcSection';
+	return section;
 }
 function lcItemFitBounds(map)
 {
@@ -884,14 +910,7 @@ LayerControl.prototype._addOverlays = function(parentItem, parentDiv, path)
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
-
-			const arrowSpan = document.createElement('span');
-			arrowSpan.className = 'lcArrow';
-			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
-			arrowSpan.addEventListener('click', toggleLayerMenu, false);
-
-			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
-			nameSpan.addEventListener('click', clickArrow, false);
+			addArrow(nameSpan);
 		}
 	}
 };
@@ -919,8 +938,7 @@ function getItem(path, item)
 }
 LayerControl.prototype.addOverlays = function(rootLCD, overlays, mapBounds)
 {
-	this.div.appendChild(document.createElement('hr'));
-	this._addOverlays(rootLCD, this.div, []);
+	this._addOverlays(rootLCD, menuHeader(this.div, 'GeoJSON Overlays'), []);
 
 	for (const pathStr of overlays)
 	{
@@ -970,14 +988,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
-
-			const arrowSpan = document.createElement('span');
-			arrowSpan.className = 'lcArrow';
-			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
-			arrowSpan.addEventListener('click', toggleLayerMenu, false);
-
-			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
-			nameSpan.addEventListener('click', clickArrow, false);
+			addArrow(nameSpan);
 		} else {
 			const input = document.createElement('input');
 			input.type = 'radio';
@@ -1001,7 +1012,7 @@ LayerControl.prototype._addBaseLayers = function(parentItem, parentDiv, path, pa
 };
 LayerControl.prototype.addBaseLayers = function(rootLCD, path, defaultPath)
 {
-	this._addBaseLayers(rootLCD, this.div, [], rootLCD.makeLayer);
+	this._addBaseLayers(rootLCD, menuHeader(this.div, 'Base Layers'), [], rootLCD.makeLayer);
 
 	let item = getItem(path.split('_'), rootLCD);
 	if (!item || !item.layer) {
@@ -1122,21 +1133,13 @@ LayerControl.prototype._addTileOverlays = function(parentItem, parentDiv, path, 
 			path.pop();
 
 			parentDiv.appendChild(childDiv);
-
-			const arrowSpan = document.createElement('span');
-			arrowSpan.className = 'lcArrow';
-			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
-			arrowSpan.addEventListener('click', toggleLayerMenu, false);
-
-			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
-			nameSpan.addEventListener('click', clickArrow, false);
+			addArrow(nameSpan);
 		}
 	}
 };
 LayerControl.prototype.addTileOverlays = function(rootLCD, overlays)
 {
-	this.div.appendChild(document.createElement('hr'));
-	this._addTileOverlays(rootLCD, this.div, [], rootLCD.makeLayer);
+	this._addTileOverlays(rootLCD, menuHeader(this.div, 'Tile Overlays'), [], rootLCD.makeLayer);
 
 	for (const pathStr of overlays)
 	{
@@ -1184,14 +1187,7 @@ LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 
 			parentDiv.appendChild(itemDiv);
 			parentDiv.appendChild(childDiv);
-
-			const arrowSpan = document.createElement('span');
-			arrowSpan.className = 'lcArrow';
-			arrowSpan.appendChild(document.createTextNode(menuCollapsedIcon));
-			arrowSpan.addEventListener('click', toggleLayerMenu, false);
-
-			itemDiv.insertBefore(arrowSpan, itemDiv.firstChild);
-			nameSpan.addEventListener('click', clickArrow, false);
+			addArrow(nameSpan);
 		}
 	}
 
@@ -1199,8 +1195,7 @@ LayerControl.prototype._addPointQueries = function(parentItem, parentDiv)
 };
 LayerControl.prototype.addPointQueries = function(rootLCD, pointQueries, geometryQueries)
 {
-	this.div.appendChild(document.createElement('hr'));
-	this._addPointQueries(rootLCD, this.div);
+	this._addPointQueries(rootLCD, menuHeader(this.div, 'Point Queries'));
 
 	for (const [id, color] of geometryQueries)
 	{
