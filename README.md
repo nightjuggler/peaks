@@ -19,7 +19,7 @@
 (Peaks in other western states not on any of the above lists)
 </ul>
 
-I've also started compiling a list of [Sierra Mountain Passes](https://nightjuggler.com/nature/SierraPasses.html)
+I've also started compiling a list of [Sierra Mountain Passes](https://nightjuggler.com/nature/SierraPasses.html).
 
 ## P-Map
 
@@ -28,7 +28,7 @@ I've also started compiling a list of [Sierra Mountain Passes](https://nightjugg
 * [P-Map built on Mapbox GL JS](https://nightjuggler.com/nature/pmapgl.html?o=sps)
 
 The Leaflet/Mapbox.js version of P-Map includes a powerful, extensible menu
-(accessible via the layers icon in the top-left)
+(accessible via the layers icon in the top-left corner)
 with which different base layers and overlays can be selected and point queries can be enabled.
 
 Many parameters can also be specified in the URL. For example, the following link
@@ -41,7 +41,7 @@ loads a layer showing land managed by the National Park Service in semi-transpar
 enables "point queries" and "geometry queries" for the National Park Service layer
 with outlines shown in red (**q=us_nps&qg=us_nps:ff0000**), and
 simulates a click on the map center (**clk**) which runs the enabled queries
-for the center point and opens a popup with the result.
+for the center point and opens a popup with the results.
 
 [https://nightjuggler.com/nature/pmapmb.html?o=sps&ot=us_nps&q=us_nps&qg=us_nps:ff0000&ll=37.81082,-119.4855&z=10&clk](https://nightjuggler.com/nature/pmapmb.html?o=sps&ot=us_nps&q=us_nps&qg=us_nps:ff0000&ll=37.81082,-119.4855&z=10&clk)
 
