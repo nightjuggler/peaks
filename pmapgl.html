@@ -221,8 +221,8 @@ constructor(map, currentLayer)
 	const div = document.getElementById('layerControl');
 	const icon = document.getElementById('layerControlIcon');
 
-	icon.addEventListener('mouseenter', function() {div.style.display = 'block';}, false);
-	icon.addEventListener('mouseleave', function() {div.style.display = 'none';}, false);
+	icon.addEventListener('mouseenter', function() {div.style.display = 'block';});
+	icon.addEventListener('mouseleave', function() {div.style.display = 'none';});
 
 	this.map = map;
 	this.div = div;
@@ -248,7 +248,7 @@ addLayer(layer)
 	const div = document.createElement('div');
 	div.appendChild(input);
 	div.appendChild(document.createTextNode(' ' + layer.name));
-	div.addEventListener('click', changeStyle, false);
+	div.addEventListener('click', changeStyle);
 
 	ctrl.div.appendChild(div);
 }
@@ -273,11 +273,11 @@ addOverlay(name, markers)
 
 	input.type = 'checkbox';
 	input.checked = true;
-	input.addEventListener('change', toggleMarkers, false);
+	input.addEventListener('change', toggleMarkers);
 
 	div.appendChild(input);
 	div.appendChild(document.createTextNode(' ' + name));
-	div.addEventListener('click', clickInput, false);
+	div.addEventListener('click', clickInput);
 
 	ctrl.div.appendChild(div);
 }
@@ -416,7 +416,7 @@ function createMap(options)
 			map.fitBounds(mapBounds, {padding: 30});
 		else
 			map.fitBounds(mapBounds);
-	}, false);
+	});
 
 	const llText = document.getElementById('llText').firstChild;
 	function updateCenter()
@@ -468,11 +468,11 @@ function createMap(options)
 	map.on('rotate', updateBearing);
 	map.on('pitch', updatePitch);
 
-	bearingSpan.addEventListener('click', updateBearing, false);
-	pitchSpan.addEventListener('click', updatePitch, false);
+	bearingSpan.addEventListener('click', updateBearing);
+	pitchSpan.addEventListener('click', updatePitch);
 
-	bearingSpan.addEventListener('dblclick', resetBearing, false);
-	pitchSpan.addEventListener('dblclick', resetPitch, false);
+	bearingSpan.addEventListener('dblclick', resetBearing);
+	pitchSpan.addEventListener('dblclick', resetPitch);
 
 	function addPeakList(geojson)
 	{
@@ -488,10 +488,10 @@ function createMap(options)
 				event.preventDefault();
 				event.stopPropagation();
 				map.flyTo({center: ll, zoom: map.getMaxZoom() - 5});
-			}, false);
+			});
 			icon.addEventListener('click', function() {
 				window.setTimeout(enableTooltips, 100);
-			}, false);
+			});
 
 			const popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
 				.setLngLat(ll)
@@ -545,7 +545,7 @@ function createMap(options)
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
 	});
 }
-window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createMap); }, false);
+window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createMap); });
 })();
 </script>
 </head>
