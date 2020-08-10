@@ -33,15 +33,14 @@ with which different base layers and overlays can be selected and point queries 
 
 Many parameters can also be specified in the URL. For example, the following link
 opens the map at zoom level 10 (**z=10**),
-centered at a given latitude and longitude (the Olmsted Point parking area in Yosemite)
-(**ll=37.81082,-119.4855**),
+centered at a given latitude and longitude (**ll=37.81082,-119.4855**),
 loads a GeoJSON file with data from the Sierra Peaks Section list (see above),
 shows those peaks as clickable triangular markers (**o=sps**),
 loads a layer showing land managed by the National Park Service in semi-transparent yellow
 (**ot=us_nps**),
 enables "point queries" and "geometry queries" for the National Park Service layer
 with outlines shown in red (**q=us_nps&qg=us_nps:ff0000**), and
-simulates a click on the map center (**clk**) which then runs the enabled queries
+simulates a click on the map center (**clk**) which runs the enabled queries
 for the center point and opens a popup with the result.
 
 [https://nightjuggler.com/nature/pmapmb.html?o=sps&ot=us_nps&q=us_nps&qg=us_nps:ff0000&ll=37.81082,-119.4855&z=10&clk](https://nightjuggler.com/nature/pmapmb.html?o=sps&ot=us_nps&q=us_nps&qg=us_nps:ff0000&ll=37.81082,-119.4855&z=10&clk)
