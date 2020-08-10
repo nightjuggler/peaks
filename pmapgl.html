@@ -215,7 +215,8 @@ function centerIcon()
 	div.appendChild(svg);
 	return div;
 }
-function LayerControl(map, currentLayer)
+class LayerControl {
+constructor(map, currentLayer)
 {
 	const div = document.getElementById('layerControl');
 	const icon = document.getElementById('layerControlIcon');
@@ -227,7 +228,7 @@ function LayerControl(map, currentLayer)
 	this.div = div;
 	this.currentLayer = currentLayer;
 }
-LayerControl.prototype.addLayer = function(layer)
+addLayer(layer)
 {
 	const ctrl = this;
 
@@ -250,8 +251,8 @@ LayerControl.prototype.addLayer = function(layer)
 	div.addEventListener('click', changeStyle, false);
 
 	ctrl.div.appendChild(div);
-};
-LayerControl.prototype.addOverlay = function(name, markers)
+}
+addOverlay(name, markers)
 {
 	const ctrl = this;
 
@@ -279,7 +280,8 @@ LayerControl.prototype.addOverlay = function(name, markers)
 	div.addEventListener('click', clickInput, false);
 
 	ctrl.div.appendChild(div);
-};
+}
+}
 function addFeatureLayer(layerId, map)
 {
 	function mapLink(lat, lng)
