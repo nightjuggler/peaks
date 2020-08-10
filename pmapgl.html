@@ -79,13 +79,13 @@ function validKey(key)
 }
 function parseLatLng(q, v)
 {
-	var m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
+	const m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
 	if (m === null) return;
 
-	var lat = parseFloat(m[1]);
+	const lat = parseFloat(m[1]);
 	if (lat < -90 || lat > 90) return;
 
-	var lng = parseFloat(m[2]);
+	const lng = parseFloat(m[2]);
 	if (lng < -180 || lng > 180) return;
 
 	q.ll = [lng, lat];
@@ -94,7 +94,7 @@ function parseZoom(q, v)
 {
 	if (!/^[1-9][0-9]?$/.test(v)) return;
 
-	var zoom = parseInt(v, 10);
+	const zoom = parseInt(v, 10);
 	if (zoom < 1 || zoom > 22) return;
 
 	q.zoom = zoom;
@@ -103,7 +103,7 @@ function parseBearing(q, v)
 {
 	if (!/^[1-9][0-9]{0,2}$/.test(v)) return;
 
-	var bearing = parseInt(v, 10);
+	const bearing = parseInt(v, 10);
 	if (bearing > 359) return;
 
 	q.bearing = bearing;
@@ -112,7 +112,7 @@ function parsePitch(q, v)
 {
 	if (!/^[1-9][0-9]?$/.test(v)) return;
 
-	var pitch = parseInt(v, 10);
+	const pitch = parseInt(v, 10);
 	if (pitch > 60) return;
 
 	q.pitch = pitch;
@@ -162,29 +162,29 @@ function parseQueryString(queryString)
 const svgNS = 'http://www.w3.org/2000/svg';
 function peakIcon(p)
 {
-	var fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
-	var stroke = p.climbed ? 'green' : 'red';
+	const fill = p.emblem ? 'magenta' : p.mtneer ? 'cyan' : 'white';
+	const stroke = p.climbed ? 'green' : 'red';
 
-	var svg = document.createElementNS(svgNS, 'svg');
+	const svg = document.createElementNS(svgNS, 'svg');
 	svg.setAttribute('width', 20);
 	svg.setAttribute('height', 26);
 	svg.setAttribute('viewBox', '0 0 20 26');
 
-	var path = document.createElementNS(svgNS, 'path');
+	const path = document.createElementNS(svgNS, 'path');
 	path.setAttribute('fill', fill);
 	path.setAttribute('stroke', stroke);
 	path.setAttribute('stroke-width', '3');
 	path.setAttribute('d', 'M 10,2 L 1,19 19,19 Z');
 	svg.appendChild(path);
 
-	var div = document.createElement('div');
+	const div = document.createElement('div');
 	div.className = 'peakIcon';
 	div.appendChild(svg);
 	return div;
 }
 function centerIcon()
 {
-	var lines = [
+	const lines = [
 		{x1: '13', y1: '0', x2: '13', y2: '28', stroke: 'white'},
 		{x1: '14', y1: '0', x2: '14', y2: '28', stroke: 'black'},
 		{x1: '15', y1: '0', x2: '15', y2: '28', stroke: 'white'},
@@ -193,14 +193,14 @@ function centerIcon()
 		{y1: '15', x1: '0', y2: '15', x2: '28', stroke: 'white'},
 	];
 
-	var svg = document.createElementNS(svgNS, 'svg');
+	const svg = document.createElementNS(svgNS, 'svg');
 	svg.setAttribute('width', 28);
 	svg.setAttribute('height', 28);
 	svg.setAttribute('viewBox', '0 0 28 28');
 
-	for (var line of lines)
+	for (const line of lines)
 	{
-		var node = document.createElementNS(svgNS, 'line');
+		const node = document.createElementNS(svgNS, 'line');
 		node.setAttribute('x1', line.x1);
 		node.setAttribute('y1', line.y1);
 		node.setAttribute('x2', line.x2);
@@ -210,15 +210,15 @@ function centerIcon()
 		svg.appendChild(node);
 	}
 
-	var div = document.createElement('div');
+	const div = document.createElement('div');
 	div.className = 'centerIcon';
 	div.appendChild(svg);
 	return div;
 }
 function LayerControl(map, currentLayer)
 {
-	var div = document.getElementById('layerControl');
-	var icon = document.getElementById('layerControlIcon');
+	const div = document.getElementById('layerControl');
+	const icon = document.getElementById('layerControlIcon');
 
 	icon.addEventListener('mouseenter', function() {div.style.display = 'block';}, false);
 	icon.addEventListener('mouseleave', function() {div.style.display = 'none';}, false);
@@ -229,9 +229,9 @@ function LayerControl(map, currentLayer)
 }
 LayerControl.prototype.addLayer = function(layer)
 {
-	var ctrl = this;
+	const ctrl = this;
 
-	var input = document.createElement('input');
+	const input = document.createElement('input');
 	input.type = 'radio';
 	input.name = 'style';
 	input.checked = layer === ctrl.currentLayer;
@@ -244,7 +244,7 @@ LayerControl.prototype.addLayer = function(layer)
 		ctrl.map.setStyle(layer.style);
 	}
 
-	var div = document.createElement('div');
+	const div = document.createElement('div');
 	div.appendChild(input);
 	div.appendChild(document.createTextNode(' ' + layer.name));
 	div.addEventListener('click', changeStyle, false);
@@ -253,13 +253,13 @@ LayerControl.prototype.addLayer = function(layer)
 };
 LayerControl.prototype.addOverlay = function(name, markers)
 {
-	var ctrl = this;
+	const ctrl = this;
 
 	if (ctrl.div.lastChild && ctrl.div.lastChild.firstChild.type === 'radio')
 		ctrl.div.appendChild(document.createElement('hr'));
 
-	var div = document.createElement('div');
-	var input = document.createElement('input');
+	const div = document.createElement('div');
+	const input = document.createElement('input');
 
 	function toggleMarkers()
 	{
@@ -384,7 +384,7 @@ function createMap(options)
 	options.pitch = queryString.pitch;
 	options.zoom = 6;
 
-	var map = new mapboxgl.Map(options);
+	const map = new mapboxgl.Map(options);
 
 	map.addControl(new mapboxgl.NavigationControl(), 'top-left');
 	map.addControl(new mapboxgl.ScaleControl({unit: 'imperial'}), 'bottom-left');
@@ -392,15 +392,15 @@ function createMap(options)
 	const layerControl = new LayerControl(map, queryString.baseLayer);
 	baseLayers.forEach(([, baseLayer]) => layerControl.addLayer(baseLayer));
 
-	var mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
-	var mapBoundsFromOverlay = false;
-	var overlaysToLoad = queryString.peakLists.size;
+	let mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
+	let mapBoundsFromOverlay = false;
+	let overlaysToLoad = queryString.peakLists.size;
 
 	if (queryString.ll) {
-		var minZoom = map.getMinZoom();
-		var maxZoom = map.getMaxZoom();
+		const minZoom = map.getMinZoom();
+		const maxZoom = map.getMaxZoom();
 
-		var zoom = queryString.zoom || maxZoom - 5;
+		let zoom = queryString.zoom || maxZoom - 5;
 
 		if (zoom < minZoom) zoom = minZoom; else
 		if (zoom > maxZoom) zoom = maxZoom;
@@ -416,15 +416,15 @@ function createMap(options)
 			map.fitBounds(mapBounds);
 	}, false);
 
-	var llText = document.getElementById('llText').firstChild;
+	const llText = document.getElementById('llText').firstChild;
 	function updateCenter()
 	{
-		var center = map.getCenter();
+		const center = map.getCenter();
 		llText.nodeValue = center.lat.toFixed(6) + ',' + center.lng.toFixed(6);
 		return center;
 	}
 
-	var centerMarker = new mapboxgl.Marker({element: centerIcon()})
+	const centerMarker = new mapboxgl.Marker({element: centerIcon()})
 		.setLngLat(updateCenter())
 		.addTo(map);
 
@@ -432,15 +432,15 @@ function createMap(options)
 		centerMarker.setLngLat(updateCenter());
 	});
 
-	var bearingSpan = document.getElementById('bearingText');
-	var pitchSpan = document.getElementById('pitchText');
+	const bearingSpan = document.getElementById('bearingText');
+	const pitchSpan = document.getElementById('pitchText');
 
-	var bearingText = bearingSpan.lastChild;
-	var pitchText = pitchSpan.lastChild;
+	const bearingText = bearingSpan.lastChild;
+	const pitchText = pitchSpan.lastChild;
 
 	function updateBearing()
 	{
-		var bearing = Math.round(map.getBearing());
+		let bearing = Math.round(map.getBearing());
 		if (bearing < 0)
 			bearing += 360;
 		bearingText.nodeValue = bearing + '\u00B0'; // \u00B0 is the degree symbol (&deg;)
@@ -451,12 +451,12 @@ function createMap(options)
 	}
 	function resetBearing()
 	{
-		var duration = 1000 + Math.round(1000 * Math.abs(map.getBearing()) / 180);
+		const duration = 1000 + Math.round(1000 * Math.abs(map.getBearing()) / 180);
 		map.easeTo({bearing: 0, duration: duration});
 	}
 	function resetPitch()
 	{
-		var duration = 1000 + Math.round(1000 * map.getPitch() / 60);
+		const duration = 1000 + Math.round(1000 * map.getPitch() / 60);
 		map.easeTo({pitch: 0, duration: duration});
 	}
 
@@ -480,7 +480,7 @@ function createMap(options)
 
 		function addPeak(ll, p)
 		{
-			var icon = peakIcon(p);
+			const icon = peakIcon(p);
 
 			icon.addEventListener('dblclick', function(event) {
 				event.preventDefault();
@@ -491,7 +491,7 @@ function createMap(options)
 				window.setTimeout(enableTooltips, 100);
 			}, false);
 
-			var popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
+			const popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
 				.setLngLat(ll)
 				.setHTML(popupHTML(ll[0], ll[1], p));
 
@@ -501,16 +501,16 @@ function createMap(options)
 				.addTo(map);
 		}
 
-		var markers = [];
-		var minLng, minLat;
-		var maxLng, maxLat;
-		var first = true;
+		const markers = [];
+		let minLng, minLat;
+		let maxLng, maxLat;
+		let first = true;
 
-		for (var feature of geojson.features)
+		for (const feature of geojson.features)
 		{
-			var ll = feature.geometry.coordinates;
-			var lng = ll[0];
-			var lat = ll[1];
+			const ll = feature.geometry.coordinates;
+			const lng = ll[0];
+			const lat = ll[1];
 			if (first) {
 				minLng = maxLng = lng;
 				minLat = maxLat = lat;
@@ -522,7 +522,7 @@ function createMap(options)
 			markers.push(addPeak(ll, feature.properties));
 		}
 
-		var bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
+		const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
 
 		if (mapBoundsFromOverlay) {
 			mapBounds.extend(bounds);
