@@ -59,7 +59,7 @@ function extentForLatLong(latitude, longitude)
 function wccLink(latitude, longitude)
 {
 	// WCC = National Water and Climate Center
-	return 'https://www.wcc.nrcs.usda.gov/webmap_beta/#' +
+	return 'https://www.nrcs.usda.gov/wps/portal/wcc/home/quicklinks/imap#' +
 	[
 		['activeForecastPointsOnly', 'true'],
 		['openSections', ''],
