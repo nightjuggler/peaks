@@ -1,7 +1,7 @@
 /* globals document, Image, window, L, loadJSON */
 /* exported BaseLayers, TileOverlays, MapServer */
 
-var BaseLayers = {
+const BaseLayers = {
 name: 'Base Layers',
 items: {
 	mapbox: {
@@ -105,7 +105,7 @@ items: {
 },
 order: ['mapbox', 'natmap', 'esri', 'caltopo', 'canvec', 'osm'],
 };
-var TileOverlays = {
+const TileOverlays = {
 name: 'Tile Overlays',
 items: {
 	us: {
@@ -409,7 +409,7 @@ items: {
 },
 order: ['us', 'ca', 'nv'],
 };
-var MapServer = (function() {
+const MapServer = (function() {
 'use strict';
 
 function latLngToStr(lat, lng)

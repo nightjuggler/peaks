@@ -2,7 +2,7 @@
 /* globals enableTooltips, loadJSON, popupHTML, setPopupGlobals, weatherLink */
 /* exported pmapLayerControl */
 
-var pmapLayerControl = (function() {
+const pmapLayerControl = (function() {
 'use strict';
 
 const BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
@@ -11,9 +11,9 @@ const USFS_NM_Prefix = 'https://www.fs.fed.us/visit/';
 const Wikipedia_Prefix = 'https://en.wikipedia.org/wiki/';
 const Wilderness_Prefix = 'https://wilderness.net/visit-wilderness/?ID=';
 
-let globalMap = null;
-let currentBaseLayer = null;
-let lcItemFitLink = null;
+let globalMap;
+let currentBaseLayer;
+let lcItemFitLink;
 
 const lcItemHoverColor = 'rgb(255, 255, 224)';
 const menuDisplayedIcon = ' \u25BC';
