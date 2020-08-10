@@ -44,7 +44,7 @@ function fitLink(fitBounds, className)
 	img.alt = 'Zoom To Fit';
 	img.src = 'ztf.svg';
 	img.className = className;
-	img.addEventListener('click', fitBounds, false);
+	img.addEventListener('click', fitBounds);
 	return img;
 }
 function popupFitLink(layer)
@@ -67,7 +67,7 @@ function raiseLink(layer)
 	a.href = '#';
 	a.className = 'bringToFront';
 	a.appendChild(document.createTextNode('\u2B06\uFE0F'));
-	a.addEventListener('click', bringToFront, false);
+	a.addEventListener('click', bringToFront);
 	return a;
 }
 function lowerLink(layer)
@@ -81,7 +81,7 @@ function lowerLink(layer)
 	a.href = '#';
 	a.className = 'bringToBack';
 	a.appendChild(document.createTextNode('\u2B07\uFE0F'));
-	a.addEventListener('click', bringToBack, false);
+	a.addEventListener('click', bringToBack);
 	return a;
 }
 function dynamicWeatherLink(layer)
@@ -97,7 +97,7 @@ function dynamicWeatherLink(layer)
 	a.href = '#';
 	a.className = 'wxLink';
 	a.appendChild(document.createTextNode('\u26C5'));
-	a.addEventListener('click', setWxLink, false);
+	a.addEventListener('click', setWxLink);
 	return a;
 }
 function bindPopup(popupDiv, layer)
@@ -613,8 +613,8 @@ function addZoomToFitHandlers(item)
 	else
 		itemDiv.style.paddingRight = '23px';
 
-	itemDiv.addEventListener('mouseenter', showZoomToFit, false);
-	itemDiv.addEventListener('mouseleave', hideZoomToFit, false);
+	itemDiv.addEventListener('mouseenter', showZoomToFit);
+	itemDiv.addEventListener('mouseleave', hideZoomToFit);
 /*
 	Tapping an element in a mobile browser triggers the following sequence
 	of events: touchstart, touchmove, touchend, mouseover, mouseenter,
@@ -644,7 +644,7 @@ function addZoomToFitHandlers(item)
 	items. When that happens, a second tap will be necessary to open or
 	close any associated submenu.
 */
-	itemDiv.addEventListener('touchstart', showZoomToFit, false);
+	itemDiv.addEventListener('touchstart', showZoomToFit);
 
 	if (item.order)
 		for (const id of item.order)
@@ -769,7 +769,7 @@ function addCheckboxClickHandler(item)
 			item.mapBounds.delSetter(item);
 	}
 
-	checkbox.addEventListener('click', clickHandler, false);
+	checkbox.addEventListener('click', clickHandler);
 }
 function getPathStr(path, id)
 {
