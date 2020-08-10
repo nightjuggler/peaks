@@ -506,8 +506,9 @@ addFunctions.add_UC_Reserve = function(geojson)
 function getTop(div)
 {
 	let top = div.offsetTop;
+	const body = document.body;
 
-	while (div.offsetParent !== document.body)
+	while (div.offsetParent !== body)
 	{
 		div = div.offsetParent;
 		top += div.offsetTop;
@@ -894,11 +895,11 @@ function getItem(path, item)
 	}
 	return item;
 }
-function selectOverlays(rootLCD, overlays, mapBounds)
+function selectOverlays(root, paths, mapBounds)
 {
-	for (const pathStr of overlays)
+	for (const path of paths)
 	{
-		const item = getItem(pathStr.split('_'), rootLCD);
+		const item = getItem(path.split('_'), root);
 		if (item && item.checkbox && !item.checkbox.checked) {
 			mapBounds.addSetter(item);
 			item.checkbox.click();
@@ -966,11 +967,11 @@ function addBaseLayers(parentItem, parentDiv, path, parentMakeLayer)
 		}
 	}
 }
-function selectBaseLayer(rootLCD, path, defaultPath)
+function selectBaseLayer(root, path, defaultPath)
 {
-	let item = getItem(path.split('_'), rootLCD);
+	let item = getItem(path.split('_'), root);
 	if (!item || !item.layer) {
-		item = getItem(defaultPath.split('_'), rootLCD);
+		item = getItem(defaultPath.split('_'), root);
 		if (!item || !item.layer) return;
 	}
 	item.input.click();
@@ -1091,11 +1092,11 @@ function addTileOverlays(parentItem, parentDiv, path, parentMakeLayer, versionPa
 		}
 	}
 }
-function selectTileOverlays(rootLCD, overlays)
+function selectTileOverlays(root, paths)
 {
-	for (const pathStr of overlays)
+	for (const path of paths)
 	{
-		const item = getItem(pathStr.split('_'), rootLCD);
+		const item = getItem(path.split('_'), root);
 		if (item && item.input && !item.input.checked)
 			item.input.click();
 	}
@@ -1144,11 +1145,11 @@ function addPointQueries(parentItem, parentDiv)
 
 	return hasInput;
 }
-function selectGeometryQueries(rootLCD, geometryQueries)
+function selectGeometryQueries(root, paths)
 {
-	for (const [id, color] of geometryQueries)
+	for (const [path, color] of paths)
 	{
-		const item = getItem(id.split('_'), rootLCD);
+		const item = getItem(path.split('_'), root);
 		if (item && item.popup) {
 			item.popup.runGeometryQuery = true;
 			if (color)
@@ -1156,11 +1157,11 @@ function selectGeometryQueries(rootLCD, geometryQueries)
 		}
 	}
 }
-function selectPointQueries(rootLCD, pointQueries)
+function selectPointQueries(root, paths)
 {
-	for (const id of pointQueries)
+	for (const path of paths)
 	{
-		const item = getItem(id.split('_'), rootLCD);
+		const item = getItem(path.split('_'), root);
 		if (item && item.queryToggle && !item.queryToggle.checked)
 			item.toggleQuery();
 	}
@@ -1203,26 +1204,26 @@ return function(map)
 	icon.addEventListener('touchstart', iconTouch);
 
 	return {
-		addBaseLayers: function(rootLCD, path, defaultPath)
+		addBaseLayers: function(root, path, defaultPath)
 		{
-			addBaseLayers(rootLCD, menuHeader(div, 'Base Layers'), [], rootLCD.makeLayer);
-			selectBaseLayer(rootLCD, path, defaultPath);
+			addBaseLayers(root, menuHeader(div, 'Base Layers'), [], root.makeLayer);
+			selectBaseLayer(root, path, defaultPath);
 		},
-		addTileOverlays: function(rootLCD, overlays)
+		addTileOverlays: function(root, overlays)
 		{
-			addTileOverlays(rootLCD, menuHeader(div, 'Tile Overlays'), [], rootLCD.makeLayer);
-			selectTileOverlays(rootLCD, overlays);
+			addTileOverlays(root, menuHeader(div, 'Tile Overlays'), [], root.makeLayer);
+			selectTileOverlays(root, overlays);
 		},
-		addPointQueries: function(rootLCD, pointQueries, geometryQueries)
+		addPointQueries: function(root, pointQueries, geometryQueries)
 		{
-			addPointQueries(rootLCD, menuHeader(div, 'Point Queries'));
-			selectGeometryQueries(rootLCD, geometryQueries);
-			selectPointQueries(rootLCD, pointQueries);
+			addPointQueries(root, menuHeader(div, 'Point Queries'));
+			selectGeometryQueries(root, geometryQueries);
+			selectPointQueries(root, pointQueries);
 		},
-		addOverlays: function(rootLCD, overlays, mapBounds)
+		addOverlays: function(root, overlays, mapBounds)
 		{
-			addOverlays(rootLCD, menuHeader(div, 'GeoJSON Overlays'), []);
-			selectOverlays(rootLCD, overlays, mapBounds);
+			addOverlays(root, menuHeader(div, 'GeoJSON Overlays'), []);
+			selectOverlays(root, overlays, mapBounds);
 		},
 	};
 };
