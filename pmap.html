@@ -15,20 +15,19 @@ progress {
 	text-align: center;
 }
 .popupDiv input {
-	margin-top: 0;
-	margin-bottom: 0;
-	padding-top: 0;
-	padding-bottom: 0;
+	margin: 0 0 0 4px;
+	padding: 0;
 	vertical-align: middle;
 }
-.popupDiv input[type="color"] {
+input[type="color"] {
 	border-style: none;
-	margin-left: 0;
-	margin-right: 0;
-	padding-left: 0;
-	padding-right: 0;
-	width: 25px;
-	height: 10px;
+	width: 28px;
+	height: 13px;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+	padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
 }
 .bringToFront, .bringToBack, .wxLink {
 	font-size: 13pt;
@@ -63,7 +62,7 @@ progress {
 	height: 15px;
 }
 .msZtf {
-	margin: 1px 4px;
+	margin: 1px 0 1px 4px;
 	vertical-align: middle;
 	width: 11px;
 	height: 11px;
