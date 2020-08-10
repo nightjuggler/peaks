@@ -409,37 +409,36 @@ items: {
 },
 order: ['us', 'ca', 'nv'],
 };
-
 var MapServer = (function() {
 'use strict';
 
 function latLngToStr(lat, lng)
 {
-	var deg = '\u00B0';
+	const deg = '\u00B0';
 	return (lat.charAt(0) === '-' ? lat.substring(1) + deg + 'S ' : lat + deg + 'N ') +
 		(lng.charAt(0) === '-' ? lng.substring(1) + deg + 'W' : lng + deg + 'E');
 }
 function degToStr(degrees)
 {
 	degrees = degrees.toFixed(6);
-	var len = degrees.length - 1;
-	while (degrees.charAt(len) === '0') --len;
-	if (degrees.charAt(len) === '.') --len;
-	return degrees.substring(0, len + 1);
+	let i = degrees.length - 1;
+	while (degrees.charAt(i) === '0') --i;
+	if (degrees.charAt(i) === '.') --i;
+	return degrees.substring(0, i + 1);
 }
 function getDateTime(millisecondsSinceEpoch)
 {
-	var date = new Date(millisecondsSinceEpoch);
-	var year = date.getFullYear();
-	var month = date.getMonth() + 1;
-	var day = date.getDate();
+	const date = new Date(millisecondsSinceEpoch);
+	const year = date.getFullYear();
+	let month = date.getMonth() + 1;
+	let day = date.getDate();
 
 	if (month < 10) month = '0' + month;
 	if (day < 10) day = '0' + day;
 
-	var h = date.getHours();
-	var m = date.getMinutes();
-	var s = date.getSeconds();
+	let h = date.getHours();
+	let m = date.getMinutes();
+	let s = date.getSeconds();
 
 	if (h < 10) h = h === 0 ? '00' : '0' + h;
 	if (m < 10) m = m === 0 ? '00' : '0' + m;
@@ -454,11 +453,11 @@ function fitLink(map, spec)
 		event.preventDefault();
 		map.fitBounds(spec.outline.getBounds());
 	}
-	var img = new Image();
+	const img = new Image();
 	img.alt = 'Zoom To Fit';
 	img.src = 'ztf.svg';
 	img.className = 'msZtf';
-	img.addEventListener('click', fitBounds, false);
+	img.addEventListener('click', fitBounds);
 	return img;
 }
 function simpleLineSymbol(color, width)
@@ -553,7 +552,7 @@ const {
 aiannhSpec.popup = {
 	init: function(div)
 	{
-		var boldNode = document.createElement('b');
+		const boldNode = document.createElement('b');
 		boldNode.appendChild(this.nameNode = document.createTextNode(''));
 		this.brNode = document.createElement('br');
 
@@ -563,8 +562,8 @@ aiannhSpec.popup = {
 	},
 	show: function(attr)
 	{
-		var name = attr.NAME;
-		var line2 = ' and Off-Reservation Trust Land';
+		const name = attr.NAME;
+		const line2 = ' and Off-Reservation Trust Land';
 
 		if (name.endsWith(line2)) {
 			if (!this.brNode.parentNode)
@@ -585,10 +584,8 @@ npsSpec.popup = {
 	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
-		this.nameNode = document.createTextNode('');
-
 		this.linkNode.style.fontWeight = 'bold';
-		this.linkNode.appendChild(this.nameNode);
+		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(this.linkNode);
 		div.appendChild(this.ztf);
 	},
@@ -596,6 +593,7 @@ npsSpec.popup = {
 	{
 		let [code, name] = this === npsSpec.popup ?
 			[attr.UNIT_CODE, attr.UNIT_NAME] : [attr.UNITCODE, attr.UNITNAME];
+
 		code = code.toLowerCase();
 		if (code === 'kica' || code === 'sequ') code = 'seki';
 
@@ -621,32 +619,28 @@ nlcsSpec.popup = {
 	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
-		this.nameNode = document.createTextNode('');
-		this.textNode = document.createTextNode('');
-
 		this.linkNode.style.fontWeight = 'bold';
-		this.linkNode.appendChild(this.nameNode);
+		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(this.linkNode);
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode);
+		div.appendChild(this.textNode = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
 	{
-		var name = attr['Monuments_NCAs_SimilarDesignation2015.NCA_NAME'];
-		var code = attr['Monuments_NCAs_SimilarDesignation2015.sma_code'];
-		var state = attr['Monuments_NCAs_SimilarDesignation2015.STATE_GEOG'];
-		var url = attr['nlcs_desc.WEBLINK'];
+		const name = attr['Monuments_NCAs_SimilarDesignation2015.NCA_NAME'];
+		const code = attr['Monuments_NCAs_SimilarDesignation2015.sma_code'];
+		const state = attr['Monuments_NCAs_SimilarDesignation2015.STATE_GEOG'];
+		const link = this.linkNode;
 
-		this.linkNode.href = url;
-		if (this.linkNode.protocol !== 'https:')
-			this.linkNode.protocol = 'https:';
-		if (this.linkNode.host !== 'www.blm.gov')
-			this.linkNode.host = 'www.blm.gov';
-		if (!this.linkNode.href.startsWith('https://www.blm.gov/programs/') &&
-			!(this.linkNode.href.startsWith('https://www.blm.gov/nlcs_web/') &&
-			this.linkNode.href.endsWith('.html')))
-			this.linkNode.href = 'https://www.blm.gov/';
+		link.href = attr['nlcs_desc.WEBLINK'];
+		if (link.protocol !== 'https:')
+			link.protocol = 'https:';
+		if (link.host !== 'www.blm.gov')
+			link.host = 'www.blm.gov';
+		if (!link.href.startsWith('https://www.blm.gov/programs/') &&
+			!(link.href.startsWith('https://www.blm.gov/nlcs_web/') && link.href.endsWith('.html')))
+			link.href = 'https://www.blm.gov/';
 
 		this.nameNode.nodeValue = name;
 		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
@@ -657,10 +651,8 @@ nlcsSpec.popup = {
 fsSpec.popup = {
 	init: function(div)
 	{
-		var boldNode = document.createElement('b');
-		this.textNode = document.createTextNode('');
-
-		boldNode.appendChild(this.textNode);
+		const boldNode = document.createElement('b');
+		boldNode.appendChild(this.textNode = document.createTextNode(''));
 		div.appendChild(boldNode);
 		div.appendChild(this.ztf);
 	},
@@ -673,14 +665,11 @@ fsSpec.popup = {
 fsrdSpec.popup = {
 	init: function(div)
 	{
-		var boldNode = document.createElement('b');
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		boldNode.appendChild(this.textNode1);
+		const boldNode = document.createElement('b');
+		boldNode.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(boldNode);
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -693,12 +682,9 @@ fsrdSpec.popup = {
 fsondaSpec.popup = {
 	init: function(div)
 	{
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -711,15 +697,11 @@ fsondaSpec.popup = {
 fssimaSpec.popup = {
 	init: function(div)
 	{
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-		this.textNode3 = document.createTextNode('');
-
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode3);
+		div.appendChild(this.textNode3 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -733,12 +715,9 @@ fssimaSpec.popup = {
 nwrSpec.popup = {
 	init: function(div)
 	{
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -764,16 +743,12 @@ wildernessSpec.popup = {
 	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
-		this.nameNode = document.createTextNode('');
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
 		this.linkNode.style.fontWeight = 'bold';
-		this.linkNode.appendChild(this.nameNode);
+		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(this.linkNode);
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -781,8 +756,8 @@ wildernessSpec.popup = {
 		let agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
-		let year = (new Date(attr.YearDesignated)).getUTCFullYear();
-		let acres = attr.Acreage.toLocaleString();
+		const year = (new Date(attr.YearDesignated)).getUTCFullYear();
+		const acres = attr.Acreage.toLocaleString();
 
 		this.linkNode.href = 'https://wilderness.net/visit-wilderness/?ID=' + attr.WID;
 		this.nameNode.nodeValue = attr.NAME;
@@ -795,12 +770,9 @@ wildernessSpec.popup = {
 wsaSpec.popup = {
 	init: function(div)
 	{
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
@@ -814,13 +786,10 @@ wsaSpec.popup = {
 caParkSpec.popup = {
 	init: function(div)
 	{
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 	},
 	show: function(attr)
 	{
@@ -834,13 +803,10 @@ caParkSpec.popup = {
 nvParkSpec.popup = {
 	init: function(div)
 	{
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 	},
 	show: function(attr)
 	{
@@ -904,21 +870,17 @@ blmSpec.popup = {
 	init: function(div)
 	{
 		this.linkNode = document.createElement('a');
-		this.nameNode = document.createTextNode('');
-		this.textNode1 = document.createTextNode('');
-		this.textNode2 = document.createTextNode('');
-
-		this.linkNode.appendChild(this.nameNode);
+		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(document.createTextNode('BLM '));
 		div.appendChild(this.linkNode);
-		div.appendChild(this.textNode1);
+		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2);
+		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
 	show: function(attr)
 	{
-		var url = attr.ADMU_ST_URL;
+		let url = attr.ADMU_ST_URL;
 		if (url.charAt(0) === '\'')
 			url = url.substring(1);
 
@@ -931,7 +893,6 @@ blmSpec.popup = {
 		this.nameNode.nodeValue = attr.ADMU_NAME;
 		this.textNode1.nodeValue = ' (' + attr.ADMIN_ST + ')';
 		this.textNode2.nodeValue = '(' + attr.PARENT_NAME + ')';
-
 		return '#0000FF';
 	},
 };
@@ -948,9 +909,9 @@ fireSpec.popup = {
 	},
 	show: function(attr)
 	{
-		var name = attr.IncidentName + ' Fire';
-		var size = (Math.round(attr.GISAcres * 100) / 100).toLocaleString();
-		var date = getDateTime(attr.DateCurrent);
+		const name = attr.IncidentName + ' Fire';
+		const size = (Math.round(attr.GISAcres * 100) / 100).toLocaleString();
+		const date = getDateTime(attr.DateCurrent);
 
 		this.nameNode.nodeValue = name;
 		this.textNode1.nodeValue = '(' + size + ' acres)';
@@ -963,8 +924,7 @@ arfireSpec.popup = {
 	init: fireSpec.popup.init,
 	show: fireSpec.popup.show,
 };
-
-var querySpecs = [
+let querySpecs = [
 	aiannhSpec,
 	npsSpec,
 	npsimdSpec,
@@ -986,7 +946,6 @@ var querySpecs = [
 	fireSpec,
 	arfireSpec,
 ];
-
 function esriFeatureLayer(spec)
 {
 	const options = {
@@ -1082,9 +1041,9 @@ function exportLayer(spec, transparent)
 	// ESRI:102113 (EPSG:3785) is the deprecated spatial reference identifier for Web Mercator.
 	// ESRI:102100 (EPSG:3857) should also work.
 
-	var exportImage = spec.url.endsWith('/ImageServer');
-	var command = exportImage ? '/exportImage' : '/export';
-	var baseURL = [spec.url + command + '?f=image', 'bboxSR=102113', 'imageSR=102113'];
+	const exportImage = spec.url.endsWith('/ImageServer');
+	const command = exportImage ? '/exportImage' : '/export';
+	let baseURL = [spec.url + command + '?f=image', 'bboxSR=102113', 'imageSR=102113'];
 
 	if (!exportImage) {
 		if (transparent)
@@ -1099,22 +1058,22 @@ function exportLayer(spec, transparent)
 	return L.GridLayer.extend({
 	createTile: function(tileCoords, done)
 	{
-		var m = earthCircumference / (1 << tileCoords.z); // tile size in meters
-		var x = tileOrigin + m*tileCoords.x;
-		var y = tileOrigin + m*tileCoords.y;
-		var p = 2;
+		const m = earthCircumference / (1 << tileCoords.z); // tile size in meters
+		const x = tileOrigin + m*tileCoords.x;
+		const y = tileOrigin + m*tileCoords.y;
+		const p = 2;
 
-		var tileSize = this.getTileSize();
+		const tileSize = this.getTileSize();
 
-		var url = [baseURL,
+		const url = [baseURL,
 			'size=' + tileSize.x + ',' + tileSize.y,
 			'bbox=' + [x.toFixed(p), (-y-m).toFixed(p), (x+m).toFixed(p), (-y).toFixed(p)].join(',')
 		].join('&');
 
-		var tile = new Image(tileSize.x, tileSize.y);
+		const tile = new Image(tileSize.x, tileSize.y);
 
-		tile.addEventListener('load', function() { done(null, tile); }, false);
-		tile.addEventListener('error', function() { done('Failed to load ' + url, tile); }, false);
+		tile.addEventListener('load', function() { done(null, tile); });
+		tile.addEventListener('error', function() { done('Failed to load ' + url, tile); });
 		tile.src = url;
 
 		return tile;
@@ -1123,7 +1082,7 @@ function exportLayer(spec, transparent)
 }
 function getAttribution(spec)
 {
-	var url = spec.url;
+	let url = spec.url;
 	if (spec.tile)
 		url += '?f=pjson';
 	return spec.attribution.replace(/\[([- &,\.\/:;A-Za-z]+)\]/, '<a href="' + url + '">$1</a>');
@@ -1270,10 +1229,10 @@ initPointQueries: function(map)
 	const geojson = false;
 	const responseFormat = geojson ? 'geojson' : 'json';
 	const attrKey = geojson ? 'properties' : 'attributes';
-	var globalClickID = 0;
-	var popupEmpty = true;
-	var firstResponse = false;
-	var popupSpecs = [];
+	let globalClickID = 0;
+	let popupEmpty = true;
+	let firstResponse = false;
+	const popupSpecs = [];
 
 	const popupDiv = document.createElement('div');
 	popupDiv.className = 'popupDiv blmPopup';
