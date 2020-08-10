@@ -23,7 +23,7 @@ function latitudeToWebMercatorY(latitude)
 {
 	// See https://en.wikipedia.org/wiki/Mercator_projection#Alternative_expressions
 
-	var y = Math.sin(latitude * radiansPerDegree);
+	const y = Math.sin(latitude * radiansPerDegree);
 
 	return (earthRadius / 2 * Math.log((1 + y) / (1 - y))).toFixed(4);
 }
@@ -40,14 +40,14 @@ function extentForLatLong(latitude, longitude)
 	result is (1) centered on "lat,long", (2) ymax-ymin (delta latitude) is approx.
 	8 miles, and (3) xmax-xmin (delta longitude) is approx. 10.667 miles (8 * 4/3).
 */
-	var distance = 8 * 1609.344; // Convert 8 miles to meters
-	var deltaLat = deltaLatForDistanceNorth(distance / 2);
-	var deltaLong = deltaLongForDistanceEast(latitude, distance * 2/3);
+	const distance = 8 * 1609.344; // Convert 8 miles to meters
+	const deltaLat = deltaLatForDistanceNorth(distance / 2);
+	const deltaLong = deltaLongForDistanceEast(latitude, distance * 2/3);
 
-	var xmin = longitude - deltaLong;
-	var xmax = longitude + deltaLong;
-	var ymin = latitude - deltaLat;
-	var ymax = latitude + deltaLat;
+	let xmin = longitude - deltaLong;
+	let xmax = longitude + deltaLong;
+	let ymin = latitude - deltaLat;
+	let ymax = latitude + deltaLat;
 
 	xmin = longitudeToWebMercatorX(xmin);
 	xmax = longitudeToWebMercatorX(xmax);
@@ -59,9 +59,8 @@ function extentForLatLong(latitude, longitude)
 function wccLink(latitude, longitude)
 {
 	// WCC = National Water and Climate Center
-	var url = 'https://www.wcc.nrcs.usda.gov/webmap_beta/#';
-
-	var params = [
+	return 'https://www.wcc.nrcs.usda.gov/webmap_beta/#' +
+	[
 		['activeForecastPointsOnly', 'true'],
 		['openSections', ''],
 		['base', 'esriNgwm'],
@@ -73,24 +72,21 @@ function wccLink(latitude, longitude)
 		['lat', latitude],
 		['lon', longitude],
 		['zoom', '12'],
-	];
 
-	var q = []; for (var p of params) q.push(p.join('='));
-
-	return url + q.join('&');
+	].map(p => p.join('=')).join('&');
 }
 function round(number, precision)
 {
-	var p = Math.pow(10, precision);
+	const p = Math.pow(10, precision);
 	return Math.round(number * p) / p;
 }
 function terriaObject(latitude, longitude)
 {
-	var distance = 3000; // meters
-	var deltaLat = deltaLatForDistanceNorth(distance);
-	var deltaLong = deltaLongForDistanceEast(latitude, distance);
+	const distance = 3000; // meters
+	const deltaLat = deltaLatForDistanceNorth(distance);
+	const deltaLong = deltaLongForDistanceEast(latitude, distance);
 
-	var camera = {
+	const camera = {
 		west: round(longitude - deltaLong, 6),
 		east: round(longitude + deltaLong, 6),
 		south: round(latitude - deltaLat, 6),
@@ -106,17 +102,17 @@ function terriaObject(latitude, longitude)
 }
 
 // See https://en.wikipedia.org/wiki/Geometric_Shapes
-var rowCollapsedIcon = ' \u25B6\uFE0E';
-var rowExpandedIcon = ' \u25BC';
-var mapLinkIconUp = '\u25B2';
-var mapLinkIconDown = '\u25BC';
-var mapLinkHash = {};
-var extraRow = {};
-var landColumnArray = [];
-var climbedColumnArray = [];
-var activePopup = null;
-var mobileMode = false;
-var globalPeakInfo = {
+const rowCollapsedIcon = ' \u25B6\uFE0E';
+const rowExpandedIcon = ' \u25BC';
+const mapLinkIconUp = '\u25B2';
+const mapLinkIconDown = '\u25BC';
+const mapLinkHash = {};
+const extraRow = {};
+const landColumnArray = [];
+const climbedColumnArray = [];
+let activePopup = null;
+let mobileMode = false;
+const globalPeakInfo = {
 	pathPrefix: '',
 	peakListId: '',
 
@@ -179,18 +175,18 @@ function newPeakFlags(parentFlags)
 }
 function getPeakFlag(attrValue, trueValue)
 {
-	for (var value of attrValue.split('/'))
+	for (const value of attrValue.split('/'))
 		if (value === trueValue)
 			return true;
 	return false;
 }
 function setPeakFlag(row, parentFlags, attrName, trueValue)
 {
-	var attrValue = row.dataset[attrName];
+	const attrValue = row.dataset[attrName];
 	if (!attrValue) return;
 
-	var flagName = attrName + '_' + trueValue;
-	var flagValue = getPeakFlag(attrValue, trueValue);
+	const flagName = attrName + '_' + trueValue;
+	const flagValue = getPeakFlag(attrValue, trueValue);
 	if (flagValue === parentFlags[flagName]) return;
 
 	if (row.peakFlags === parentFlags)
@@ -199,12 +195,12 @@ function setPeakFlag(row, parentFlags, attrName, trueValue)
 }
 function setPeakFlags(row, parentFlags, attrName, setValue)
 {
-	var attrValue = row.dataset[attrName];
+	const attrValue = row.dataset[attrName];
 	if (!attrValue) return;
 
-	for (var flagName of attrValue.split(','))
+	for (const flagName of attrValue.split(','))
 	{
-		var flagValue = parentFlags[flagName];
+		const flagValue = parentFlags[flagName];
 		if (typeof flagValue !== 'boolean' || flagValue === setValue) continue;
 		if (row.peakFlags === parentFlags)
 			row.peakFlags = newPeakFlags(parentFlags);
@@ -221,13 +217,13 @@ function setRowFlags(row, parentFlags)
 }
 function getPeakListId()
 {
-	var path = window.location.href;
-	var n = path.length;
-	var i = -1;
-	var j = 0;
+	const path = window.location.href;
+	const n = path.length;
+	let i = -1;
+	let j = 0;
 
 	while (j < n) {
-		var ch = path.charAt(j);
+		const ch = path.charAt(j);
 		if (ch === '/')
 			i = j;
 		else if (ch === '?' || ch === '#')
@@ -244,9 +240,9 @@ function getPeakListId()
 }
 function initPeakListMenu()
 {
-	var id = getPeakListId();
+	const id = getPeakListId();
 
-	var peakLists = [
+	const peakLists = [
 		{id: 'dps', name: 'Desert Peaks Section'},
 		{id: 'gbp', name: 'Great Basin Peaks List'},
 		{id: 'hps', name: 'Hundred Peaks Section'},
@@ -261,11 +257,11 @@ function initPeakListMenu()
 		{id: 'SierraPasses', name: 'Sierra Passes'},
 	];
 
-	var menu = document.getElementById('peakListMenu');
+	const menu = document.getElementById('peakListMenu');
 
-	for (var pl of peakLists)
+	for (const pl of peakLists)
 	{
-		var selected = pl.id === id;
+		const selected = pl.id === id;
 		if (menu)
 			menu.add(new Option(pl.name, pl.id, selected, selected));
 		if (selected)
@@ -274,10 +270,10 @@ function initPeakListMenu()
 
 	if (menu)
 	{
-		var selectedIndex = menu.selectedIndex;
+		const selectedIndex = menu.selectedIndex;
 
 		menu.addEventListener('change', function() {
-			var id = peakLists[menu.selectedIndex].id;
+			const id = peakLists[menu.selectedIndex].id;
 
 			menu.selectedIndex = selectedIndex;
 
@@ -287,15 +283,15 @@ function initPeakListMenu()
 }
 function totalOffsetTop(element)
 {
-	var top = 0;
+	let top = 0;
 	for (; element; element = element.offsetParent)
 		top += element.offsetTop;
 	return top;
 }
 function addMapLink(listNode, linkText, url)
 {
-	var listItem = document.createElement('li');
-	var linkNode = document.createElement('a');
+	const listItem = document.createElement('li');
+	const linkNode = document.createElement('a');
 	linkNode.href = url;
 	linkNode.appendChild(document.createTextNode(linkText));
 	listItem.appendChild(linkNode);
@@ -303,14 +299,14 @@ function addMapLink(listNode, linkText, url)
 }
 function createMapLinkBox(latCommaLong, peakFlags)
 {
-	var latLong = latCommaLong.split(',');
-	var latitude = Number(latLong[0]);
-	var longitude = Number(latLong[1]);
-	var extent = extentForLatLong(latitude, longitude);
-	var pathPrefix = globalPeakInfo.pathPrefix;
-	var peakListId = globalPeakInfo.peakListId;
+	const latLong = latCommaLong.split(',');
+	const latitude = Number(latLong[0]);
+	const longitude = Number(latLong[1]);
+	const extent = extentForLatLong(latitude, longitude);
+	const pathPrefix = globalPeakInfo.pathPrefix;
+	const peakListId = globalPeakInfo.peakListId;
 
-	var listNode = document.createElement('ul');
+	const listNode = document.createElement('ul');
 
 	addMapLink(listNode, 'Andrew Kirmse P300 Peaks',
 		'https://fusiontables.googleusercontent.com/embedviz?' +
@@ -424,11 +420,11 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://umontana.maps.arcgis.com/apps/webappviewer/index.html?' +
 		'id=a415bca07f0a4bee9f0e894b0db5c3b6&extent=' + extent);
 
-	var llSpan = document.createElement('span');
+	const llSpan = document.createElement('span');
 	llSpan.style.color = 'black';
 	llSpan.style.cursor = 'pointer';
-	var deg = '\u00B0';
-	var llText = (latitude < 0 ? -latitude + deg + 'S ' : latitude + deg + 'N ') +
+	const deg = '\u00B0';
+	const llText = (latitude < 0 ? -latitude + deg + 'S ' : latitude + deg + 'N ') +
 		(longitude < 0 ? -longitude + deg + 'W' : longitude + deg + 'E');
 	llSpan.appendChild(document.createTextNode(llText));
 	llSpan.addEventListener('click', function() {
@@ -438,12 +434,12 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		llSpan.firstChild.nodeValue = llText;
 	});
 
-	var llDiv = document.createElement('div');
+	const llDiv = document.createElement('div');
 	llDiv.style.textAlign = 'center';
 	llDiv.style.paddingBottom = '2px';
 	llDiv.appendChild(llSpan);
 
-	var mapLinkBox = document.createElement('div');
+	const mapLinkBox = document.createElement('div');
 	mapLinkBox.className = 'mapLinkBox';
 	mapLinkBox.appendChild(llDiv);
 	mapLinkBox.appendChild(listNode);
@@ -451,25 +447,25 @@ function createMapLinkBox(latCommaLong, peakFlags)
 }
 function addMapLinkBox(mapLinkSpan)
 {
-	var secondColumn = mapLinkSpan.parentNode;
-	var peakFlags = secondColumn.parentNode.peakFlags;
+	const secondColumn = mapLinkSpan.parentNode;
+	const peakFlags = secondColumn.parentNode.peakFlags;
 
-	var mapLink = secondColumn.firstElementChild;
-	var latCommaLong = mapLink.href.split('#')[1].split('&')[0].split('=')[1];
+	const mapLink = secondColumn.firstElementChild;
+	const latCommaLong = mapLink.href.split('#')[1].split('&')[0].split('=')[1];
 
 	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakFlags));
 }
 function showMapLinkBox(event)
 {
-	var mapLinkSpan = event.currentTarget;
+	const mapLinkSpan = event.currentTarget;
 	mapLinkSpan.className = 'mapLinkWithBox';
 	if (mapLinkSpan.lastChild !== mapLinkSpan.firstChild)
 		mapLinkSpan.lastChild.style.display = 'block';
 	else
 		addMapLinkBox(mapLinkSpan);
 
-	var offsetTop = totalOffsetTop(mapLinkSpan);
-	var mapLinkBox = mapLinkSpan.lastChild;
+	const offsetTop = totalOffsetTop(mapLinkSpan);
+	const mapLinkBox = mapLinkSpan.lastChild;
 	if (offsetTop - window.scrollY > mapLinkBox.offsetHeight) {
 		mapLinkBox.style.top = 'auto';
 		mapLinkBox.style.bottom = '14px';
@@ -486,7 +482,8 @@ function showMapLinkBoxOnEnter(event)
 	if (event.key !== 'Enter')
 		return true;
 
-	let mapLinkSpan = event.currentTarget;
+	const mapLinkSpan = event.currentTarget;
+
 	if (mapLinkSpan.lastChild === activePopup)
 		closeActivePopup();
 	else
@@ -496,14 +493,14 @@ function showMapLinkBoxOnEnter(event)
 }
 function showMapLinkIcon(event)
 {
-	var mapLinkSpan = mapLinkHash[event.currentTarget.id];
+	const mapLinkSpan = mapLinkHash[event.currentTarget.id];
 
 	if (mapLinkSpan.lastChild !== activePopup)
 		mapLinkSpan.className = 'mapLink';
 }
 function hideMapLinkIcon(event)
 {
-	var mapLinkSpan = mapLinkHash[event.currentTarget.id];
+	const mapLinkSpan = mapLinkHash[event.currentTarget.id];
 
 	if (mapLinkSpan.lastChild === activePopup)
 		closeActivePopup();
@@ -514,10 +511,10 @@ function hideMapLinkIcon(event)
 }
 function clickFirstColumn(event)
 {
-	var firstColumn = event.currentTarget;
-	var row = firstColumn.parentNode;
-	var peakTable = row.parentNode;
-	var nextRow = row.nextElementSibling;
+	const firstColumn = event.currentTarget;
+	let row = firstColumn.parentNode;
+	const peakTable = row.parentNode;
+	const nextRow = row.nextElementSibling;
 	row = extraRow[firstColumn.id];
 	if (row.parentNode === null) {
 		peakTable.insertBefore(row, nextRow);
@@ -544,7 +541,7 @@ function suspendedHidden()
 }
 function addListLink(row)
 {
-	var refArray = row.dataset.also ? row.dataset.also.split(' ') : [];
+	const refArray = row.dataset.also ? row.dataset.also.split(' ') : [];
 
 	if (row.dataset.from)
 		refArray.unshift(row.dataset.from);
@@ -552,22 +549,22 @@ function addListLink(row)
 	const pll = document.createElement('div');
 	pll.className = 'pll';
 
-	for (var ref of refArray)
+	for (const ref of refArray)
 	{
-		var m = ref.match(/^((?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x))([0-9]+)\.[0-9]+[ab]?([ds]?)$/);
+		const m = ref.match(/^((?:[A-Z]|x[0-9])[0-9A-Z]*(?:[A-Z]|[0-9]x))([0-9]+)\.[0-9]+[ab]?([ds]?)$/);
 		if (m === null) continue;
 
-		var htmlId = m[1];
-		var listId = htmlId;
-		var sectionNumber = m[2];
+		const htmlId = m[1];
+		let listId = htmlId;
+		const sectionNumber = m[2];
 
 		if (listId.charAt(0) === 'x')
 			listId = listId.substring(1);
 		if (listId.charAt(listId.length - 1) === 'x')
 			listId = listId.substring(0, listId.length - 1);
 
-		var linkHref = listId.toLowerCase() + '.html';
-		var linkText = listId;
+		let linkHref = listId.toLowerCase() + '.html';
+		let linkText = listId;
 
 		if (m[3] === 'd') {
 			linkHref += '?showDelisted';
@@ -578,7 +575,7 @@ function addListLink(row)
 			linkText = '(' + listId + ')';
 		}
 
-		var listLink = document.createElement('a');
+		const listLink = document.createElement('a');
 		listLink.href = globalPeakInfo.pathPrefix + linkHref + '#' + htmlId + sectionNumber;
 		listLink.appendChild(document.createTextNode(linkText));
 
@@ -595,23 +592,23 @@ function peakTableFirstRow()
 }
 function decorateTable()
 {
-	var g = globalPeakInfo;
-	var sectionFlags = g.flags;
-	var sectionNumber = 0;
-	var sectionPeakNumber = 0;
+	const g = globalPeakInfo;
+	let sectionFlags = g.flags;
+	let sectionNumber = 0;
+	let sectionPeakNumber = 0;
 
 	parseQueryString();
 	initPeakListMenu();
 
-	for (var a of document.getElementsByTagName('a'))
+	for (const a of document.getElementsByTagName('a'))
 		if (a.hostname === 'caltopo.com' && a.href.substring(a.href.length - 4) === '&b=t')
 			a.href += '&o=r&n=0.2';
 
 	const firstRow = peakTableFirstRow();
 
-	for (var row = firstRow; row !== null; row = row.nextElementSibling)
+	for (let row = firstRow; row !== null; row = row.nextElementSibling)
 	{
-		var firstColumn = row.children[0];
+		const firstColumn = row.children[0];
 		if (firstColumn.colSpan !== 1) {
 			if (row.className === 'section') {
 				setRowFlags(row, g.flags);
@@ -628,9 +625,9 @@ function decorateTable()
 
 		sectionPeakNumber += 1;
 		setRowFlags(row, sectionFlags);
-		var climbed = row.className.slice(0, 7) === 'climbed';
-		var delisted = row.className.slice(-8) === 'delisted';
-		var suspended = row.className.slice(-9) === 'suspended';
+		const climbed = row.className.slice(0, 7) === 'climbed';
+		const delisted = row.className.slice(-8) === 'delisted';
+		const suspended = row.className.slice(-9) === 'suspended';
 
 		g.numPeaks += 1;
 		if (climbed) {
@@ -646,7 +643,7 @@ function decorateTable()
 			firstColumn.appendChild(document.createTextNode(sectionNumber + '.' + sectionPeakNumber));
 		if (firstColumn.rowSpan === 2)
 		{
-			var spanElement = document.createElement('span');
+			const spanElement = document.createElement('span');
 			spanElement.className = 'expandCollapse';
 			spanElement.appendChild(document.createTextNode(rowCollapsedIcon));
 			firstColumn.appendChild(spanElement);
@@ -656,14 +653,14 @@ function decorateTable()
 			firstColumn.style.cursor = 'pointer';
 			firstColumn.rowSpan = 1;
 
-			var nextRow = row.nextElementSibling;
+			const nextRow = row.nextElementSibling;
 			extraRow[firstColumn.id] = nextRow.parentNode.removeChild(nextRow);
 		}
 		if (row.peakFlags.country_US)
 		{
-			var secondColumn = firstColumn.nextElementSibling;
-			var lineBreak = secondColumn.firstElementChild.nextElementSibling;
-			var mapLinkSpan = document.createElement('span');
+			const secondColumn = firstColumn.nextElementSibling;
+			const lineBreak = secondColumn.firstElementChild.nextElementSibling;
+			const mapLinkSpan = document.createElement('span');
 			mapLinkSpan.className = 'mapLinkHidden';
 			mapLinkSpan.appendChild(document.createTextNode(mapLinkIconUp));
 			mapLinkSpan.tabIndex = 0;
@@ -789,20 +786,20 @@ function insertClimbedColumn(row)
 }
 function addRemoveColumn(addRemoveFunction, colDiff)
 {
-	var delistedPeaks = globalPeakInfo.delistedPeaks;
-	var addRemoveDelisted = hiddenRows(delistedPeaks);
+	const delistedPeaks = globalPeakInfo.delistedPeaks;
+	const addRemoveDelisted = hiddenRows(delistedPeaks);
 	if (addRemoveDelisted) addRows(delistedPeaks);
 
-	var suspendedPeaks = globalPeakInfo.suspendedPeaks;
-	var addRemoveSuspended = hiddenRows(suspendedPeaks);
+	const suspendedPeaks = globalPeakInfo.suspendedPeaks;
+	const addRemoveSuspended = hiddenRows(suspendedPeaks);
 	if (addRemoveSuspended) addRows(suspendedPeaks);
 
-	for (var row = peakTableFirstRow(); row !== null; row = row.nextElementSibling)
+	for (let row = peakTableFirstRow(); row !== null; row = row.nextElementSibling)
 	{
-		var firstColumn = row.children[0];
+		const firstColumn = row.children[0];
 		if (firstColumn.colSpan === 1) {
 			addRemoveFunction(row);
-			var row2 = extraRow[firstColumn.id];
+			const row2 = extraRow[firstColumn.id];
 			if (row2 && !row2.parentNode)
 				row2.children[0].colSpan += colDiff;
 		} else
@@ -814,7 +811,7 @@ function addRemoveColumn(addRemoveFunction, colDiff)
 }
 function getPeakTable()
 {
-	var peakTable = peakTableFirstRow().parentNode;
+	let peakTable = peakTableFirstRow().parentNode;
 	if (peakTable.tagName !== 'TABLE')
 		peakTable = peakTable.parentNode;
 	return peakTable;
@@ -849,11 +846,11 @@ function toggleClimbedColumn()
 }
 function updateClimbedCount()
 {
-	var span = document.getElementById('climbedCountSpan');
+	const span = document.getElementById('climbedCountSpan');
 	if (!span) return;
 
-	var numClimbed = globalPeakInfo.numClimbed;
-	var numPeaks = globalPeakInfo.numPeaks;
+	let numClimbed = globalPeakInfo.numClimbed;
+	let numPeaks = globalPeakInfo.numPeaks;
 
 	if (delistedHidden()) {
 		numClimbed -= globalPeakInfo.numDelistedClimbed;
@@ -864,7 +861,7 @@ function updateClimbedCount()
 		numPeaks -= globalPeakInfo.numSuspended;
 	}
 
-	var text = '(' + numClimbed + '/' + numPeaks + ')';
+	const text = '(' + numClimbed + '/' + numPeaks + ')';
 	if (span.firstChild)
 		span.firstChild.nodeValue = text;
 	else
@@ -872,10 +869,10 @@ function updateClimbedCount()
 }
 function setCount(spanId, count)
 {
-	var span = document.getElementById(spanId);
+	const span = document.getElementById(spanId);
 	if (!span) return;
 
-	var text = '(' + count + ')';
+	const text = '(' + count + ')';
 	if (span.firstChild)
 		span.firstChild.nodeValue = text;
 	else
@@ -883,14 +880,14 @@ function setCount(spanId, count)
 }
 function addRows(rows)
 {
-	for (var item of rows)
+	for (const item of rows)
 	{
-		var row = item[0];
-		var nextSibling = item[1];
-		var firstColumn = row.children[0];
+		const row = item[0];
+		let nextSibling = item[1];
+		const firstColumn = row.children[0];
 		if (firstColumn.rowSpan === 2)
 		{
-			var row2 = extraRow[firstColumn.id];
+			const row2 = extraRow[firstColumn.id];
 			nextSibling.parentNode.insertBefore(row2, nextSibling);
 			nextSibling = row2;
 		}
@@ -899,10 +896,10 @@ function addRows(rows)
 }
 function removeRows(rows)
 {
-	for (var item of rows)
+	for (const item of rows)
 	{
-		var row = item[0];
-		var firstColumn = row.children[0];
+		const row = item[0];
+		const firstColumn = row.children[0];
 		if (firstColumn.rowSpan === 2)
 			row.parentNode.removeChild(extraRow[firstColumn.id]);
 
@@ -928,12 +925,12 @@ function toggleSuspended()
 }
 function changeColors()
 {
-	var colorMenu = document.getElementById('colorMenu');
+	const colorMenu = document.getElementById('colorMenu');
 	setPeakTableClass(0, colorMenu.options[colorMenu.selectedIndex].value);
 }
 function addClickHandlers(firstRow)
 {
-	var checkbox = document.getElementById('toggleLandColumn');
+	let checkbox = document.getElementById('toggleLandColumn');
 	if (checkbox) {
 		checkbox.checked = landColumnArray.length === 0;
 		checkbox.addEventListener('click', toggleLandColumn, false);
@@ -957,10 +954,10 @@ function addClickHandlers(firstRow)
 		checkbox.addEventListener('click', toggleSuspended, false);
 	}
 
-	var colorMenu = document.getElementById('colorMenu');
+	const colorMenu = document.getElementById('colorMenu');
 	if (colorMenu) {
-		var color = getPeakTableClass(0);
-		for (var option of colorMenu.options)
+		const color = getPeakTableClass(0);
+		for (const option of colorMenu.options)
 			if (option.value === color) {
 				colorMenu.selectedIndex = option.index;
 				break;
@@ -1001,18 +998,18 @@ function addClickHandlers(firstRow)
 
 	tableHeader.appendChild(headerGrid);
 
-	var closeLegend = document.getElementById('closeLegend');
+	const closeLegend = document.getElementById('closeLegend');
 	if (closeLegend)
 		closeLegend.addEventListener('click', hideLegend, false);
 }
 function showLegend()
 {
-	var legend = document.getElementById('legend');
+	const legend = document.getElementById('legend');
 	legend.style.display = 'block';
 }
 function hideLegend()
 {
-	var legend = document.getElementById('legend');
+	const legend = document.getElementById('legend');
 	legend.style.display = 'none';
 }
 window.addEventListener('DOMContentLoaded', decorateTable, false);
