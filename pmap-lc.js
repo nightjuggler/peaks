@@ -1204,23 +1204,23 @@ return function(map)
 	icon.addEventListener('touchstart', iconTouch);
 
 	return {
-		addBaseLayers: function(root, path, defaultPath)
+		addBaseLayers(root, path, defaultPath)
 		{
 			addBaseLayers(root, menuHeader(div, 'Base Layers'), [], root.makeLayer);
 			selectBaseLayer(root, path, defaultPath);
 		},
-		addTileOverlays: function(root, overlays)
+		addTileOverlays(root, overlays)
 		{
 			addTileOverlays(root, menuHeader(div, 'Tile Overlays'), [], root.makeLayer);
 			selectTileOverlays(root, overlays);
 		},
-		addPointQueries: function(root, pointQueries, geometryQueries)
+		addPointQueries(root, pointQueries, geometryQueries)
 		{
 			addPointQueries(root, menuHeader(div, 'Point Queries'));
 			selectGeometryQueries(root, geometryQueries);
 			selectPointQueries(root, pointQueries);
 		},
-		addOverlays: function(root, overlays, mapBounds)
+		addOverlays(root, overlays, mapBounds)
 		{
 			addOverlays(root, menuHeader(div, 'GeoJSON Overlays'), []);
 			selectOverlays(root, overlays, mapBounds);

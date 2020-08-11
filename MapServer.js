@@ -550,7 +550,7 @@ const {
 	npsimdSpec.opacity = 0.5;
 }
 aiannhSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		const boldNode = document.createElement('b');
 		boldNode.appendChild(this.nameNode = document.createTextNode(''));
@@ -560,7 +560,7 @@ aiannhSpec.popup = {
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		const name = attr.NAME;
 		const line2 = ' and Off-Reservation Trust Land';
@@ -578,10 +578,10 @@ aiannhSpec.popup = {
 		}
 
 		return '#CC33FF';
-	},
+	}
 };
 npsSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		this.linkNode = document.createElement('a');
 		this.linkNode.style.fontWeight = 'bold';
@@ -589,7 +589,7 @@ npsSpec.popup = {
 		div.appendChild(this.linkNode);
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		let [code, name] = this === npsSpec.popup ?
 			[attr.UNIT_CODE, attr.UNIT_NAME] : [attr.UNITCODE, attr.UNITNAME];
@@ -601,7 +601,7 @@ npsSpec.popup = {
 		this.nameNode.nodeValue = name;
 
 		return '#FFFF00';
-	},
+	}
 };
 npsimdSpec.popup = {
 	init: npsSpec.popup.init,
@@ -616,7 +616,7 @@ nlcsSpec.popup = {
 		'BLM_NCA': 'National Conservation Area',
 		'BLM_NM': 'National Monument',
 	},
-	init: function(div)
+	init(div)
 	{
 		this.linkNode = document.createElement('a');
 		this.linkNode.style.fontWeight = 'bold';
@@ -626,7 +626,7 @@ nlcsSpec.popup = {
 		div.appendChild(this.textNode = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		const name = attr['Monuments_NCAs_SimilarDesignation2015.NCA_NAME'];
 		const code = attr['Monuments_NCAs_SimilarDesignation2015.sma_code'];
@@ -646,24 +646,24 @@ nlcsSpec.popup = {
 		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
 
 		return '#800000';
-	},
+	}
 };
 fsSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		const boldNode = document.createElement('b');
 		boldNode.appendChild(this.textNode = document.createTextNode(''));
 		div.appendChild(boldNode);
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode.nodeValue = attr.FORESTNAME;
 		return '#FFFF00';
-	},
+	}
 };
 fsrdSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		const boldNode = document.createElement('b');
 		boldNode.appendChild(this.textNode1 = document.createTextNode(''));
@@ -672,30 +672,30 @@ fsrdSpec.popup = {
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.FORESTNAME;
 		this.textNode2.nodeValue = '(' + attr.DISTRICTNAME + ')';
 		return '#008080';
-	},
+	}
 };
 fsondaSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.AREANAME;
 		this.textNode2.nodeValue = attr.AREATYPE;
 		return '#0000CD';
-	},
+	}
 };
 fssimaSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
@@ -704,28 +704,28 @@ fssimaSpec.popup = {
 		div.appendChild(this.textNode3 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.AREANAME;
 		this.textNode2.nodeValue = attr.AREATYPE;
 		this.textNode3.nodeValue = '(' + Math.round(attr.GIS_ACRES).toLocaleString() + ' acres)';
 		return '#CD0000';
-	},
+	}
 };
 nwrSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.ORGNAME;
 		this.textNode2.nodeValue = '(' + Math.round(attr.SUM_GISACRES).toLocaleString() + ' acres)';
 		return '#FFA07A';
-	},
+	}
 };
 const wildernessSpec = {
 	name: 'Wilderness Areas',
@@ -740,7 +740,7 @@ wildernessSpec.popup = {
 		NPS: '#800080', // Purple (fill color is #A900E6)
 		USFS:'#008000', // Green  (fill color is #38A800)
 	},
-	init: function(div)
+	init(div)
 	{
 		this.linkNode = document.createElement('a');
 		this.linkNode.style.fontWeight = 'bold';
@@ -751,7 +751,7 @@ wildernessSpec.popup = {
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		let agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
@@ -765,109 +765,109 @@ wildernessSpec.popup = {
 		this.textNode2.nodeValue = '(' + year + ') (' + acres + ' acres)';
 
 		return this.outlineColor[agency] || '#000000';
-	},
+	}
 };
 wsaSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr['nlcs_wsa_poly.NLCS_NAME'];
 		this.textNode2.nodeValue = '(' + attr['nlcs_wsa_poly.ADMIN_ST'] + ') (' +
 			attr['nlcs_wsa_poly.WSA_RCMND'] + ')';
 		return '#B22222';
-	},
+	}
 };
 caParkSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.UNITNAME;
 		this.textNode2.nodeValue = '(' + attr.MgmtStatus + ') (' +
 			Math.round(attr.GISACRES).toLocaleString() + ' acres)';
 
 		return '#70A800';
-	},
+	}
 };
 nvParkSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.LandName;
 		this.textNode2.nodeValue = '(' + Math.round(attr.Acres).toLocaleString() + ' acres)';
 		return '#70A800';
-	},
+	}
 };
 caZipSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode.nodeValue = attr.NAME + ', ' + attr.STATE + ' ' + attr.ZIP_CODE;
 		return '#FF1493';
-	},
+	}
 };
 countySpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.nameNode.nodeValue = attr.NAME;
 		return '#A52A2A';
-	},
+	}
 };
 cpadSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.textNode1 = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.textNode1.nodeValue = attr.SITE_NAME;
 		this.textNode2.nodeValue = '(' + attr.MNG_AGNCY + ')';
 		return '#C71585';
-	},
+	}
 };
 stateSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		this.nameNode.nodeValue = attr.NAME + ' (' + attr.STUSAB + ')';
 		return '#000000';
-	},
+	}
 };
 blmSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		this.linkNode = document.createElement('a');
 		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
@@ -878,7 +878,7 @@ blmSpec.popup = {
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 		div.appendChild(this.ztf);
 	},
-	show: function(attr)
+	show(attr)
 	{
 		let url = attr.ADMU_ST_URL;
 		if (url.charAt(0) === '\'')
@@ -894,11 +894,11 @@ blmSpec.popup = {
 		this.textNode1.nodeValue = ' (' + attr.ADMIN_ST + ')';
 		this.textNode2.nodeValue = '(' + attr.PARENT_NAME + ')';
 		return '#0000FF';
-	},
+	}
 };
 fireSpec.style = () => ({color: '#FF0000', weight: 2});
 fireSpec.popup = {
-	init: function(div)
+	init(div)
 	{
 		div.appendChild(this.nameNode = document.createTextNode(''));
 		div.appendChild(document.createElement('br'));
@@ -907,7 +907,7 @@ fireSpec.popup = {
 		div.appendChild(document.createElement('br'));
 		div.appendChild(this.textNode2 = document.createTextNode(''));
 	},
-	show: function(attr)
+	show(attr)
 	{
 		const name = attr.IncidentName + ' Fire';
 		const size = (Math.round(attr.GISAcres * 100) / 100).toLocaleString();
@@ -917,7 +917,7 @@ fireSpec.popup = {
 		this.textNode1.nodeValue = '(' + size + ' acres)';
 		this.textNode2.nodeValue = '(' + date + ')';
 		return '#FF0000';
-	},
+	}
 };
 arfireSpec.style = () => ({color: '#FFD700', weight: 2});
 arfireSpec.popup = {
@@ -1056,7 +1056,7 @@ function exportLayer(spec, transparent)
 	baseURL = baseURL.join('&');
 
 	return L.GridLayer.extend({
-	createTile: function(tileCoords, done)
+	createTile(tileCoords, done)
 	{
 		const m = earthCircumference / (1 << tileCoords.z); // tile size in meters
 		const x = tileOrigin + m*tileCoords.x;
@@ -1224,7 +1224,7 @@ function addOutlineCheckbox(spec, map)
 	}
 }
 return {
-initPointQueries: function(map)
+initPointQueries(map)
 {
 	const geojson = false;
 	const responseFormat = geojson ? 'geojson' : 'json';
