@@ -1,4 +1,4 @@
-/* globals document, Image, window, L, loadJSON */
+/* globals document, Image, window, L, pmapShared */
 /* exported BaseLayers, TileOverlays, MapServer */
 
 const BaseLayers = {
@@ -1226,6 +1226,7 @@ function addOutlineCheckbox(spec, map)
 return {
 initPointQueries(map)
 {
+	const loadJSON = pmapShared.loadJSON;
 	const geojson = false;
 	const responseFormat = geojson ? 'geojson' : 'json';
 	const attrKey = geojson ? 'properties' : 'attributes';

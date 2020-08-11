@@ -1,9 +1,11 @@
 /* globals console, document, Image, window, L */
-/* globals enableTooltips, loadJSON, popupHTML, setPopupGlobals, weatherLink */
+/* globals enableTooltips, pmapShared */
 /* exported pmapLayerControl */
 
 const pmapLayerControl = (function() {
 'use strict';
+
+const {loadJSON, popupHTML, setPopupGlobals, weatherLink} = pmapShared;
 
 const BLM_CA_NLCS_Prefix = 'https://www.blm.gov/nlcs_web/sites/ca/st/en/prog/nlcs/';
 const USFS_Prefix = 'https://www.fs.usda.gov/';

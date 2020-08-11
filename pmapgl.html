@@ -70,9 +70,12 @@
 <script src="pmap-shared.js"></script>
 <script>
 /* globals document, window, mapboxgl */
-/* globals createMapboxMap, enableTooltips, loadJSON, popupHTML, setPopupGlobals */
+/* globals enableTooltips, pmapShared */
 (function() {
 'use strict';
+
+const {createMapboxMap, loadJSON, popupHTML, setPopupGlobals} = pmapShared;
+
 function validKey(key)
 {
 	return key.length <= 8 && /^[a-z][0-9a-z]*$/.test(key);

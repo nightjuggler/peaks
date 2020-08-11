@@ -159,7 +159,7 @@ input[type="color"]::-webkit-color-swatch {
 <script src="pmap-lc.js"></script>
 <script>
 /* globals document, window, MouseEvent */
-/* globals L, BaseLayers, TileOverlays, MapServer, pmapLayerControl, createMapboxMap, loadJSON */
+/* globals L, BaseLayers, TileOverlays, MapServer, pmapLayerControl, pmapShared */
 (function() {
 'use strict';
 function isValidId(s, n)
@@ -402,7 +402,7 @@ function createMap(options)
 		layerControl.addOverlays(lcdjson, queryString.overlays, mapBounds);
 		mapBounds.delSetter();
 	}
-	loadJSON('json/pmap/lcd.json', addOverlayMenu);
+	pmapShared.loadJSON('json/pmap/lcd.json', addOverlayMenu);
 }
 (function()
 {
@@ -411,7 +411,7 @@ function createMap(options)
 
 	function init()
 	{
-		if (jsLoaded && domLoaded) createMapboxMap(createMap);
+		if (jsLoaded && domLoaded) pmapShared.createMapboxMap(createMap);
 	}
 
 	const path = window.location.pathname;

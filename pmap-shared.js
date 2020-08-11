@@ -1,5 +1,7 @@
 /* globals document, window, URL, XMLHttpRequest, mapbox */
-/* exported createMapboxMap, loadJSON, popupHTML, setPopupGlobals */
+/* exported pmapShared */
+
+const pmapShared = (function() {
 'use strict';
 
 let defaultPeakList;
@@ -203,3 +205,6 @@ function createMapboxMap(createMap)
 	} else
 		loadJSON('mapbox.cgi', createMap);
 }
+
+return { createMapboxMap, loadJSON, popupHTML, setPopupGlobals, weatherLink };
+})();
