@@ -44,15 +44,11 @@ function extentForLatLong(latitude, longitude)
 	const deltaLat = deltaLatForDistanceNorth(distance / 2);
 	const deltaLong = deltaLongForDistanceEast(latitude, distance * 2/3);
 
-	let xmin = longitude - deltaLong;
-	let xmax = longitude + deltaLong;
-	let ymin = latitude - deltaLat;
-	let ymax = latitude + deltaLat;
+	const xmin = longitudeToWebMercatorX(longitude - deltaLong);
+	const xmax = longitudeToWebMercatorX(longitude + deltaLong);
 
-	xmin = longitudeToWebMercatorX(xmin);
-	xmax = longitudeToWebMercatorX(xmax);
-	ymin = latitudeToWebMercatorY(ymin);
-	ymax = latitudeToWebMercatorY(ymax);
+	const ymin = latitudeToWebMercatorY(latitude - deltaLat);
+	const ymax = latitudeToWebMercatorY(latitude + deltaLat);
 
 	return [xmin, ymin, xmax, ymax, '102113'].join(',');
 }
@@ -61,6 +57,7 @@ function wccLink(latitude, longitude)
 	// WCC = National Water and Climate Center
 	return 'https://www.nrcs.usda.gov/wps/portal/wcc/home/quicklinks/imap#' +
 	[
+		['version', '125'],
 		['activeForecastPointsOnly', 'true'],
 		['openSections', ''],
 		['base', 'esriNgwm'],
@@ -71,7 +68,7 @@ function wccLink(latitude, longitude)
 		['relativeDate', '-1'],
 		['lat', latitude],
 		['lon', longitude],
-		['zoom', '12'],
+		['zoom', '12.0'],
 
 	].map(p => p.join('=')).join('&');
 }
@@ -278,7 +275,7 @@ function initPeakListMenu()
 			menu.selectedIndex = selectedIndex;
 
 			window.location = globalPeakInfo.pathPrefix + id + '.html';
-		}, false);
+		});
 	}
 }
 function totalOffsetTop(element)
@@ -649,7 +646,7 @@ function decorateTable()
 			firstColumn.appendChild(spanElement);
 			if (!firstColumn.id)
 				firstColumn.id = 'p' + g.numPeaks;
-			firstColumn.addEventListener('click', clickFirstColumn, false);
+			firstColumn.addEventListener('click', clickFirstColumn);
 			firstColumn.style.cursor = 'pointer';
 			firstColumn.rowSpan = 1;
 
@@ -666,11 +663,11 @@ function decorateTable()
 			mapLinkSpan.tabIndex = 0;
 			secondColumn.id = 'm' + g.numPeaks;
 			secondColumn.insertBefore(mapLinkSpan, lineBreak);
-			secondColumn.addEventListener('mouseenter', showMapLinkIcon, false);
-			secondColumn.addEventListener('mouseleave', hideMapLinkIcon, false);
+			secondColumn.addEventListener('mouseenter', showMapLinkIcon);
+			secondColumn.addEventListener('mouseleave', hideMapLinkIcon);
 			mapLinkHash[secondColumn.id] = mapLinkSpan;
-			mapLinkSpan.addEventListener('click', showMapLinkBox, false);
-			mapLinkSpan.addEventListener('keydown', showMapLinkBoxOnEnter, false);
+			mapLinkSpan.addEventListener('click', showMapLinkBox);
+			mapLinkSpan.addEventListener('keydown', showMapLinkBoxOnEnter);
 		}
 		if (delisted) {
 			g.numDelisted += 1;
@@ -696,7 +693,7 @@ function decorateTable()
 	if (window.location.hash)
 		window.location.replace(window.location.href);
 
-	window.removeEventListener('DOMContentLoaded', decorateTable, false);
+	window.removeEventListener('DOMContentLoaded', decorateTable);
 }
 function closeActivePopup(event)
 {
@@ -710,7 +707,7 @@ function closeActivePopup(event)
 
 	activePopup.style.display = 'none';
 	mapLinkSpan.className = mobileMode ? 'mapLink' : 'mapLinkHidden';
-	mapLinkSpan.addEventListener('click', showMapLinkBox, false);
+	mapLinkSpan.addEventListener('click', showMapLinkBox);
 	activePopup = null;
 
 	if (mobileMode) {
@@ -724,7 +721,7 @@ function setActivePopup(element)
 	closeActivePopup();
 
 	activePopup = element;
-	activePopup.parentNode.removeEventListener('click', showMapLinkBox, false);
+	activePopup.parentNode.removeEventListener('click', showMapLinkBox);
 
 	if (mobileMode) {
 		const body = document.body;
@@ -749,8 +746,8 @@ function clickMobile()
 	{
 		Object.values(mapLinkHash).forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
-			parent.removeEventListener('mouseenter', showMapLinkIcon, false);
-			parent.removeEventListener('mouseleave', hideMapLinkIcon, false);
+			parent.removeEventListener('mouseenter', showMapLinkIcon);
+			parent.removeEventListener('mouseleave', hideMapLinkIcon);
 			mapLinkSpan.className = 'mapLink';
 		});
 		elem.nodeValue = 'DESKTOP';
@@ -760,8 +757,8 @@ function clickMobile()
 	{
 		Object.values(mapLinkHash).forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
-			parent.addEventListener('mouseenter', showMapLinkIcon, false);
-			parent.addEventListener('mouseleave', hideMapLinkIcon, false);
+			parent.addEventListener('mouseenter', showMapLinkIcon);
+			parent.addEventListener('mouseleave', hideMapLinkIcon);
 			mapLinkSpan.className = 'mapLinkHidden';
 		});
 		elem.nodeValue = 'MOBILE';
@@ -933,25 +930,25 @@ function addClickHandlers(firstRow)
 	let checkbox = document.getElementById('toggleLandColumn');
 	if (checkbox) {
 		checkbox.checked = landColumnArray.length === 0;
-		checkbox.addEventListener('click', toggleLandColumn, false);
+		checkbox.addEventListener('click', toggleLandColumn);
 	}
 
 	checkbox = document.getElementById('toggleClimbedColumn');
 	if (checkbox) {
 		checkbox.checked = climbedColumnArray.length === 0;
-		checkbox.addEventListener('click', toggleClimbedColumn, false);
+		checkbox.addEventListener('click', toggleClimbedColumn);
 	}
 
 	checkbox = document.getElementById('toggleDelisted');
 	if (checkbox) {
 		checkbox.checked = !delistedHidden();
-		checkbox.addEventListener('click', toggleDelisted, false);
+		checkbox.addEventListener('click', toggleDelisted);
 	}
 
 	checkbox = document.getElementById('toggleSuspended');
 	if (checkbox) {
 		checkbox.checked = !suspendedHidden();
-		checkbox.addEventListener('click', toggleSuspended, false);
+		checkbox.addEventListener('click', toggleSuspended);
 	}
 
 	const colorMenu = document.getElementById('colorMenu');
@@ -962,7 +959,7 @@ function addClickHandlers(firstRow)
 				colorMenu.selectedIndex = option.index;
 				break;
 			}
-		colorMenu.addEventListener('change', changeColors, false);
+		colorMenu.addEventListener('change', changeColors);
 	}
 
 	function createHeaderLink(label, callback)
@@ -971,7 +968,7 @@ function addClickHandlers(firstRow)
 		button.type = 'button';
 		button.className = 'headerLink';
 		button.appendChild(document.createTextNode(label));
-		button.addEventListener('click', callback, false);
+		button.addEventListener('click', callback);
 		return button;
 	}
 
@@ -1000,7 +997,7 @@ function addClickHandlers(firstRow)
 
 	const closeLegend = document.getElementById('closeLegend');
 	if (closeLegend)
-		closeLegend.addEventListener('click', hideLegend, false);
+		closeLegend.addEventListener('click', hideLegend);
 }
 function showLegend()
 {
@@ -1012,5 +1009,5 @@ function hideLegend()
 	const legend = document.getElementById('legend');
 	legend.style.display = 'none';
 }
-window.addEventListener('DOMContentLoaded', decorateTable, false);
+window.addEventListener('DOMContentLoaded', decorateTable);
 })();
