@@ -985,9 +985,9 @@ modisSpec.makeLayer = function(spec) {
 		'<a href="https://en.wikipedia.org/wiki/Terra_(satellite)">Terra</a>' : sat === 'A' ?
 		'<a href="https://en.wikipedia.org/wiki/Aqua_(satellite)">Aqua</a>' : sat;
 
-	return esriFeatureLayer(spec).bindPopup(function(e) {
-		const p = e.feature.properties;
-		const [lng, lat] = e.feature.geometry.coordinates;
+	return esriFeatureLayer(spec).bindPopup(function({feature}) {
+		const p = feature.properties;
+		const [lng, lat] = feature.geometry.coordinates;
 		return [
 			'<div>' + daynight(p.DAYNIGHT) + ' Fire</div>',
 			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + '</div>',
@@ -1008,9 +1008,9 @@ viirsSpec.makeLayer = function(spec) {
 		'<a href="https://en.wikipedia.org/wiki/Suomi_NPP">Suomi NPP</a>' : sat === '1' ?
 		'<a href="https://en.wikipedia.org/wiki/NOAA-20">NOAA-20</a>' : sat;
 
-	return esriFeatureLayer(spec).bindPopup(function(e) {
-		const p = e.feature.properties;
-		const [lng, lat] = e.feature.geometry.coordinates;
+	return esriFeatureLayer(spec).bindPopup(function({feature}) {
+		const p = feature.properties;
+		const [lng, lat] = feature.geometry.coordinates;
 		return [
 			'<div>' + daynight(p.daynight) + ' Fire</div>',
 			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + '</div>',
