@@ -958,8 +958,7 @@ function esriFeatureLayer(spec)
 	return L.esri.featureLayer(options);
 }
 modisSpec.pointToLayer = function(feature, latlng) {
-	const p = feature.properties;
-	const frp = p.FRP;
+	const frp = feature.properties.FRP;
 
 	return L.circleMarker(latlng, {
 		color:
@@ -970,8 +969,7 @@ modisSpec.pointToLayer = function(feature, latlng) {
 	});
 };
 viirsSpec.pointToLayer = function(feature, latlng) {
-	const p = feature.properties;
-	const frp = p.frp;
+	const frp = feature.properties.frp;
 
 	return L.circleMarker(latlng, {
 		color:
@@ -987,9 +985,7 @@ modisSpec.makeLayer = function(spec) {
 		'<a href="https://en.wikipedia.org/wiki/Terra_(satellite)">Terra</a>' : sat === 'A' ?
 		'<a href="https://en.wikipedia.org/wiki/Aqua_(satellite)">Aqua</a>' : sat;
 
-	const layer = esriFeatureLayer(spec);
-
-	layer.bindPopup(function(e) {
+	return esriFeatureLayer(spec).bindPopup(function(e) {
 		const p = e.feature.properties;
 		const [lng, lat] = e.feature.geometry.coordinates;
 		return [
@@ -1005,8 +1001,6 @@ modisSpec.makeLayer = function(spec) {
 			'<div class="peakDiv">Satellite: ' + satellite(p.SATELLITE) + '</div>',
 		].join('');
 	}, {className: 'popupDiv'});
-
-	return layer;
 };
 viirsSpec.makeLayer = function(spec) {
 	const daynight = dn => dn === 'D' ? 'Day' : 'Night';
@@ -1014,9 +1008,7 @@ viirsSpec.makeLayer = function(spec) {
 		'<a href="https://en.wikipedia.org/wiki/Suomi_NPP">Suomi NPP</a>' : sat === '1' ?
 		'<a href="https://en.wikipedia.org/wiki/NOAA-20">NOAA-20</a>' : sat;
 
-	const layer = esriFeatureLayer(spec);
-
-	layer.bindPopup(function(e) {
+	return esriFeatureLayer(spec).bindPopup(function(e) {
 		const p = e.feature.properties;
 		const [lng, lat] = e.feature.geometry.coordinates;
 		return [
@@ -1028,8 +1020,6 @@ viirsSpec.makeLayer = function(spec) {
 			'<div class="peakDiv">Satellite: ' + satellite(p.satellite) + '</div>',
 		].join('');
 	}, {className: 'popupDiv'});
-
-	return layer;
 };
 
 const earthRadius = 6378137; // WGS 84 equatorial radius in meters
@@ -1292,8 +1282,8 @@ initPointQueries(map)
 		if (!popupSpec.div)
 			queryInit(spec);
 
-		let order = spec.queryOrder;
-		let n = querySpecs.length;
+		const order = spec.queryOrder;
+		const n = querySpecs.length;
 		let i = n - 1;
 
 		while (i >= 0 && order < querySpecs[i].queryOrder) --i;
