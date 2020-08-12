@@ -168,13 +168,18 @@ function isFileURL(url)
 }
 function loadJSON(url, onSuccess, onFailure, progressBar)
 {
+	if (isFileURL(url)) {
+		if (onFailure) onFailure();
+		return null;
+	}
+
 	const xhr = new XMLHttpRequest();
 
 	xhr.responseType = 'json';
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4)
 		{
-			if (xhr.status === 200 || isFileURL(url) && xhr.status === 0 && xhr.response !== null)
+			if (xhr.status === 200)
 				onSuccess(xhr.response);
 			else if (onFailure)
 				onFailure();
