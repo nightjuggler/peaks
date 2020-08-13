@@ -305,7 +305,7 @@ items: {
 					archived: {
 		name: 'Archived Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/Archived_Wildfire_Perimeters/FeatureServer',
+			'/Archived_Wildfire_Perimeters2/FeatureServer',
 		queryFields: ['OBJECTID', 'IncidentName', 'GISAcres', 'DateCurrent'],
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
 			'National Interagency Fire Center</a>',

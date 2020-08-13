@@ -380,7 +380,7 @@ class NIFC_CurrentPerimetersQuery(Query):
 class NIFC_ArchivedPerimetersQuery(Query):
 	name = "NIFC Archived Wildfire Perimeters"
 	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
-	service = "Archived_Wildfire_Perimeters"
+	service = "Archived_Wildfire_Perimeters2"
 	serverType = "Feature"
 	layer = 0 # sr = 4326
 
