@@ -549,46 +549,80 @@ const {
 	npsimdSpec.dynamicLayers = simpleFillLayer(0, [255, 255, 0, 255]);
 	npsimdSpec.opacity = 0.5;
 }
-aiannhSpec.popup = {
-	init(div)
-	{
-		const boldNode = document.createElement('b');
-		boldNode.appendChild(this.nameNode = document.createTextNode(''));
-		this.brNode = document.createElement('br');
+function makePopupDiv(spec)
+{
+	const div = spec.div;
+	let linkCount = 0;
+	let textCount = 0;
+	const makeText = () => spec['textNode' + textCount++] = document.createTextNode('');
+	const makeLink = () => {
+		const link = document.createElement('a');
+		link.appendChild(makeText());
+		spec['linkNode' + linkCount++] = link;
+		return link;
+	};
+	const makeNode = type => {
+		if (type === 'text')
+			return makeText();
+		if (type === 'br')
+			return document.createElement('br');
+		if (type === 'boldtext') {
+			const bold = document.createElement('b');
+			bold.appendChild(makeText());
+			return bold;
+		}
+		if (type === 'boldlink') {
+			const link = makeLink();
+			link.style.fontWeight = 'bold';
+			return link;
+		}
+		if (type === 'link')
+			return makeLink();
+		if (type === 'ztf')
+			return spec.ztf;
 
-		div.appendChild(boldNode);
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+		return document.createTextNode(type);
+	};
+	spec.template.split('|').forEach(type => div.appendChild(makeNode(type)));
+}
+function setPopupText(spec, ...content)
+{
+	content.forEach((text, i) => spec['textNode' + i].nodeValue = text);
+}
+function setPopupLink(spec, url)
+{
+	const link = spec.linkNode0;
+	link.href = url;
+	return link;
+}
+function formatAcres(acres, precision = 0)
+{
+	const p = Math.pow(10, precision);
+	return '(' + (Math.round(acres * p) / p).toLocaleString() + ' acres)';
+}
+aiannhSpec.popup = {
+	template: 'boldtext|br|text|ztf',
 	show(attr)
 	{
 		const name = attr.NAME;
 		const line2 = ' and Off-Reservation Trust Land';
+		const br = this.brNode || (this.brNode = this.textNode1.previousSibling);
 
 		if (name.endsWith(line2)) {
-			if (!this.brNode.parentNode)
-				this.div.insertBefore(this.brNode, this.textNode2);
-			this.nameNode.nodeValue = name.substring(0, name.length - line2.length);
-			this.textNode2.nodeValue = line2.substring(1);
+			if (!br.parentNode)
+				this.div.insertBefore(br, this.textNode1);
+			setPopupText(this, name.substring(0, name.length - line2.length), line2.substring(1));
 		} else {
-			if (this.brNode.parentNode)
-				this.div.removeChild(this.brNode);
-			this.nameNode.nodeValue = name;
-			this.textNode2.nodeValue = '';
+			if (br.parentNode)
+				this.div.removeChild(br);
+			setPopupText(this, name, '');
 		}
 
 		return '#CC33FF';
 	}
 };
 npsSpec.popup = {
-	init(div)
-	{
-		this.linkNode = document.createElement('a');
-		this.linkNode.style.fontWeight = 'bold';
-		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(this.linkNode);
-		div.appendChild(this.ztf);
-	},
+	template: 'boldlink|ztf',
 	show(attr)
 	{
 		let [code, name] = this === npsSpec.popup ?
@@ -597,14 +631,14 @@ npsSpec.popup = {
 		code = code.toLowerCase();
 		if (code === 'kica' || code === 'sequ') code = 'seki';
 
-		this.linkNode.href = 'https://www.nps.gov/' + code + '/index.htm';
-		this.nameNode.nodeValue = name;
+		setPopupLink(this, 'https://www.nps.gov/' + code + '/index.htm');
+		setPopupText(this, name);
 
 		return '#FFFF00';
 	}
 };
 npsimdSpec.popup = {
-	init: npsSpec.popup.init,
+	template: npsSpec.popup.template,
 	show: npsSpec.popup.show,
 };
 nlcsSpec.popup = {
@@ -616,24 +650,14 @@ nlcsSpec.popup = {
 		'BLM_NCA': 'National Conservation Area',
 		'BLM_NM': 'National Monument',
 	},
-	init(div)
-	{
-		this.linkNode = document.createElement('a');
-		this.linkNode.style.fontWeight = 'bold';
-		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(this.linkNode);
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'boldlink|br|text|ztf',
 	show(attr)
 	{
 		const name = attr['Monuments_NCAs_SimilarDesignation2015.NCA_NAME'];
 		const code = attr['Monuments_NCAs_SimilarDesignation2015.sma_code'];
 		const state = attr['Monuments_NCAs_SimilarDesignation2015.STATE_GEOG'];
-		const link = this.linkNode;
+		const link = setPopupLink(this, attr['nlcs_desc.WEBLINK']);
 
-		link.href = attr['nlcs_desc.WEBLINK'];
 		if (link.protocol !== 'https:')
 			link.protocol = 'https:';
 		if (link.host !== 'www.blm.gov')
@@ -642,88 +666,47 @@ nlcsSpec.popup = {
 			!(link.href.startsWith('https://www.blm.gov/nlcs_web/') && link.href.endsWith('.html')))
 			link.href = 'https://www.blm.gov/';
 
-		this.nameNode.nodeValue = name;
-		this.textNode.nodeValue = '(' + code + ') (' + state + ')';
-
+		setPopupText(this, name, '(' + code + ') (' + state + ')');
 		return '#800000';
 	}
 };
 fsSpec.popup = {
-	init(div)
-	{
-		const boldNode = document.createElement('b');
-		boldNode.appendChild(this.textNode = document.createTextNode(''));
-		div.appendChild(boldNode);
-		div.appendChild(this.ztf);
-	},
+	template: 'boldtext|ztf',
 	show(attr)
 	{
-		this.textNode.nodeValue = attr.FORESTNAME;
+		setPopupText(this, attr.FORESTNAME);
 		return '#FFFF00';
 	}
 };
 fsrdSpec.popup = {
-	init(div)
-	{
-		const boldNode = document.createElement('b');
-		boldNode.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(boldNode);
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'boldtext|br|text|ztf',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.FORESTNAME;
-		this.textNode2.nodeValue = '(' + attr.DISTRICTNAME + ')';
+		setPopupText(this, attr.FORESTNAME, '(' + attr.DISTRICTNAME + ')');
 		return '#008080';
 	}
 };
 fsondaSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.AREANAME;
-		this.textNode2.nodeValue = attr.AREATYPE;
+		setPopupText(this, attr.AREANAME, attr.AREATYPE);
 		return '#0000CD';
 	}
 };
 fssimaSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode3 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|br|text|br|text|ztf',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.AREANAME;
-		this.textNode2.nodeValue = attr.AREATYPE;
-		this.textNode3.nodeValue = '(' + Math.round(attr.GIS_ACRES).toLocaleString() + ' acres)';
+		setPopupText(this, attr.AREANAME, attr.AREATYPE, formatAcres(attr.GIS_ACRES));
 		return '#CD0000';
 	}
 };
 nwrSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.ORGNAME;
-		this.textNode2.nodeValue = '(' + Math.round(attr.SUM_GISACRES).toLocaleString() + ' acres)';
+		setPopupText(this, attr.ORGNAME, formatAcres(attr.SUM_GISACRES));
 		return '#FFA07A';
 	}
 };
@@ -740,188 +723,112 @@ wildernessSpec.popup = {
 		NPS: '#800080', // Purple (fill color is #A900E6)
 		USFS:'#008000', // Green  (fill color is #38A800)
 	},
-	init(div)
-	{
-		this.linkNode = document.createElement('a');
-		this.linkNode.style.fontWeight = 'bold';
-		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(this.linkNode);
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'boldlink|text|br|text|ztf',
 	show(attr)
 	{
 		let agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
 		const year = (new Date(attr.YearDesignated)).getUTCFullYear();
-		const acres = attr.Acreage.toLocaleString();
+		const acres = formatAcres(attr.Acreage);
 
-		this.linkNode.href = 'https://wilderness.net/visit-wilderness/?ID=' + attr.WID;
-		this.nameNode.nodeValue = attr.NAME;
-		this.textNode1.nodeValue = ' (' + agency + ')';
-		this.textNode2.nodeValue = '(' + year + ') (' + acres + ' acres)';
+		setPopupLink(this, 'https://wilderness.net/visit-wilderness/?ID=' + attr.WID);
+		setPopupText(this, attr.NAME, ' (' + agency + ')', '(' + year + ') ' + acres);
 
 		return this.outlineColor[agency] || '#000000';
 	}
 };
 wsaSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr['nlcs_wsa_poly.NLCS_NAME'];
-		this.textNode2.nodeValue = '(' + attr['nlcs_wsa_poly.ADMIN_ST'] + ') (' +
-			attr['nlcs_wsa_poly.WSA_RCMND'] + ')';
+		setPopupText(this, attr['nlcs_wsa_poly.NLCS_NAME'],
+			'(' + attr['nlcs_wsa_poly.ADMIN_ST'] + ') (' + attr['nlcs_wsa_poly.WSA_RCMND'] + ')');
 		return '#B22222';
 	}
 };
 caParkSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-	},
+	template: 'text|ztf|br|text',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.UNITNAME;
-		this.textNode2.nodeValue = '(' + attr.MgmtStatus + ') (' +
-			Math.round(attr.GISACRES).toLocaleString() + ' acres)';
-
+		setPopupText(this, attr.UNITNAME, '(' + attr.MgmtStatus + ') ' + formatAcres(attr.GISACRES));
 		return '#70A800';
 	}
 };
 nvParkSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-	},
+	template: 'text|ztf|br|text',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.LandName;
-		this.textNode2.nodeValue = '(' + Math.round(attr.Acres).toLocaleString() + ' acres)';
+		setPopupText(this, attr.LandName, formatAcres(attr.Acres));
 		return '#70A800';
 	}
 };
 caZipSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|ztf',
 	show(attr)
 	{
-		this.textNode.nodeValue = attr.NAME + ', ' + attr.STATE + ' ' + attr.ZIP_CODE;
+		setPopupText(this, attr.NAME + ', ' + attr.STATE + ' ' + attr.ZIP_CODE);
 		return '#FF1493';
 	}
 };
 countySpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|ztf',
 	show(attr)
 	{
-		this.nameNode.nodeValue = attr.NAME;
+		setPopupText(this, attr.NAME);
 		return '#A52A2A';
 	}
 };
 cpadSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		this.textNode1.nodeValue = attr.SITE_NAME;
-		this.textNode2.nodeValue = '(' + attr.MNG_AGNCY + ')';
+		setPopupText(this, attr.SITE_NAME, '(' + attr.MNG_AGNCY + ')');
 		return '#C71585';
 	}
 };
 stateSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'text|ztf',
 	show(attr)
 	{
-		this.nameNode.nodeValue = attr.NAME + ' (' + attr.STUSAB + ')';
+		setPopupText(this, attr.NAME + ' (' + attr.STUSAB + ')');
 		return '#000000';
 	}
 };
 blmSpec.popup = {
-	init(div)
-	{
-		this.linkNode = document.createElement('a');
-		this.linkNode.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(document.createTextNode('BLM '));
-		div.appendChild(this.linkNode);
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-	},
+	template: 'BLM |link|text|br|text|ztf',
 	show(attr)
 	{
 		let url = attr.ADMU_ST_URL;
 		if (url.charAt(0) === '\'')
 			url = url.substring(1);
 
-		this.linkNode.href = url;
-		if (this.linkNode.protocol !== 'https:')
-			this.linkNode.protocol = 'https:';
-		if (this.linkNode.host !== 'www.blm.gov')
-			this.linkNode.host = 'www.blm.gov';
+		const link = setPopupLink(this, url);
+		if (link.protocol !== 'https:')
+			link.protocol = 'https:';
+		if (link.host !== 'www.blm.gov')
+			link.host = 'www.blm.gov';
 
-		this.nameNode.nodeValue = attr.ADMU_NAME;
-		this.textNode1.nodeValue = ' (' + attr.ADMIN_ST + ')';
-		this.textNode2.nodeValue = '(' + attr.PARENT_NAME + ')';
+		setPopupText(this, attr.ADMU_NAME, ' (' + attr.ADMIN_ST + ')', '(' + attr.PARENT_NAME + ')');
 		return '#0000FF';
 	}
 };
 fireSpec.style = () => ({color: '#FF0000', weight: 2});
 fireSpec.popup = {
-	init(div)
-	{
-		div.appendChild(this.nameNode = document.createTextNode(''));
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode1 = document.createTextNode(''));
-		div.appendChild(this.ztf);
-		div.appendChild(document.createElement('br'));
-		div.appendChild(this.textNode2 = document.createTextNode(''));
-	},
+	template: 'text|br|text|ztf|br|text',
 	show(attr)
 	{
 		const name = attr.IncidentName + ' Fire';
-		const size = (Math.round(attr.GISAcres * 100) / 100).toLocaleString();
+		const size = formatAcres(attr.GISAcres, 2);
 		const date = getDateTime(attr.DateCurrent);
 
-		this.nameNode.nodeValue = name;
-		this.textNode1.nodeValue = '(' + size + ' acres)';
-		this.textNode2.nodeValue = '(' + date + ')';
+		setPopupText(this, name, size, '(' + date + ')');
 		return '#FF0000';
 	}
 };
 arfireSpec.style = () => ({color: '#FFD700', weight: 2});
 arfireSpec.popup = {
-	init: fireSpec.popup.init,
+	template: fireSpec.popup.template,
 	show: fireSpec.popup.show,
 };
 let querySpecs = [
@@ -1250,7 +1157,7 @@ initPointQueries(map)
 		const popupSpec = spec.popup;
 		popupSpec.div = document.createElement('div');
 		popupSpec.ztf = fitLink(map, popupSpec);
-		popupSpec.init(popupSpec.div);
+		makePopupDiv(popupSpec);
 		addOutlineCheckbox(popupSpec, map);
 		popupSpec.div.style.display = 'none';
 
