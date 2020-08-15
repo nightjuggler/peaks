@@ -9,32 +9,32 @@ let activeTooltip;
 const closedIcon = '\u25C4\uFE0E'; // black left-pointing pointer
 const openIcon = '\u25B2'; // black up-pointing triangle
 
-function positionTooltip(tooltip, parent)
+function positionTooltip(tooltip, host)
 {
 	tooltip.style.display = 'block';
 
 	const arrow = tooltip.lastElementChild;
 
-	if (!parent) parent = tooltip.parentElement;
+	if (!host) host = tooltip.parentElement;
 
-	let tooltipLeft = (parent.offsetWidth - tooltip.offsetWidth) / 2;
-	let parentLeft = 0;
-	let parentTop = 0;
+	let parent = tooltip.offsetParent;
 	let parentStyle;
 
-	while (parent && (parentStyle = window.getComputedStyle(parent)).position === 'static')
-	{
-		const borderLeft = +parentStyle.borderLeftWidth.slice(0, -2); // strip 'px'
-		const borderTop = +parentStyle.borderTopWidth.slice(0, -2); // strip 'px'
-		parentLeft += parent.offsetLeft + borderLeft;
-		parentTop += parent.offsetTop + borderTop;
-		parent = parent.offsetParent;
-	}
+	while ((parentStyle = window.getComputedStyle(parent)).position === 'static' && parent.parentElement)
+		parent = parent.parentElement;
 
-	tooltipLeft += parentLeft;
+	const borderLeft = +parentStyle.borderLeftWidth.slice(0, -2); // strip 'px'
+	const borderTop = +parentStyle.borderTopWidth.slice(0, -2); // strip 'px'
+
+	const hostBox = host.getBoundingClientRect();
+	const parentBox = parent.getBoundingClientRect();
+
+	const offsetLeft = hostBox.left - (parentBox.left + borderLeft);
+	const offsetTop = hostBox.top - (parentBox.top + borderTop);
+
+	let tooltipLeft = offsetLeft + (host.offsetWidth - tooltip.offsetWidth) / 2;
+	let tooltipTop = offsetTop - arrow.offsetHeight - tooltip.offsetHeight + tooltip.clientTop;
 	let arrowLeft = (tooltip.clientWidth - arrow.offsetWidth) / 2;
-	let tooltipTop = parentTop - arrow.offsetHeight - tooltip.offsetHeight + tooltip.clientTop;
-//	let tooltipTop = parentTop - arrow.offsetHeight - tooltip.clientHeight - tooltip.clientTop;
 
 	if (tooltipLeft < 0)
 	{
