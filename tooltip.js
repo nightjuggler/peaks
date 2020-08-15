@@ -4,29 +4,37 @@
 const enableTooltips = (function() {
 'use strict';
 
-function positionTooltip(tooltip)
+let activeTooltip;
+
+const closedIcon = '\u25C4\uFE0E'; // black left-pointing pointer
+const openIcon = '\u25B2'; // black up-pointing triangle
+
+function positionTooltip(tooltip, parent)
 {
 	tooltip.style.display = 'block';
 
-	const arrowDiv = tooltip.lastElementChild;
-	const arrowBox = arrowDiv.getBoundingClientRect();
-	const tooltipBox = tooltip.getBoundingClientRect();
+	const arrow = tooltip.lastElementChild;
 
-	let parent = tooltip.parentElement;
-	const parentBox = parent.getBoundingClientRect();
+	if (!parent) parent = tooltip.parentElement;
+
+	let tooltipLeft = (parent.offsetWidth - tooltip.offsetWidth) / 2;
 	let parentLeft = 0;
 	let parentTop = 0;
+	let parentStyle;
 
-	while (parent && window.getComputedStyle(parent).position === 'static')
+	while (parent && (parentStyle = window.getComputedStyle(parent)).position === 'static')
 	{
-		parentLeft += parent.offsetLeft;
-		parentTop += parent.offsetTop;
+		const borderLeft = +parentStyle.borderLeftWidth.slice(0, -2); // strip 'px'
+		const borderTop = +parentStyle.borderTopWidth.slice(0, -2); // strip 'px'
+		parentLeft += parent.offsetLeft + borderLeft;
+		parentTop += parent.offsetTop + borderTop;
 		parent = parent.offsetParent;
 	}
 
-	let tooltipLeft = Math.round(parentLeft + parentBox.width / 2.0 - tooltipBox.width / 2.0);
-	const tooltipTop = Math.round(parentTop + 2 - arrowBox.height - tooltipBox.height);
-	let arrowLeft = Math.round((tooltipBox.width - arrowBox.width) / 2.0);
+	tooltipLeft += parentLeft;
+	let arrowLeft = (tooltip.clientWidth - arrow.offsetWidth) / 2;
+	let tooltipTop = parentTop - arrow.offsetHeight - tooltip.offsetHeight + tooltip.clientTop;
+//	let tooltipTop = parentTop - arrow.offsetHeight - tooltip.clientHeight - tooltip.clientTop;
 
 	if (tooltipLeft < 0)
 	{
@@ -36,7 +44,29 @@ function positionTooltip(tooltip)
 
 	tooltip.style.left = tooltipLeft + 'px';
 	tooltip.style.top = tooltipTop + 'px';
-	arrowDiv.style.left = arrowLeft + 'px';
+	arrow.style.left = arrowLeft + 'px';
+}
+function toggleTooltip(event)
+{
+	const toggle = event.currentTarget;
+	const tooltip = toggle.previousSibling;
+
+	if (activeTooltip) {
+		const activeToggle = activeTooltip.nextSibling;
+		activeToggle.firstChild.nodeValue = closedIcon;
+		activeTooltip.style.display = '';
+
+		if (tooltip === activeTooltip) {
+			activeTooltip = undefined;
+			return false;
+		}
+	}
+
+	activeTooltip = tooltip;
+	toggle.firstChild.nodeValue = openIcon;
+	positionTooltip(tooltip, toggle);
+
+	return false;
 }
 function showTooltip(event)
 {
@@ -50,7 +80,7 @@ function hideTooltip(event)
 	tooltips[0].style.display = 'none';
 	return false;
 }
-function enableTooltips(element)
+function enableTooltips(element, openOnClick=false)
 {
 	for (const tooltip of element.getElementsByClassName('tooltip'))
 	{
@@ -69,8 +99,16 @@ function enableTooltips(element)
 		tooltip.appendChild(arrowDiv);
 
 		const parent = tooltip.parentElement;
-		parent.addEventListener('mouseenter', showTooltip);
-		parent.addEventListener('mouseleave', hideTooltip);
+		if (openOnClick) {
+			const toggle = document.createElement('div');
+			toggle.className = 'tooltipToggle';
+			toggle.appendChild(document.createTextNode(closedIcon));
+			toggle.addEventListener('click', toggleTooltip);
+			parent.insertBefore(toggle, tooltip.nextSibling);
+		} else {
+			parent.addEventListener('mouseenter', showTooltip);
+			parent.addEventListener('mouseleave', hideTooltip);
+		}
 		tooltip.tooltipEnabled = true;
 	}
 }

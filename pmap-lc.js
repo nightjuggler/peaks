@@ -477,7 +477,7 @@ addFunctions.addPeakOverlay = function(geojson)
 		const p = feature.properties;
 		return L.marker(latlng, {icon: peakIcon(p)})
 			.bindPopup(popupHTML(latlng.lng, latlng.lat, p))
-			.on('popupopen', e => enableTooltips(e.popup.getElement()))
+			.on('popupopen', e => enableTooltips(e.popup.getElement(), true))
 			.on('dblclick', zoomTo(latlng));
 	}
 

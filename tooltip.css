@@ -41,3 +41,13 @@
 	border-right: 14px double rgba(240,255,255,0);
 	border-top: 40px solid rgb(240,255,255);
 }
+.tooltipToggle {
+	color: rgb(140,140,140);
+	cursor: pointer;
+	display: inline-block;
+	margin-left: 2px;
+	line-height: 0.75;
+}
+.tooltipToggle:hover {
+	color: rgb(0,0,238);
+}

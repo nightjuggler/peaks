@@ -496,7 +496,7 @@ function createMap(options)
 			const popup = new mapboxgl.Popup({anchor: 'bottom', offset: [0, -8]})
 				.setLngLat(ll)
 				.setHTML(popupHTML(ll[0], ll[1], p))
-				.on('open', e => enableTooltips(e.target.getElement()));
+				.on('open', e => enableTooltips(e.target.getElement(), true));
 
 			return new mapboxgl.Marker({element: icon})
 				.setLngLat(ll)
