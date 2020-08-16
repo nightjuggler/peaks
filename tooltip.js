@@ -12,6 +12,7 @@ const openIcon = '\u25B2'; // black up-pointing triangle
 function positionTooltip(tooltip, host)
 {
 	tooltip.style.display = 'block';
+	activeTooltip = tooltip;
 
 	const arrow = tooltip.lastElementChild;
 
@@ -62,43 +63,57 @@ function toggleTooltip(event)
 		}
 	}
 
-	activeTooltip = tooltip;
 	toggle.firstChild.nodeValue = openIcon;
 	positionTooltip(tooltip, toggle);
-
 	return false;
 }
 function showTooltip(event)
 {
-	const tooltips = event.currentTarget.getElementsByClassName('tooltip');
-	positionTooltip(tooltips[0]);
+	const tooltip = event.currentTarget.getElementsByClassName('tooltip')[0];
+	positionTooltip(tooltip);
 	return false;
 }
 function hideTooltip(event)
 {
-	const tooltips = event.currentTarget.getElementsByClassName('tooltip');
-	tooltips[0].style.display = 'none';
+	const tooltip = event.currentTarget.getElementsByClassName('tooltip')[0];
+	tooltip.style.display = '';
+	if (tooltip === activeTooltip)
+		activeTooltip = undefined;
 	return false;
 }
 function enableTooltips(element, openOnClick=false)
 {
+	const mode = openOnClick ? 1 : 2;
+
 	for (const tooltip of element.getElementsByClassName('tooltip'))
 	{
-		if (tooltip.tooltipEnabled) continue;
-
-		const arrowDiv = document.createElement('div');
-		const arrow1 = document.createElement('div');
-		const arrow2 = document.createElement('div');
-
-		arrowDiv.className = 'tooltipArrowDiv';
-		arrow1.className = 'tooltipArrow1';
-		arrow2.className = 'tooltipArrow2';
-
-		arrowDiv.appendChild(arrow1);
-		arrowDiv.appendChild(arrow2);
-		tooltip.appendChild(arrowDiv);
-
 		const parent = tooltip.parentElement;
+
+		if (tooltip.tooltipMode) {
+			if (tooltip.tooltipMode === mode) continue;
+			if (tooltip === activeTooltip) {
+				tooltip.style.display = '';
+				activeTooltip = undefined;
+			}
+			if (openOnClick) {
+				parent.removeEventListener('mouseenter', showTooltip);
+				parent.removeEventListener('mouseleave', hideTooltip);
+			} else
+				parent.removeChild(tooltip.nextSibling);
+		} else {
+			const arrowDiv = document.createElement('div');
+			const arrow1 = document.createElement('div');
+			const arrow2 = document.createElement('div');
+
+			arrowDiv.className = 'tooltipArrowDiv';
+			arrow1.className = 'tooltipArrow1';
+			arrow2.className = 'tooltipArrow2';
+
+			arrowDiv.appendChild(arrow1);
+			arrowDiv.appendChild(arrow2);
+			tooltip.appendChild(arrowDiv);
+		}
+
 		if (openOnClick) {
 			const toggle = document.createElement('div');
 			toggle.className = 'tooltipToggle';
@@ -109,7 +124,7 @@ function enableTooltips(element, openOnClick=false)
 			parent.addEventListener('mouseenter', showTooltip);
 			parent.addEventListener('mouseleave', hideTooltip);
 		}
-		tooltip.tooltipEnabled = true;
+		tooltip.tooltipMode = mode;
 	}
 }
 	window.addEventListener('DOMContentLoaded', () => enableTooltips(document.body));

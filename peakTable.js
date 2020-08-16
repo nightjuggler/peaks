@@ -1,4 +1,4 @@
-/* globals document, Option, window */
+/* globals document, Option, window, enableTooltips */
 (function() {
 'use strict';
 
@@ -733,17 +733,13 @@ function clickMobile()
 {
 	let elem = document.getElementById('headerRight');
 	if (!elem) return;
-
-	elem = elem.firstChild; // the div containing the text node
-	if (!elem) return;
-
-	elem = elem.firstChild; // the text node
-	if (!elem) return;
+	if (!(elem = elem.firstChild)) return; // the button containing the text node
+	if (!(elem = elem.firstChild)) return; // the text node
 
 	closeActivePopup();
 
-	if (elem.nodeValue === 'MOBILE')
-	{
+	mobileMode = !mobileMode;
+	if (mobileMode) {
 		Object.values(mapLinkHash).forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
 			parent.removeEventListener('mouseenter', showMapLinkIcon);
@@ -751,10 +747,7 @@ function clickMobile()
 			mapLinkSpan.className = 'mapLink';
 		});
 		elem.nodeValue = 'DESKTOP';
-		mobileMode = true;
-	}
-	else if (elem.nodeValue === 'DESKTOP')
-	{
+	} else {
 		Object.values(mapLinkHash).forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
 			parent.addEventListener('mouseenter', showMapLinkIcon);
@@ -762,8 +755,8 @@ function clickMobile()
 			mapLinkSpan.className = 'mapLinkHidden';
 		});
 		elem.nodeValue = 'MOBILE';
-		mobileMode = false;
 	}
+	enableTooltips(document.body, mobileMode);
 }
 function removeLandColumn(row)
 {
