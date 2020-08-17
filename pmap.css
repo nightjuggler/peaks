@@ -57,6 +57,12 @@ a {
 	padding-left: 2px;
 	padding-right: 2px;
 }
+.pagerNext {
+	padding-right: 4px;
+}
+.pagerPrev {
+	padding-left: 4px;
+}
 .pagerText {
 	padding-left: 4px;
 	padding-right: 4px;

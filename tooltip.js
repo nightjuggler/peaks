@@ -6,8 +6,16 @@ const enableTooltips = (function() {
 
 let activeTooltip;
 
-const closedIcon = '\u25C4\uFE0E'; // black left-pointing pointer
-const openIcon = '\u25B2'; // black up-pointing triangle
+// https://en.wikipedia.org/wiki/Media_control_symbols
+// const ejectSymbol = '\u23CF\uFE0E';
+
+// https://en.wikipedia.org/wiki/Geometric_Shapes
+const leftTriangle = '\u25C0\uFE0E'; // black left-pointing triangle
+const leftPointer = '\u25C4'; // black left-pointing pointer
+const upTriangle = '\u25B2'; // black up-pointing triangle
+
+const closedIcon = window.matchMedia('(hover: none)').matches ? leftTriangle : leftPointer;
+const openIcon = upTriangle;
 
 function positionTooltip(tooltip, host)
 {

@@ -1051,8 +1051,17 @@ function addPager(spec, numPages, showPage)
 	const textSpan = document.createElement('span');
 	const textNode = document.createTextNode(page + textSuffix);
 
-	prevSpan.appendChild(document.createTextNode('\u25C4'));
-	nextSpan.appendChild(document.createTextNode('\u25BA'));
+	// See https://en.wikipedia.org/wiki/Geometric_Shapes
+	const [prevText, nextText] = window.matchMedia('(hover: none)').matches ? [
+		'\u25C0\uFE0E', // black left-pointing triangle
+		'\u25B6\uFE0E', // black right-pointing triangle
+	] : [
+		'\u25C4', // black left-pointing pointer
+		'\u25BA', // black right-pointing pointer
+	];
+
+	prevSpan.appendChild(document.createTextNode(prevText));
+	nextSpan.appendChild(document.createTextNode(nextText));
 	textSpan.appendChild(textNode);
 
 	div.appendChild(prevSpan).className = 'pagerPrev';
