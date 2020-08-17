@@ -42,11 +42,15 @@
 	border-top: 40px solid rgb(240,255,255);
 }
 .tooltipToggle {
+	background-color: transparent;
+	border: none;
 	color: rgb(140,140,140);
 	cursor: pointer;
-	display: inline-block;
-	margin-left: 2px;
+	font-family: verdana;
+	font-size: 10pt;
 	line-height: 0.75;
+	margin: 0 0 0 2px;
+	padding: 0;
 }
 .tooltipToggle:hover {
 	color: rgb(0,0,238);

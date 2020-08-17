@@ -123,7 +123,7 @@ function enableTooltips(element, openOnClick=false)
 		}
 
 		if (openOnClick) {
-			const toggle = document.createElement('div');
+			const toggle = document.createElement('button');
 			toggle.className = 'tooltipToggle';
 			toggle.appendChild(document.createTextNode(closedIcon));
 			toggle.addEventListener('click', toggleTooltip);
