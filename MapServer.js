@@ -1052,7 +1052,9 @@ function addPager(spec, numPages, showPage)
 	const textNode = document.createTextNode(page + textSuffix);
 
 	// See https://en.wikipedia.org/wiki/Geometric_Shapes
-	const [prevText, nextText] = window.matchMedia('(hover: none)').matches ? [
+	// The left/right pointer looks better in Firefox on the desktop.
+	// Use the left/right triangle in all other cases.
+	const [prevText, nextText] = window.navigator.vendor !== '' || window.matchMedia('(hover: none)').matches ? [
 		'\u25C0\uFE0E', // black left-pointing triangle
 		'\u25B6\uFE0E', // black right-pointing triangle
 	] : [

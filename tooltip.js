@@ -14,7 +14,9 @@ const leftTriangle = '\u25C0\uFE0E'; // black left-pointing triangle
 const leftPointer = '\u25C4'; // black left-pointing pointer
 const upTriangle = '\u25B2'; // black up-pointing triangle
 
-const closedIcon = window.matchMedia('(hover: none)').matches ? leftTriangle : leftPointer;
+// The left pointer looks better in Firefox on the desktop. Use the left triangle in all other cases.
+const closedIcon = window.navigator.vendor === '' && !window.matchMedia('(hover: none)').matches ?
+	leftPointer : leftTriangle;
 const openIcon = upTriangle;
 
 function positionTooltip(tooltip, host)
