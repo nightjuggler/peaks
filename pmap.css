@@ -52,10 +52,14 @@ a {
 }
 .pagerNext,
 .pagerPrev {
+	background-color: transparent;
+	border: none;
 	color: rgb(0,0,238);
 	cursor: pointer;
-	padding-left: 2px;
-	padding-right: 2px;
+	font-family: verdana;
+	font-size: 10pt;
+	margin: 0;
+	padding: 0 2px;
 }
 .pagerNext {
 	padding-right: 4px;

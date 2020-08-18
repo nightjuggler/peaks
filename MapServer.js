@@ -1046,8 +1046,8 @@ function addPager(spec, numPages, showPage)
 	const textSuffix = '/' + numPages;
 
 	const div = document.createElement('div');
-	const prevSpan = document.createElement('span');
-	const nextSpan = document.createElement('span');
+	const prevSpan = document.createElement('button');
+	const nextSpan = document.createElement('button');
 	const textSpan = document.createElement('span');
 	const textNode = document.createTextNode(page + textSuffix);
 
