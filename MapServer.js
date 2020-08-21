@@ -310,6 +310,19 @@ items: {
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
 			'National Interagency Fire Center</a>',
 					},
+					calfire: {
+		name: 'CAL FIRE Units',
+		url: 'https://egis.fire.ca.gov/arcgis/rest/services/FRAP/CalFireUnits/MapServer',
+		queryFields: ['OBJECTID', 'UNIT', 'UNITCODE'],
+		attribution: '[FRAP]',
+					},
+					czuevac: {
+		name: 'CAL FIRE CZU|Evacuation Zones',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/CZU_Lightning_Evac/FeatureServer',
+		queryFields: ['OBJECTID', 'Status', 'zone_name', 'zone_name_', 'zone_numbe'],
+		attribution: '[CAL FIRE]',
+					},
 					modis: {
 		name: 'MODIS',
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
@@ -325,7 +338,7 @@ items: {
 			'NASA</a>',
 					},
 				},
-				order: ['current', 'archived', 'modis', 'viirs'],
+				order: ['current', 'archived', 'modis', 'viirs', 'czuevac', 'calfire'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -494,7 +507,9 @@ const {
 		counties: countySpec,
 		fires: { items: {
 			archived: arfireSpec,
+			calfire: calfireSpec,
 			current: fireSpec,
+			czuevac: czuevacSpec,
 			modis: modisSpec,
 			viirs: viirsSpec,
 		}},
@@ -831,6 +846,33 @@ arfireSpec.popup = {
 	template: fireSpec.popup.template,
 	show: fireSpec.popup.show,
 };
+calfireSpec.popup = {
+	template: 'text|ztf',
+	show(attr)
+	{
+		setPopupText(this, 'CAL FIRE ' + attr.UNIT + ' (' + attr.UNITCODE + ')');
+		return '#0000FF';
+	}
+};
+czuevacSpec.popup = {
+	template: 'text|ztf|br|text',
+	show(attr)
+	{
+		let name = attr.zone_name_;
+		if (attr.zone_name)
+			name += ' (' + attr.zone_name + ')';
+
+		setPopupText(this, 'Evacuation Zone ' + attr.zone_numbe, name);
+		return '#FF6347';
+	}
+};
+czuevacSpec.style = ({properties: {Status: status}}) => ({
+	color: status === 'ORDER' ? '#FF00FF' :
+		status === 'WARNING' ? '#FFFF00' :
+		status ? '#778899' : '#00FF00',
+	weight: 2,
+});
+czuevacSpec.where = 'Status <> \'\'';
 let querySpecs = [
 	aiannhSpec,
 	npsSpec,
@@ -852,6 +894,8 @@ let querySpecs = [
 	blmSpec,
 	fireSpec,
 	arfireSpec,
+	calfireSpec,
+	czuevacSpec,
 ];
 function esriFeatureLayer(spec)
 {
@@ -861,6 +905,7 @@ function esriFeatureLayer(spec)
 	};
 	if (spec.pointToLayer) options.pointToLayer = spec.pointToLayer;
 	if (spec.style) options.style = spec.style;
+	if (spec.where) options.where = spec.where;
 
 	return L.esri.featureLayer(options);
 }
