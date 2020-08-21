@@ -396,13 +396,14 @@ function createMap(options)
 		centerMarker.setLatLng(updateCenter());
 	});
 
-	function addOverlayMenu(lcdjson)
-	{
-		mapBounds.addSetter();
-		layerControl.addOverlays(lcdjson, queryString.overlays, mapBounds);
+	mapBounds.addSetter();
+
+	pmapShared.loadJSON('json/pmap/lcd.json', json => {
+		layerControl.addOverlays(json, queryString.overlays, mapBounds);
 		mapBounds.delSetter();
-	}
-	pmapShared.loadJSON('json/pmap/lcd.json', addOverlayMenu);
+	}, () => {
+		mapBounds.delSetter();
+	});
 }
 (function()
 {
