@@ -323,6 +323,14 @@ items: {
 		queryFields: ['OBJECTID', 'Status', 'zone_name', 'zone_name_', 'zone_numbe'],
 		attribution: '[CAL FIRE]',
 					},
+					scuevac: {
+		name: 'CAL FIRE SCU|Evacuation Zones',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView/FeatureServer',
+		queryLayer: '1',
+		queryFields: ['OBJECTID', 'Name', 'Level_'],
+		attribution: '[CAL FIRE]',
+					},
 					modis: {
 		name: 'MODIS',
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
@@ -338,7 +346,7 @@ items: {
 			'NASA</a>',
 					},
 				},
-				order: ['current', 'archived', 'modis', 'viirs', 'czuevac', 'calfire'],
+				order: ['current', 'archived', 'modis', 'viirs', 'calfire', 'czuevac', 'scuevac'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -511,6 +519,7 @@ const {
 			current: fireSpec,
 			czuevac: czuevacSpec,
 			modis: modisSpec,
+			scuevac: scuevacSpec,
 			viirs: viirsSpec,
 		}},
 		fs: fsSpec,
@@ -873,6 +882,23 @@ czuevacSpec.style = ({properties: {Status: status}}) => ({
 	weight: 2,
 });
 czuevacSpec.where = 'Status <> \'\'';
+scuevacSpec.popup = {
+	template: 'text|ztf',
+	show(attr)
+	{
+		const {Name: name, Level_: level} = attr;
+		let text = 'Evacuation ' + (level === 'Order' || level === 'Warning' ? level : 'Zone');
+		if (name) text += ' (' + name + ')';
+		setPopupText(this, text);
+		return '#FF6347';
+	}
+};
+scuevacSpec.style = ({properties: {Level_: status}}) => ({
+	color: status === 'Order' ? '#FF00FF' :
+		status === 'Warning' ? '#FFFF00' :
+		status ? '#778899' : '#00FF00',
+	weight: 2,
+});
 let querySpecs = [
 	aiannhSpec,
 	npsSpec,
@@ -896,6 +922,7 @@ let querySpecs = [
 	arfireSpec,
 	calfireSpec,
 	czuevacSpec,
+	scuevacSpec,
 ];
 function esriFeatureLayer(spec)
 {

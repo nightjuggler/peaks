@@ -384,6 +384,12 @@ class NIFC_ArchivedPerimetersQuery(Query):
 	serverType = "Feature"
 	layer = 0 # sr = 4326
 
+class CalFire_UnitsQuery(Query):
+	name = "Cal Fire Units"
+	home = "https://egis.fire.ca.gov/arcgis/rest/services"
+	service = "FRAP/CalFireUnits"
+	layer = 0 # sr = 102100
+
 class CalFireCZU_EvacQuery(Query):
 	name = "Cal Fire CZU Evacuation Zones"
 	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
@@ -391,11 +397,12 @@ class CalFireCZU_EvacQuery(Query):
 	serverType = "Feature"
 	layer = 0 # sr = 4326
 
-class CalFire_UnitsQuery(Query):
-	name = "Cal Fire Units"
-	home = "https://egis.fire.ca.gov/arcgis/rest/services"
-	service = "FRAP/CalFireUnits"
-	layer = 0 # sr = 102100
+class CalFireSCU_EvacQuery(Query):
+	name = "Cal Fire SCU Evacuation Zones"
+	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
+	service = "2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView"
+	serverType = "Feature"
+	layer = 1 # sr = 3310
 
 class GeoMAC_CurrentPerimetersQuery(Query):
 	name = "GeoMAC Current Fire Perimeters"
@@ -600,13 +607,14 @@ def main():
 		"blm": BLM_Query,
 		"ca_parks": CA_StateParksQuery,
 		"calfire": CalFire_UnitsQuery,
+		"calfire_czu_evac": CalFireCZU_EvacQuery,
+		"calfire_scu_evac": CalFireSCU_EvacQuery,
 		"cnra_conservancy": CNRA_ConservancyQuery,
 		"county": TigerCountyQuery,
 		"county_census": CensusCountyQuery,
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"cpad_holdings": CPAD_HoldingsQuery,
-		"czu_evac": CalFireCZU_EvacQuery,
 		"fires_current": NIFC_CurrentPerimetersQuery,
 		"fires_archived": NIFC_ArchivedPerimetersQuery,
 		"fs": USFS_Query,
