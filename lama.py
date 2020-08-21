@@ -393,7 +393,7 @@ class CalFire_UnitsQuery(Query):
 class CalFireCZU_EvacQuery(Query):
 	name = "Cal Fire CZU Evacuation Zones"
 	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
-	service = "CZU_Lightning_Evac"
+	service = "CZU_Lightning_Evac_VIEW"
 	serverType = "Feature"
 	layer = 0 # sr = 4326
 
