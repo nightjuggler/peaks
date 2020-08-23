@@ -298,7 +298,7 @@ items: {
 		name: 'Current Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Public_Wildfire_Perimeters_View/FeatureServer',
-		queryFields: ['OBJECTID', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
 			'National Interagency Fire Center</a>',
 					},
@@ -306,7 +306,7 @@ items: {
 		name: 'Archived Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Archived_Wildfire_Perimeters2/FeatureServer',
-		queryFields: ['OBJECTID', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
 			'National Interagency Fire Center</a>',
 					},
@@ -842,7 +842,9 @@ fireSpec.popup = {
 	template: 'text|br|text|ztf|br|text',
 	show(attr)
 	{
-		const name = attr.IncidentName + ' Fire';
+		const {ComplexName: complex, IncidentName: incident} = attr;
+		let name = incident + ' Fire';
+		if (complex && complex !== incident) name += ' (' + complex + ')';
 		const size = formatAcres(attr.GISAcres, 2);
 		const date = getDateTime(attr.DateCurrent);
 
