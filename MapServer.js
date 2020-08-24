@@ -328,7 +328,7 @@ items: {
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView/FeatureServer',
 		queryLayer: '1',
-		queryFields: ['OBJECTID', 'Name', 'Level_'],
+		queryFields: ['OBJECTID', 'Level_', 'Name', 'Zone'],
 		attribution: '[CAL FIRE]',
 					},
 					modis: {
@@ -885,15 +885,22 @@ czuevacSpec.style = ({properties: {status}}) => ({
 		status === 'NORMAL' ? '#00FF00' : '#778899',
 	weight: 2,
 });
-czuevacSpec.where = 'zstatus <> 1';
+czuevacSpec.where = 'status <> \'NORMAL\'';
 scuevacSpec.popup = {
 	template: 'text|ztf',
 	show(attr)
 	{
-		let {Level_: type, Name: name} = attr;
+		let {Level_: type, Name: name, Zone: zone} = attr;
 
-		if (type !== 'Order' && type !== 'Warning') type = 'Zone';
-		name = name ? ' (' + name + ')' : '';
+		if (zone)
+			name = name ? zone + ' / ' + name : zone;
+
+		if (type === 'Order' || type === 'Warning') {
+			name = name ? ' (Zone ' + name + ')' : '';
+		} else {
+			type = 'Zone';
+			name = name ? ' ' + name : '';
+		}
 
 		setPopupText(this, 'Evacuation ' + type + name);
 		return '#FF6347';
@@ -902,9 +909,10 @@ scuevacSpec.popup = {
 scuevacSpec.style = ({properties: {Level_: status}}) => ({
 	color: status === 'Order' ? '#FF00FF' :
 		status === 'Warning' ? '#FFFF00' :
-		status ? '#778899' : '#00FF00',
+		status === 'None' ? '#00FF00' : '#778899',
 	weight: 2,
 });
+scuevacSpec.where = 'Level_ <> \'None\'';
 let querySpecs = [
 	aiannhSpec,
 	npsSpec,
