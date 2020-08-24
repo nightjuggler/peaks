@@ -961,6 +961,7 @@ modisSpec.pointToLayer = function(feature, latlng) {
 		fillOpacity: 0.5,
 	});
 };
+viirsSpec.where = 'frp >= 1 AND esritimeutc >= CURRENT_TIMESTAMP - 2';
 viirsSpec.pointToLayer = function(feature, latlng) {
 	const frp = feature.properties.frp;
 
