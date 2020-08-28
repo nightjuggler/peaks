@@ -871,18 +871,20 @@ czuevacSpec.popup = {
 	{
 		let {status: type, zname_l: name, zname_s: abbr} = attr;
 
-		type = type === 'ORDER' ? 'Order' : type === 'WARNING' ? 'Warning' : 'Zone';
+		type = type === 'ORDER' ? 'Evacuation Order' :
+			type === 'WARNING' ? 'Evacuation Warning' :
+			type === 'REPOPULATION' ? 'Repopulation Zone' : 'Evacuation Zone';
 		if (abbr)
 			name += ' (' + abbr + ')';
 
-		setPopupText(this, 'Evacuation ' + type, name);
+		setPopupText(this, type, name);
 		return '#FF6347';
 	}
 };
 czuevacSpec.style = ({properties: {status}}) => ({
 	color: status === 'ORDER' ? '#FF00FF' :
 		status === 'WARNING' ? '#FFFF00' :
-		status === 'NORMAL' ? '#00FF00' : '#778899',
+		status === 'REPOPULATION' ? '#00FF00' : '#778899',
 	weight: 2,
 });
 czuevacSpec.where = 'status <> \'NORMAL\'';
@@ -896,20 +898,21 @@ scuevacSpec.popup = {
 			name = name ? zone + ' / ' + name : zone;
 
 		if (type === 'Order' || type === 'Warning') {
+			type = 'Evacuation ' + type;
 			name = name ? ' (Zone ' + name + ')' : '';
 		} else {
-			type = 'Zone';
+			type = type === 'RePop' ? 'Repopulation Zone' : 'Evacuation Zone';
 			name = name ? ' ' + name : '';
 		}
 
-		setPopupText(this, 'Evacuation ' + type + name);
+		setPopupText(this, type + name);
 		return '#FF6347';
 	}
 };
 scuevacSpec.style = ({properties: {Level_: status}}) => ({
 	color: status === 'Order' ? '#FF00FF' :
 		status === 'Warning' ? '#FFFF00' :
-		status === 'None' ? '#00FF00' : '#778899',
+		status === 'RePop' ? '#00FF00' : '#778899',
 	weight: 2,
 });
 scuevacSpec.where = 'Level_ <> \'None\'';
