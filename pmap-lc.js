@@ -897,6 +897,15 @@ function getItem(path, item)
 	}
 	return item;
 }
+function getItemFromPath(path, root)
+{
+	const aliases = root.aliases;
+
+	if (aliases && aliases.hasOwnProperty(path))
+		path = aliases[path];
+
+	return getItem(path.split('_'), root);
+}
 function selectOverlays(root, paths, mapBounds)
 {
 	for (const path of paths)
@@ -1098,7 +1107,7 @@ function selectTileOverlays(root, paths)
 {
 	for (const path of paths)
 	{
-		const item = getItem(path.split('_'), root);
+		const item = getItemFromPath(path, root);
 		if (item && item.input && !item.input.checked)
 			item.input.click();
 	}
@@ -1151,7 +1160,7 @@ function selectGeometryQueries(root, paths)
 {
 	for (const [path, color] of paths)
 	{
-		const item = getItem(path.split('_'), root);
+		const item = getItemFromPath(path, root);
 		if (item && item.popup) {
 			item.popup.runGeometryQuery = true;
 			if (color)
@@ -1163,7 +1172,7 @@ function selectPointQueries(root, paths)
 {
 	for (const path of paths)
 	{
-		const item = getItem(path.split('_'), root);
+		const item = getItemFromPath(path, root);
 		if (item && item.queryToggle && !item.queryToggle.checked)
 			item.toggleQuery();
 	}

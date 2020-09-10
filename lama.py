@@ -404,6 +404,20 @@ class CalFireSCU_EvacQuery(Query):
 	serverType = "Feature"
 	layer = 1 # sr = 3310
 
+class SonomaEvacAreasQuery(Query):
+	name = "Sonoma County Evacuation Areas"
+	home = "https://services1.arcgis.com/P5Mv5GY5S66M8Z1Q/arcgis/rest/services"
+	service = "Sonoma_County_Evacuation_Areas_public"
+	serverType = "Feature"
+	layer = 0 # sr = 102100 (3857)
+
+class SonomaEvacZonesQuery(Query):
+	name = "Sonoma County Evacuation Zones"
+	home = "https://services1.arcgis.com/P5Mv5GY5S66M8Z1Q/arcgis/rest/services"
+	service = "Sonoma_County_Evacuation_Zone_Reference"
+	serverType = "Feature"
+	layer = 0 # sr = 102100 (3857)
+
 class GeoMAC_CurrentPerimetersQuery(Query):
 	name = "GeoMAC Current Fire Perimeters"
 	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
@@ -639,6 +653,8 @@ def main():
 		"scc_protected": SCC_ProtectedLandsQuery,
 		"slo": SLO_OpenSpaceQuery,
 		"sma": BLM_SMA_Query,
+		"sonoma_evac_areas": SonomaEvacAreasQuery,
+		"sonoma_evac_zones": SonomaEvacZonesQuery,
 		"state": TigerStateQuery,
 		"topo": USGS_TopoQuery,
 		"topoview": USGS_TopoViewQuery,

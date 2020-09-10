@@ -310,27 +310,6 @@ items: {
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
 			'National Interagency Fire Center</a>',
 					},
-					calfire: {
-		name: 'CAL FIRE Units',
-		url: 'https://egis.fire.ca.gov/arcgis/rest/services/FRAP/CalFireUnits/MapServer',
-		queryFields: ['OBJECTID', 'UNIT', 'UNITCODE'],
-		attribution: '[FRAP]',
-					},
-					czuevac: {
-		name: 'CAL FIRE CZU|Evacuation Zones',
-		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/CZU_Lightning_Evac_VIEW/FeatureServer',
-		queryFields: ['OBJECTID', 'status', 'zname_l', 'zname_s'],
-		attribution: '[CAL FIRE]',
-					},
-					scuevac: {
-		name: 'CAL FIRE SCU|Evacuation Zones',
-		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView/FeatureServer',
-		queryLayer: '1',
-		queryFields: ['OBJECTID', 'Level_', 'Name', 'Zone'],
-		attribution: '[CAL FIRE]',
-					},
 					modis: {
 		name: 'MODIS',
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
@@ -346,7 +325,7 @@ items: {
 			'NASA</a>',
 					},
 				},
-				order: ['current', 'archived', 'modis', 'viirs', 'calfire', 'czuevac', 'scuevac'],
+				order: ['current', 'archived', 'modis', 'viirs'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -397,6 +376,40 @@ items: {
 		queryFields: ['OBJECTID', 'MNG_AGNCY', 'SITE_NAME'],
 		attribution: '[GreenInfo Network]',
 			},
+			fire: {
+				name: 'Wildfires',
+				items: {
+					calfire: {
+		name: 'CAL FIRE Units',
+		url: 'https://egis.fire.ca.gov/arcgis/rest/services/FRAP/CalFireUnits/MapServer',
+		queryFields: ['OBJECTID', 'UNIT', 'UNITCODE'],
+		attribution: '[FRAP]',
+					},
+					czuevac: {
+		name: 'CAL FIRE CZU|Evacuation Zones',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/CZU_Lightning_Evac_VIEW/FeatureServer',
+		queryFields: ['OBJECTID', 'status', 'zname_l', 'zname_s'],
+		attribution: '[CAL FIRE]',
+					},
+					scuevac: {
+		name: 'CAL FIRE SCU|Evacuation Zones',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView/FeatureServer',
+		queryLayer: '1',
+		queryFields: ['OBJECTID', 'Level_', 'Name', 'Zone'],
+		attribution: '[CAL FIRE]',
+					},
+					sonomaevac: {
+		name: 'Sonoma County|Evacuation Zones',
+		url: 'https://services1.arcgis.com/P5Mv5GY5S66M8Z1Q/arcgis/rest/services' +
+			'/Sonoma_County_Evacuation_Zone_Reference/FeatureServer',
+		queryFields: ['OBJECTID', 'Number', 'Status'],
+		attribution: '[Sonoma County]',
+					},
+				},
+				order: ['calfire', 'czuevac', 'scuevac', 'sonomaevac'],
+			},
 			parks: {
 		name: 'State Parks',
 		url: 'https://services.gis.ca.gov/arcgis/rest/services/Boundaries/CA_State_Parks/MapServer',
@@ -411,7 +424,7 @@ items: {
 		attribution: '[USPS]',
 			},
 		},
-		order: ['counties', 'cpad', 'parks', 'zip'],
+		order: ['counties', 'cpad', 'parks', 'fire', 'zip'],
 	},
 	nv: {
 		name: 'Nevada',
@@ -427,6 +440,17 @@ items: {
 		order: ['parks'],
 	},
 	w: 'us',
+},
+aliases: {
+	'calfire': 'ca_fire_calfire',
+	'czuevac': 'ca_fire_czuevac',
+	'fires': 'us_fires_current',
+	'modis': 'us_fires_modis',
+	'scuevac': 'ca_fire_scuevac',
+	'us_fires_calfire': 'ca_fire_calfire',
+	'us_fires_czuevac': 'ca_fire_czuevac',
+	'us_fires_scuevac': 'ca_fire_scuevac',
+	'viirs': 'us_fires_viirs',
 },
 order: ['us', 'ca', 'nv'],
 };
@@ -515,11 +539,8 @@ const {
 		counties: countySpec,
 		fires: { items: {
 			archived: arfireSpec,
-			calfire: calfireSpec,
 			current: fireSpec,
-			czuevac: czuevacSpec,
 			modis: modisSpec,
-			scuevac: scuevacSpec,
 			viirs: viirsSpec,
 		}},
 		fs: fsSpec,
@@ -535,6 +556,12 @@ const {
 	}},
 	ca: { items: {
 		cpad: cpadSpec,
+		fire: { items: {
+			calfire: calfireSpec,
+			czuevac: czuevacSpec,
+			scuevac: scuevacSpec,
+			sonomaevac: sonomaevacSpec,
+		}},
 		parks: caParkSpec,
 		zip: caZipSpec,
 	}},
@@ -916,6 +943,25 @@ scuevacSpec.style = ({properties: {Level_: status}}) => ({
 	weight: 2,
 });
 scuevacSpec.where = 'Level_ <> \'None\'';
+sonomaevacSpec.popup = {
+	template: 'text|ztf',
+	show(attr)
+	{
+		const {Status: type, Number: zone} = attr;
+
+		const text = type === 'Evacuation Order' || type === 'Evacuation Warning' ?
+			type + ' (Zone ' + zone + ')' : 'Evacuation Zone ' + zone;
+
+		setPopupText(this, text);
+		return '#FF6347';
+	}
+};
+sonomaevacSpec.style = ({properties: {Status: status}}) => ({
+	color: status === 'Evacuation Order' ? '#FF00FF' :
+		status === 'Evacuation Warning' ? '#FFFF00' :
+		status === 'Open' ? '#00FF00' : '#778899',
+	weight: 2,
+});
 let querySpecs = [
 	aiannhSpec,
 	npsSpec,
@@ -940,6 +986,7 @@ let querySpecs = [
 	calfireSpec,
 	czuevacSpec,
 	scuevacSpec,
+	sonomaevacSpec,
 ];
 function esriFeatureLayer(spec)
 {
