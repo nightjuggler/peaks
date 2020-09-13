@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 #
 # lcd2json - Convert Layer Control Data to JSON
 #            Usage: ./lcd2json.py pmap.lcd > json/pmap/lcd.json
@@ -18,7 +18,7 @@ addPatterns = [
 ]
 
 def log(message, *formatArgs):
-	print >>sys.stderr, message.format(*formatArgs)
+	print(message.format(*formatArgs), file=sys.stderr)
 
 def err(*args):
 	log(*args)
@@ -133,13 +133,13 @@ def parseLCD(lcdFile):
 			fileName = 'json/' + '/'.join(path) + '.json'
 			try:
 				statinfo = os.stat(fileName + '.gz')
-			except OSError, e:
+			except OSError as e:
 				if e.errno != 2:
 					err('Line {}: stat("{}") failed: {} (errno {})',
 						lineNumber, fileName + '.gz', e.strerror, e.errno)
 				try:
 					statinfo = os.stat(fileName)
-				except OSError, e:
+				except OSError as e:
 					err('Line {}: stat("{}") failed: {} (errno {})',
 						lineNumber, fileName, e.strerror, e.errno)
 

@@ -1,12 +1,11 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 #
 # ppjson.py - Pretty Print JSON
 #
 import sys
-import types
 
 def log(message, *formatArgs):
-	print >>sys.stderr, message.format(*formatArgs)
+	print(message.format(*formatArgs), file=sys.stderr)
 
 level = 0
 write = sys.stdout.write
@@ -60,7 +59,7 @@ def ppList(o):
 		prettyPrint(o[0])
 		write(']')
 		return
-	if n == 2 and isinstance(o[0], (float, int, long)) and isinstance(o[1], (float, int, long)):
+	if n == 2 and isinstance(o[0], (float, int)) and isinstance(o[1], (float, int)):
 		write('[{},{}]'.format(o[0], o[1]))
 		return
 
@@ -90,10 +89,7 @@ def prettyPrint(o):
 	if objType is str:
 		write('"{}"'.format(o))
 
-	elif objType is unicode:
-		write('"{}"'.format(o.encode(errors='replace')))
-
-	elif objType in (bool, float, int, long):
+	elif objType in (bool, float, int):
 		write(str(o))
 
 	elif objType is dict:
@@ -102,7 +98,7 @@ def prettyPrint(o):
 	elif objType is list:
 		ppList(o)
 
-	elif objType is types.NoneType:
+	elif o is None:
 		write('null')
 
 	else:
