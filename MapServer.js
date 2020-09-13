@@ -299,16 +299,30 @@ items: {
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Public_Wildfire_Perimeters_View/FeatureServer',
 		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
-		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
-			'National Interagency Fire Center</a>',
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
+			'wildfire-perimeters">NIFC</a>',
 					},
 					archived: {
 		name: 'Archived Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Archived_Wildfire_Perimeters2/FeatureServer',
 		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
-		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/wildfire-perimeters">' +
-			'National Interagency Fire Center</a>',
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
+			'archived-wildfire-perimeters-2">NIFC</a>',
+					},
+					incidents: {
+		name: 'Current Incidents',
+		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
+			'/USA_Wildfires_v1/FeatureServer',
+		attribution: '[NIFC]',
+					},
+					perimeters: {
+		name: 'Current Perimeters|(Mirror)',
+		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
+			'/USA_Wildfires_v1/FeatureServer',
+		queryLayer: '1',
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		attribution: '[NIFC]',
 					},
 					modis: {
 		name: 'MODIS',
@@ -325,7 +339,7 @@ items: {
 			'NASA</a>',
 					},
 				},
-				order: ['current', 'archived', 'modis', 'viirs'],
+				order: ['current', 'perimeters', 'archived', 'incidents', 'modis', 'viirs'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -540,7 +554,9 @@ const {
 		fires: { items: {
 			archived: arfireSpec,
 			current: fireSpec,
+			incidents: fireIncidentSpec,
 			modis: modisSpec,
+			perimeters: firePerimeterSpec,
 			viirs: viirsSpec,
 		}},
 		fs: fsSpec,
@@ -884,6 +900,11 @@ arfireSpec.popup = {
 	template: fireSpec.popup.template,
 	show: fireSpec.popup.show,
 };
+firePerimeterSpec.style = () => ({color: '#FF0000', weight: 2});
+firePerimeterSpec.popup = {
+	template: fireSpec.popup.template,
+	show: fireSpec.popup.show,
+};
 calfireSpec.popup = {
 	template: 'text|ztf',
 	show(attr)
@@ -983,6 +1004,7 @@ let querySpecs = [
 	blmSpec,
 	fireSpec,
 	arfireSpec,
+	firePerimeterSpec,
 	calfireSpec,
 	czuevacSpec,
 	scuevacSpec,
@@ -1000,6 +1022,7 @@ function esriFeatureLayer(spec)
 
 	return L.esri.featureLayer(options);
 }
+modisSpec.where = 'FRP >= 1';
 modisSpec.pointToLayer = function(feature, latlng) {
 	const frp = feature.properties.FRP;
 
@@ -1035,7 +1058,7 @@ modisSpec.makeLayer = function(spec) {
 		return [
 			'<div>' + daynight(p.DAYNIGHT) + ' Fire</div>',
 			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + '</div>',
-			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
+			'<div class="peakDiv">' + lat + ',' + lng + '</div>',
 			'<div class="peakDiv">Radiative Power: ' + p.FRP + ' MW</div>',
 			'<div class="peakDiv">Brightness 21: ' + p.BRIGHTNESS + '&deg;K</div>',
 			'<div class="peakDiv">Brightness 31: ' + p.BRIGHT_T31 + '&deg;K</div>',
@@ -1058,10 +1081,44 @@ viirsSpec.makeLayer = function(spec) {
 		return [
 			'<div>' + daynight(p.daynight) + ' Fire</div>',
 			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + '</div>',
-			'<div class="peakDiv">' + lat + ',' + lng + '</a>',
+			'<div class="peakDiv">' + lat + ',' + lng + '</div>',
 			'<div class="peakDiv">Radiative Power: ' + p.frp + ' MW</div>',
 			'<div class="peakDiv">Confidence: ' + p.confidence + '</div>',
 			'<div class="peakDiv">Satellite: ' + satellite(p.satellite) + '</div>',
+		].join('');
+	}, {className: 'popupDiv'});
+};
+fireIncidentSpec.where = 'DailyAcres >= 1';
+fireIncidentSpec.pointToLayer = function(feature, latlng) {
+	const size = feature.properties.DailyAcres;
+
+	return L.circleMarker(latlng, {
+		color: '#FF00FF',
+		fillOpacity: 0.5,
+		radius: size < 10 ? 5 :
+			size < 100 ? 6 :
+			size < 300 ? 7 :
+			size < 1000 ? 8 :
+			size < 5000 ? 9 :
+			size < 10000 ? 10 :
+			size < 50000 ? 11 :
+			size < 100000 ? 12 :
+			size < 500000 ? 13 : 14,
+	});
+};
+fireIncidentSpec.makeLayer = function(spec) {
+	const div = s => '<div class="peakDiv">' + s + '</div>';
+	const div2 = (a, b) => div(a + (a.length > 21 ? '<br>' : ' ') + b);
+
+	return esriFeatureLayer(spec).bindPopup(function({feature}) {
+		const p = feature.properties;
+		const [lng, lat] = feature.geometry.coordinates;
+		return [
+			'<div>' + lat + ',' + lng + '</div>',
+			div2(p.IncidentName + ' Fire', formatAcres(p.DailyAcres)),
+			div('Discovered: ' + getDateTime(p.FireDiscoveryDateTime)),
+			div('Updated: ' + getDateTime(p.ModifiedOnDateTime)),
+			div('Containment: ' + (p.PercentContained || 0) + '%'),
 		].join('');
 	}, {className: 'popupDiv'});
 };

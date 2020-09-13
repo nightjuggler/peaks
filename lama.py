@@ -384,6 +384,20 @@ class NIFC_ArchivedPerimetersQuery(Query):
 	serverType = "Feature"
 	layer = 0 # sr = 4326
 
+class USA_WildfireIncidentsQuery(Query):
+	name = "USA Wildfire Incidents"
+	home = "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services"
+	service = "USA_Wildfires_v1"
+	serverType = "Feature"
+	layer = 0 # sr = 4326
+
+class USA_WildfirePerimetersQuery(Query):
+	name = "USA Wildfire Perimeters"
+	home = "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services"
+	service = "USA_Wildfires_v1"
+	serverType = "Feature"
+	layer = 1 # sr = 4326
+
 class CalFire_UnitsQuery(Query):
 	name = "Cal Fire Units"
 	home = "https://egis.fire.ca.gov/arcgis/rest/services"
@@ -629,6 +643,8 @@ def main():
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"cpad_holdings": CPAD_HoldingsQuery,
+		"fire_incidents": USA_WildfireIncidentsQuery,
+		"fire_perimeters": USA_WildfirePerimetersQuery,
 		"fires_current": NIFC_CurrentPerimetersQuery,
 		"fires_archived": NIFC_ArchivedPerimetersQuery,
 		"fs": USFS_Query,
