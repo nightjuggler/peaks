@@ -280,7 +280,7 @@ items: {
 			w: {
 		name: 'Wilderness Areas',
 		url: 'https://tiles.arcgis.com/tiles/ERdCHt0sNM6dENSD/arcgis/rest/services' +
-			'/Wilderness_Areas_of_the_United_States_010920/MapServer',
+			'/Wilderness_in_the_United_States_070820/MapServer',
 		tile: true,
 		opacity: 0.5,
 		attribution: 'Wilderness Institute',
