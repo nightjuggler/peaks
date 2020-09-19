@@ -407,7 +407,7 @@ class NIFC_HistoryBaseQuery(NIFC_BaseQuery):
 		fields["date"] = date
 
 class NIFC_AllYearsHistoryQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History All Years"
+	name = "Interagency Fire Perimeter History: All Years"
 	service = "Interagency_Fire_Perimeter_History_All_Years_Read_Only"
 
 class NIFC_Pre1980HistoryQuery(NIFC_HistoryBaseQuery):
@@ -444,7 +444,7 @@ class GeomacBaseQuery(NIFC_BaseQuery):
 		("uniquefireidentifier", "id"),
 	]
 	orderByFields = "uniquefireidentifier, perimeterdatetime"
-	printSpec = "{id:19} {date:19} {size} {name}"
+	printSpec = "{id:19} {date:19} {size:>10,.2f} ac {name}"
 
 	@classmethod
 	def processFields(self, fields):
@@ -452,8 +452,6 @@ class GeomacBaseQuery(NIFC_BaseQuery):
 
 		if fields["incomplex"] == "Y" and fields["name"] != fields["complex"]:
 			fields["name"] += " ({})".format(fields["complex"])
-
-		fields["size"] = "{:>10,.2f} ac".format(fields["size"])
 
 def newGeomacQuery(_name, _service, _layer):
 	class GeomacQuery(GeomacBaseQuery):
