@@ -406,33 +406,24 @@ class NIFC_HistoryBaseQuery(NIFC_BaseQuery):
 			date = ""
 		fields["date"] = date
 
-class NIFC_AllYearsHistoryQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: All Years"
-	service = "Interagency_Fire_Perimeter_History_All_Years_Read_Only"
+def newFireHistoryQuery(_service):
+	class NIFC_HistoryQuery(NIFC_HistoryBaseQuery):
+		name = "Interagency Fire Perimeter History: " + _service
+		service = "Interagency_Fire_Perimeter_History_" + _service + "_Read_Only"
 
-class NIFC_Pre1980HistoryQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: 1979 and Prior"
-	service = "Interagency_Fire_Perimeter_History_1979_And_Prior_Read_Only"
+	return NIFC_HistoryQuery
 
-class NIFC_1980sHistoryQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: 1980s"
-	service = "Interagency_Fire_Perimeter_History_1980s_Read_Only"
-
-class NIFC_1990sHistoryQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: 1990s"
-	service = "Interagency_Fire_Perimeter_History_1990s_Read_Only"
-
-class NIFC_2000sHistoryQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: 2000s"
-	service = "Interagency_Fire_Perimeter_History_2000s_Read_Only"
-
-class NIFC_CurrentDecadeQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: Current Decade"
-	service = "Interagency_Fire_Perimeter_History_Current_Decade_Read_Only"
-
-class NIFC_PreviousYearQuery(NIFC_HistoryBaseQuery):
-	name = "Interagency Fire Perimeter History: Previous Year"
-	service = "Interagency_Fire_Perimeter_History_Previous_Year_Read_Only"
+def addFireHistoryQueries(queryMap):
+	for key, service in (
+		("fire_history",         "All_Years"),
+		("fire_history_pre1980", "1979_And_Prior"),
+		("fire_history_1980s",   "1980s"),
+		("fire_history_1990s",   "1990s"),
+		("fire_history_2000s",   "2000s"),
+		("fire_history_decade",  "Current_Decade"),
+		("fire_history_year",    "Previous_Year"),
+	):
+		queryMap[key] = newFireHistoryQuery(service)
 
 class GeomacBaseQuery(NIFC_BaseQuery):
 	fields = [
@@ -481,18 +472,14 @@ def addGeomacQueries(queryMap):
 
 	queryMap["us_fires_2000_2018"] = newGeomacQuery(namePrefix + "2000-2018", service, 19)
 
-class NIFC_CurrentPerimetersQuery(Query):
+class NIFC_CurrentPerimetersQuery(NIFC_BaseQuery):
 	name = "NIFC Current Wildfire Perimeters"
-	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
 	service = "Public_Wildfire_Perimeters_View"
-	serverType = "Feature"
 	layer = 0 # sr = 4326
 
-class NIFC_ArchivedPerimetersQuery(Query):
+class NIFC_ArchivedPerimetersQuery(NIFC_BaseQuery):
 	name = "NIFC Archived Wildfire Perimeters"
-	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
 	service = "Archived_Wildfire_Perimeters2"
-	serverType = "Feature"
 	layer = 0 # sr = 4326
 
 class USA_WildfireIncidentsQuery(Query):
@@ -515,18 +502,14 @@ class CalFire_UnitsQuery(Query):
 	service = "FRAP/CalFireUnits"
 	layer = 0 # sr = 102100
 
-class CalFireCZU_EvacQuery(Query):
+class CalFireCZU_EvacQuery(NIFC_BaseQuery):
 	name = "Cal Fire CZU Evacuation Zones"
-	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
 	service = "CZU_Lightning_Evac_VIEW"
-	serverType = "Feature"
 	layer = 0 # sr = 4326
 
-class CalFireSCU_EvacQuery(Query):
+class CalFireSCU_EvacQuery(NIFC_BaseQuery):
 	name = "Cal Fire SCU Evacuation Zones"
-	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
 	service = "2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView"
-	serverType = "Feature"
 	layer = 1 # sr = 3310
 
 class SonomaEvacAreasQuery(Query):
@@ -696,13 +679,6 @@ def main():
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"cpad_holdings": CPAD_HoldingsQuery,
-		"fire_history": NIFC_AllYearsHistoryQuery,
-		"fire_history_pre1980": NIFC_Pre1980HistoryQuery,
-		"fire_history_1980s": NIFC_1980sHistoryQuery,
-		"fire_history_1990s": NIFC_1990sHistoryQuery,
-		"fire_history_2000s": NIFC_2000sHistoryQuery,
-		"fire_history_decade": NIFC_CurrentDecadeQuery,
-		"fire_history_year": NIFC_PreviousYearQuery,
 		"fire_incidents": USA_WildfireIncidentsQuery,
 		"fire_perimeters": USA_WildfirePerimetersQuery,
 		"fires_current": NIFC_CurrentPerimetersQuery,
@@ -747,6 +723,7 @@ def main():
 		"where":                args.where,
 	}
 
+	addFireHistoryQueries(queryMap)
 	addGeomacQueries(queryMap)
 
 	for k in queries:
