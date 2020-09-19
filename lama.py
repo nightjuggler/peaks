@@ -9,14 +9,22 @@ def makePrefixedFields(*prefixesWithFields):
 			for prefix, fields in prefixesWithFields
 				for field, alias in fields]
 
+def formatDate(date):
+	date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(date / 1000))
+	if date[-3:] == ":00":
+		return date[:-9] if date[-9:] == " 00:00:00" else date[:-3]
+	return date
+
 class Query(object):
 	fields = []
+	orderByFields = None
 	printSpec = None
 	processFields = None
 	serverType = "Map"
 
 	@classmethod
-	def query(self, geometry, distance=20, raw=False, returnGeometry=False, verbose=False, where=None):
+	def query(self, geometry, distance=20, raw=False, reprocess=False, returnGeometry=False,
+		verbose=False, where=None):
 		params = ["f=json"]
 		if geometry:
 			params.append("geometry={}".format(geometry))
@@ -26,6 +34,9 @@ class Query(object):
 
 		params.append("outFields={}".format(",".join([field for field, alias in self.fields])
 			if self.fields and not raw else "*"))
+
+		if self.orderByFields:
+			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
 
 		if returnGeometry:
 			params.append("returnGeometry=true")
@@ -38,7 +49,7 @@ class Query(object):
 			params.append("distance={}".format(distance))
 			params.append("units=esriSRUnit_Meter")
 		if where:
-			params.append("where={}".format(where))
+			params.append("where={}".format(where.replace(" ", "%20").replace("'", "%27")))
 
 		url = "{}/{}/{}Server/{}/query?{}".format(self.home, self.service, self.serverType, self.layer,
 			"&".join(params))
@@ -57,12 +68,13 @@ class Query(object):
 		else:
 			command.insert(1, "-s")
 
-		rc = subprocess.call(command)
-		if rc != 0:
-			if not verbose:
-				print(*command)
-			print("Exit code", rc)
-			return
+		if not reprocess:
+			rc = subprocess.call(command)
+			if rc != 0:
+				if not verbose:
+					print(*command)
+				print("Exit code", rc)
+				return
 
 		with open(fileName) as f:
 			jsonData = json.load(f)
@@ -369,6 +381,108 @@ class AIANNH_Query(Query):
 	fields = [("NAME", "name")]
 	printSpec = "{name}"
 
+class NIFC_BaseQuery(Query):
+	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
+	serverType = "Feature"
+
+class NIFC_HistoryBaseQuery(NIFC_BaseQuery):
+	layer = 0
+	fields = [
+		("FID", "id"),
+		("DATE_CUR", "date"),
+		("FIRE_YEAR", "year"),
+		("INCIDENT", "name"),
+		("GIS_ACRES", "size"),
+	]
+	orderByFields = "FID"
+	printSpec = "{id:6} | {year} | {date:16} | {size:>10,.2f} ac | {name}"
+
+	@classmethod
+	def processFields(self, fields):
+		date = fields["date"]
+		if len(date) == 12 and date.isdecimal() and date != "999909090000":
+			date = "{}-{}-{} {}:{}".format(date[:4], date[4:6], date[6:8], date[8:10], date[10:])
+		else:
+			date = ""
+		fields["date"] = date
+
+class NIFC_AllYearsHistoryQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History All Years"
+	service = "Interagency_Fire_Perimeter_History_All_Years_Read_Only"
+
+class NIFC_Pre1980HistoryQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History: 1979 and Prior"
+	service = "Interagency_Fire_Perimeter_History_1979_And_Prior_Read_Only"
+
+class NIFC_1980sHistoryQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History: 1980s"
+	service = "Interagency_Fire_Perimeter_History_1980s_Read_Only"
+
+class NIFC_1990sHistoryQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History: 1990s"
+	service = "Interagency_Fire_Perimeter_History_1990s_Read_Only"
+
+class NIFC_2000sHistoryQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History: 2000s"
+	service = "Interagency_Fire_Perimeter_History_2000s_Read_Only"
+
+class NIFC_CurrentDecadeQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History: Current Decade"
+	service = "Interagency_Fire_Perimeter_History_Current_Decade_Read_Only"
+
+class NIFC_PreviousYearQuery(NIFC_HistoryBaseQuery):
+	name = "Interagency Fire Perimeter History: Previous Year"
+	service = "Interagency_Fire_Perimeter_History_Previous_Year_Read_Only"
+
+class GeomacBaseQuery(NIFC_BaseQuery):
+	fields = [
+		("complexname", "complex"),
+		("gisacres", "size"),
+		("incidentname", "name"),
+		("incomplex", "incomplex"),
+		("perimeterdatetime", "date"),
+		("uniquefireidentifier", "id"),
+	]
+	orderByFields = "uniquefireidentifier, perimeterdatetime"
+	printSpec = "{id:19} {date:19} {size} {name}"
+
+	@classmethod
+	def processFields(self, fields):
+		fields["date"] = formatDate(fields["date"])
+
+		if fields["incomplex"] == "Y" and fields["name"] != fields["complex"]:
+			fields["name"] += " ({})".format(fields["complex"])
+
+		fields["size"] = "{:>10,.2f} ac".format(fields["size"])
+
+def newGeomacQuery(_name, _service, _layer):
+	class GeomacQuery(GeomacBaseQuery):
+		name = _name
+		service = _service
+		layer = _layer
+
+	return GeomacQuery
+
+def addGeomacQueries(queryMap):
+	namePrefix = "Historic GeoMAC Perimeters "
+	servicePrefix = "Historic_Geomac_Perimeters_"
+
+	for year in range(2000, 2020):
+		year = str(year)
+		queryMap["geomac_" + year] = newGeomacQuery(namePrefix + year, servicePrefix + year, 0)
+
+	queryMap["geomac_2000_2018"] = newGeomacQuery(namePrefix + "2000-2018",
+		servicePrefix + "Combined_2000_2018", 0)
+
+	namePrefix = "Historic Fire Perimeters "
+	service = servicePrefix + "All_Years_2000_2018"
+
+	for layer in range(19):
+		year = str(2000 + layer)
+		queryMap["us_fires_" + year] = newGeomacQuery(namePrefix + year, service, layer)
+
+	queryMap["us_fires_2000_2018"] = newGeomacQuery(namePrefix + "2000-2018", service, 19)
+
 class NIFC_CurrentPerimetersQuery(Query):
 	name = "NIFC Current Wildfire Perimeters"
 	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
@@ -430,65 +544,6 @@ class SonomaEvacZonesQuery(Query):
 	service = "Sonoma_County_Evacuation_Zone_Reference"
 	serverType = "Feature"
 	layer = 0 # sr = 102100 (3857)
-
-class GeoMAC_CurrentPerimetersQuery(Query):
-	name = "GeoMAC Current Fire Perimeters"
-	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
-	service = "geomac_dyn"
-	layer = 2 # sr = 102100 (3857)
-	fields = [
-		("objectid", "id"),
-		("active", "isActive"),
-		("complexname", "complexName"),
-		("incomplex", "inComplex"),
-		("incidentname", "name"),
-		("datecurrent", "date"),
-		("perimeterdatetime", "perimeterTime"),
-		("gisacres", "acres"),
-		("uniquefireidentifier", "fid"),
-	]
-	printSpec = "{name} Fire"
-
-	@classmethod
-	def processFields(self, fields):
-		fields["name"] = fields["name"].title()
-		isActive = fields["isActive"]
-		fields["isActive"] = "Yes" if isActive == "Y" else "No" if isActive == "N" else isActive
-		fields["date"] = time.strftime("%Y-%m-%d %H:%M:%S",
-			time.gmtime(fields["date"] / 1000))
-		fields["perimeterTime"] = time.strftime("%Y-%m-%d %H:%M:%S",
-			time.gmtime(fields["perimeterTime"] / 1000))
-		if fields["inComplex"] == "Y":
-			self.printSpec += " ({complexName})"
-		self.printSpec = "\n".join([
-			self.printSpec,
-			"\tActive: {isActive}",
-			"\tSize: {acres:,.2f} acres",
-			"\tDate Current: {date}",
-			"\tPerimeter Date/Time: {perimeterTime}",
-			"\tUnique Fire Identifier: {fid}",
-		])
-
-class GeoMAC_LatestPerimetersQuery(GeoMAC_CurrentPerimetersQuery):
-	name = "GeoMAC Latest Fire Perimeters"
-	layer = 3 # sr = 102100 (3857)
-
-class GeoMAC_PerimetersDD83_Query(GeoMAC_CurrentPerimetersQuery):
-	name = "GeoMAC Perimeters DD83"
-	service = "geomac_perims"
-	layer = 4 # sr = 4269
-
-class GeoMAC_MODIS_Query(Query):
-	name = "GeoMAC MODIS Fire Detection"
-	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
-	service = "geomac_dyn"
-	layer = 4 # sr = 102100 (3857)
-
-class GeoMAC_VIIRS_Query(Query):
-	name = "GeoMAC VIIRS IBAND Fire Detection"
-	home = "https://wildfire.cr.usgs.gov/arcgis/rest/services" # 10.51
-	service = "geomac_dyn"
-	layer = 5 # sr = 102100 (3857)
 
 class NASA_MODIS_Query(Query):
 	name = "MODIS"
@@ -609,6 +664,7 @@ def main():
 	parser.add_argument("-d", "--distance", type=float, default=20)
 	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("--raw", action="store_true")
+	parser.add_argument("--reprocess", action="store_true")
 	parser.add_argument("--return-geometry", action="store_true")
 	parser.add_argument("-v", "--verbose", action="store_true")
 	parser.add_argument("-w", "--where")
@@ -642,16 +698,18 @@ def main():
 		"county_usfs": USFS_CountyQuery,
 		"county_usgs": USGS_CountyQuery,
 		"cpad_holdings": CPAD_HoldingsQuery,
+		"fire_history": NIFC_AllYearsHistoryQuery,
+		"fire_history_pre1980": NIFC_Pre1980HistoryQuery,
+		"fire_history_1980s": NIFC_1980sHistoryQuery,
+		"fire_history_1990s": NIFC_1990sHistoryQuery,
+		"fire_history_2000s": NIFC_2000sHistoryQuery,
+		"fire_history_decade": NIFC_CurrentDecadeQuery,
+		"fire_history_year": NIFC_PreviousYearQuery,
 		"fire_incidents": USA_WildfireIncidentsQuery,
 		"fire_perimeters": USA_WildfirePerimetersQuery,
 		"fires_current": NIFC_CurrentPerimetersQuery,
 		"fires_archived": NIFC_ArchivedPerimetersQuery,
 		"fs": USFS_Query,
-		"geomac_cp": GeoMAC_CurrentPerimetersQuery,
-		"geomac_dd83": GeoMAC_PerimetersDD83_Query,
-		"geomac_lp": GeoMAC_LatestPerimetersQuery,
-		"geomac_modis": GeoMAC_MODIS_Query,
-		"geomac_viirs": GeoMAC_VIIRS_Query,
 		"govunits_blm": GovUnits_BLM_Query,
 		"govunits_nps": GovUnits_NPS_Query,
 		"govunits_usfs": GovUnits_USFS_Query,
@@ -685,10 +743,13 @@ def main():
 	kwargs = {
 		"distance":             args.distance,
 		"raw":                  args.raw,
+		"reprocess":            args.reprocess,
 		"returnGeometry":       args.return_geometry,
 		"verbose":              args.verbose,
 		"where":                args.where,
 	}
+
+	addGeomacQueries(queryMap)
 
 	for k in queries:
 		q = queryMap.get(k)
