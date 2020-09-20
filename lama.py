@@ -23,8 +23,16 @@ class Query(object):
 	serverType = "Map"
 
 	@classmethod
-	def query(self, geometry, distance=20, raw=False, reprocess=False, returnGeometry=False,
-		verbose=False, where=None):
+	def query(self, geometry,
+		distance=20,
+		raw=False,
+		reprocess=False,
+		returnCountOnly=False,
+		returnExtentOnly=False,
+		returnGeometry=False,
+		verbose=False,
+		where=None
+	):
 		params = ["f=json"]
 		if geometry:
 			params.append("geometry={}".format(geometry))
@@ -35,7 +43,7 @@ class Query(object):
 		params.append("outFields={}".format(",".join([field for field, alias in self.fields])
 			if self.fields and not raw else "*"))
 
-		if self.orderByFields:
+		if self.orderByFields and not returnExtentOnly:
 			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
 
 		if returnGeometry:
@@ -50,6 +58,11 @@ class Query(object):
 			params.append("units=esriSRUnit_Meter")
 		if where:
 			params.append("where={}".format(where.replace(" ", "%20").replace("'", "%27")))
+		if returnCountOnly:
+			params.append("returnCountOnly=true")
+		if returnExtentOnly:
+			params.append("returnExtentOnly=true")
+			params.append("outSR=4326")
 
 		url = "{}/{}/{}Server/{}/query?{}".format(self.home, self.service, self.serverType, self.layer,
 			"&".join(params))
@@ -79,6 +92,10 @@ class Query(object):
 		with open(fileName) as f:
 			jsonData = json.load(f)
 
+		if returnCountOnly or returnExtentOnly:
+			prettyPrint(jsonData)
+			return
+
 		features = jsonData.get("features")
 		if features is None:
 			print("Query response doesn't have the \"features\" property!")
@@ -97,6 +114,9 @@ class Query(object):
 			if self.processFields:
 				self.processFields(fields)
 			print(self.printSpec.format(**fields))
+
+		if jsonData.get("exceededTransferLimit"):
+			print("Transfer Limit Exceeded!")
 
 class WildernessQuery(Query):
 	name = "Wilderness Areas"
@@ -434,15 +454,31 @@ class GeomacBaseQuery(NIFC_BaseQuery):
 		("perimeterdatetime", "date"),
 		("uniquefireidentifier", "id"),
 	]
-	orderByFields = "uniquefireidentifier, perimeterdatetime"
+	orderByFields = "uniquefireidentifier,perimeterdatetime"
 	printSpec = "{id:19} {date:19} {size:>10,.2f} ac {name}"
 
 	@classmethod
 	def processFields(self, fields):
 		fields["date"] = formatDate(fields["date"])
 
-		if fields["incomplex"] == "Y" and fields["name"] != fields["complex"]:
-			fields["name"] += " ({})".format(fields["complex"])
+		name = fields["name"]
+		name = "" if name is None else name.strip()
+
+		if fields["incomplex"] == "Y":
+			complex = fields["complex"]
+			complex = "" if complex is None else complex.strip()
+
+			if not complex:
+				complex = "Complex"
+			elif "complex" not in complex.lower():
+				complex += " Complex"
+
+			if not name:
+				name = complex
+			elif name != complex:
+				name += " ({})".format(complex)
+
+		fields["name"] = name
 
 def newGeomacQuery(_name, _service, _layer):
 	class GeomacQuery(GeomacBaseQuery):
@@ -644,11 +680,13 @@ def main():
 	parser.add_argument("latlong")
 	parser.add_argument("-d", "--distance", type=float, default=20)
 	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
+	parser.add_argument("-n", "--return-count-only", action="store_true")
 	parser.add_argument("--raw", action="store_true")
 	parser.add_argument("--reprocess", action="store_true")
 	parser.add_argument("--return-geometry", action="store_true")
 	parser.add_argument("-v", "--verbose", action="store_true")
 	parser.add_argument("-w", "--where")
+	parser.add_argument("-x", "--return-extent-only", action="store_true")
 	args = parser.parse_args()
 
 	if args.latlong == "none":
@@ -665,6 +703,25 @@ def main():
 			return
 
 		geometry = "{},{}".format(longitude, latitude)
+
+	if args.return_geometry:
+		if args.return_count_only:
+			print("returnCountOnly and returnGeometry should not both be true!")
+			return
+		if args.return_extent_only:
+			print("returnExtentOnly and returnGeometry should not both be true!")
+			return
+
+	kwargs = {
+		"distance":             args.distance,
+		"raw":                  args.raw,
+		"reprocess":            args.reprocess,
+		"returnCountOnly":      args.return_count_only,
+		"returnExtentOnly":     args.return_extent_only,
+		"returnGeometry":       args.return_geometry,
+		"verbose":              args.verbose,
+		"where":                args.where,
+	}
 
 	queryMap = {
 		"aiannh": AIANNH_Query,
@@ -712,21 +769,11 @@ def main():
 		"wsa": BLM_WSA_Query,
 		"zip_ca": CA_ZIP_Code_Query,
 	}
-	queries = args.query.split(",")
-
-	kwargs = {
-		"distance":             args.distance,
-		"raw":                  args.raw,
-		"reprocess":            args.reprocess,
-		"returnGeometry":       args.return_geometry,
-		"verbose":              args.verbose,
-		"where":                args.where,
-	}
 
 	addFireHistoryQueries(queryMap)
 	addGeomacQueries(queryMap)
 
-	for k in queries:
+	for k in args.query.split(","):
 		q = queryMap.get(k)
 		if q:
 			q.query(geometry, **kwargs)
