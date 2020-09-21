@@ -25,6 +25,7 @@ class Query(object):
 	@classmethod
 	def query(self, geometry,
 		distance=20,
+		groupBy=None,
 		raw=False,
 		reprocess=False,
 		returnCountOnly=False,
@@ -43,7 +44,14 @@ class Query(object):
 		params.append("outFields={}".format(",".join([field for field, alias in self.fields])
 			if self.fields and not raw else "*"))
 
-		if self.orderByFields and not returnExtentOnly:
+		if groupBy:
+			fields, self.fields, stats, self.printSpec = groupBy
+			params.append("groupByFieldsForStatistics={}".format(fields))
+			params.append("outStatistics={}".format(stats))
+			params.append("orderByFields={}".format(fields))
+			self.processFields = None
+
+		elif self.orderByFields and not returnExtentOnly:
 			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
 
 		if returnGeometry:
@@ -415,7 +423,7 @@ class NIFC_HistoryBaseQuery(NIFC_BaseQuery):
 		("GIS_ACRES", "size"),
 	]
 	orderByFields = "FID"
-	printSpec = "{id:6} | {year} | {date:16} | {size:>10,.2f} ac | {name}"
+	printSpec = "{id:6} | {year} | {date:16} | {size:10,.2f} ac | {name}"
 
 	@classmethod
 	def processFields(self, fields):
@@ -455,7 +463,7 @@ class GeomacBaseQuery(NIFC_BaseQuery):
 		("uniquefireidentifier", "id"),
 	]
 	orderByFields = "uniquefireidentifier,perimeterdatetime"
-	printSpec = "{id:19} {date:19} {size:>10,.2f} ac {name}"
+	printSpec = "{id:19} {date:19} {size:10,.2f} ac {name}"
 
 	@classmethod
 	def processFields(self, fields):
@@ -663,6 +671,47 @@ class GovUnits_Wilderness_Query(Query):
 		if agency:
 			fields["agency"] = agency
 
+def processGroupBy(spec):
+	import re
+
+	# ./lama.py -q geomac_2000_2018 -w fireyear=2018
+	#           -g fireyear:6/agency:16//count:fireyear:4/sum:gisacres:14,.2f none
+
+	pattern = re.compile("^{field}(?:/{field})*//{stat}:{field}(?:/{stat}:{field})*$".format(
+		field="[_0-9A-Za-z]+(?::[,.0-9<>A-Za-z]+)?", stat="(?:avg|count|min|max|stddev|sum|var)"))
+
+	if not pattern.match(spec):
+		print("Group-by expression doesn't match pattern!")
+		return None
+
+	def splitField(field):
+		if ":" in field:
+			field, printSpec = field.split(":")
+			return (field, ":" + printSpec)
+		return (field, "")
+
+	groupFields, spec = spec.split("//")
+	printFields = [splitField(field) for field in groupFields.split("/")]
+	groupFields = ",".join([field for field, printSpec in printFields])
+	stats = []
+
+	for spec in spec.split("/"):
+		stat, field = spec.split(":", 1)
+		field, spec = splitField(field)
+		statField = "{}_{}".format(field, stat)
+		printFields.append((statField, spec))
+
+		stats.append("%7B{}%7D".format(",".join(["%22{}%22:%22{}%22".format(k, v) for k, v in (
+			("statisticType", stat),
+			("onStatisticField", field),
+			("outStatisticFieldName", statField))])))
+
+	stats = "%5B{}%5D".format(",".join(stats))
+	allFields = [(field, field) for field, spec in printFields]
+	printSpec = " ".join(["{{{}{}}}".format(field, spec) for field, spec in printFields])
+
+	return (groupFields, allFields, stats, printSpec)
+
 def checkDegrees(degrees, minValue, maxValue):
 	try:
 		degrees = float(degrees)
@@ -679,8 +728,9 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
 	parser.add_argument("-d", "--distance", type=float, default=20)
-	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
+	parser.add_argument("-g", "--group-by")
 	parser.add_argument("-n", "--return-count-only", action="store_true")
+	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("--raw", action="store_true")
 	parser.add_argument("--reprocess", action="store_true")
 	parser.add_argument("--return-geometry", action="store_true")
@@ -712,8 +762,16 @@ def main():
 			print("returnExtentOnly and returnGeometry should not both be true!")
 			return
 
+	if args.group_by:
+		groupBy = processGroupBy(args.group_by)
+		if not groupBy:
+			return
+	else:
+		groupBy = None
+
 	kwargs = {
 		"distance":             args.distance,
+		"groupBy":              groupBy,
 		"raw":                  args.raw,
 		"reprocess":            args.reprocess,
 		"returnCountOnly":      args.return_count_only,
