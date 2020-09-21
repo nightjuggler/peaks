@@ -45,11 +45,10 @@ class Query(object):
 			if self.fields and not raw else "*"))
 
 		if groupBy:
-			fields, self.fields, stats, self.printSpec = groupBy
-			params.append("groupByFieldsForStatistics={}".format(fields))
-			params.append("outStatistics={}".format(stats))
-			params.append("orderByFields={}".format(fields))
-			self.processFields = None
+			groupFields, stats, printFields = groupBy
+			params.append("groupByFieldsForStatistics=" + groupFields)
+			params.append("outStatistics=" + stats)
+			params.append("orderByFields=" + groupFields)
 
 		elif self.orderByFields and not returnExtentOnly:
 			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
@@ -112,6 +111,20 @@ class Query(object):
 
 		for feature in features:
 			response = feature["attributes"]
+			if groupBy:
+				if raw:
+					prettyPrint(response)
+					continue
+				values = []
+				for field, (spec, nullSpec) in printFields:
+					value = response[field]
+					if value is None:
+						spec = nullSpec
+						value = "null"
+					values.append("{{{}}}".format(spec).format(value))
+				print(*values)
+				continue
+
 			if raw or not (self.fields and self.printSpec):
 				prettyPrint(response)
 				if returnGeometry:
@@ -678,17 +691,21 @@ def processGroupBy(spec):
 	#           -g fireyear:6/agency:16//count:fireyear:4/sum:gisacres:14,.2f none
 
 	pattern = re.compile("^{field}(?:/{field})*//{stat}:{field}(?:/{stat}:{field})*$".format(
-		field="[_0-9A-Za-z]+(?::[,.0-9<>A-Za-z]+)?", stat="(?:avg|count|min|max|stddev|sum|var)"))
+		field="[_0-9A-Za-z]+(?::[<>]?[0-9]*,?(\\.[0-9]+)?[A-Za-z]?)?",
+		stat="(?:avg|count|min|max|stddev|sum|var)"))
 
 	if not pattern.match(spec):
 		print("Group-by expression doesn't match pattern!")
 		return None
 
+	pattern = re.compile("^[<>]?[0-9]*")
+
 	def splitField(field):
 		if ":" in field:
 			field, printSpec = field.split(":")
-			return (field, ":" + printSpec)
-		return (field, "")
+			nullSpec = pattern.match(printSpec).group(0)
+			return (field, (":" + printSpec, ":" + nullSpec))
+		return (field, ("", ""))
 
 	groupFields, spec = spec.split("//")
 	printFields = [splitField(field) for field in groupFields.split("/")]
@@ -707,10 +724,8 @@ def processGroupBy(spec):
 			("outStatisticFieldName", statField))])))
 
 	stats = "%5B{}%5D".format(",".join(stats))
-	allFields = [(field, field) for field, spec in printFields]
-	printSpec = " ".join(["{{{}{}}}".format(field, spec) for field, spec in printFields])
 
-	return (groupFields, allFields, stats, printSpec)
+	return (groupFields, stats, printFields)
 
 def checkDegrees(degrees, minValue, maxValue):
 	try:
