@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3
 import json
+import math
 import subprocess
 import time
 from ppjson import prettyPrint
@@ -15,6 +16,67 @@ def formatDate(date):
 		return date[:-9] if date[-9:] == " 00:00:00" else date[:-3]
 	return date
 
+# See JPL Publication 07-3 "Some Algorithms for Polygons on a Sphere"
+# by Robert G. Chamberlain and William H. Duquette, Jet Propulsion Laboratory, 2007
+# https://trs.jpl.nasa.gov/handle/2014/40409
+
+def ringArea(points):
+	R = 6378137
+	N = len(points)
+	area = 0
+
+	assert N >= 4
+	assert points[0] == points[-1]
+
+	points[0:0] = [points[-2]]
+	for i in range(N - 1):
+		p1 = points[i]
+		p2 = points[i + 1]
+		p3 = points[i + 2]
+		area += (p3[0] - p1[0]) * math.sin(p2[1] * math.pi/180)
+	points[0:0] = []
+	area *= math.pi/180 * R*R / 2
+
+#	print("ringArea = {:,.2f}".format(area))
+	return area
+
+def polygonArea(rings):
+	N = len(rings)
+	assert N > 0
+
+	area = ringArea(rings[0])
+	if N > 1:
+		assert area > 0
+		for hole in rings[1:]:
+			_ringArea = ringArea(hole)
+			assert _ringArea < 0
+			area += _ringArea
+
+#	print("polygonArea = {:,.2f}".format(area))
+	return area
+
+def printArea(feature, geojson, jsonData):
+	geometry = feature["geometry"]
+	if geojson:
+		geometryType = geometry["type"]
+		coordinates = geometry["coordinates"]
+
+		if geometryType == "Polygon":
+			area = polygonArea(coordinates)
+		elif geometryType == "MultiPolygon":
+			area = sum([polygonArea(polygon) for polygon in coordinates])
+		else:
+			area = 0
+	else:
+		geometryType = jsonData.get("geometryType")
+
+		if geometryType == "esriGeometryPolygon":
+			area = sum([ringArea(ring) for ring in geometry["rings"]])
+		else:
+			area = 0
+
+	print("Area({}) = {:,.2f} square meters = {:,.2f} acres".format(geometryType, area, area / 4046.9))
+
 class Query(object):
 	fields = []
 	orderByFields = None
@@ -24,8 +86,11 @@ class Query(object):
 
 	@classmethod
 	def query(self, geometry,
+		computeArea=False,
 		distance=20,
+		geojson=False,
 		groupBy=None,
+		precision=5,
 		raw=False,
 		reprocess=False,
 		returnCountOnly=False,
@@ -34,7 +99,7 @@ class Query(object):
 		verbose=False,
 		where=None
 	):
-		params = ["f=json"]
+		params = ["f=" + ("geojson" if geojson else "json")]
 		if geometry:
 			params.append("geometry={}".format(geometry))
 			params.append("geometryType=esriGeometryPoint")
@@ -53,9 +118,9 @@ class Query(object):
 		elif self.orderByFields and not returnExtentOnly:
 			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
 
-		if returnGeometry:
+		if returnGeometry or computeArea:
 			params.append("returnGeometry=true")
-			params.append("geometryPrecision=5")
+			params.append("geometryPrecision={}".format(precision))
 			params.append("outSR=4326")
 		else:
 			params.append("returnGeometry=false")
@@ -109,8 +174,10 @@ class Query(object):
 			prettyPrint(jsonData)
 			return
 
+		attrKey = "properties" if geojson else "attributes"
+
 		for feature in features:
-			response = feature["attributes"]
+			response = feature[attrKey]
 			if groupBy:
 				if raw:
 					prettyPrint(response)
@@ -129,12 +196,16 @@ class Query(object):
 				prettyPrint(response)
 				if returnGeometry:
 					prettyPrint(feature["geometry"])
+				if computeArea:
+					printArea(feature, geojson, jsonData)
 				continue
 
 			fields = {alias: response[field] for field, alias in self.fields}
 			if self.processFields:
 				self.processFields(fields)
 			print(self.printSpec.format(**fields))
+			if computeArea:
+				printArea(feature, geojson, jsonData)
 
 		if jsonData.get("exceededTransferLimit"):
 			print("Transfer Limit Exceeded!")
@@ -742,9 +813,12 @@ def main():
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
+	parser.add_argument("-a", "--area", action="store_true")
 	parser.add_argument("-d", "--distance", type=float, default=20)
+	parser.add_argument("--geojson", action="store_true")
 	parser.add_argument("-g", "--group-by")
 	parser.add_argument("-n", "--return-count-only", action="store_true")
+	parser.add_argument("-p", "--precision", type=int, default=5, choices=(4,5,6))
 	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("--raw", action="store_true")
 	parser.add_argument("--reprocess", action="store_true")
@@ -785,8 +859,11 @@ def main():
 		groupBy = None
 
 	kwargs = {
+		"computeArea":          args.area,
 		"distance":             args.distance,
+		"geojson":              args.geojson,
 		"groupBy":              groupBy,
+		"precision":            args.precision,
 		"raw":                  args.raw,
 		"reprocess":            args.reprocess,
 		"returnCountOnly":      args.return_count_only,
