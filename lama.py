@@ -28,13 +28,13 @@ def ringArea(points):
 	assert N >= 4
 	assert points[0] == points[-1]
 
-	points[0:0] = [points[-2]]
-	for i in range(N - 1):
-		p1 = points[i]
-		p2 = points[i + 1]
-		p3 = points[i + 2]
+	p1 = points[-2]
+	p2 = points[0]
+	for p3 in points[1:]:
 		area += (p3[0] - p1[0]) * math.sin(p2[1] * math.pi/180)
-	points[0:0] = []
+		p1 = p2
+		p2 = p3
+
 	area *= math.pi/180 * R*R / 2
 
 #	print("ringArea = {:,.2f}".format(area))
