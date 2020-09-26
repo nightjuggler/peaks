@@ -22,9 +22,9 @@ def ppDict(o):
 		return
 	if n == 1:
 		write('{')
-		key, value = o.popitem()
-		write('"{}": '.format(key))
-		prettyPrint(value)
+		for key, value in o.items():
+			write('"{}": '.format(key))
+			prettyPrint(value)
 		write('}')
 		return
 
