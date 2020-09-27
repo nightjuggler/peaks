@@ -72,10 +72,35 @@ def printArea(feature, geojson, jsonData):
 
 		if geometryType == "esriGeometryPolygon":
 			area = sum([ringArea(ring) for ring in geometry["rings"]])
+#			printExtentArea(getExtent(geometry["rings"]))
 		else:
 			area = 0
 
 	print("Area({}) = {:,.2f} square meters = {:,.2f} acres".format(geometryType, area, area / 4046.9))
+
+def getExtent(rings):
+	xmin, ymin = xmax, ymax = rings[0][0]
+
+	for ring in rings:
+		for x, y in ring:
+			if x < xmin: xmin = x
+			elif x > xmax: xmax = x
+			if y < ymin: ymin = y
+			elif y > ymax: ymax = y
+
+	extent = {"xmin": xmin, "xmax": xmax, "ymin": ymin, "ymax": ymax}
+	prettyPrint(extent)
+	return extent
+
+def printExtentArea(extent):
+	xmin = extent["xmin"]
+	xmax = extent["xmax"]
+	ymin = extent["ymin"]
+	ymax = extent["ymax"]
+	ring = [[xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]]
+	ring.append(ring[0])
+	area = ringArea(ring)
+	print("Extent Area = {:,.2f} square meters = {:,.2f} acres".format(area, area / 4046.9))
 
 class Query(object):
 	fields = []
@@ -118,7 +143,7 @@ class Query(object):
 		elif self.orderByFields and not returnExtentOnly:
 			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
 
-		if returnGeometry or computeArea:
+		if returnGeometry or (computeArea and not (returnCountOnly or returnExtentOnly)):
 			params.append("returnGeometry=true")
 			params.append("geometryPrecision={}".format(precision))
 			params.append("outSR=4326")
@@ -134,6 +159,7 @@ class Query(object):
 			params.append("returnCountOnly=true")
 		if returnExtentOnly:
 			params.append("returnExtentOnly=true")
+			params.append("geometryPrecision={}".format(precision))
 			params.append("outSR=4326")
 
 		url = "{}/{}/{}Server/{}/query?{}".format(self.home, self.service, self.serverType, self.layer,
@@ -166,6 +192,8 @@ class Query(object):
 
 		if returnCountOnly or returnExtentOnly:
 			prettyPrint(jsonData)
+			if computeArea and returnExtentOnly:
+				printExtentArea(jsonData["extent"])
 			return
 
 		features = jsonData.get("features")
@@ -814,18 +842,18 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("latlong")
 	parser.add_argument("-a", "--area", action="store_true")
+	parser.add_argument("--count", action="store_true")
 	parser.add_argument("-d", "--distance", type=float, default=20)
 	parser.add_argument("--geojson", action="store_true")
+	parser.add_argument("--geometry", action="store_true")
 	parser.add_argument("-g", "--group-by")
-	parser.add_argument("-n", "--return-count-only", action="store_true")
 	parser.add_argument("-p", "--precision", type=int, default=5, choices=(4,5,6))
 	parser.add_argument("-q", "--query", default="state,county,zip_ca,topo,nps,rd,nlcs,blm,sma,w,wsa")
 	parser.add_argument("--raw", action="store_true")
 	parser.add_argument("--reprocess", action="store_true")
-	parser.add_argument("--return-geometry", action="store_true")
 	parser.add_argument("-v", "--verbose", action="store_true")
 	parser.add_argument("-w", "--where")
-	parser.add_argument("-x", "--return-extent-only", action="store_true")
+	parser.add_argument("-x", "--extent", action="store_true")
 	args = parser.parse_args()
 
 	if args.latlong == "none":
@@ -843,11 +871,11 @@ def main():
 
 		geometry = "{},{}".format(longitude, latitude)
 
-	if args.return_geometry:
-		if args.return_count_only:
+	if args.geometry:
+		if args.count:
 			print("returnCountOnly and returnGeometry should not both be true!")
 			return
-		if args.return_extent_only:
+		if args.extent:
 			print("returnExtentOnly and returnGeometry should not both be true!")
 			return
 
@@ -866,9 +894,9 @@ def main():
 		"precision":            args.precision,
 		"raw":                  args.raw,
 		"reprocess":            args.reprocess,
-		"returnCountOnly":      args.return_count_only,
-		"returnExtentOnly":     args.return_extent_only,
-		"returnGeometry":       args.return_geometry,
+		"returnCountOnly":      args.count,
+		"returnExtentOnly":     args.extent,
+		"returnGeometry":       args.geometry,
 		"verbose":              args.verbose,
 		"where":                args.where,
 	}
