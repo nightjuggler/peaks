@@ -310,6 +310,32 @@ items: {
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
 			'archived-wildfire-perimeters-2">NIFC</a>',
 					},
+					geomac: {
+		name: 'Historic Perimeters|(>10,000 acres)',
+		items: {},
+		order: []
+					},
+					history: {
+		name: 'Historic Perimeters|(>10,000 acres)|(Mirror)',
+		items: {},
+		order: []
+					},
+					ia: {
+		name: 'Historic Perimeters|(Interagency)',
+		items: {
+					all: {
+		name: 'All Years|(>100,000 acres)',
+		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+			'/Interagency_Fire_Perimeter_History_All_Years_Read_Only/FeatureServer',
+		queryFields: ['FID', 'FIRE_YEAR', 'INCIDENT', 'GIS_ACRES'],
+		orderByFields: 'FIRE_YEAR,INCIDENT',
+		where: 'GIS_ACRES > 99999',
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
+			'interagency-fire-perimeter-history-all-years">NIFC</a>'
+					},
+		},
+		order: ['all']
+					},
 					incidents: {
 		name: 'Current Incidents',
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
@@ -339,7 +365,8 @@ items: {
 			'NASA</a>',
 					},
 				},
-				order: ['current', 'perimeters', 'archived', 'incidents', 'modis', 'viirs'],
+				order: ['modis', 'viirs', 'incidents', 'current', 'perimeters', 'archived',
+					'geomac', 'history', 'ia'],
 			},
 			glims: {
 		name: 'GLIMS Glaciers',
@@ -1010,13 +1037,168 @@ let querySpecs = [
 	scuevacSpec,
 	sonomaevacSpec,
 ];
+/*
+	--------------------------
+	Historic GeoMAC Perimeters
+	--------------------------
+*/
+(function (){
+	const urlPrefix = 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+		'/Historic_Geomac_Perimeters_';
+
+	const makeAttribution = s => '<a href="https://data-nifc.opendata.arcgis.com/datasets/' + s + '">NIFC</a>';
+
+	const queryFields = ['OBJECTID', 'complexname', 'gisacres', 'incidentname', 'incomplex',
+		'perimeterdatetime', 'uniquefireidentifier'];
+
+	const orderByFields = 'uniquefireidentifier,perimeterdatetime';
+
+	const {template, show} = {
+		template: 'text|ztf|br|text|br|text',
+	show(attr)
+	{
+		const date = getDateTime(attr.perimeterdatetime);
+		const size = formatAcres(attr.gisacres);
+
+		let name = attr.incidentname;
+		name = name === null ? '' : name.trim();
+
+		if (attr.incomplex === 'Y') {
+			let complex = attr.complexname;
+			complex = complex === null ? '' : complex.trim();
+
+			if (!complex)
+				complex = 'Unnamed Complex';
+			else if (complex.toLowerCase().indexOf('complex') < 0)
+				complex += ' Complex';
+
+			if (!name)
+				name = complex;
+			else if (name.toUpperCase() !== complex.toUpperCase()) {
+				if (name.toLowerCase().indexOf(' fire') < 0) name += ' Fire';
+				name += ' (' + complex + ')';
+			}
+		}
+		else if (!name) name = 'Unnamed Fire';
+		else if (name.toLowerCase().indexOf(' fire') < 0) name += ' Fire';
+
+		setPopupText(this, name, date, size);
+		return '#FFFF00';
+	}};
+
+	const style = () => ({color: '#FF0000', fillOpacity: 0, weight: 2});
+	const where = 'gisacres >= 10000';
+
+	const {geomac, history} = TileOverlays.items.us.items.fires.items;
+
+	let {items, order} = geomac;
+
+	function addSpec(key, spec)
+	{
+		items[key] = spec;
+		order.push(key);
+		querySpecs.push(spec);
+	}
+	let makeSpec = (name, urlSuffix, attributionSuffix) =>
+	({
+		name, style, where,
+		popup: {template, show}, queryFields, orderByFields,
+		url: urlPrefix + urlSuffix + '/FeatureServer',
+		attribution: makeAttribution('historic-geomac-perimeters-' + attributionSuffix)
+	});
+	for (let y = 2019; y >= 2000; y -= 1)
+	{
+		const year = y.toString();
+		addSpec(year, makeSpec(year, year, year));
+	}
+	addSpec('combined', makeSpec('2000-2018', 'Combined_2000_2018', 'combined-2000-2018'));
+
+	const url = urlPrefix + 'All_Years_2000_2018/FeatureServer';
+
+	({items, order} = history);
+
+	makeSpec = (name, queryLayer) =>
+	({
+		name, style, where, url, queryLayer,
+		popup: {template, show}, queryFields, orderByFields,
+		attribution: makeAttribution('us-hist-fire-perim-' + name + '-dd83')
+	});
+	for (let layer = 18; layer >= 0; layer -= 1)
+	{
+		const year = (2000 + layer).toString();
+		addSpec(year, makeSpec(year, layer.toString()));
+	}
+	addSpec('combined', makeSpec('2000-2018', '19'));
+})();
+/*
+	----------------------------------
+	Interagency Fire Perimeter History
+	----------------------------------
+*/
+(function (){
+	const {template, setArea, show} = {
+		template: 'text|ztf|br|text|text',
+	setArea(area, attr)
+	{
+		const size = attr.GIS_ACRES;
+
+		if (Math.abs((area /= 4046.9) - size) / size > 0.02)
+			this.textNode2.nodeValue = formatAcres(area);
+	},
+	show(attr)
+	{
+		const {FIRE_YEAR: year, GIS_ACRES: size} = attr;
+
+		let name = attr.INCIDENT.trim();
+		const lowerCaseName = name.toLowerCase();
+
+		if (!name)
+			name = 'Unnamed Fire';
+		else if (lowerCaseName.indexOf(' fire') < 0 && lowerCaseName.indexOf(' complex') < 0)
+			name += ' Fire';
+
+		setPopupText(this, name, '(' + year + ') ', formatAcres(size));
+		return '#FF0000';
+	}};
+	const style = () => ({color: '#FF0000', weight: 2});
+
+	const {items, order} = TileOverlays.items.us.items.fires.items.ia;
+	const {url, queryFields, orderByFields} = items.all;
+
+	for (let [id, name, size] of [
+		['year', 'Previous Year', 1000],
+		['decade', 'Current Decade', 20000],
+		['2000s', '2000s', 20000],
+		['1990s', '1990s', 10000],
+		['1980s', '1980s', 10000],
+		['pre1980', '1979 And Prior', 20000]])
+	{
+		items[id] = {
+			name: name + (name.length > 5 ? '|' : ' ') + '(>' + size.toLocaleString() + ' acres)',
+			url: url.replace('All_Years', name.split(' ').join('_')),
+			queryFields, orderByFields,
+			where: 'GIS_ACRES >= ' + size,
+			attribution: '[NIFC]'
+		};
+		order.push(id);
+	}
+	for (const id of order)
+	{
+		const spec = items[id];
+		spec.popup = {template, show, setArea};
+		spec.style = style;
+		querySpecs.push(spec);
+	}
+})();
 function esriFeatureLayer(spec)
 {
 	const options = {
 		attribution: getAttribution(spec),
+		precision: 5,
 		url: spec.url + '/' + (spec.queryLayer || '0'),
 	};
 	if (spec.pointToLayer) options.pointToLayer = spec.pointToLayer;
+	if (spec.queryFields) options.fields = spec.queryFields;
 	if (spec.style) options.style = spec.style;
 	if (spec.where) options.where = spec.where;
 
@@ -1234,6 +1416,44 @@ BaseLayers.makeLayer = function(spec)
 
 	return new (exportLayer(spec, false))(options);
 };
+/*
+	"Returns the approximate signed geodesic area of the polygon in square meters.
+	The area will be positive if the polygon is oriented clockwise, otherwise it will be negative."
+	-- https://github.com/Turfjs/turf/blob/master/packages/turf-area/index.ts
+
+	Based on "Some Algorithms for Polygons on a Sphere"
+	by Robert G. Chamberlain and William H. Duquette, Jet Propulsion Laboratory, 2007
+	-- https://trs.jpl.nasa.gov/handle/2014/40409
+*/
+function ringArea(points)
+{
+	const numPoints = points.length;
+
+	if (numPoints < 3) return 0;
+
+	const R = earthRadius;
+	let p1 = points[numPoints - 2];
+	let p2 = points[numPoints - 1];
+	let p3 = points[0];
+	let area = 0;
+
+	for (let i = p2[0] === p3[0] && p2[1] === p3[1] ? 1 : 0; i < numPoints; i += 1)
+	{
+		p3 = points[i];
+		area += (p3[0] - p1[0]) * Math.sin(p2[1] * Math.PI/180);
+		p1 = p2;
+		p2 = p3;
+	}
+	return area * Math.PI/180 * R*R/2;
+}
+function geojsonArea({type: geometryType, coordinates})
+{
+	const polygonArea = rings => rings.reduce((area, ring) => area + ringArea(ring), 0);
+
+	return geometryType === 'Polygon' ? polygonArea(coordinates) :
+		geometryType === 'MultiPolygon' ?
+			coordinates.reduce((area, polygon) => area + polygonArea(polygon), 0) : 0;
+}
 function addPager(spec, numPages, showPage)
 {
 	let page = 1;
@@ -1368,15 +1588,18 @@ initPointQueries(map)
 
 		const queryLayer = spec.queryLayer || spec.exportLayers || '0';
 		const baseURL = spec.url + '/' + queryLayer + '/query?f=' + responseFormat;
-
-		popupSpec.queryField0 = spec.queryFields ? spec.queryFields[0] : spec.queryField0 || 'OBJECTID';
-		popupSpec.queryByLL = [baseURL,
+		const queryByLL = [baseURL,
 			'returnGeometry=false',
 			'outFields=' + (spec.queryFields ? spec.queryFields.join(',') : '*'),
 			'spatialRel=esriSpatialRelIntersects',
 			'inSR=4326', // WGS 84 (EPSG:4326) longitude/latitude
 			'geometryType=esriGeometryPoint',
-			'geometry='].join('&');
+			'geometry='];
+		if (spec.orderByFields)
+			queryByLL.splice(3, 0, 'orderByFields=' + spec.orderByFields);
+
+		popupSpec.queryField0 = spec.queryFields ? spec.queryFields[0] : spec.queryField0 || 'OBJECTID';
+		popupSpec.queryByLL = queryByLL.join('&');
 		popupSpec.queryByID = [baseURL,
 			'returnGeometry=true',
 			'geometryPrecision=5',
@@ -1454,7 +1677,7 @@ initPointQueries(map)
 		}
 		firstResponse = false;
 	}
-	function addOutline(spec, outline)
+	function addOutline(spec, outline, attr)
 	{
 		spec.outline = outline;
 		if (outline.options.color !== spec.style.color)
@@ -1462,6 +1685,8 @@ initPointQueries(map)
 		if (spec.toggle.checked)
 			outline.addTo(map);
 		spec.ztf.style.display = '';
+		if (spec.setArea)
+			spec.setArea(outline.computedArea, attr);
 		popup.update();
 	}
 
@@ -1517,8 +1742,10 @@ initPointQueries(map)
 					const outline = L.GeoJSON.geometryToLayer(geometry, style);
 					spec.outlineCache[outlineID] = outline;
 
+					if (spec.setArea)
+						outline.computedArea = geojsonArea(geometry);
 					if (outlineID === spec.outlineID)
-						addOutline(spec, outline);
+						addOutline(spec, outline, attr);
 				},
 				function() {
 					delete spec.activeQueries[outlineID];
@@ -1528,7 +1755,7 @@ initPointQueries(map)
 
 			const outline = spec.outlineCache[outlineID];
 			if (outline)
-				addOutline(spec, outline);
+				addOutline(spec, outline, attr);
 			else if (spec.toggle.checked)
 				spec.runGeometryQuery();
 		}
