@@ -442,7 +442,7 @@ class USGS_TopoQuery(Query):
 class USGS_TopoViewQuery(Query):
 	name = "USGS TopoView"
 	home = "https://ngmdb.usgs.gov/arcgis/rest/services"
-	service = "topoView/ustOverlay"
+	service = "topoview/ustOverlay"
 	layer = 0 # sr = 102100 (3857)
 
 class TigerCountyQuery(Query):

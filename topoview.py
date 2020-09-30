@@ -10,6 +10,12 @@ class TopoError(Exception):
 		self.message = message.format(*formatArgs)
 
 class TopoView(object):
+
+	# Note (2020-09-30):
+	# The old 'gnis_cell_id' field had 2-6 digits.
+	# The new 'gda_item_id' field has 7 digits.
+	# GDA = Geospatial Data Act of 2018 ?
+
 	FIELDS = (
 		('scan_id',             '[0-9]{6}'),
 		('md5',                 '[0-9a-f]{32}'),
@@ -25,7 +31,7 @@ class TopoView(object):
 		('max_latitude',        '-?[0-9]{1,3}(?:\.[0-9]{1,5})?'),
 		('OBJECTID',            '[1-9][0-9]{3,5}'),
 		('datum',               'NAD(?:27|83)'),
-		('gnis_cell_id',        '[1-9][0-9]{1,5}'),
+		('gda_item_id',         '[1-9][0-9]{1,6}'),
 	)
 	CORRECTIONS = {
 		'37ee6fadbdf1cb98d54214a695c3c7e7': (
@@ -93,7 +99,7 @@ def query(bin_num, topo_id, longitude, latitude):
 		]),
 	]
 
-	url = 'https://ngmdb.usgs.gov/arcgis/rest/services/topoView/ustOverlay/MapServer/0/query?' + '&'.join(params)
+	url = 'https://ngmdb.usgs.gov/arcgis/rest/services/topoview/ustOverlay/MapServer/0/query?' + '&'.join(params)
 
 	response_filename = 'topoview.out'
 
