@@ -575,7 +575,7 @@ class GeomacBaseQuery(NIFC_BaseQuery):
 		("uniquefireidentifier", "id"),
 	]
 	orderByFields = "uniquefireidentifier,perimeterdatetime"
-	printSpec = "{id:19} {date:19} {size:10,.2f} ac {name}"
+	printSpec = "{id:19} {date:19} {size:12,.2f}  {incomplex}  {name}"
 
 	@classmethod
 	def processFields(self, fields):
@@ -584,18 +584,13 @@ class GeomacBaseQuery(NIFC_BaseQuery):
 		name = fields["name"]
 		name = "" if name is None else name.strip()
 
-		if fields["incomplex"] == "Y":
-			complex = fields["complex"]
-			complex = "" if complex is None else complex.strip()
+		complex = fields["complex"]
+		complex = "" if complex is None else complex.strip()
 
-			if not complex:
-				complex = "Complex"
-			elif "complex" not in complex.lower():
-				complex += " Complex"
-
+		if complex:
 			if not name:
 				name = complex
-			elif name != complex:
+			elif name.lower() != complex.lower():
 				name += " ({})".format(complex)
 
 		fields["name"] = name

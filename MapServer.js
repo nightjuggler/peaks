@@ -916,17 +916,14 @@ function fireName(name, complex = null, inComplex = null)
 	name = name === null ? '' : name.trim();
 	complex = complex === null ? '' : complex.trim();
 
-	if (inComplex === null)
-		inComplex = complex;
-
 	const lowerCaseName = name.toLowerCase();
 	const addFire = () => lowerCaseName.indexOf(' fire') < 0 &&
 		lowerCaseName.indexOf(' complex') < 0 ? name + ' Fire' : name;
 
-	if (!inComplex)
-		return name ? addFire() : 'Unnamed Fire';
-
 	if (!complex) {
+		if (!inComplex)
+			return name ? addFire() : 'Unnamed Fire';
+
 		if (lowerCaseName.indexOf(' complex') > 0) return name;
 		complex = 'Unnamed Complex';
 	}
