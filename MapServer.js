@@ -299,6 +299,7 @@ items: {
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Public_Wildfire_Perimeters_View/FeatureServer',
 		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		orderByFields: 'DateCurrent%20DESC',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
 			'wildfire-perimeters">NIFC</a>',
 					},
@@ -307,6 +308,7 @@ items: {
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Archived_Wildfire_Perimeters2/FeatureServer',
 		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		orderByFields: 'DateCurrent%20DESC',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
 			'archived-wildfire-perimeters-2">NIFC</a>',
 					},
@@ -348,6 +350,7 @@ items: {
 			'/USA_Wildfires_v1/FeatureServer',
 		queryLayer: '1',
 		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		orderByFields: 'DateCurrent%20DESC',
 		attribution: '[NIFC]',
 					},
 					modis: {
@@ -689,7 +692,7 @@ function setPopupLink(spec, url)
 	link.href = url;
 	return link;
 }
-function formatAcres(acres, precision = 0)
+function formatAcres(acres, precision = acres < 100 ? 2 : 0)
 {
 	const p = Math.pow(10, precision);
 	return '(' + (Math.round(acres * p) / p).toLocaleString() + ' acres)';
@@ -907,18 +910,45 @@ blmSpec.popup = {
 		return '#0000FF';
 	}
 };
+function fireName(name, complex = null, inComplex = null)
+{
+	name = name === null ? '' : name.trim();
+	complex = complex === null ? '' : complex.trim();
+
+	if (inComplex === null)
+		inComplex = complex;
+
+	const lowerCaseName = name.toLowerCase();
+	const addFire = () => lowerCaseName.indexOf(' fire') < 0 &&
+		lowerCaseName.indexOf(' complex') < 0 ? name + ' Fire' : name;
+
+	if (!inComplex)
+		return name ? addFire() : 'Unnamed Fire';
+
+	if (!complex) {
+		if (lowerCaseName.indexOf(' complex') > 0) return name;
+		complex = 'Unnamed Complex';
+	}
+	else if (complex.toLowerCase().indexOf(' complex') < 0)
+		complex += ' Complex';
+
+	if (!name)
+		return complex;
+	if (complex.toLowerCase() === lowerCaseName)
+		return name;
+
+	return addFire() + ' (' + complex + ')';
+}
 fireSpec.style = () => ({color: '#FF0000', weight: 2});
 fireSpec.popup = {
 	template: 'text|br|text|ztf|br|text',
 	show(attr)
 	{
-		const {ComplexName: complex, IncidentName: incident} = attr;
-		let name = incident + ' Fire';
-		if (complex && complex !== incident) name += ' (' + complex + ')';
-		const size = formatAcres(attr.GISAcres, 2);
+		const name = fireName(attr.IncidentName, attr.ComplexName);
 		const date = getDateTime(attr.DateCurrent);
+		const size = formatAcres(attr.GISAcres);
 
-		setPopupText(this, name, size, '(' + date + ')');
+		setPopupText(this, name, size, date);
 		return '#FF0000';
 	}
 };
@@ -1057,30 +1087,9 @@ let querySpecs = [
 		template: 'text|ztf|br|text|br|text',
 	show(attr)
 	{
+		const name = fireName(attr.incidentname, attr.complexname, attr.incomplex === 'Y');
 		const date = getDateTime(attr.perimeterdatetime);
 		const size = formatAcres(attr.gisacres);
-
-		let name = attr.incidentname;
-		name = name === null ? '' : name.trim();
-
-		if (attr.incomplex === 'Y') {
-			let complex = attr.complexname;
-			complex = complex === null ? '' : complex.trim();
-
-			if (!complex)
-				complex = 'Unnamed Complex';
-			else if (complex.toLowerCase().indexOf('complex') < 0)
-				complex += ' Complex';
-
-			if (!name)
-				name = complex;
-			else if (name.toUpperCase() !== complex.toUpperCase()) {
-				if (name.toLowerCase().indexOf(' fire') < 0) name += ' Fire';
-				name += ' (' + complex + ')';
-			}
-		}
-		else if (!name) name = 'Unnamed Fire';
-		else if (name.toLowerCase().indexOf(' fire') < 0) name += ' Fire';
 
 		setPopupText(this, name, date, size);
 		return '#FFFF00';
@@ -1147,17 +1156,8 @@ let querySpecs = [
 	},
 	show(attr)
 	{
-		const {FIRE_YEAR: year, GIS_ACRES: size} = attr;
-
-		let name = attr.INCIDENT.trim();
-		const lowerCaseName = name.toLowerCase();
-
-		if (!name)
-			name = 'Unnamed Fire';
-		else if (lowerCaseName.indexOf(' fire') < 0 && lowerCaseName.indexOf(' complex') < 0)
-			name += ' Fire';
-
-		setPopupText(this, name, '(' + year + ') ', formatAcres(size));
+		setPopupText(this, fireName(attr.INCIDENT),
+			'(' + attr.FIRE_YEAR + ') ', formatAcres(attr.GIS_ACRES));
 		return '#FF0000';
 	}};
 	const style = () => ({color: '#FF0000', weight: 2});
