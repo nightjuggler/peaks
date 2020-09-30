@@ -483,6 +483,7 @@ items: {
 		},
 		order: ['parks'],
 	},
+	geomac: 'us/fires',
 	w: 'us',
 },
 aliases: {
@@ -1165,7 +1166,7 @@ let querySpecs = [
 	const {items, order} = TileOverlays.items.us.items.fires.items.ia;
 	const {url, queryFields, orderByFields} = items.all;
 
-	for (let [id, name, size] of [
+	for (const [id, name, size] of [
 		['year', 'Previous Year', 1000],
 		['decade', 'Current Decade', 20000],
 		['2000s', '2000s', 20000],

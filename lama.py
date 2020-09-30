@@ -23,11 +23,11 @@ def formatDate(date):
 def ringArea(points):
 	R = 6378137
 	N = len(points)
-	area = 0
 
 	assert N >= 4
 	assert points[0] == points[-1]
 
+	area = 0
 	p1 = points[-2]
 	p2 = points[0]
 	for p3 in points[1:]:
@@ -35,7 +35,7 @@ def ringArea(points):
 		p1 = p2
 		p2 = p3
 
-	area *= math.pi/180 * R*R / 2
+	area *= math.pi/180 * R*R/2
 
 #	print("ringArea = {:,.2f}".format(area))
 	return area
@@ -535,7 +535,7 @@ class NIFC_HistoryBaseQuery(NIFC_BaseQuery):
 		("GIS_ACRES", "size"),
 	]
 	orderByFields = "FID"
-	printSpec = "{id:6} | {year} | {date:16} | {size:10,.2f} ac | {name}"
+	printSpec = "{id:6} | {year} | {date:16} | {size:11,.1f} ac | {name}"
 
 	@classmethod
 	def processFields(self, fields):
