@@ -623,6 +623,39 @@ def addGeomacQueries(queryMap):
 
 	queryMap["us_fires_2000_2018"] = newGeomacQuery(namePrefix + "2000-2018", service, 19)
 
+class IRWIN_InciWebQuery(NIFC_BaseQuery):
+	#
+	# IRWIN = Integrated Reporting of Wildland Fire Information
+	#
+	name = "IRWIN to InciWeb"
+	service = "IRWIN_to_Inciweb_View"
+	layer = 0
+	fields = [
+		("OBJECTID", "oid"),
+		("Title", "name"),
+		("Id", "inciweb"),
+		("LinkURI", "url"),
+		("IrwinID", "irwin"),
+	]
+	orderByFields = "OBJECTID"
+	printSpec = "{oid:4}  {irwin}  {inciweb:>5}  {name}"
+
+	@classmethod
+	def processFields(self, fields):
+		name = fields["name"]
+		inciweb = fields["inciweb"]
+		url = fields["url"]
+
+		if inciweb != url or url[:33] != "http://inciweb.nwcg.gov/incident/" or url[-1] != "/":
+			fields["inciweb"] = "(*)"
+		else:
+			fields["inciweb"] = url[33:-1]
+
+		if name.endswith(" (Wildfire)"):
+			fields["name"] = name[:-11]
+		else:
+			fields["name"] = name + " (*)"
+
 class NIFC_CurrentPerimetersQuery(NIFC_BaseQuery):
 	name = "NIFC Current Wildfire Perimeters"
 	service = "Public_Wildfire_Perimeters_View"
@@ -918,6 +951,7 @@ def main():
 		"govunits_nps": GovUnits_NPS_Query,
 		"govunits_usfs": GovUnits_USFS_Query,
 		"govunits_w": GovUnits_Wilderness_Query,
+		"irwin_inciweb": IRWIN_InciWebQuery,
 		"nasa_modis": NASA_MODIS_Query,
 		"nasa_viirs": NASA_VIIRS_Query,
 		"nlcs": BLM_NLCS_Query,
