@@ -1,6 +1,7 @@
 #!/usr/local/bin/python3
 import json
 import math
+import re
 import subprocess
 import time
 from ppjson import prettyPrint
@@ -638,13 +639,18 @@ class IRWIN_InciWebQuery(NIFC_BaseQuery):
 		("IrwinID", "irwin"),
 	]
 	orderByFields = "OBJECTID"
-	printSpec = "{oid:4}  {irwin}  {inciweb:>5}  {name}"
+	printSpec = "{oid:4}  {irwin:36}  {inciweb:>5}  {name}"
+
+	IRWIN_ID_Pattern = re.compile('^[0-9a-f]{8}(?:-[0-9a-f]{4}){4}[0-9a-f]{8}$')
 
 	@classmethod
 	def processFields(self, fields):
 		name = fields["name"]
 		inciweb = fields["inciweb"]
 		url = fields["url"]
+
+		if not self.IRWIN_ID_Pattern.match(fields["irwin"]):
+			fields["irwin"] = "(*)"
 
 		if inciweb != url or url[:33] != "http://inciweb.nwcg.gov/incident/" or url[-1] != "/":
 			fields["inciweb"] = "(*)"
@@ -812,8 +818,6 @@ class GovUnits_Wilderness_Query(Query):
 			fields["agency"] = agency
 
 def processGroupBy(spec):
-	import re
-
 	# ./lama.py -q geomac_2000_2018 -w fireyear=2018
 	#           -g fireyear:6/agency:16//count:fireyear:4/sum:gisacres:14,.2f none
 

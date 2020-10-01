@@ -298,7 +298,7 @@ items: {
 		name: 'Current Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Public_Wildfire_Perimeters_View/FeatureServer',
-		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent', 'IRWINID'],
 		orderByFields: 'DateCurrent%20DESC',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
 			'wildfire-perimeters">NIFC</a>',
@@ -349,7 +349,7 @@ items: {
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
 			'/USA_Wildfires_v1/FeatureServer',
 		queryLayer: '1',
-		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent', 'IRWINID'],
 		orderByFields: 'DateCurrent%20DESC',
 		attribution: '[NIFC]',
 					},
@@ -937,6 +937,87 @@ function fireName(name, complex = null, inComplex = null)
 
 	return addFire() + ' (' + complex + ')';
 }
+const IRWIN_InciWeb_Map = new Map();
+function query_IRWIN_InciWeb(IrwinId, setInciWebId)
+{
+	function getId(json)
+	{
+		if (!json) return null;
+		const features = json.features;
+		if (!(features && features.length)) return null;
+		const attr = features[0].attributes;
+		if (!attr) return null;
+		let id = attr.Id;
+		if (!(id && typeof id === 'string')) return null;
+		const len = id.length;
+		if (!id.startsWith('http://inciweb.nwcg.gov/incident/')) return null;
+		if (id.charAt(len - 1) !== '/') return null;
+		id = id.slice(33, len - 1);
+		if (!/^[1-9][0-9]*$/.test(id)) return null;
+		return id;
+	}
+	function setId(json)
+	{
+		const id = getId(json);
+		IRWIN_InciWeb_Map.set(IrwinId, id);
+		setInciWebId(id);
+	}
+	pmapShared.loadJSON('https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
+		'/IRWIN_to_Inciweb_View/FeatureServer/0/query?f=json&outFields=OBJECTID,Id&' +
+		'where=IrwinID=%27' + IrwinId + '%27', setId, setId);
+}
+function linkInciWeb(spec, attr)
+{
+	let textNode = spec.textNode0;
+	let linkNode = spec.linkNode0;
+	function wantText() {
+		if (textNode.parentNode === linkNode)
+			spec.div.replaceChild(textNode, linkNode);
+	}
+	function wantLink() {
+		if (textNode.parentNode !== linkNode) {
+			if (!linkNode)
+				spec.linkNode0 = linkNode = document.createElement('a');
+			spec.div.replaceChild(linkNode, textNode);
+			linkNode.appendChild(textNode);
+		}
+	}
+	function checkInciWebId() {
+		const id = attr.InciWebId;
+		if (id) {
+			wantLink();
+			linkNode.href = 'https://inciweb.nwcg.gov/incident/' + id + '/';
+			return true;
+		}
+		if (id !== undefined) {
+			wantText();
+			return true;
+		}
+		return false;
+	}
+	function checkIrwinId() {
+		let IrwinId = attr.IRWINID;
+		if (!IrwinId || !/^\{[0-9A-F]{8}(?:-[0-9A-F]{4}){4}[0-9A-F]{8}\}$/.test(IrwinId))
+			return false;
+
+		const setInciWebId = id => {
+			attr.InciWebId = id;
+			checkInciWebId();
+		};
+
+		IrwinId = IrwinId.slice(1, 37).toLowerCase();
+		const InciWebId = IRWIN_InciWeb_Map.get(IrwinId);
+
+		if (InciWebId !== undefined) {
+			setInciWebId(InciWebId);
+			return true;
+		}
+		query_IRWIN_InciWeb(IrwinId, setInciWebId);
+		return false;
+	}
+	if (!checkInciWebId() && !checkIrwinId())
+		wantText();
+}
 fireSpec.style = () => ({color: '#FF0000', weight: 2});
 fireSpec.popup = {
 	template: 'text|br|text|ztf|br|text',
@@ -946,6 +1027,7 @@ fireSpec.popup = {
 		const date = getDateTime(attr.DateCurrent);
 		const size = formatAcres(attr.GISAcres);
 
+		linkInciWeb(this, attr);
 		setPopupText(this, name, size, date);
 		return '#FF0000';
 	}
@@ -1295,10 +1377,14 @@ fireIncidentSpec.makeLayer = function(spec) {
 		const [lng, lat] = feature.geometry.coordinates;
 		return [
 			'<div>' + lat + ',' + lng + '</div>',
-			div2(p.IncidentName + ' Fire', formatAcres(p.DailyAcres)),
+			div2(fireName(p.IncidentName), formatAcres(p.DailyAcres)),
 			div('Discovered: ' + getDateTime(p.FireDiscoveryDateTime)),
 			div('Updated: ' + getDateTime(p.ModifiedOnDateTime)),
 			div('Containment: ' + (p.PercentContained || 0) + '%'),
+			div('Injuries / Fatalities: ' + (p.Injuries || 0) + ' / ' + (p.Fatalities || 0)),
+			div('Residences Destroyed: ' + (p.ResidencesDestroyed || 0)),
+			div('Other Structures Destroyed: ' + (p.OtherStructuresDestroyed || 0)),
+			div('Personnel: ' + (p.TotalIncidentPersonnel || 0)),
 		].join('');
 	}, {className: 'popupDiv'});
 };
