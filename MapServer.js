@@ -298,7 +298,8 @@ items: {
 		name: 'Current Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
 			'/Public_Wildfire_Perimeters_View/FeatureServer',
-		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent', 'IRWINID'],
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent',
+			'IRWINID', 'ComplexID'],
 		orderByFields: 'DateCurrent%20DESC',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
 			'wildfire-perimeters">NIFC</a>',
@@ -349,7 +350,8 @@ items: {
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
 			'/USA_Wildfires_v1/FeatureServer',
 		queryLayer: '1',
-		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent', 'IRWINID'],
+		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent',
+			'IRWINID', 'ComplexID'],
 		orderByFields: 'DateCurrent%20DESC',
 		attribution: '[NIFC]',
 					},
@@ -995,19 +997,28 @@ function linkInciWeb(spec, attr)
 		}
 		return false;
 	}
-	function checkIrwinId() {
-		let IrwinId = attr.IRWINID;
-		if (!IrwinId || !/^\{[0-9A-F]{8}(?:-[0-9A-F]{4}){4}[0-9A-F]{8}\}$/.test(IrwinId))
-			return false;
-
-		const setInciWebId = id => {
-			attr.InciWebId = id;
+	function setInciWebId(id) {
+		attr.InciWebId = id;
+		if (spec.outlineID === attr[spec.queryField0])
 			checkInciWebId();
-		};
+	}
+	function checkIrwinId(id) {
+		if (!id || typeof id !== 'string') return null;
 
-		IrwinId = IrwinId.slice(1, 37).toLowerCase();
+		if (id.length === 38 && id.charAt(0) === '{' && id.charAt(37) === '}')
+			id = id.slice(1, 37);
+
+		id = id.toLowerCase();
+		if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){4}[0-9a-f]{8}$/.test(id))
+			return null;
+
+		return id;
+	}
+	function getInciWebId() {
+		const IrwinId = checkIrwinId(attr.ComplexID) || checkIrwinId(attr.IRWINID);
+		if (!IrwinId) return false;
+
 		const InciWebId = IRWIN_InciWeb_Map.get(IrwinId);
-
 		if (InciWebId !== undefined) {
 			setInciWebId(InciWebId);
 			return true;
@@ -1015,8 +1026,8 @@ function linkInciWeb(spec, attr)
 		query_IRWIN_InciWeb(IrwinId, setInciWebId);
 		return false;
 	}
-	if (!checkInciWebId() && !checkIrwinId())
-		wantText();
+	if (!checkInciWebId() && !getInciWebId())
+		setInciWebId(null);
 }
 fireSpec.style = () => ({color: '#FF0000', weight: 2});
 fireSpec.popup = {
@@ -1783,6 +1794,9 @@ initPointQueries(map)
 	{
 		function showFeature(attr)
 		{
+			const outlineID = attr[spec.queryField0];
+			spec.outlineID = outlineID;
+
 			let style = spec.show(attr);
 			if (typeof style === 'string')
 				style = {color: style.toLowerCase(), fillOpacity: 0};
@@ -1800,9 +1814,6 @@ initPointQueries(map)
 				popupEmpty = false;
 			} else
 				popup.update();
-
-			const outlineID = attr[spec.queryField0];
-			spec.outlineID = outlineID;
 
 			spec.runGeometryQuery = function()
 			{
