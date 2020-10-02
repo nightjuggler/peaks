@@ -1217,18 +1217,18 @@ let querySpecs = [
 
 	({items, order} = history);
 
-	makeSpec = (name, queryLayer) =>
+	makeSpec = (name, queryLayer, attributionPrefix) =>
 	({
 		name, style, where, url, queryLayer,
 		popup: {template, show}, queryFields, orderByFields,
-		attribution: makeAttribution('us-hist-fire-perim-' + name + '-dd83')
+		attribution: makeAttribution(attributionPrefix + name + '-dd83')
 	});
 	for (let layer = 18; layer >= 0; layer -= 1)
 	{
 		const year = (2000 + layer).toString();
-		addSpec(year, makeSpec(year, layer.toString()));
+		addSpec(year, makeSpec(year, layer.toString(), 'us-hist-fire-perim-'));
 	}
-	addSpec('combined', makeSpec('2000-2018', '19'));
+	addSpec('combined', makeSpec('2000-2018', '19', 'us-hist-fire-perimtrs-'));
 })();
 /*
 	----------------------------------
