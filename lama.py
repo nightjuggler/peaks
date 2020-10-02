@@ -103,6 +103,10 @@ def printExtentArea(extent):
 	area = ringArea(ring)
 	print("Extent Area = {:,.2f} square meters = {:,.2f} acres".format(area, area / 4046.9))
 
+encodeURIComponentPattern = re.compile("[^-.0-9A-Z_a-z]")
+def encodeURIComponent(s):
+	return encodeURIComponentPattern.sub(lambda m: "%{:02X}".format(ord(m.group(0))), s)
+
 class Query(object):
 	fields = []
 	orderByFields = None
@@ -142,7 +146,7 @@ class Query(object):
 			params.append("orderByFields=" + groupFields)
 
 		elif self.orderByFields and not returnExtentOnly:
-			params.append("orderByFields={}".format(self.orderByFields.replace(" ", "%20")))
+			params.append("orderByFields=" + encodeURIComponent(self.orderByFields))
 
 		if returnGeometry or (computeArea and not (returnCountOnly or returnExtentOnly)):
 			params.append("returnGeometry=true")
@@ -155,7 +159,7 @@ class Query(object):
 			params.append("distance={}".format(distance))
 			params.append("units=esriSRUnit_Meter")
 		if where:
-			params.append("where={}".format(where.replace(" ", "%20").replace("'", "%27")))
+			params.append("where=" + encodeURIComponent(where))
 		if returnCountOnly:
 			params.append("returnCountOnly=true")
 		if returnExtentOnly:
@@ -638,10 +642,10 @@ class IRWIN_InciWebQuery(NIFC_BaseQuery):
 		("LinkURI", "url"),
 		("IrwinID", "irwin"),
 	]
-	orderByFields = "OBJECTID"
-	printSpec = "{oid:4}  {irwin:36}  {inciweb:>5}  {name}"
+	orderByFields = "IrwinID"
+	printSpec = "{irwin:36}  {inciweb:>5}  {name}"
 
-	IRWIN_ID_Pattern = re.compile('^[0-9a-f]{8}(?:-[0-9a-f]{4}){4}[0-9a-f]{8}$')
+	IRWIN_ID_Pattern = re.compile("^[0-9a-f]{8}(?:-[0-9a-f]{4}){4}[0-9a-f]{8}$")
 
 	@classmethod
 	def processFields(self, fields):
