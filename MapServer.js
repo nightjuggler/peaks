@@ -970,32 +970,23 @@ function query_IRWIN_InciWeb(IrwinId, setInciWebId)
 }
 function linkInciWeb(spec, attr)
 {
-	let textNode = spec.textNode0;
-	let linkNode = spec.linkNode0;
-	function wantText() {
-		if (textNode.parentNode === linkNode)
-			spec.div.replaceChild(textNode, linkNode);
-	}
-	function wantLink() {
-		if (textNode.parentNode !== linkNode) {
-			if (!linkNode)
-				spec.linkNode0 = linkNode = document.createElement('a');
-			spec.div.replaceChild(linkNode, textNode);
-			linkNode.appendChild(textNode);
-		}
-	}
 	function checkInciWebId() {
 		const id = attr.InciWebId;
+		if (id === undefined) return false;
+		let textNode = spec.textNode0;
+		let linkNode = spec.linkNode0;
 		if (id) {
-			wantLink();
+			if (textNode.parentNode !== linkNode) {
+				if (!linkNode)
+					spec.linkNode0 = linkNode = document.createElement('a');
+				spec.div.replaceChild(linkNode, textNode);
+				linkNode.appendChild(textNode);
+			}
 			linkNode.href = 'https://inciweb.nwcg.gov/incident/' + id + '/';
-			return true;
-		}
-		if (id !== undefined) {
-			wantText();
-			return true;
-		}
-		return false;
+		} else
+			if (textNode.parentNode === linkNode)
+				spec.div.replaceChild(textNode, linkNode);
+		return true;
 	}
 	function setInciWebId(id) {
 		attr.InciWebId = id;
