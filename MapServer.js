@@ -946,11 +946,11 @@ function query_IRWIN_InciWeb(IrwinId, setInciWebId)
 	{
 		if (!json) return null;
 		const features = json.features;
-		if (!(features && features.length)) return null;
+		if (!features || features.length !== 1) return null;
 		const attr = features[0].attributes;
 		if (!attr) return null;
 		let id = attr.Id;
-		if (!(id && typeof id === 'string')) return null;
+		if (!id || typeof id !== 'string') return null;
 		const len = id.length;
 		if (!id.startsWith('http://inciweb.nwcg.gov/incident/')) return null;
 		if (id.charAt(len - 1) !== '/') return null;
@@ -1320,6 +1320,7 @@ viirsSpec.pointToLayer = function(feature, latlng) {
 	});
 };
 modisSpec.makeLayer = function(spec) {
+	const div = s => '<div class="peakDiv">' + s + '</div>';
 	const daynight = dn => dn === 'D' ? 'Day' : 'Night';
 	const satellite = sat => sat === 'T' ?
 		'<a href="https://en.wikipedia.org/wiki/Terra_(satellite)">Terra</a>' : sat === 'A' ?
@@ -1330,19 +1331,20 @@ modisSpec.makeLayer = function(spec) {
 		const [lng, lat] = feature.geometry.coordinates;
 		return [
 			'<div>' + daynight(p.DAYNIGHT) + ' Fire</div>',
-			'<div class="peakDiv">' + getDateTime(p.ACQ_DATE) + '</div>',
-			'<div class="peakDiv">' + lat + ',' + lng + '</div>',
-			'<div class="peakDiv">Radiative Power: ' + p.FRP + ' MW</div>',
-			'<div class="peakDiv">Brightness 21: ' + p.BRIGHTNESS + '&deg;K</div>',
-			'<div class="peakDiv">Brightness 31: ' + p.BRIGHT_T31 + '&deg;K</div>',
-			'<div class="peakDiv">Confidence: ' + p.CONFIDENCE + '%</div>',
-			'<div class="peakDiv">Version: ' + p.VERSION + '</div>',
-			'<div class="peakDiv">Scan / Track: ' + p.SCAN + ' / ' + p.TRACK + '</div>',
-			'<div class="peakDiv">Satellite: ' + satellite(p.SATELLITE) + '</div>',
+			div(getDateTime(p.ACQ_DATE)),
+			div(lat + ',' + lng),
+			div('Radiative Power: ' + p.FRP + ' MW'),
+			div('Brightness 21: ' + p.BRIGHTNESS + '&deg;K'),
+			div('Brightness 31: ' + p.BRIGHT_T31 + '&deg;K'),
+			div('Confidence: ' + p.CONFIDENCE + '%'),
+			div('Version: ' + p.VERSION),
+			div('Scan / Track: ' + p.SCAN + ' / ' + p.TRACK),
+			div('Satellite: ' + satellite(p.SATELLITE)),
 		].join('');
 	}, {className: 'popupDiv'});
 };
 viirsSpec.makeLayer = function(spec) {
+	const div = s => '<div class="peakDiv">' + s + '</div>';
 	const daynight = dn => dn === 'D' ? 'Day' : 'Night';
 	const satellite = sat => sat === 'N' ?
 		'<a href="https://en.wikipedia.org/wiki/Suomi_NPP">Suomi NPP</a>' : sat === '1' ?
@@ -1353,11 +1355,11 @@ viirsSpec.makeLayer = function(spec) {
 		const [lng, lat] = feature.geometry.coordinates;
 		return [
 			'<div>' + daynight(p.daynight) + ' Fire</div>',
-			'<div class="peakDiv">' + getDateTime(p.esritimeutc) + '</div>',
-			'<div class="peakDiv">' + lat + ',' + lng + '</div>',
-			'<div class="peakDiv">Radiative Power: ' + p.frp + ' MW</div>',
-			'<div class="peakDiv">Confidence: ' + p.confidence + '</div>',
-			'<div class="peakDiv">Satellite: ' + satellite(p.satellite) + '</div>',
+			div(getDateTime(p.esritimeutc)),
+			div(lat + ',' + lng),
+			div('Radiative Power: ' + p.frp + ' MW'),
+			div('Confidence: ' + p.confidence),
+			div('Satellite: ' + satellite(p.satellite)),
 		].join('');
 	}, {className: 'popupDiv'});
 };
