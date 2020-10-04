@@ -113,11 +113,13 @@ class Query(object):
 	printSpec = None
 	processFields = None
 	serverType = "Map"
+	sortkey = None
 
 	@classmethod
 	def query(self, geometry,
 		computeArea=False,
 		distance=20,
+		fieldsOnly=False,
 		geojson=False,
 		groupBy=None,
 		precision=5,
@@ -167,8 +169,9 @@ class Query(object):
 			params.append("geometryPrecision={}".format(precision))
 			params.append("outSR=4326")
 
-		url = "{}/{}/{}Server/{}/query?{}".format(self.home, self.service, self.serverType, self.layer,
-			"&".join(params))
+		url = "{}/{}/{}Server/{}".format(self.home, self.service, self.serverType, self.layer)
+		url += "?f=json" if fieldsOnly else "/query?" + "&".join(params)
+
 		fileName = "lama.out"
 
 		command = ["/usr/local/opt/curl/bin/curl",
@@ -195,6 +198,22 @@ class Query(object):
 		with open(fileName) as f:
 			jsonData = json.load(f)
 
+		if fieldsOnly:
+			fields = jsonData.get("fields")
+			if fields is None:
+				print("Query response doesn't have the \"fields\" property!")
+				prettyPrint(jsonData)
+				return
+			for f in fields:
+				if "length" not in f:
+					f["length"] = ""
+				if f["type"][:13] == "esriFieldType":
+					f["type"] = f["type"][13:]
+				if f["sqlType"][:7] == "sqlType":
+					f["sqlType"] = f["sqlType"][7:]
+				print("{name:28} {type:8} {sqlType:10} {length:3} {defaultValue}".format(**f))
+			return
+
 		if returnCountOnly or returnExtentOnly:
 			prettyPrint(jsonData)
 			if computeArea and returnExtentOnly:
@@ -208,6 +227,9 @@ class Query(object):
 			return
 
 		attrKey = "properties" if geojson else "attributes"
+
+		if self.sortkey and not groupBy:
+			features.sort(key = lambda feature: self.sortkey(feature[attrKey]))
 
 		for feature in features:
 			response = feature[attrKey]
@@ -225,7 +247,7 @@ class Query(object):
 				print(*values)
 				continue
 
-			if raw or not (self.fields and self.printSpec):
+			if raw or not self.printSpec:
 				prettyPrint(response)
 				if returnGeometry:
 					prettyPrint(feature["geometry"])
@@ -233,7 +255,10 @@ class Query(object):
 					printArea(feature, geojson, jsonData)
 				continue
 
-			fields = {alias: response[field] for field, alias in self.fields}
+			if self.fields:
+				fields = {alias: response[field] for field, alias in self.fields}
+			else:
+				fields = response
 			if self.processFields:
 				self.processFields(fields)
 			print(self.printSpec.format(**fields))
@@ -525,6 +550,82 @@ class AIANNH_Query(Query):
 	layer = 47 # sr = 102100 (3857)
 	fields = [("NAME", "name")]
 	printSpec = "{name}"
+
+class AirNow_BaseQuery(Query):
+	home = "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services"
+	serverType = "Feature"
+	layer = 0
+
+class AirNowPointQuery(AirNow_BaseQuery):
+	printSpec = "{PM25_AQI:4} | {PM10_AQI:4} | {OZONE_AQI:4} | {LocalTimeString:22} | {SiteName} ({DataSource})"
+
+	@classmethod
+	def sortkey(self, fields):
+		date = fields["LocalTimeString"] # e.g. "Sat 10/03/2020 07:00 AM PDT"
+		if len(date) >= 27:
+			hour = date[15:17]
+			if date[21] == "P":
+				if hour != "12":
+					hour = str(int(hour) + 12)
+			else:
+				assert date[21] == "A"
+				if hour == "12":
+					hour = "00"
+
+			fields["LocalTimeString"] = date = "{}-{}-{} {}:{} {}".format(
+				date[10:14], date[4:6], date[7:9], hour, date[18:20], date[24:])
+
+		return (fields["SiteName"], date)
+
+	@classmethod
+	def processFields(self, fields):
+		def checkValue(key):
+			value = fields.get(key)
+			if value is None:
+				fields[key] = "null"
+			elif isinstance(value, str):
+				fields[key] = round(float(value))
+			elif isinstance(value, float):
+				fields[key] = round(value)
+
+		checkValue("PM25_AQI")
+		checkValue("PM10_AQI")
+		checkValue("OZONE_AQI")
+
+		state = fields.get("StateName")
+		if state:
+			fields["SiteName"] += ", " + state
+		country = fields.get("CountryCode")
+		if country:
+			fields["SiteName"] += ", " + country
+
+class AirNow_Query(AirNowPointQuery):
+	name = "Air Now"
+	service = "Air_Now_Monitor_Data_Public"
+
+class AirNow_Current_Query(AirNowPointQuery):
+	name = "Air Now - Current"
+	service = encodeURIComponent("Air Now Current Monitor Data Public")
+
+class AirNowOzonePM_Query(AirNowPointQuery):
+	name = "Air Now - PM 2.5, PM 10, and Ozone"
+	service = "Air_Now_Monitors_Ozone_and_PM"
+
+class AirNowOzonePM_Current_Query(AirNowPointQuery):
+	name = "Air Now - PM 2.5, PM 10, and Ozone - Current"
+	service = "Air_Now_Current_Monitors_Ozone_and_PM"
+
+class AirNowContours_PM25_Query(AirNow_BaseQuery):
+	name = "Air Now Contours - PM 2.5"
+	service = "AirNowLatestContoursPM25"
+
+class AirNowContours_Ozone_Query(AirNow_BaseQuery):
+	name = "Air Now Contours - Ozone"
+	service = "AirNowLatestContoursOzone"
+
+class AirNowContours_Combined_Query(AirNow_BaseQuery):
+	name = "Air Now Contours - Combined"
+	service = "AirNowLatestContoursCombined"
 
 class NIFC_BaseQuery(Query):
 	home = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
@@ -880,6 +981,7 @@ def main():
 	parser.add_argument("-a", "--area", action="store_true")
 	parser.add_argument("--count", action="store_true")
 	parser.add_argument("-d", "--distance", type=float, default=20)
+	parser.add_argument("--fields", action="store_true")
 	parser.add_argument("--geojson", action="store_true")
 	parser.add_argument("--geometry", action="store_true")
 	parser.add_argument("-g", "--group-by")
@@ -925,6 +1027,7 @@ def main():
 	kwargs = {
 		"computeArea":          args.area,
 		"distance":             args.distance,
+		"fieldsOnly":           args.fields,
 		"geojson":              args.geojson,
 		"groupBy":              groupBy,
 		"precision":            args.precision,
@@ -939,6 +1042,13 @@ def main():
 
 	queryMap = {
 		"aiannh": AIANNH_Query,
+		"airnow": AirNow_Query,
+		"airnow_contours_combined": AirNowContours_Combined_Query,
+		"airnow_contours_ozone": AirNowContours_Ozone_Query,
+		"airnow_contours_pm25": AirNowContours_PM25_Query,
+		"airnow_current": AirNow_Current_Query,
+		"airnow_ozpm": AirNowOzonePM_Query,
+		"airnow_ozpm_current": AirNowOzonePM_Current_Query,
 		"blm": BLM_Query,
 		"ca_parks": CA_StateParksQuery,
 		"calfire": CalFire_UnitsQuery,
