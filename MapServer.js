@@ -1170,23 +1170,21 @@ let querySpecs = [
 		['#99004C', 'Very Unhealthy'],
 		['#4C0026', 'Hazardous'],
 	];
-	const levelIndex = i => Number.isInteger(i) && i >= 1 && i <= 6 ? i : 0;
+	const getLevel = i => levels[Number.isInteger(i) && i >= 1 && i <= 6 ? i : 0];
 	const style = ({properties: {gridcode}}) => ({
-		color: levels[levelIndex(gridcode)][0],
+		color: getLevel(gridcode)[0],
 		weight: 2,
 	});
 	const {template, show} = {
 		template: 'text|ztf|br|text',
 	show(attr) {
-		setPopupText(this, this.label + ': ' + levels[levelIndex(attr.gridcode)][1],
+		setPopupText(this, this.label + ': ' + getLevel(attr.gridcode)[1],
 			getDateTime(attr.Timestamp));
 		return '#0000FF';
 	}};
-	const queryFields = ['OBJECTID', 'Timestamp', 'gridcode'];
 	const url = 'https://services.arcgis.com/cJ9YHowT8TU7DUyn/ArcGIS/rest/services/AirNowLatestContours';
-
-	const aq = TileOverlays.items.us.items.aq;
-	const {items, order} = aq;
+	const queryFields = ['OBJECTID', 'Timestamp', 'gridcode'];
+	const {items, order} = TileOverlays.items.us.items.aq;
 
 	for (const [key, name, service, label] of [
 		['contours25', 'PM 2.5', 'PM25', 'PM 2.5'],
