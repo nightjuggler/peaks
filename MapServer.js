@@ -111,6 +111,11 @@ items: {
 	us: {
 		name: 'National',
 		items: {
+			aq: {
+		name: 'Air Quality',
+		items: {},
+		order: []
+			},
 			aiannh: {
 		name: 'American Indian,|Alaska Native, and|Native Hawaiian Areas',
 		url: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/AIANNHA/MapServer',
@@ -381,6 +386,7 @@ items: {
 			},
 		},
 		order: [
+			'aq',
 			'aiannh',
 			'blm',
 			'nlcs',
@@ -1149,6 +1155,57 @@ let querySpecs = [
 	scuevacSpec,
 	sonomaevacSpec,
 ];
+/*
+	---------------
+	AirNow Contours
+	---------------
+*/
+(function (){
+	const levels = [
+		['#778899', 'Unknown'],
+		['#00E400', 'Good'],
+		['#FFFF00', 'Moderate'],
+		['#FF7E00', 'Unhealthy for Sensitive Groups'],
+		['#FF0000', 'Unhealthy'],
+		['#99004C', 'Very Unhealthy'],
+		['#4C0026', 'Hazardous'],
+	];
+	const levelIndex = i => Number.isInteger(i) && i >= 1 && i <= 6 ? i : 0;
+	const style = ({properties: {gridcode}}) => ({
+		color: levels[levelIndex(gridcode)][0],
+		weight: 2,
+	});
+	const {template, show} = {
+		template: 'text|ztf|br|text',
+	show(attr) {
+		setPopupText(this, this.label + ': ' + levels[levelIndex(attr.gridcode)][1],
+			getDateTime(attr.Timestamp));
+		return '#0000FF';
+	}};
+	const queryFields = ['OBJECTID', 'Timestamp', 'gridcode'];
+	const url = 'https://services.arcgis.com/cJ9YHowT8TU7DUyn/ArcGIS/rest/services/AirNowLatestContours';
+
+	const aq = TileOverlays.items.us.items.aq;
+	const {items, order} = aq;
+
+	for (const [key, name, service, label] of [
+		['contours25', 'PM 2.5', 'PM25', 'PM 2.5'],
+		['contoursoz', 'Ozone', 'Ozone', 'Ozone'],
+		['contours', 'Combined', 'Combined', 'Air Quality']])
+	{
+		const spec = {
+			name: name + ' Contours',
+			url: url + service + '/FeatureServer',
+			queryFields,
+			attribution: '[AirNow]',
+			popup: {template, show, label},
+			style,
+		};
+		items[key] = spec;
+		order.push(key);
+		querySpecs.push(spec);
+	}
+})();
 /*
 	--------------------------
 	Historic GeoMAC Perimeters
