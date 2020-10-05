@@ -57,7 +57,10 @@ def polygonArea(rings):
 	return area
 
 def printArea(feature, geojson, jsonData):
-	geometry = feature["geometry"]
+	geometry = feature.get("geometry")
+	if geometry is None:
+		print("Feature doesn't have the \"geometry\" property!")
+		return
 	if geojson:
 		geometryType = geometry["type"]
 		coordinates = geometry["coordinates"]
@@ -250,7 +253,11 @@ class Query(object):
 			if raw or not self.printSpec:
 				prettyPrint(response)
 				if returnGeometry:
-					prettyPrint(feature["geometry"])
+					geometry = feature.get("geometry")
+					if geometry is None:
+						print("Feature doesn't have the \"geometry\" property!")
+						continue
+					prettyPrint(geometry)
 				if computeArea:
 					printArea(feature, geojson, jsonData)
 				continue
