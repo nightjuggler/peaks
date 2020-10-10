@@ -526,6 +526,7 @@ class LandMgmtAreaLoJ(LandMgmtArea):
 	"Shasta National Forest":                       "Shasta-Trinity National Forest",
 	"Toiyabe National Forest":                      "Humboldt-Toiyabe National Forest",
 	"Trinity National Forest":                      "Shasta-Trinity National Forest",
+	"Uinta National Forest":                        "Uinta-Wasatch-Cache National Forest",
 	"Wasatch National Forest":                      "Uinta-Wasatch-Cache National Forest",
 	"Winema National Forest":                       "Fremont-Winema National Forest",
 	}

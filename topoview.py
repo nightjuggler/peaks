@@ -13,7 +13,7 @@ class TopoView(object):
 
 	# Note (2020-09-30):
 	# The old 'gnis_cell_id' field had 2-6 digits.
-	# The new 'gda_item_id' field has 7 digits.
+	# The new 'gda_item_id' field has 7-8 digits.
 	# GDA = Geospatial Data Act of 2018 ?
 
 	FIELDS = (
@@ -31,7 +31,7 @@ class TopoView(object):
 		('max_latitude',        '-?[0-9]{1,3}(?:\.[0-9]{1,5})?'),
 		('OBJECTID',            '[1-9][0-9]{3,5}'),
 		('datum',               'NAD(?:27|83)'),
-		('gda_item_id',         '[1-9][0-9]{1,6}'),
+		('gda_item_id',         '[1-9][0-9]{1,7}'),
 	)
 	CORRECTIONS = {
 		'37ee6fadbdf1cb98d54214a695c3c7e7': (
