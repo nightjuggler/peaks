@@ -1772,7 +1772,9 @@ class PeakLoJ(TablePeak):
 			assert 'NV' in self.state
 
 	parentPeakPattern = re.compile(
-		'^<a href="/peak/([1-9][0-9]*)">' + peakNamePattern + '</a>$'
+		'^<a href="/(?:(?:peak/([1-9][0-9]*))|'
+		'(?:mapf\\?lat=-?[0-9]{1,2}\\.[0-9]{1,4}&lon=-?[0-9]{1,3}\\.[0-9]{1,4}))">' +
+		peakNamePattern + '</a>$'
 	)
 	peakFilePatterns = {
 		"Coords": (

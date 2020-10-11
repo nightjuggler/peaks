@@ -1355,7 +1355,7 @@ class RE(object):
 	)
 	column2 = re.compile(
 		'^<td><a href="https://caltopo\\.com/map\\.html#'
-		'll=([34][0-9]\\.[0-9]{1,5}),(-1[012][0-9]\\.[0-9]{1,5})&z=(1[0-9])&b=(t|oo)">'
+		'll=([34][0-9]\\.[0-9]{1,5}),(-1[012][0-9]\\.[0-9]{1,5})&z=(1[0-9])&b=t">'
 		'([- #&\'()+.0-9;A-Za-z]+)</a>( \\*{1,2})?'
 		'(?:<br>\\(([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: (?:HP|[1-9][0-9]+|VOR))?)\\))?</td>$'
 	)
@@ -1918,12 +1918,8 @@ def readHTML(pl):
 			m = RE.column2.match(line)
 			if m is None:
 				badLine()
-			(peak.latitude, peak.longitude,
-				peak.zoom, baseLayer,
+			(peak.latitude, peak.longitude, peak.zoom,
 				peak.name, suffix, peak.otherName) = m.groups()
-
-			if baseLayer != ('t' if peak.countryUS else 'oo'):
-				badLine()
 
 			if suffix is None:
 				if peak.isEmblem or peak.isMtneer:
@@ -2089,7 +2085,7 @@ def readHTML(pl):
 
 def writeHTML(pl):
 	sectionFormat = '<tr class="section"{4}><td id="{0}{1}" colspan="{2}">{1}. {3}</td></tr>'
-	column2Format = '<td><a href="https://caltopo.com/map.html#ll={},{}&z={}&b={}">{}</a>{}{}</td>'
+	column2Format = '<td><a href="https://caltopo.com/map.html#ll={},{}&z={}&b=t">{}</a>{}{}</td>'
 	summitpostFormat = '<td><a href="https://www.summitpost.org/{0}/{1}">SP</a></td>'
 	wikipediaFormat = '<td><a href="https://en.wikipedia.org/wiki/{0}">W</a></td>'
 	bobBurdFormat = '<td><a href="https://www.snwburd.com/dayhikes/peak/{0}">BB</a></td>'
@@ -2156,7 +2152,6 @@ def writeHTML(pl):
 			otherName = '' if peak.otherName is None else '<br>({})'.format(peak.otherName)
 
 			print column2Format.format(peak.latitude, peak.longitude, peak.zoom,
-				't' if peak.countryUS else 'oo',
 				peak.name, suffix, otherName)
 
 			if peak.landManagement:

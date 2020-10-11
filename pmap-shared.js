@@ -126,9 +126,7 @@ function inlineDiv(prefix, content)
 function popupHTML(lng, lat, p)
 {
 	const z = p.z || 15;
-	const b = p.noWX ? 'oo' : 't&o=r&n=0.2';
-
-	const topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&z=' + z + '&b=' + b;
+	const topoLink = 'https://caltopo.com/map.html#ll=' + lat + ',' + lng + '&z=' + z + '&b=t&o=r&n=0.2';
 
 	let name = makeLink(topoLink, p.name);
 	if (p.emblem)
