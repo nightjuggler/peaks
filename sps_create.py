@@ -6,10 +6,13 @@ import stat
 import subprocess
 import sys
 import time
-import HTMLParser
+from html.parser import HTMLParser
+
+def out(message, *args, **kwargs):
+	print(message.format(*args, **kwargs))
 
 def log(message, *args, **kwargs):
-	print >>sys.stderr, message.format(*args, **kwargs)
+	print(message.format(*args, **kwargs), file=sys.stderr)
 
 def err(*args, **kwargs):
 	log(*args, **kwargs)
@@ -18,14 +21,7 @@ def err(*args, **kwargs):
 def int2str(n):
 	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
 
-class TableParserError(Exception):
-	def __init__(self, message, *args, **kwargs):
-		self.message = message.format(*args, **kwargs)
-
-	def __str__(self):
-		return self.message
-
-class TableParser(HTMLParser.HTMLParser):
+class TableParser(HTMLParser):
 	def handle_starttag(self, tag, attributes):
 		if self.tableDepth == 0:
 			if tag == self.startTag and (
@@ -113,6 +109,7 @@ class TableParser(HTMLParser.HTMLParser):
 				self.currentCol += data
 
 	def __init__(self, fileName, numTables=1, startTag="table", startTagAttributes=None):
+		self.convert_charrefs = False
 		self.reset()
 
 		self.numTables = numTables
@@ -121,7 +118,7 @@ class TableParser(HTMLParser.HTMLParser):
 		self.tableDepth = 0
 		self.tables = []
 
-		fileObj = open(fileName)
+		fileObj = open(fileName, encoding="ascii", errors="backslashreplace")
 
 		while self.numTables > 0:
 			bytes = fileObj.read(1000)
@@ -160,7 +157,7 @@ class TableReader(object):
 		self.bytes = ""
 		self.rowNum = 0
 		self.colNum = 0
-		self.fileObj = open(fileName)
+		self.fileObj = open(fileName, encoding="ascii", errors="backslashreplace")
 
 		if upper:
 			self.TABLE, self.TR, self.TD, self.TH = ("TABLE", "TR", "TD", "TH")
@@ -212,7 +209,7 @@ class TableReader(object):
 				bytes += newbytes
 				bytesLen += bufSize
 
-	def next(self):
+	def __next__(self):
 		if self.fileObj is None:
 			raise StopIteration()
 
@@ -327,16 +324,16 @@ class ObjectDiff(object):
 
 		self.notEq = []
 		self.onlyA = []
-		self.onlyB = [k for k in b.iterkeys() if k not in a]
+		self.onlyB = [k for k in b if k not in a]
 
-		for k, v in a.iteritems():
+		for k, v in a.items():
 			if k in b:
 				if v != b[k] and k not in allowNotEq:
 					self.notEq.append(k)
 			else:
 				self.onlyA.append(k)
 
-	def __nonzero__(self):
+	def __bool__(self):
 		return bool(self.notEq or self.onlyA or self.onlyB)
 
 	def message(self, nameA, nameB, suffix=""):
@@ -455,12 +452,12 @@ class LandMgmtArea(object):
 			if hp is None:
 				area.highPoint = peak
 			elif peak.elevation.feet > hp.elevation.feet:
-				print "{} Overriding HP for {} (> {})".format(peak.fmtIdName, name, hp.name)
+				out("{} Overriding HP for {} (> {})", peak.fmtIdName, name, hp.name)
 				area.highPoint = peak
 			elif peak.elevation.feet < hp.elevation.feet:
-				print "{} Ignoring HP for {} (< {})".format(peak.fmtIdName, name, hp.name)
+				out("{} Ignoring HP for {} (< {})", peak.fmtIdName, name, hp.name)
 			else:
-				print "{} Ignoring HP for {} (= {})".format(peak.fmtIdName, name, hp.name)
+				out("{} Ignoring HP for {} (= {})", peak.fmtIdName, name, hp.name)
 
 		return area
 
@@ -477,7 +474,7 @@ class LandMgmtArea(object):
 			name = self.normalizeName(name, peak)
 			area = self.add(name, peak, isHighPoint)
 			if area in landAreas:
-				print "{} Duplicate land \"{}\"".format(peak.fmtIdName, name)
+				out("{} Duplicate land '{}'", peak.fmtIdName, name)
 			elif area.nps:
 				landAreas.insert(0, area)
 			else:
@@ -537,10 +534,6 @@ class LandMgmtAreaLoJ(LandMgmtArea):
 			err("{} Unexpected land \"{}\"", peak.fmtIdName, name)
 		return self.nameLookup.get(name, name)
 
-# Doesn't work with https URLs on my system:
-# import urllib
-# filename, headers = urllib.urlretrieve(url, filename)
-
 def formatTime(timestamp):
 	ymdhms = time.localtime(timestamp)[0:6]
 	return "{}-{:02}-{:02} {:02}:{:02}:{:02}".format(*ymdhms)
@@ -566,11 +559,11 @@ def loadURLs(loadLists):
 				os.chmod(filename, mode644)
 
 			command = ["/usr/local/opt/curl/bin/curl", "-o", filename, url]
-			print " ".join(command)
+			print(" ".join(command))
 
 			rc = subprocess.call(command)
 			if rc != 0:
-				print "Exit code", rc
+				print("Exit code", rc)
 				return
 
 			os.chmod(filename, mode444)
@@ -607,7 +600,7 @@ def getLoadListsFromTable(pl):
 					modTime = os.stat(filename).st_mtime
 					if modTime > cutoffTime:
 						continue
-					print "{:5} {:24} {} Last mod ({}) > 180 days ago ({})".format(
+					out("{:5} {:24} {} Last mod ({}) > 180 days ago ({})",
 						peak.id,
 						peak.name.replace('&quot;', '"'),
 						peakClass.classId,
@@ -627,7 +620,7 @@ class TablePeak(object):
 			return []
 
 		table = TableReader(fileName, **getattr(self, "tableReaderArgs", {}))
-		row = table.next()
+		row = table.__next__()
 
 		columns = []
 		for colNum, colStr in enumerate(row):
@@ -687,13 +680,13 @@ class TablePeak(object):
 		for area2 in self.landManagement:
 			area1 = getAreaNPS(area2.nps) if area2.nps else land1.pop(area2.name, None)
 			if area1 is None:
-				print "{} '{}' not in table".format(peak.fmtIdName, area2.name)
+				out("{} '{}' not in table", peak.fmtIdName, area2.name)
 			elif area1.isHighPoint(peak) != (area2.highPoint is self):
-				print "{} High Point mismatch ({})".format(peak.fmtIdName, area2.name)
+				out("{} High Point mismatch ({})", peak.fmtIdName, area2.name)
 
-		for name, area in sorted(land1.iteritems()):
+		for name, area in sorted(land1.items()):
 			if self.expectLand(area):
-				print "{} '{}' not on {}".format(peak.fmtIdName, name, self.classTitle)
+				out("{} '{}' not on {}", peak.fmtIdName, name, self.classTitle)
 
 	def checkDataSheet(self, peak):
 		dataSheets = peak.getDataSheets()
@@ -703,10 +696,10 @@ class TablePeak(object):
 		ds = self.dataSheet
 		if ds is None:
 			if dataSheets:
-				print self.fmtIdName, "Datasheet not on", self.classTitle
+				print(self.fmtIdName, "Datasheet not on", self.classTitle)
 		else:
 			if ds not in dataSheets:
-				print self.fmtIdName, "Datasheet", ds, "not in table"
+				print(self.fmtIdName, "Datasheet", ds, "not in table")
 
 class PeakPb(TablePeak):
 	classId = 'Pb'
@@ -1148,7 +1141,7 @@ class PeakPb(TablePeak):
 		"(?:Wilderness/Special Area: ([- ()/A-Za-z]+))?$"
 	)
 	def readLandManagement(self, land):
-		land = land.replace("\xE2\x80\x99", "'") # Tohono O'odham Nation
+		land = land.replace("\\xe2\\x80\\x99", "'") # Tohono O'odham Nation
 		land = land.replace("Palen/McCoy", "Palen-McCoy")
 		m = self.landPattern.match(land)
 		if m is None:
@@ -1190,7 +1183,7 @@ class PeakPb(TablePeak):
 	def readElevationInfo(self, maxPeak, html):
 		m = self.elevationRangePattern.match(html)
 		if m is None:
-			print self.fmtIdName, "Elevation Info doesn't match pattern"
+			print(self.fmtIdName, "Elevation Info doesn't match pattern")
 			maxPeak.elevation = self.elevation
 			return
 
@@ -1362,13 +1355,13 @@ class PeakPb(TablePeak):
 			v1 = getattr(self, attr)
 			v2 = getattr(other, attr)
 			if v1 != v2:
-				print "{} {} doesn't match: {} != {}".format(self.fmtIdName, attr, v1, v2)
+				out("{} {} doesn't match: {} != {}", self.fmtIdName, attr, v1, v2)
 
 		min1, max1 = self.prominence
 		min2, max2 = other.prominence
 
 		if not (abs(min2-min1) in (0,1,2) and abs(max2-max1) in (0,1,2)):
-			print "{} Prominence doesn't match: {} != {}".format(self.fmtIdName,
+			out("{} Prominence doesn't match: {} != {}", self.fmtIdName,
 				self.prominence, other.prominence)
 
 	def copyListFields(self, other):
@@ -1734,9 +1727,9 @@ class PeakLoJ(TablePeak):
 
 		assert self.prominence == self.elevation - self.saddleElev
 
-		if isinstance(self.state, basestring):
+		if isinstance(self.state, str):
 			self.state = self.state.split(', ')
-		if isinstance(self.counties, basestring):
+		if isinstance(self.counties, str):
 			self.counties = self.counties.split(' &amp; ')
 		self.isolation = float(self.isolation)
 		self.saddleLat = float(self.saddleLat)
@@ -1859,7 +1852,8 @@ class PeakLoJ(TablePeak):
 
 	def readPeakFile(self, fileName):
 		lines = (TableParser(fileName).tables[0][0][0] # First table, first row, first column
-				.translate(None, "\r\n")
+				.replace("\r", "")
+				.replace("\n", "")
 				.replace(" <a><img></a>", "")
 				.replace("<small>", "").replace("</small>", "")
 				.replace("<font>", "").replace("</font>", "")
@@ -1941,7 +1935,7 @@ class PeakLoJ(TablePeak):
 			v1 = getattr(self, attr)
 			v2 = getattr(other, attr)
 			if v1 != v2:
-				print "{} {} doesn't match: {} != {}".format(self.fmtIdName, attr, v1, v2)
+				out("{} {} doesn't match: {} != {}", self.fmtIdName, attr, v1, v2)
 
 	def copyListFields(self, other):
 		for attr in ("sectionNumber", "sectionName"):
@@ -2228,7 +2222,7 @@ class PeakVR(object):
 		if searchStr is not None:
 			table.readUntil(searchStr, discard=True)
 			table.readUntil("</tr>", discard=True)
-		row = table.next()
+		row = table.__next__()
 
 		columns = []
 		for colNum, colStr in enumerate(row):
@@ -2280,7 +2274,7 @@ class PeakVR(object):
 		return getattr(peak2, attr, None)
 
 def matchElevation(peak, elevation):
-	line = "{} {:7} {{:7}}".format(peak.fmtIdName, elevation)
+	line = "{} {:7} {{:7}}".format(peak.fmtIdName, str(elevation))
 
 	exactMatches, otherMatches = peak.matchElevation(elevation)
 
@@ -2288,10 +2282,10 @@ def matchElevation(peak, elevation):
 		return
 	if otherMatches:
 		for e, result in otherMatches:
-			print line.format(e.getElevation()), result
+			print(line.format(e.getElevation()), result)
 	else:
 		for e in peak.elevations:
-			print line.format(e.getElevation()), "No match", elevation.diff(e)
+			print(line.format(e.getElevation()), "No match", elevation.diff(e))
 
 class MatchByName(object):
 	def __init__(self, pl):
@@ -2340,9 +2334,9 @@ def printTitle(title):
 	border = "+" + ("-" * (width - 2)) + "+"
 	title = "| " + title + (" " * (width - 4 - len(title))) + " |"
 
-	print border
-	print title
-	print border
+	print(border)
+	print(title)
+	print(border)
 
 def checkElevation(pl, peakClass):
 	printTitle("Elevations - " + peakClass.classTitle)
@@ -2375,7 +2369,7 @@ def checkProminence(pl, setProm=False):
 			return "not listed"
 		if isinstance(prom, int):
 			minPb, maxPb = promPb
-			if prom == (minPb + maxPb) / 2:
+			if prom == (minPb + maxPb) // 2:
 				return True
 			return "{} != ({} + {})/2".format(prom, minPb, maxPb)
 
@@ -2412,15 +2406,15 @@ def checkProminence(pl, setProm=False):
 					source = "Pb"
 
 					if promObj is None:
-						print peak.fmtIdName, "{:6} ".format(prom),
-						print "Matches Pb but not LoJ [{}]".format(matchLoJ)
+						print(peak.fmtIdName, "{:6} ".format(prom), end=" ")
+						print("Matches Pb but not LoJ [{}]".format(matchLoJ))
 				else:
 					numMatchNone += 1
-					print peak.fmtIdName, "{:6} ".format(prom),
+					print(peak.fmtIdName, "{:6} ".format(prom), end=" ")
 
 					if promObj is None and promLoJ is not None and promPb is not None:
 						minPb, maxPb = promPb
-						avgPb = (minPb + maxPb) / 2
+						avgPb = (minPb + maxPb) // 2
 						if avgPb == promLoJ and len(peak.prominences) == 1:
 							if prom == minPb:
 								newProm = (avgPb, "min")
@@ -2429,19 +2423,19 @@ def checkProminence(pl, setProm=False):
 								newProm = (avgPb, "max")
 								break
 
-					print "Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb)
+					print("Matches neither LoJ [{}] nor Pb [{}]".format(matchLoJ, matchPb))
 
 				if promObj is not None and source != promObj.source:
-					print peak.fmtIdName, "{:6} ".format(prom),
-					print "Source should be {} instead of {}".format(source, promObj.source)
+					print(peak.fmtIdName, "{:6} ".format(prom), end=" ")
+					print("Source should be {} instead of {}".format(source, promObj.source))
 
 			if newProm is not None:
 				newProm, promType = newProm
 				if setProm:
-					print "Setting to {} [LoJ={}, Pb={}]".format(newProm, promLoJ, promPb)
+					out("Setting to {} [LoJ={}, Pb={}]", newProm, promLoJ, promPb)
 					peak.prominences = [newProm]
 				else:
-					print "Matches {}Pb and avgPb == LoJ".format(promType)
+					out("Matches {}Pb and avgPb == LoJ", promType)
 
 	printTitle("Prominences: LoJ/Pb={}, LoJ={}, Pb={}, None={}".format(
 		numMatchBoth, numMatchLoJ, numMatchPb, numMatchNone))
@@ -2459,17 +2453,17 @@ def checkThirteeners(pl, setVR=False):
 			vr = getattr(peak, PeakVR.classAttrPeak, None)
 			if vr is None:
 				if thirteener:
-					print peak.fmtIdName, "Missing VR link"
+					print(peak.fmtIdName, "Missing VR link")
 			else:
 				if not thirteener:
-					print peak.fmtIdName, "Unexpected VR link"
+					print(peak.fmtIdName, "Unexpected VR link")
 				colVR = peak.column12
 				if colVR is None:
 					if setVR:
 						peak.column12 = vr
 				else:
 					if vr.rank != colVR.rank or vr.linkName != colVR.name:
-						print "{} VR rank/link {}/{} doesn't match {}/{}".format(
+						out("{} VR rank/link {}/{} doesn't match {}/{}",
 							peak.fmtIdName, colVR.rank, colVR.name, vr.rank, vr.linkName)
 
 def checkData(pl, setProm=False, setVR=False):
@@ -2489,10 +2483,10 @@ def checkData(pl, setProm=False, setVR=False):
 		for peak in peaks:
 			if peakMap.get(peak) is None:
 				if verbose:
-					print "Cannot map '{}' ({})".format(peak.name, peak.elevation)
+					out("Cannot map '{}' ({})", peak.name, peak.elevation)
 			else:
 				numMapped += 1
-		print "Mapped {}/{} peaks".format(numMapped, len(peaks))
+		out("Mapped {}/{} peaks", numMapped, len(peaks))
 
 	for peakClass in (PeakLoJ, PeakPb):
 		printTitle("Reading Peak Files - " + peakClass.classTitle)
@@ -2515,11 +2509,11 @@ def checkData(pl, setProm=False, setVR=False):
 				if peak3 is None:
 					peak3 = peakMap.get(peak2)
 					if peak3 is None:
-						print "{} Name doesn't match ({})".format(
+						out("{} Name doesn't match ({})",
 							peak.fmtIdName, peak2.name)
 						setattr(peak, peakClass.classAttrPeak, peak2)
 					elif peak3 is not peak:
-						print "{} Name matches a different peak ({})!".format(
+						out("{} Name matches a different peak ({})!",
 							peak.fmtIdName, peak2.name)
 						continue
 				else:
@@ -2533,22 +2527,22 @@ def checkData(pl, setProm=False, setVR=False):
 						float(peak.latitude) > 35.36)
 
 					if haveFlag != wantFlag:
-						print "{} Should {}able CC flag".format(peak.fmtIdName,
+						out("{} Should {}able CC flag", peak.fmtIdName,
 							"en" if wantFlag else "dis")
 				else:
 					peak2.checkDataSheet(peak)
 
 				if peak.quad is not None:
 					if peak.quad != peak2.quadName:
-						print "{} Quad '{}' != '{}'".format(peak.fmtIdName,
+						out("{} Quad '{}' != '{}'", peak.fmtIdName,
 							peak2.quadName, peak.quad)
 
 				if peak.country != peak2.country:
-					print '{} data-country should be "{}" instead of "{}"'.format(
+					out('{} data-country should be "{}" instead of "{}"',
 						peak.fmtIdName, "/".join(peak2.country), "/".join(peak.country))
 
 				if peak.state != peak2.state:
-					print '{} data-state should be "{}" instead of "{}"'.format(
+					out('{} data-state should be "{}" instead of "{}"',
 						peak.fmtIdName, "/".join(peak2.state), "/".join(peak.state))
 
 	for peakClass in peakClasses:
@@ -2603,7 +2597,7 @@ def readListFile(peakListId):
 
 		if int(sectionNumber) != expectedSectionNumber:
 			err("Expected section number {}:\n{}", expectedSectionNumber, line)
-		if listFile.next() != "\n":
+		if listFile.__next__() != "\n":
 			err("Expected empty line after section header:\n{}", line)
 
 		peaks = []
@@ -2639,7 +2633,7 @@ def readListFile(peakListId):
 
 def createBBMap(peakLists):
 	bbMap = {}
-	for pl in peakLists.itervalues():
+	for pl in peakLists.values():
 		for section in pl.sections:
 			for peak in section.peaks:
 				if peak.bobBurdId is None:
@@ -2687,11 +2681,11 @@ def setPeak(peak, peakClass, idMap):
 def printPeaks(pl):
 	for sectionNumber, section in enumerate(pl.sections, start=1):
 		if sectionNumber != 1:
-			print
-		print "{}. {}".format(sectionNumber, section.name)
-		print
+			print()
+		print("{}. {}".format(sectionNumber, section.name))
+		print()
 		for peak in section.peaks:
-			print "{:5} {:28} {} {:12} {}".format(peak.id, peak.name,
+			out("{:5} {:28} {} {:12} {}", peak.id, peak.name,
 				peak.listsOfJohnPeak.state[0],
 				peak.listsOfJohnPeak.counties[0],
 				peak.peakbaggerPeak.rangeList[-1][1])
@@ -2809,7 +2803,7 @@ def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbos
 								fmtIdName, fromId, p.peakList.id, p.id)
 		section.setDataAttributes()
 
-	for peak in mapPb.itervalues():
+	for peak in mapPb.values():
 		log("Pb peak {} ({}) not used!", peak.id, peak.name)
-	for peak in mapLoJ.itervalues():
+	for peak in mapLoJ.values():
 		log("LoJ peak {} ({}) not used!", peak.id, peak.name)

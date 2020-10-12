@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 import struct
 
 class Grid(object):
@@ -28,7 +28,7 @@ class Grid(object):
 		ident += " " * (56 - len(ident))
 		ident += "vertc2.0"
 
-		assert f.read(64) == ident
+		assert f.read(64) == ident.encode()
 
 		(self.numLng, self.numLat, numZ,
 			self.minLng, self.deltaLng,
@@ -46,7 +46,7 @@ class Grid(object):
 		unpackFormat = "<" + "f" * self.numLng
 		f.seek(recordLen)
 		self.data = [struct.unpack_from(unpackFormat, f.read(recordLen), 4)
-			for n in xrange(self.numLat)]
+			for n in range(self.numLat)]
 		f.close()
 
 	def interpolate(self, lat, lng):
@@ -108,7 +108,7 @@ def main():
 	assert -90 <= args.latitude <= 90
 	assert -180 <= args.longitude <= 180
 
-	print getShift(args.latitude, args.longitude)
+	print(getShift(args.latitude, args.longitude))
 
 if __name__ == "__main__":
 	main()

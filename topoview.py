@@ -1,4 +1,3 @@
-from __future__ import print_function
 import json
 import random
 import re
@@ -208,7 +207,7 @@ def load(sources):
 	}
 
 	with open(CSV_FILENAME, 'a', 1) as f:
-		for topo_id, topo in sorted(sources.iteritems()):
+		for topo_id, topo in sorted(sources.items()):
 			if topo_id in topos:
 				continue
 			bin_num = scale_to_bin_num.get(topo.scale)
@@ -231,12 +230,12 @@ def compare(sources):
 	if topos is None:
 		return
 
-	for topo_id, corrections in TopoView.CORRECTIONS.iteritems():
+	for topo_id, corrections in TopoView.CORRECTIONS.items():
 		topo = topos[topo_id]
 		for name, value in corrections:
 			setattr(topo, name, value)
 
-	for topo_id, topoview in sorted(topos.iteritems()):
+	for topo_id, topoview in sorted(topos.items()):
 		topo = sources.get(topo_id)
 		if topo is None:
 			print(topo_id, "Not used in the HTML")

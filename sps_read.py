@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 import re
 import sys
 import vertcon
 
 def log(message, *args, **kwargs):
-	print >>sys.stderr, message.format(*args, **kwargs)
+	print(message.format(*args, **kwargs), file=sys.stderr)
 
 def err(*args, **kwargs):
 	log(*args, **kwargs)
@@ -14,15 +14,23 @@ class FormatError(Exception):
 	def __init__(self, message, *formatArgs):
 		self.message = message.format(*formatArgs)
 
-class InputFile(file):
+class InputFile(object):
 	def __init__(self, fileName):
 		self.lineNumber = 0
-		super(InputFile, self).__init__(fileName)
+		self.fileObject = open(fileName)
 
-	def next(self):
-		line = super(InputFile, self).next()
+	def close(self):
+		self.fileObject.close()
+
+	def __iter__(self):
+		return self
+
+	def __next__(self):
+		line = self.fileObject.__next__()
 		self.lineNumber += 1
 		return line
+
+	next = __next__
 
 def int2str(n):
 	return str(n) if n < 1000 else '{},{:03}'.format(*divmod(n, 1000))
@@ -108,7 +116,7 @@ class Section(object):
 			count[attr] = count.get(attr, 0) + 1
 
 		def setmax(attr, count):
-			tally, attrValue = max([(v, k) for k, v in count.iteritems()])
+			tally, attrValue = max([(v, k) for k, v in count.items()])
 			if tally > 1 or len(count) == 1:
 				attrValue = attrValue.split("/")
 				if getattr(self, attr) != attrValue:
@@ -249,7 +257,7 @@ class Peak(object):
 				err('{} {} ({}) and {} ({}) should not both have data-from="{}"!',
 					p.peakList.id, p.id, p.name, self.id, self.name, self.dataFrom)
 
-		for k, v in vars(other).iteritems():
+		for k, v in vars(other).items():
 			if not (k[0] == '_' or k in doNotCopy):
 				setattr(self, k, v)
 
@@ -608,9 +616,9 @@ class LandMgmtSummary(object):
 
 		titleBar = '+-{}-+-{}-+-{}-+-{}'.format('-'*len1, '-'*len2, '-'*len3, '-'*maxLenURL)
 
-		print '+{}'.format('-'*(maxLineLen - 1))
-		print '| {} ({} peaks)'.format(self.title, len(self.peaks))
-		print titleBar
+		print('+{}'.format('-'*(maxLineLen - 1)))
+		print('| {} ({} peaks)'.format(self.title, len(self.peaks)))
+		print(titleBar)
 
 		for area in self.areas:
 			hp = area.highPoint.name if area.highPoint else '-'
@@ -619,9 +627,9 @@ class LandMgmtSummary(object):
 			if len(url) > maxLenURL:
 				url = url[:url.rfind('/', 0, maxLenURL - 3) + 1] + '...'
 
-			print lineFormat.format(len(area.peaks), area.name, hp, url)
+			print(lineFormat.format(len(area.peaks), area.name, hp, url))
 
-		print titleBar
+		print(titleBar)
 
 def printLandManagementAreas():
 	summaryLookup = {
@@ -635,12 +643,12 @@ def printLandManagementAreas():
 	}
 	miscSummary = LandMgmtSummary('Miscellaneous')
 
-	for name, area in sorted(LandMgmtArea.name2area.iteritems()):
+	for name, area in sorted(LandMgmtArea.name2area.items()):
 		(summaryLookup.get(area.landClass) or miscSummary).add(area)
 
-	for summary in summaryLookup.itervalues():
+	for summary in sorted(summaryLookup.values(), key=lambda s: s.title):
 		summary.printSummary()
-		print
+		print()
 
 	miscSummary.printSummary()
 
@@ -965,9 +973,9 @@ class Elevation(object):
 
 		if self.isRange:
 			if self.source.inMeters:
-				return feet == toFeet(self.elevationMeters + self.source.contourInterval/2, 0)
+				return feet == toFeet(self.elevationMeters + self.source.contourInterval // 2, 0)
 
-			return feet == self.elevationFeet + self.source.contourInterval/2
+			return feet == self.elevationFeet + self.source.contourInterval // 2
 
 		if self.source.inMeters:
 			return feet == toFeet(self.elevationMeters, 0)
@@ -1128,7 +1136,7 @@ def parseElevation(htmlFile, peak):
 		checkElevationTypes(peak)
 
 def printElevationStats():
-	print '====== Number of peaks with some/all elevations sourced\n'
+	print('====== Number of peaks with some/all elevations sourced\n')
 
 	for pl in peakListsOrdered:
 		numAllSourced = 0
@@ -1143,23 +1151,23 @@ def printElevationStats():
 					numAllSourced += 1
 				elif numSources > 0:
 					numSomeSourced += 1
-		print "{:4}: {:3}/{:3}/{:3}".format(pl.id, numSomeSourced, numAllSourced, pl.numPeaks)
+		print('{:4}: {:3}/{:3}/{:3}'.format(pl.id, numSomeSourced, numAllSourced, pl.numPeaks))
 
-	print '\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources))
+	print('\n====== {} NGS Data Sheets\n'.format(len(NGSDataSheet.sources)))
 
-	for stationID, src in sorted(NGSDataSheet.sources.iteritems()):
+	for stationID, src in sorted(NGSDataSheet.sources.items()):
 		peak = src.peak
-		print stationID, "({})".format(src.name), peak.name,
+		print(stationID, '({})'.format(src.name), peak.name, end='')
 		if peak.otherName is not None:
-			print "({})".format(peak.otherName),
-		print
+			print(' ({})'.format(peak.otherName), end='')
+		print()
 
-	print '\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources))
+	print('\n====== {} USGS Topo Maps\n'.format(len(USGSTopo.sources)))
 
 	sameMap = []
 	lastLine = ""
 
-	for src in sorted(USGSTopo.sources.itervalues(), key=lambda topo:
+	for src in sorted(USGSTopo.sources.values(), key=lambda topo:
 		(topo.seriesID, topo.state, topo.name, topo.year, topo.id)):
 
 		numRefs = len(src.peaks)
@@ -1169,7 +1177,7 @@ def printElevationStats():
 			src.series, src.scale, src.state, src.name, src.year,
 			numPeaks, numRefs, '' if numRefs == numPeaks else ' *')
 
-		print line
+		print(line)
 
 		if line[34:92] == lastLine[34:92]:
 			if not (sameMap and lastLine is sameMap[-1]):
@@ -1178,10 +1186,10 @@ def printElevationStats():
 
 		lastLine = line
 
-	print '\n====== Different Scans of the Same Map\n'
+	print('\n====== Different Scans of the Same Map\n')
 
 	for line in sameMap:
-		print line
+		print(line)
 
 RE_Escape = re.compile('[\\' + '\\'.join('$()*+.?[]^') + ']')
 
@@ -1634,7 +1642,7 @@ class SimpleElevation(object):
 
 	def avgFeet(self, toFeet=toSurveyFeet):
 		avgElev = (self.minElev + self.maxElev) / 2
-		return toFeet(avgElev) if self.inMeters else avgElev
+		return toFeet(avgElev) if self.inMeters else int(avgElev)
 
 	def __str__(self):
 		if self.minElev == self.maxElev:
@@ -2099,18 +2107,18 @@ def writeHTML(pl):
 
 	htmlFile = open(pl.htmlFilename)
 	for line in htmlFile:
-		print line,
+		print(line, end='')
 		if line == tableLine:
 			break
 	for line in htmlFile:
 		m = RE.sectionRow.match(line)
 		if m is not None:
 			break
-		print line,
+		print(line, end='')
 
 	for sectionNumber, section in enumerate(pl.sections, start=1):
-		print sectionFormat.format(pl.htmlId, sectionNumber, pl.numColumns, section.name,
-			getCommonDataAttributes(section, pl))
+		print(sectionFormat.format(pl.htmlId, sectionNumber, pl.numColumns, section.name,
+			getCommonDataAttributes(section, pl)))
 
 		for peak in section.peaks:
 			suffix = ''
@@ -2140,87 +2148,87 @@ def writeHTML(pl):
 			if peak.dataAlsoPeaks:
 				peak.dataAlsoPeaks.sort(key=lambda p: p.peakList.sortkey)
 				attr += ' data-also="{}"'.format(" ".join([p.fromId() for p in peak.dataAlsoPeaks]))
-			print '<tr{}{}>'.format(attr, getCommonDataAttributes(peak, section))
+			print('<tr{}{}>'.format(attr, getCommonDataAttributes(peak, section)))
 
 			attr = ''
 			if peak.hasHtmlId:
 				attr += ' id="{}{}"'.format(pl.htmlId, peak.id)
 			if peak.extraRow is not None:
 				attr += ' rowspan="2"'
-			print '<td{}>{}</td>'.format(attr, peak.id)
+			print('<td{}>{}</td>'.format(attr, peak.id))
 
 			otherName = '' if peak.otherName is None else '<br>({})'.format(peak.otherName)
 
-			print column2Format.format(peak.latitude, peak.longitude, peak.zoom,
-				peak.name, suffix, otherName)
+			print(column2Format.format(peak.latitude, peak.longitude, peak.zoom,
+				peak.name, suffix, otherName))
 
 			if peak.landManagement:
-				print '<td>{}</td>'.format(peak.landManagementHTML())
+				print('<td>{}</td>'.format(peak.landManagementHTML()))
 			else:
-				print emptyCell
+				print(emptyCell)
 
-			print '<td>{}</td>'.format(peak.elevationHTML())
+			print('<td>{}</td>'.format(peak.elevationHTML()))
 
 			if peak.grade is None:
-				print emptyCell
+				print(emptyCell)
 			else:
-				print '<td>Class {}</td>'.format(peak.grade)
+				print('<td>Class {}</td>'.format(peak.grade))
 
-			print '<td>{}</td>'.format(peak.prominenceHTML())
+			print('<td>{}</td>'.format(peak.prominenceHTML()))
 
 			if peak.summitpostId is None:
-				print emptyCell
+				print(emptyCell)
 			else:
-				print summitpostFormat.format(peak.summitpostName, peak.summitpostId)
+				print(summitpostFormat.format(peak.summitpostName, peak.summitpostId))
 
 			if peak.wikipediaLink is None:
-				print emptyCell
+				print(emptyCell)
 			else:
-				print wikipediaFormat.format(peak.wikipediaLink)
+				print(wikipediaFormat.format(peak.wikipediaLink))
 
 			if peak.bobBurdId is None:
-				print emptyCell
+				print(emptyCell)
 			else:
-				print bobBurdFormat.format(peak.bobBurdId)
+				print(bobBurdFormat.format(peak.bobBurdId))
 
 			if peak.listsOfJohnId is None:
-				print emptyCell
+				print(emptyCell)
 			else:
-				print listsOfJohnFormat.format(peak.listsOfJohnId)
+				print(listsOfJohnFormat.format(peak.listsOfJohnId))
 
 			if peak.peakbaggerId is None:
-				print emptyCell
+				print(emptyCell)
 			else:
-				print peakbaggerFormat.format(peak.peakbaggerId)
+				print(peakbaggerFormat.format(peak.peakbaggerId))
 
 			if pl.column12 is not None:
 				if peak.column12 is None:
-					print emptyCell
+					print(emptyCell)
 				else:
-					print str(peak.column12),
+					print(str(peak.column12), end='')
 
 			if peak.countryUS:
-				print weatherFormat.format(peak.longitude, peak.latitude)
+				print(weatherFormat.format(peak.longitude, peak.latitude))
 			else:
-				print emptyCell
+				print(emptyCell)
 
 			if peak.isClimbed:
-				print '<td>{}</td>'.format(climbed2Html(peak.climbed))
+				print('<td>{}</td>'.format(climbed2Html(peak.climbed)))
 			else:
-				print emptyCell
+				print(emptyCell)
 
-			print '</tr>'
+			print('</tr>')
 			if peak.extraRow is not None:
-				print extraRowFirstLine
-				print peak.extraRow,
-				print extraRowLastLine
+				print(extraRowFirstLine)
+				print(peak.extraRow, end='')
+				print(extraRowLastLine)
 
 	for line in htmlFile:
 		if line == '</table>\n':
-			print line,
+			print(line, end='')
 			break
 	for line in htmlFile:
-		print line,
+		print(line, end='')
 	htmlFile.close()
 
 def writePeakJSON(f, peak):
@@ -2274,7 +2282,7 @@ def writeJSON(pl):
 	import topoview
 	topos = topoview.read_csv()
 
-	for topo in USGSTopo.sources.itervalues():
+	for topo in USGSTopo.sources.values():
 		topo.id = topos[topo.id].scan_id
 
 	f = sys.stdout.write
@@ -2364,23 +2372,23 @@ def printStats():
 	n = len(climbedElevs)
 	eIndex = 0
 	for elev, name in sorted(climbedElevs):
-		print "{:3}.  {:4}m  {}".format(n, elev, name)
+		print("{:3}.  {:4}m  {}".format(n, elev, name))
 		if eIndex == 0 and elev >= n:
 			eIndex = n
 		n -= 1
 
-	print "E-Index:", eIndex
-	print
+	print("E-Index:", eIndex)
+	print()
 
 	n = len(climbedProms)
 	pIndex = 0
 	for prom, name in sorted(climbedProms):
-		print "{:3}.  {:4}m  {}".format(n, prom, name)
+		print("{:3}.  {:4}m  {}".format(n, prom, name))
 		if pIndex == 0 and prom >= n:
 			pIndex = n
 		n -= 1
 
-	print "P-Index:", pIndex
+	print("P-Index:", pIndex)
 
 class RegionInfo(object):
 	def __init__(self, peak, elev, prom):
@@ -2475,19 +2483,19 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 		return "{:>16}:".format(label)
 
 	def printInfo(info, label):
-		print "{}: {}".format(label, len(info.elevs))
+		print("{}: {}".format(label, len(info.elevs)))
 
-		print align("Min Elev"), elev2Str(info.minElev), peakNames(info.minElevPeaks)
-		print align("Max Elev"), elev2Str(info.maxElev), peakNames(info.maxElevPeaks)
-		print align("Mean Elev"), elev2Str(average(info.elevs))
-		print align("Median Elev"), elev2Str(median(info.elevs))
+		print(align("Min Elev"), elev2Str(info.minElev), peakNames(info.minElevPeaks))
+		print(align("Max Elev"), elev2Str(info.maxElev), peakNames(info.maxElevPeaks))
+		print(align("Mean Elev"), elev2Str(average(info.elevs)))
+		print(align("Median Elev"), elev2Str(median(info.elevs)))
 
-		print align("Min Prom"), prom2Str(info.minProm), peakNames(info.minPromPeaks)
-		print align("Max Prom"), prom2Str(info.maxProm), peakNames(info.maxPromPeaks)
-		print align("Mean Prom"), prom2Str(average(info.proms))
-		print align("Median Prom"), prom2Str(median(info.proms))
+		print(align("Min Prom"), prom2Str(info.minProm), peakNames(info.minPromPeaks))
+		print(align("Max Prom"), prom2Str(info.maxProm), peakNames(info.maxPromPeaks))
+		print(align("Mean Prom"), prom2Str(average(info.proms)))
+		print(align("Median Prom"), prom2Str(median(info.proms)))
 
-	for region, info in sorted(regionInfoMap.iteritems()):
+	for region, info in sorted(regionInfoMap.items()):
 		printInfo(info, "/".join(region))
 
 	printInfo(total, "Total")
