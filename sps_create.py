@@ -840,6 +840,7 @@ class PeakPb(TablePeak):
 		('Snow Mountain', 7056):                'Snow Mountain East',
 	# Other Western Peaks:
 		('Mount Evans-West Peak', 14256):       'West Evans',
+		('Mount Nebo-South Peak', 11877):       'Mount Nebo South',
 		('Mount Saint Helens', 8333):           'Mount St. Helens',
 		('Trail Canyon Saddle Peak', 11325):    'Trail Canyon Peak',
 	}
@@ -1562,6 +1563,7 @@ class PeakLoJ(TablePeak):
 		('Twin Peaks, South', 922):                     'Twin Peaks',
 	# Other Western Peaks:
 		('Mount Saint Helens', 8333):                   'Mount St. Helens',
+		('South Peak', 11877):                          'Mount Nebo South',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
