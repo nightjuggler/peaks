@@ -99,11 +99,15 @@ function terriaObject(latitude, longitude)
 }
 
 // See https://en.wikipedia.org/wiki/Geometric_Shapes
-const rowCollapsedIcon = ' \u25B6\uFE0E';
-const rowExpandedIcon = ' \u25BC';
-const mapLinkIconUp = '\u25B2';
-const mapLinkIconDown = '\u25BC';
-const mapLinkHash = {};
+// The "right-pointing pointer" looks better in Firefox on the desktop.
+// Use the "right-pointing triangle" in all other cases.
+const rightPointer = '\u25BA'; // black right-pointing pointer
+const rightTriangle = '\u25B6\uFE0E'; // black right-pointing triangle
+const collapsedIcon = window.navigator.vendor === '' && !window.matchMedia('(hover: none)').matches ?
+	rightPointer : rightTriangle;
+const expandedAboveIcon = '\u25B2'; // black up-pointing triangle
+const expandedBelowIcon = '\u25BC'; // black down-pointing triangle
+const mapLinkHash = new Map();
 const extraRow = {};
 const landColumnArray = [];
 const climbedColumnArray = [];
@@ -278,13 +282,6 @@ function initPeakListMenu()
 		});
 	}
 }
-function totalOffsetTop(element)
-{
-	let top = 0;
-	for (; element; element = element.offsetParent)
-		top += element.offsetTop;
-	return top;
-}
 function addMapLink(listNode, linkText, url)
 {
 	const listItem = document.createElement('li');
@@ -450,77 +447,72 @@ function addMapLinkBox(mapLinkSpan)
 	const mapLink = secondColumn.firstElementChild;
 	const latCommaLong = mapLink.href.split('#')[1].split('&')[0].split('=')[1];
 
-	mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakFlags));
+	return mapLinkSpan.appendChild(createMapLinkBox(latCommaLong, peakFlags));
 }
-function showMapLinkBox(event)
+function toggleMapLinkBox(event)
 {
-	const mapLinkSpan = event.currentTarget;
-	mapLinkSpan.className = 'mapLinkWithBox';
-	if (mapLinkSpan.lastChild !== mapLinkSpan.firstChild)
-		mapLinkSpan.lastChild.style.display = 'block';
-	else
-		addMapLinkBox(mapLinkSpan);
+	const toggle = event.currentTarget;
+	toggle.focus();
 
-	const offsetTop = totalOffsetTop(mapLinkSpan);
-	const mapLinkBox = mapLinkSpan.lastChild;
-	if (offsetTop - window.scrollY > mapLinkBox.offsetHeight) {
+	let mapLinkBox = toggle.nextSibling;
+	const active = mapLinkBox && mapLinkBox === activePopup;
+
+	closeActivePopup();
+	if (active) return;
+
+	const mapLinkSpan = toggle.parentNode;
+	mapLinkSpan.className = 'mapLinkOpen';
+
+	if (!mapLinkBox)
+		mapLinkBox = addMapLinkBox(mapLinkSpan);
+
+	const {top, height} = toggle.getBoundingClientRect();
+
+	if (top > mapLinkBox.offsetHeight) {
 		mapLinkBox.style.top = 'auto';
-		mapLinkBox.style.bottom = '14px';
-		mapLinkSpan.firstChild.nodeValue = mapLinkIconUp;
+		mapLinkBox.style.bottom = height + 'px';
+		toggle.firstChild.nodeValue = expandedAboveIcon;
 	} else {
-		mapLinkBox.style.top = '14px';
+		mapLinkBox.style.top = height + 'px';
 		mapLinkBox.style.bottom = 'auto';
-		mapLinkSpan.firstChild.nodeValue = mapLinkIconDown;
+		toggle.firstChild.nodeValue = expandedBelowIcon;
 	}
+
 	setActivePopup(mapLinkBox);
-}
-function showMapLinkBoxOnEnter(event)
-{
-	if (event.key !== 'Enter')
-		return true;
-
-	const mapLinkSpan = event.currentTarget;
-
-	if (mapLinkSpan.lastChild === activePopup)
-		closeActivePopup();
-	else
-		showMapLinkBox(event);
-
-	return false;
 }
 function showMapLinkIcon(event)
 {
-	const mapLinkSpan = mapLinkHash[event.currentTarget.id];
+	const mapLinkSpan = mapLinkHash.get(event.currentTarget);
 
 	if (mapLinkSpan.lastChild !== activePopup)
-		mapLinkSpan.className = 'mapLink';
+		mapLinkSpan.className = 'mapLinkClosed';
 }
 function hideMapLinkIcon(event)
 {
-	const mapLinkSpan = mapLinkHash[event.currentTarget.id];
+	const mapLinkSpan = mapLinkHash.get(event.currentTarget);
+
+	mapLinkSpan.firstChild.blur();
 
 	if (mapLinkSpan.lastChild === activePopup)
 		closeActivePopup();
-	else
-		mapLinkSpan.className = 'mapLinkHidden';
 
-	mapLinkSpan.blur();
+	mapLinkSpan.className = 'mapLinkHidden';
 }
-function clickFirstColumn(event)
+function toggleExtraRow(event)
 {
-	const firstColumn = event.currentTarget;
-	let row = firstColumn.parentNode;
-	const peakTable = row.parentNode;
+	const toggle = event.currentTarget;
+	const firstColumn = toggle.parentNode;
+	const row = firstColumn.parentNode;
 	const nextRow = row.nextElementSibling;
-	row = extraRow[firstColumn.id];
-	if (row.parentNode === null) {
-		peakTable.insertBefore(row, nextRow);
+
+	if (firstColumn.rowSpan === 1) {
+		row.parentNode.insertBefore(extraRow[firstColumn.id], nextRow);
 		firstColumn.rowSpan = 2;
-		firstColumn.lastChild.firstChild.nodeValue = rowExpandedIcon;
+		toggle.firstChild.nodeValue = expandedBelowIcon;
 	} else {
 		firstColumn.rowSpan = 1;
-		peakTable.removeChild(row);
-		firstColumn.lastChild.firstChild.nodeValue = rowCollapsedIcon;
+		row.parentNode.removeChild(nextRow);
+		toggle.firstChild.nodeValue = collapsedIcon;
 	}
 	return false;
 }
@@ -640,34 +632,36 @@ function decorateTable()
 			firstColumn.appendChild(document.createTextNode(sectionNumber + '.' + sectionPeakNumber));
 		if (firstColumn.rowSpan === 2)
 		{
-			const spanElement = document.createElement('span');
-			spanElement.className = 'expandCollapse';
-			spanElement.appendChild(document.createTextNode(rowCollapsedIcon));
-			firstColumn.appendChild(spanElement);
 			if (!firstColumn.id)
 				firstColumn.id = 'p' + g.numPeaks;
-			firstColumn.addEventListener('click', clickFirstColumn);
-			firstColumn.style.cursor = 'pointer';
+
+			const toggle = document.createElement('button');
+			toggle.className = 'toggle';
+			toggle.appendChild(document.createTextNode(collapsedIcon));
+			toggle.addEventListener('click', toggleExtraRow);
+			firstColumn.appendChild(toggle);
 			firstColumn.rowSpan = 1;
 
-			const nextRow = row.nextElementSibling;
-			extraRow[firstColumn.id] = nextRow.parentNode.removeChild(nextRow);
+			extraRow[firstColumn.id] = row.parentNode.removeChild(row.nextElementSibling);
 		}
 		if (row.peakFlags.country_US)
 		{
-			const secondColumn = firstColumn.nextElementSibling;
-			const lineBreak = secondColumn.firstElementChild.nextElementSibling;
+			const toggle = document.createElement('button');
+			toggle.className = 'toggle';
+			toggle.appendChild(document.createTextNode(collapsedIcon));
+			toggle.addEventListener('click', toggleMapLinkBox);
+
 			const mapLinkSpan = document.createElement('span');
 			mapLinkSpan.className = 'mapLinkHidden';
-			mapLinkSpan.appendChild(document.createTextNode(mapLinkIconUp));
-			mapLinkSpan.tabIndex = 0;
-			secondColumn.id = 'm' + g.numPeaks;
+			mapLinkSpan.appendChild(toggle);
+
+			const secondColumn = firstColumn.nextElementSibling;
+			const lineBreak = secondColumn.firstElementChild.nextElementSibling;
+
 			secondColumn.insertBefore(mapLinkSpan, lineBreak);
 			secondColumn.addEventListener('mouseenter', showMapLinkIcon);
 			secondColumn.addEventListener('mouseleave', hideMapLinkIcon);
-			mapLinkHash[secondColumn.id] = mapLinkSpan;
-			mapLinkSpan.addEventListener('click', showMapLinkBox);
-			mapLinkSpan.addEventListener('keydown', showMapLinkBoxOnEnter);
+			mapLinkHash.set(secondColumn, mapLinkSpan);
 		}
 		if (delisted) {
 			g.numDelisted += 1;
@@ -705,9 +699,8 @@ function closeActivePopup(event)
 		for (let node = event.target; node; node = node.parentNode)
 			if (node === mapLinkSpan) return;
 
-	activePopup.style.display = 'none';
-	mapLinkSpan.className = mobileMode ? 'mapLink' : 'mapLinkHidden';
-	mapLinkSpan.addEventListener('click', showMapLinkBox);
+	mapLinkSpan.className = 'mapLinkClosed';
+	mapLinkSpan.firstChild.firstChild.nodeValue = collapsedIcon;
 	activePopup = null;
 
 	if (mobileMode) {
@@ -718,10 +711,7 @@ function closeActivePopup(event)
 }
 function setActivePopup(element)
 {
-	closeActivePopup();
-
 	activePopup = element;
-	activePopup.parentNode.removeEventListener('click', showMapLinkBox);
 
 	if (mobileMode) {
 		const body = document.body;
@@ -740,15 +730,15 @@ function clickMobile()
 
 	mobileMode = !mobileMode;
 	if (mobileMode) {
-		Object.values(mapLinkHash).forEach(mapLinkSpan => {
+		mapLinkHash.forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
 			parent.removeEventListener('mouseenter', showMapLinkIcon);
 			parent.removeEventListener('mouseleave', hideMapLinkIcon);
-			mapLinkSpan.className = 'mapLink';
+			mapLinkSpan.className = 'mapLinkClosed';
 		});
 		elem.nodeValue = 'DESKTOP';
 	} else {
-		Object.values(mapLinkHash).forEach(mapLinkSpan => {
+		mapLinkHash.forEach(mapLinkSpan => {
 			const parent = mapLinkSpan.parentNode;
 			parent.addEventListener('mouseenter', showMapLinkIcon);
 			parent.addEventListener('mouseleave', hideMapLinkIcon);
