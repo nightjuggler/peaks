@@ -454,18 +454,16 @@ function toggleMapLinkBox(event)
 	const toggle = event.currentTarget;
 	toggle.focus();
 
-	let mapLinkBox = toggle.nextSibling;
-	const active = mapLinkBox && mapLinkBox === activePopup;
+	const mapLinkSpan = toggle.parentNode;
+	const active = mapLinkSpan.lastChild === activePopup;
 
 	closeActivePopup();
 	if (active) return;
 
-	const mapLinkSpan = toggle.parentNode;
-	mapLinkSpan.className = 'mapLinkOpen';
+	mapLinkSpan.className = mapLinkSpan.className === 'mapLinkClosed' ? 'mapLinkOpen' :
+		'mapLinkWasHidden mapLinkOpen';
 
-	if (!mapLinkBox)
-		mapLinkBox = addMapLinkBox(mapLinkSpan);
-
+	const mapLinkBox = toggle.nextSibling || addMapLinkBox(mapLinkSpan);
 	const {top, height} = toggle.getBoundingClientRect();
 
 	if (top > mapLinkBox.offsetHeight) {
@@ -486,6 +484,8 @@ function showMapLinkIcon(event)
 
 	if (mapLinkSpan.lastChild !== activePopup)
 		mapLinkSpan.className = 'mapLinkClosed';
+	else if (mapLinkSpan.className !== 'mapLinkOpen')
+		mapLinkSpan.className = 'mapLinkOpen';
 }
 function hideMapLinkIcon(event)
 {
@@ -699,7 +699,7 @@ function closeActivePopup(event)
 		for (let node = event.target; node; node = node.parentNode)
 			if (node === mapLinkSpan) return;
 
-	mapLinkSpan.className = 'mapLinkClosed';
+	mapLinkSpan.className = mapLinkSpan.className === 'mapLinkOpen' ? 'mapLinkClosed' : 'mapLinkHidden';
 	mapLinkSpan.firstChild.firstChild.nodeValue = collapsedIcon;
 	activePopup = null;
 
