@@ -843,6 +843,7 @@ class PeakPb(TablePeak):
 		('Mount Nebo-South Peak', 11877):       'Mount Nebo South',
 		('Mount Saint Helens', 8333):           'Mount St. Helens',
 		('Trail Canyon Saddle Peak', 11325):    'Trail Canyon Peak',
+		('Wizard Island Peak', 6933):           'Wizard Island',
 	}
 	@classmethod
 	def normalizeName(self, name, elevation=None):
