@@ -46,7 +46,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
-	('ocap','Other California Peaks', 85, 14),
+	('ocap','Other California Peaks', 86, 15),
 	('owp', 'Other Western Peaks', 17, 10),
 ]
 
@@ -426,6 +426,7 @@ landNameLookup = {
 	"Lake Mead NRA":                                'landNPS',
 	"Lake Tahoe Basin Management Unit":             'landFS',
 	"Lake Tahoe Nevada State Park":                 'landNVSP',
+	"Lava Beds National Monument":                  'landNPS',
 	"Los Coyotes Indian Reservation":               'landRez',
 	"Marin Municipal Water District":               'landCounty',
 	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
@@ -1986,8 +1987,8 @@ def readHTML(pl):
 			m = RE.bobBurd.match(line)
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
-					('OCAP', '5.4'), # Mount Saint Helena Southeast
-					('OCAP','14.1'), # Peak 2440+
+					('OCAP', '6.4'), # Mount Saint Helena Southeast
+					('OCAP','15.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
@@ -2000,8 +2001,8 @@ def readHTML(pl):
 			m = RE.listsOfJohn.match(line)
 			if m is None:
 				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
-					('OCAP', '5.4'), # Mount Saint Helena Southeast
-					('OCAP','14.1'), # Peak 2440+
+					('OCAP', '6.4'), # Mount Saint Helena Southeast
+					('OCAP','15.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
@@ -2014,9 +2015,9 @@ def readHTML(pl):
 			m = RE.peakbagger.match(line)
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
-					('OCAP', '2.3'), # Peak 7905
-					('OCAP','12.7'), # Kandlbinder Peak
-					('OCAP','14.1'), # Peak 2440+
+					('OCAP', '3.3'), # Peak 7905
+					('OCAP','13.7'), # Kandlbinder Peak
+					('OCAP','15.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '19.2'), # Peak 3113m
 					('OSP', '19.5'), # Volcanic Ridge East
