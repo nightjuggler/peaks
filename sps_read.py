@@ -431,6 +431,7 @@ landNameLookup = {
 	"Marin Municipal Water District":               'landCounty',
 	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
 	"Mount Davidson Park":                          'landCity',
+	"Mount Eddy Research Natural Area":             'Shasta-Trinity National Forest',
 	"Mount St. Helens National Volcanic Monument":  'Gifford Pinchot National Forest',
 	"Navajo Nation":                                'landRez',
 	"NAWS China Lake":                              'landDOD',
