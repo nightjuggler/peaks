@@ -47,7 +47,7 @@ peakListsOrdered = [
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
 	('ocap','Other California Peaks', 86, 15),
-	('owp', 'Other Western Peaks', 17, 10),
+	('owp', 'Other Western Peaks', 18, 10),
 ]
 
 def html2ListId(htmlId):
@@ -430,6 +430,7 @@ landNameLookup = {
 	"Los Coyotes Indian Reservation":               'landRez',
 	"Marin Municipal Water District":               'landCounty',
 	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
+	"Moran State Park":                             'landWASP',
 	"Mount Davidson Park":                          'landCity',
 	"Mount Eddy Research Natural Area":             'Shasta-Trinity National Forest',
 	"Mount St. Helens National Volcanic Monument":  'Gifford Pinchot National Forest',
@@ -500,6 +501,7 @@ landOrder = {landClass: i for i, landClass in enumerate((
 	'landRez',
 	'landNVSP',     # Nevada Division of State Parks
 	'landUDWR',     # Utah Division of Wildlife Resources - https://wildlife.utah.gov/
+	'landWASP',     # Washington State Parks - https://parks.state.wa.us/
 	'landBLM',
 	'landCNRA',     # California Natural Resources Agency (other than Department of Parks and Recreation)
 	'landSP',       # California Department of Parks and Recreation - https://www.parks.ca.gov/
@@ -1381,7 +1383,7 @@ class RE(object):
 	grade = re.compile(
 		'^<td>Class ([123456](?:s[23456])?\\+?)</td>$'
 	)
-	numLT1k = re.compile('^[1-9][0-9]{0,2}$')
+	numLT1k = re.compile('^[1-9][0-9]{0,2}|0$')
 	numGE1k = re.compile('^[1-9][0-9]?,[0-9]{3}$')
 	numMeters = re.compile('^[1-9][0-9]{0,3}(?:\\.[0-9])?$')
 	prominence = re.compile('^[,0-9]+')

@@ -93,6 +93,7 @@ td {
 	SP = California State Park
 	TWC = The Wildlands Conservancy
 	UDWR = Utah Division of Wildlife Resources
+	WASP = Washington State Park
 */
 .land .landBLM    {background-color: rgb(240,248,255);} /* AliceBlue */
 .land .landBLMW   {background-color: rgb(224,255,255);} /* LightCyan */
@@ -111,6 +112,7 @@ td {
 .land .landSP     {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
 .land .landTWC    {background-color: rgb(230,255,230);}
 .land .landUDWR   {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
+.land .landWASP   {background-color: rgb(250,250,210);} /* LightGoldenrodYellow */
 
 #peakTable.land tr.climbed > td:nth-child(5) {
 	background-image: linear-gradient(to right, rgba(173,255,47,0.0), rgba(173,255,47,0.2));
