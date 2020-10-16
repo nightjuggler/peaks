@@ -47,7 +47,7 @@ peakListsOrdered = [
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
 	('ocap','Other California Peaks', 86, 15),
-	('owp', 'Other Western Peaks', 18, 10),
+	('owp', 'Other Western Peaks', 19, 10),
 ]
 
 def html2ListId(htmlId):
@@ -1995,6 +1995,7 @@ def readHTML(pl):
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
+					('OWP',  '1.1'), # Sourdough Mountain Lookout
 				):
 					badLine()
 			else:
@@ -2009,6 +2010,7 @@ def readHTML(pl):
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
+					('OWP',  '1.1'), # Sourdough Mountain Lookout
 				):
 					badLine()
 			else:

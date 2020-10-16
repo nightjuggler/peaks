@@ -860,6 +860,7 @@ class PeakPb(TablePeak):
 		('Mount Evans-West Peak', 14256):       'West Evans',
 		('Mount Nebo-South Peak', 11877):       'Mount Nebo South',
 		('Mount Saint Helens', 8333):           'Mount St. Helens',
+		('Sourdough Mountain-Lookout Site', 5985): 'Sourdough Mountain Lookout',
 		('Trail Canyon Saddle Peak', 11325):    'Trail Canyon Peak',
 		('Wizard Island Peak', 6933):           'Wizard Island',
 	}
