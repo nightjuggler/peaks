@@ -539,6 +539,23 @@ def formatTime(timestamp):
 	ymdhms = time.localtime(timestamp)[0:6]
 	return "{}-{:02}-{:02} {:02}:{:02}:{:02}".format(*ymdhms)
 
+def zipLongest(*iterables):
+	iterators = [iter(it) for it in iterables]
+	while True:
+		values = []
+		active = []
+		for it in iterators:
+			try:
+				value = next(it)
+			except StopIteration:
+				continue
+			values.append(value)
+			active.append(it)
+		if not active:
+			break
+		yield tuple(values)
+		iterators = active
+
 def loadURLs(loadLists):
 	random.seed()
 	for loadList in loadLists:
@@ -549,7 +566,7 @@ def loadURLs(loadLists):
 	mode444 = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
 	mode644 = stat.S_IWUSR | mode444
 
-	for i, loadList in enumerate(map(lambda *a: filter(None, a), *loadLists)):
+	for i, loadList in enumerate(zipLongest(*loadLists)):
 		if i != 0:
 			sleepTime = int(random.random() * 7 + 7.5)
 			log("{}/{} Sleeping for {} seconds", i, listLengths, sleepTime)
