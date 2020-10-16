@@ -423,6 +423,7 @@ landNameLookup = {
 	"Hawthorne Army Depot":                         'landDOD',
 	"Hood Mountain Regional Park":                  'landCounty',
 	"Indian Peaks WMA":                             'landUDWR',
+	"Kings River SMA":                              'Sierra National Forest',
 	"Lake Mead NRA":                                'landNPS',
 	"Lake Tahoe Basin Management Unit":             'landFS',
 	"Lake Tahoe Nevada State Park":                 'landNVSP',
@@ -514,6 +515,7 @@ landOrder = {landClass: i for i, landClass in enumerate((
 
 def getLandClass(landList):
 	landClass = None
+	parent = None
 
 	for i, area in enumerate(landList):
 		currentClass = area.landClass
@@ -531,8 +533,9 @@ def getLandClass(landList):
 				landClass = currentClass
 			elif landOrder[landClass] < landOrder[currentClass]:
 				raise FormatError("Unexpected order of land management areas")
+			parent = area
 
-		elif i == 0 or currentClass != landList[i-1].name:
+		elif i == 0 or currentClass != landList[i-1].name and currentClass != parent.name:
 			raise FormatError('"{}" must follow "{}"', area.name, currentClass)
 
 	return landClass

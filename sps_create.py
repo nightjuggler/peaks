@@ -494,6 +494,7 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Hart Mountain National Antelope Refuge":       "Hart Mountain NAR",
 	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
 	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
+	"Kings River Special Management Unit OCD":      "Kings River SMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Lake Tahoe State Park":                        "Lake Tahoe Nevada State Park",
 	"Mount Eddy RNA":                               "Mount Eddy Research Natural Area",
