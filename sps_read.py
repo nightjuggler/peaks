@@ -429,6 +429,7 @@ landNameLookup = {
 	"Lake Tahoe Nevada State Park":                 'landNVSP',
 	"Lava Beds National Monument":                  'landNPS',
 	"Los Coyotes Indian Reservation":               'landRez',
+	"Lyon Peak-Needle Lake RNA":                    'Tahoe National Forest',
 	"Marin Municipal Water District":               'landCounty',
 	"Mono Basin National Forest Scenic Area":       'Inyo National Forest',
 	"Moran State Park":                             'landWASP',
