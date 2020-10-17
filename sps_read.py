@@ -93,6 +93,13 @@ def initPeakLists():
 		pl.sortkey = i
 		peakListsOrdered[i] = pl
 
+def allPeaksGenerator():
+	for pl in peakListsOrdered:
+		for section in pl.sections:
+			for peak in section.peaks:
+				if peak.dataFrom is None:
+					yield peak
+
 def readAllHTML():
 	for pl in peakListsOrdered:
 		pl.readHTML()
@@ -2366,18 +2373,16 @@ def createList(pl):
 def printStats():
 	climbedElevs = []
 	climbedProms = []
-	for pl in peakListsOrdered:
-		for section in pl.sections:
-			for peak in section.peaks:
-				if peak.dataFrom is None and peak.isClimbed:
-					name = peak.name.replace('&quot;', '"')
+	for peak in allPeaksGenerator():
+		if peak.isClimbed:
+			name = peak.name.replace('&quot;', '"')
 
-					prom = toMeters(peak.getPromForStats())
-					climbedProms.append((prom, name))
+			prom = toMeters(peak.getPromForStats())
+			climbedProms.append((prom, name))
 
-					if prom >= 100:
-						elev = toMeters(peak.getElevForStats())
-						climbedElevs.append((elev, name))
+			if prom >= 100:
+				elev = toMeters(peak.getElevForStats())
+				climbedElevs.append((elev, name))
 
 	n = len(climbedElevs)
 	eIndex = 0
@@ -2443,33 +2448,31 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 	regionInfoMap = {}
 	total = None
 
-	for pl in peakListsOrdered:
-		for section in pl.sections:
-			for peak in section.peaks:
-				if peak.dataFrom is None and (allPeaks or peak.isClimbed):
-					prom = peak.getPromForStats()
-					if promInMeters:
-						prom = toMeters(prom)
-					if prom < promThreshold:
-						continue
+	for peak in allPeaksGenerator():
+		if allPeaks or peak.isClimbed:
+			prom = peak.getPromForStats()
+			if promInMeters:
+				prom = toMeters(prom)
+			if prom < promThreshold:
+				continue
 
-					elev = peak.getElevForStats()
-					if elevInMeters:
-						elev = toMeters(elev)
-					if elev < elevThreshold:
-						continue
+			elev = peak.getElevForStats()
+			if elevInMeters:
+				elev = toMeters(elev)
+			if elev < elevThreshold:
+				continue
 
-					region = (peak.country[0], peak.state[0])
-					info = regionInfoMap.get(region)
-					if info is None:
-						regionInfoMap[region] = RegionInfo(peak, elev, prom)
-					else:
-						info.update(peak, elev, prom)
+			region = (peak.country[0], peak.state[0])
+			info = regionInfoMap.get(region)
+			if info is None:
+				regionInfoMap[region] = RegionInfo(peak, elev, prom)
+			else:
+				info.update(peak, elev, prom)
 
-					if total is None:
-						total = RegionInfo(peak, elev, prom)
-					else:
-						total.update(peak, elev, prom)
+			if total is None:
+				total = RegionInfo(peak, elev, prom)
+			else:
+				total.update(peak, elev, prom)
 
 	def peakNames(peaks):
 		return "({})".format(", ".join([peak.name.replace('&quot;', '"') for peak in peaks]))
@@ -2509,6 +2512,20 @@ def printSummary(elevThreshold=3000, elevInMeters=True, promThreshold=100, promI
 		printInfo(info, "/".join(region))
 
 	printInfo(total, "Total")
+
+def printHistory():
+	history = []
+	for peak in allPeaksGenerator():
+		if peak.isClimbed:
+			for date, climbedWith, tooltip in peak.climbed:
+				if isinstance(date, tuple):
+					date = date[0]
+				month, day, year = map(int, date.split("/"))
+				name = peak.name.replace('&quot;', '"')
+				history.append(((year, month, day), name))
+
+	for date, name in sorted(history):
+		print("{}-{:02}-{:02}".format(*date), name)
 
 def checkPeakListArg(args):
 	if len(args) < 1:
@@ -2569,6 +2586,7 @@ def main():
 		'cmptopo': (compareTopoMetadata, checkNoArgs),
 		'create': (createList, checkPeakListArg),
 		'elev': (printElevationStats, checkNoArgs),
+		'history': (printHistory, checkNoArgs),
 		'html': (writeHTML, checkPeakListArg),
 		'json': (writeJSON, checkPeakListArg),
 		'land': (printLandManagementAreas, checkNoArgs),
