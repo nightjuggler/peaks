@@ -47,7 +47,7 @@ peakListsOrdered = [
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
 	('ocap','Other California Peaks', 86, 15),
-	('owp', 'Other Western Peaks', 19, 10),
+	('owp', 'Other Western Peaks', 20, 10),
 ]
 
 def html2ListId(htmlId):
