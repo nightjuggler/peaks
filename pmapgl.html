@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
@@ -299,21 +299,21 @@ function addFeatureLayer(layerId, map)
 	const unit = layerId.charAt(0) === 'm' ? 'm' : '\'';
 
 	map.addLayer({
-		"id": layerId,
-		"type": "circle",
-		"source": {
-			"type": "geojson",
-			"data": "json/peaks/" + layerId + ".json"
+		'id': layerId,
+		'type': 'circle',
+		'source': {
+			'type': 'geojson',
+			'data': 'json/peaks/' + layerId + '.json'
 		},
-		"paint": {
-			"circle-color": ["step", ["get", "p"], "#FFA500",
-				399, "#FFFF00",
-				599, "#00BFFF",
-				799, "#FF00FF",
-				999, "#4B0082"],
-			"circle-radius": ["step", ["get", "p"], 5, 399, 6, 599, 7, 799, 8, 999, 9],
-			"circle-stroke-color": "#FF0000",
-			"circle-stroke-width": ["step", ["get", "p"], 1, 399, 2],
+		'paint': {
+			'circle-color': ['step', ['get', 'p'], '#FFA500',
+				399, '#FFFF00',
+				599, '#00BFFF',
+				799, '#FF00FF',
+				999, '#4B0082'],
+			'circle-radius': ['step', ['get', 'p'], 5, 399, 6, 599, 7, 799, 8, 999, 9],
+			'circle-stroke-color': '#FF0000',
+			'circle-stroke-width': ['step', ['get', 'p'], 1, 399, 2],
 		}
 	});
 	map.on('click', layerId, function(e) {
@@ -326,7 +326,7 @@ function addFeatureLayer(layerId, map)
 			'<div class="peakDiv">Elevation: ',  p.e.toLocaleString(), unit, '</div>',
 			'<div class="peakDiv">Saddle: ',     mapLink(p.sy, p.sx),        '</div>',
 			'<div class="peakDiv">Prominence: ', p.p.toLocaleString(), unit, '</div>',
-		].join("");
+		].join('');
 
 		while (Math.abs(e.lngLat.lng - lng) > 180)
 			lng += e.lngLat.lng > lng ? 360 : -360;
@@ -543,6 +543,22 @@ function createMap(options)
 		loadJSON('json/peaks/' + peakListId + '.json', addPeakList));
 
 	map.on('load', function() {
+		map.addSource('mapbox-dem', {
+			'type': 'raster-dem',
+			'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+			'tileSize': 512,
+			'maxzoom': 14
+		});
+		map.setTerrain({'source': 'mapbox-dem', 'exaggeration': 1.5});
+		map.addLayer({
+			'id': 'sky',
+			'type': 'sky',
+			'paint': {
+				'sky-type': 'atmosphere',
+				'sky-atmosphere-sun': [0.0, 0.0],
+				'sky-atmosphere-sun-intensity': 15
+			}
+		});
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
 	});
 }
