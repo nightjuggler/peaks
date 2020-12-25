@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.css" rel="stylesheet">
 <link href="tooltip.css" rel="stylesheet">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
@@ -116,7 +116,7 @@ function parsePitch(q, v)
 	if (!/^[1-9][0-9]?$/.test(v)) return;
 
 	const pitch = parseInt(v, 10);
-	if (pitch > 60) return;
+	if (pitch > 85) return;
 
 	q.pitch = pitch;
 }
@@ -245,7 +245,7 @@ addLayer(layer)
 		if (layer === ctrl.currentLayer) return;
 		ctrl.currentLayer = layer;
 		input.checked = true;
-		ctrl.map.setStyle(layer.style);
+		ctrl.map.setStyle(layer.style, {diff: false});
 	}
 
 	const div = document.createElement('div');
@@ -542,12 +542,10 @@ function createMap(options)
 	queryString.peakLists.forEach(peakListId =>
 		loadJSON('json/peaks/' + peakListId + '.json', addPeakList));
 
-	map.on('load', function() {
+	map.on('style.load', function() {
 		map.addSource('mapbox-dem', {
 			'type': 'raster-dem',
 			'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-			'tileSize': 512,
-			'maxzoom': 14
 		});
 		map.setTerrain({'source': 'mapbox-dem', 'exaggeration': 1.5});
 		map.addLayer({
