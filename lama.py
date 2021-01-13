@@ -6,6 +6,8 @@ import subprocess
 import time
 from ppjson import prettyPrint
 
+CURL = "/usr/local/opt/curl/bin/curl"
+
 def makePrefixedFields(*prefixesWithFields):
 	return [("{}.{}".format(prefix, field), alias)
 			for prefix, fields in prefixesWithFields
@@ -177,7 +179,7 @@ class Query(object):
 
 		fileName = "lama.out"
 
-		command = ["/usr/local/opt/curl/bin/curl",
+		command = [CURL,
 			"-o", fileName,
 			"--connect-timeout", "6",
 			"--max-time", "12",
@@ -987,6 +989,7 @@ def main():
 	parser.add_argument("latlong")
 	parser.add_argument("-a", "--area", action="store_true")
 	parser.add_argument("--count", action="store_true")
+	parser.add_argument("--curl")
 	parser.add_argument("-d", "--distance", type=float, default=20)
 	parser.add_argument("--fields", action="store_true")
 	parser.add_argument("--geojson", action="store_true")
@@ -1015,6 +1018,10 @@ def main():
 			return
 
 		geometry = "{},{}".format(longitude, latitude)
+
+	if args.curl:
+		global CURL
+		CURL = args.curl
 
 	if args.geometry:
 		if args.count:
