@@ -583,7 +583,11 @@ class AirNowPointQuery(AirNow_BaseQuery):
 			fields["LocalTimeString"] = date = "{}-{}-{} {}:{} {}".format(
 				date[10:14], date[4:6], date[7:9], hour, date[18:20], date[24:])
 
-		return (fields["SiteName"], date)
+		site = fields.get("SiteName")
+		if site is None:
+			fields["SiteName"] = site = "null"
+
+		return (site, date)
 
 	@classmethod
 	def processFields(self, fields):
