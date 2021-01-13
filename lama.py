@@ -286,7 +286,7 @@ class WildernessQuery(Query):
 	fields = [
 		("NAME", "name"),
 		("Agency", "agency"),
-		("YearDesignated", "year"),
+		("Designated", "year"),
 	]
 	printSpec = "{name} ({agency}) ({year})"
 
@@ -294,7 +294,6 @@ class WildernessQuery(Query):
 	def processFields(self, fields):
 		if fields["agency"] == "FS":
 			fields["agency"] = "USFS"
-		fields["year"] = time.gmtime(fields["year"] / 1000)[0]
 
 class NPS_Query(Query):
 	name = "National Park Service Unit"

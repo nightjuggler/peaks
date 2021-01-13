@@ -820,7 +820,7 @@ const wildernessSpec = {
 	name: 'Wilderness Areas',
 	url: 'https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services' +
 		'/Wilderness_Areas_in_the_United_States/FeatureServer',
-	queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'YearDesignated', 'Acreage'],
+	queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'Designated', 'Acreage'],
 };
 wildernessSpec.popup = {
 	outlineColor: {
@@ -835,7 +835,7 @@ wildernessSpec.popup = {
 		let agency = attr.Agency;
 		if (agency === 'FS') agency = 'USFS';
 
-		const year = (new Date(attr.YearDesignated)).getUTCFullYear();
+		const year = attr.Designated;
 		const acres = formatAcres(attr.Acreage);
 
 		setPopupLink(this, 'https://wilderness.net/visit-wilderness/?ID=' + attr.WID);
