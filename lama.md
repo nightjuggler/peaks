@@ -19,10 +19,10 @@ a certain radius from that point will be matched. The default radius is 20 meter
 This can be changed with the `-d` (or `--distance`) command-line option.
 
 The query or queries to execute are specified as a comma-separated list with the `-q`
-command-line option. By default, a series of 12 queries will be made. For example:
+command-line option. By default, a series of 11 queries will be made. For example:
 
 ```
-&gt; python3 lama.py 37.36144,-118.39526
+> python3 lama.py 37.36144,-118.39526
 ----- State (TIGERweb)
 California (CA)
 ----- County (TIGERweb)
@@ -46,7 +46,7 @@ To execute only the **USFS Ranger District** query (`rd`) and the **Wilderness A
 you would specify `-q rd,w`:
 
 ```
-&gt; python3 lama.py -q rd,w 38.87757,-120.16102
+> python3 lama.py -q rd,w 38.87757,-120.16102
 ----- USFS Ranger District
 Eldorado National Forest (Pacific Ranger District)
 ----- Wilderness Areas
@@ -84,7 +84,7 @@ With the `--raw` command-line option, you can display all fields, not just the o
 in the `fields` attribute. `printSpec` and `processFields` are then ignored. For example:
 
 ```
-&gt; python3 lama.py -q w --raw 38.87757,-120.16102
+> python3 lama.py -q w --raw 38.87757,-120.16102
 ----- Wilderness Areas
 {
 	"Acreage": 64041,
@@ -110,7 +110,7 @@ With the `--count` command-line option, you can display just the number of featu
 match the where clause. For example:
 
 ```
-&gt; python3 lama.py -q airnow_current --count -w "StateName='CA' AND PM25_AQI<>null" none
+> python3 lama.py -q airnow_current --count -w "StateName='CA' AND PM25_AQI<>null" none
 ----- Air Now - Current
 {"count": 121
 }
@@ -120,7 +120,7 @@ You can make group-by queries with the `-g` (or `--group-by`) command-line optio
 For example, the following shows the number of wilderness areas managed by each agency:
 
 ```
-&gt; python3 lama.py -q w -w 1=1 -g Agency//count:Agency none
+> python3 lama.py -q w -w 1=1 -g Agency//count:Agency none
 ----- Wilderness Areas
 BLM 259
 FS 448
@@ -132,7 +132,7 @@ In addition to `count`, you can also use the following functions in group-by que
 `avg`, `min`, `max`, `stddev`, `sum`, and `var`. For example:
 
 ```
-&gt; python3 lama.py -q w -w 1=1 -g Agency//sum:Acreage none
+> python3 lama.py -q w -w 1=1 -g Agency//sum:Acreage none
 ----- Wilderness Areas
 BLM 9956369
 FS 36172614
@@ -143,11 +143,11 @@ NPS 44337407
 You can specify a format spec for the output. In the following example, the agency is displayed
 in a field of width 4, and the sum of the acreage is displayed with commas in a field of width 12.
 By default, strings are left-aligned and numbers are right-aligned within a field, but this can
-be changed by specifying `&gt;` or `&lt;` at the beginning of the format spec. Fields are
+be changed by specifying `>` or `<` at the beginning of the format spec. Fields are
 always separated by a single space.
 
 ```
-&gt; python3 lama.py -q w -w 1=1 -g Agency:4//sum:Acreage:12, none
+> python3 lama.py -q w -w 1=1 -g Agency:4//sum:Acreage:12, none
 ----- Wilderness Areas
 BLM     9,956,369
 FS     36,172,614
