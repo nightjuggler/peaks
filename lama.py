@@ -214,9 +214,14 @@ class Query(object):
 					f["length"] = ""
 				if f["type"][:13] == "esriFieldType":
 					f["type"] = f["type"][13:]
-				if f["sqlType"][:7] == "sqlType":
-					f["sqlType"] = f["sqlType"][7:]
-				print("{name:28} {type:8} {sqlType:10} {length:3} {defaultValue}".format(**f))
+				sqlType = f.get("sqlType")
+				if sqlType is None:
+					f["sqlType"] = ""
+				elif sqlType[:7] == "sqlType":
+					f["sqlType"] = sqlType[7:]
+				if "defaultValue" not in f:
+					f["defaultValue"] = None
+				print("{name:28} {type:12} {sqlType:10} {length:4} {defaultValue}".format(**f))
 			return
 
 		if returnCountOnly or returnExtentOnly:
