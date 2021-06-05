@@ -17,7 +17,7 @@
 	font-family: verdana;
 	font-size: 10pt;
 }
-#llText, #bearingText, #pitchText {
+#llText, #elevText, #bearingText, #pitchText {
 	background-color: rgba(255,255,255,0.8);
 	border-radius: 5px;
 	padding: 3px 5px;
@@ -422,10 +422,14 @@ function createMap(options)
 	});
 
 	const llText = document.getElementById('llText').firstChild;
+	const elevText = document.getElementById('elevText').firstChild;
+	const elevOptions = {exaggerated: false};
 	function updateCenter()
 	{
 		const center = map.getCenter();
 		llText.nodeValue = center.lat.toFixed(6) + ',' + center.lng.toFixed(6);
+		const elevation = map.queryTerrainElevation(center, elevOptions);
+		elevText.nodeValue = elevation ? Math.round(elevation / 0.3048) + '\'' : '\u2013' /* en dash */;
 		return center;
 	}
 
@@ -568,6 +572,7 @@ window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createM
 
 <div id="map"></div>
 <div id="llDiv"><span id="llText">Latitude, Longitude</span>
+<span id="elevText">Elevation</span>
 <span id="bearingText"><span id="bearingIcon">&#8634;</span>0&deg;</span>
 <span id="pitchText"><span id="pitchIcon">&#9727;</span>0&deg;</span>
 <img id="fitLink" src="ztf.svg" width="13" height="13"></div>
