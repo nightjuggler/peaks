@@ -33,43 +33,42 @@ class TopoView(object):
 		('gda_item_id',         '[1-9][0-9]{1,7}'),
 	)
 	CORRECTIONS = {
-		'37ee6fadbdf1cb98d54214a695c3c7e7': (
+		'37765a57a94dcef9c4b200874c275c48': (
 			# The pdf (CA_Borrego_296876_1959_62500_geo.pdf) clearly shows 1978 (not 1976)
 			# for the imprint year.
 			('imprint_year', '1978'),
 		),
-		'41ca50103299307242779c6e5b2f70f1': (
-			# The map name is "Caliente Mtn." - not "Caliente Mountain".
-			('map_name', 'Caliente Mtn'),
-		),
-		'8d63467aa1ab293bb57d21e43139d83b': (
+		'5c0ab19dcfb1c84069869e95067a7789': (
 			# The map name is "Mount Ritter" - not "Mt Ritter".
 			('map_name', 'Mount Ritter'),
 		),
-		'9e236a7476167474e5b4a0451734a852': (
-			# The pdf (CA_Robbs Peak_298788_1952_62500_geo.pdf) clearly shows 1978 (not 1976)
-			# for the imprint year.
-			('imprint_year', '1978'),
+		'6779f96ea62790ea302ed2477296ee7a': (
+			# Shift the min and max longitude for the 1956/1981 Silver Lake, CA 15' map
+			# by 0.00001 degrees east.
+			# The summit of Round Top is right on the eastern edge of this map.
+			('min_longitude', '-120.251'),
+			('max_longitude', '-120.001'),
 		),
-		'9ea38c139f448a1f2dd697b449f1d328': (
+		'7bdce85700eb4d752b2a89aee57122c9': (
 			# I don't see 1976 (or any imprint year) anywhere on this map. So I'm going to
 			# use the most recent year printed on the map (1969).
 			('imprint_year', '1969'),
 		),
-		'b457cf41edc198624eb74ac0e1362064': (
+		'8e4e1f8d38139f9679243cf10deaf2db': (
+			# The pdf (CA_Robbs Peak_298788_1952_62500_geo.pdf) clearly shows 1978 (not 1976)
+			# for the imprint year.
+			('imprint_year', '1978'),
+		),
+		'a3333a377bc95e0a6566e2f187588d2b': (
+			# The map name is "Caliente Mtn." - not "Caliente Mountain".
+			('map_name', 'Caliente Mtn'),
+		),
+		'b9670df7a0825087f1013c688a10413f': (
 			# The pdf (CA_Chilcoot_297086_1950_62500_geo.pdf) clearly shows 1983 (not 1993)
 			# for the imprint year.
 			('imprint_year', '1983'),
 		),
-		'e09ff1e263c0f9f682feb777a0b1e6b2': (
-			# These are more accurate bounds for the 1992/1994 Carson Pass, CA 7.5' map.
-			# The summit of Round Top is right on the western edge of this map.
-			('min_longitude', '-120.001'),
-			('min_latitude', '38.6249'),
-			('max_longitude', '-119.87598'),
-			('max_latitude', '38.74992'),
-		),
-		'f9e6dfd5c5c62f4970246ca6c81033f6': (
+		'dedb68871e7ecbb4e90803ed96c3e5d7': (
 			# The map name is "Bloody Mtn." - not "Bloody Mountain".
 			('map_name', 'Bloody Mtn'),
 		),
@@ -78,26 +77,7 @@ class TopoView(object):
 		for (name, pattern), value in zip(self.FIELDS, values):
 			setattr(self, name, value)
 
-def query(bin_num, topo_id, longitude, latitude):
-	params = [
-		'f=json',
-		'geometry={},{}'.format(longitude, latitude),
-		'geometryType=esriGeometryPoint',
-		'inSR=4326',
-		'spatialRel=esriSpatialRelIntersects',
-		'distance=20',
-		'units=esriSRUnit_Meter',
-		'outFields=*',
-		'returnGeometry=true',
-		'geometryPrecision=5',
-		'outSR=4326',
-		'where=' + '%20AND%20'.join([
-			'bin_num={}'.format(bin_num),
-			'series=\'HTMC\'',
-			'md5=\'{}\''.format(topo_id),
-		]),
-	]
-
+def query(*params):
 	url = 'https://ngmdb.usgs.gov/arcgis/rest/services/topoview/ustOverlay/MapServer/0/query?' + '&'.join(params)
 
 	response_filename = 'topoview.out'
@@ -168,6 +148,34 @@ def query(bin_num, topo_id, longitude, latitude):
 	response['max_latitude'] = max_latitude
 	return response
 
+def loadQuery(bin_num, topo_id, longitude, latitude):
+	return query(
+		'f=json',
+		'geometry={},{}'.format(longitude, latitude),
+		'geometryType=esriGeometryPoint',
+		'inSR=4326',
+		'spatialRel=esriSpatialRelIntersects',
+		'distance=20',
+		'units=esriSRUnit_Meter',
+		'outFields=*',
+		'returnGeometry=true',
+		'geometryPrecision=5',
+		'outSR=4326',
+		'where=' + '%20AND%20'.join([
+			'bin_num={}'.format(bin_num),
+			'series=\'HTMC\'',
+			'md5=\'{}\''.format(topo_id),
+		]))
+
+def reloadQuery(scan_id):
+	return query(
+		'f=json',
+		'outFields=*',
+		'returnGeometry=true',
+		'geometryPrecision=5',
+		'outSR=4326',
+		'where=scan_id=' + scan_id)
+
 CSV_FILENAME = 'topoview.txt'
 
 def read_csv():
@@ -206,6 +214,7 @@ def load(sources):
 		'250,000': 1,
 	}
 
+	response = None
 	with open(CSV_FILENAME, 'a', 1) as f:
 		for topo_id, topo in sorted(sources.items()):
 			if topo_id in topos:
@@ -215,15 +224,39 @@ def load(sources):
 				print("Can't get bin_num for topo {}!".format(topo_id))
 				break
 			peak = topo.peaks[0]
-			response = query(bin_num, topo_id, peak.longitude, peak.latitude)
+			if response:
+				sleep_time = int(random.random() * 5 + 5.5)
+				print('Sleeping for', sleep_time, 'seconds')
+				time.sleep(sleep_time)
+			response = loadQuery(bin_num, topo_id, peak.longitude, peak.latitude)
 			if response is None:
 				break
-			f.write(','.join([str(response[name]) for name, pattern in TopoView.FIELDS]))
-			f.write('\n')
+			print(','.join([str(response[name]) for name, pattern in TopoView.FIELDS]), file=f)
 
-			sleep_time = int(random.random() * 5 + 5.5)
-			print('Sleeping for', sleep_time, 'seconds')
-			time.sleep(sleep_time)
+def read_new():
+	topos = {}
+	with open('topoview.new') as new:
+		for line in new:
+			topo = TopoView(line.split(','))
+			topos[topo.scan_id] = topo
+	return topos
+
+def reload():
+	new_topos = read_new()
+	response = None
+	with open(CSV_FILENAME) as old, open('topoview.new', 'a', 1) as new:
+		for line in old:
+			scan_id = TopoView(line.split(',')).scan_id
+			if scan_id in new_topos:
+				continue
+			if response:
+				sleep_time = int(random.random() * 5 + 5.5)
+				print('Sleeping for', sleep_time, 'seconds')
+				time.sleep(sleep_time)
+			response = reloadQuery(scan_id)
+			if response is None:
+				break
+			print(','.join([str(response[name]) for name, pattern in TopoView.FIELDS]), file=new)
 
 def compare(sources):
 	topos = read_csv()
@@ -231,7 +264,10 @@ def compare(sources):
 		return
 
 	for topo_id, corrections in TopoView.CORRECTIONS.items():
-		topo = topos[topo_id]
+		topo = topos.get(topo_id)
+		if not topo:
+			print("Skipping corrections for", topo_id, "- not in", CSV_FILENAME)
+			continue
 		for name, value in corrections:
 			setattr(topo, name, value)
 
@@ -259,20 +295,6 @@ def compare(sources):
 				diffs.append("Imprint year doesn't match ({} != {})".format(
 					topo.year[5:], topoview.imprint_year))
 
-		if diffs:
-			peak_lists = set()
-			for peak in topo.peaks:
-				peak_lists.add(peak.peakList.id)
-				for other in peak.dataAlsoPeaks:
-					peak_lists.add(other.peakList.id)
-
-			peak_lists = ', '.join(sorted(peak_lists))
-			num_peaks = '{:>3}'.format(len(topo.peaks))
-			url = topo.linkPrefix + topo_id
-
-			for diff in diffs:
-				print(url, '{:42}'.format(diff), num_peaks, peak_lists, sep='  ')
-
 		min_lng = float(topoview.min_longitude)
 		max_lng = float(topoview.max_longitude)
 		min_lat = float(topoview.min_latitude)
@@ -283,6 +305,20 @@ def compare(sources):
 			lat = float(peak.latitude)
 
 			if not (min_lng <= lng <= max_lng and min_lat <= lat <= max_lat):
-				print('{} {} {},{} not in {},{},{},{}'.format(topo_id,
+				diffs.append("{} {},{} not in {},{},{},{}".format(
 					peak.name.replace('&quot;', '"'),
 					lng, lat, min_lng, min_lat, max_lng, max_lat))
+
+		if diffs:
+			peak_lists = set()
+			for peak in topo.peaks:
+				peak_lists.add(peak.peakList.id)
+				for other in peak.dataAlsoPeaks:
+					peak_lists.add(other.peakList.id)
+
+			num_peaks = len(topo.peaks)
+			print(topo.linkPrefix + topo_id, '|', ', '.join(sorted(peak_lists)),
+				'({} peak{})'.format(num_peaks, '' if num_peaks == 1 else 's'))
+			for diff in diffs:
+				print('--', diff)
+			print()
