@@ -6,10 +6,11 @@ class Grid(object):
 		self.region = region
 		self.margin = margin
 		self.data = None
+		self.dataFile = None
 		self.readHeader()
 
 	def __del__(self):
-		if self.data is None:
+		if self.dataFile:
 			self.dataFile.close()
 
 	def __str__(self):
@@ -48,6 +49,7 @@ class Grid(object):
 		self.data = [struct.unpack_from(unpackFormat, f.read(recordLen), 4)
 			for n in range(self.numLat)]
 		f.close()
+		self.dataFile = None
 
 	def interpolate(self, lat, lng):
 		if self.data is None:
