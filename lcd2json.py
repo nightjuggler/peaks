@@ -1,7 +1,6 @@
-#!/usr/local/bin/python3
 #
 # lcd2json - Convert Layer Control Data to JSON
-#            Usage: ./lcd2json.py pmap.lcd > json/pmap/lcd.json
+#            Usage: python3 lcd2json.py pmap.lcd > json/pmap/lcd.json
 #
 import os
 import re

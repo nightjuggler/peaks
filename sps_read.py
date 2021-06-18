@@ -1,4 +1,3 @@
-#!/usr/local/bin/python3
 import re
 import sys
 import vertcon
