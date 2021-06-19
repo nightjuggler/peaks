@@ -1386,6 +1386,7 @@ class RE(object):
 		re.compile('^(?:[A-Z][a-z]+ )+(?:Mountains|Range|Wilderness) HP$'),
 		re.compile('^(?:[A-Z][a-z]+ )+\\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\)$'),
 		re.compile('^(?:[A-Z][a-z]+ )+(?:[A-Z]\\.|St\\.|del|in the|of the|and)(?: [A-Z][a-z]+)+$'),
+		re.compile('^[A-Z][a-z]+(?:-[a-z]{2,})?(?: [A-Z][a-z]+(?:-[a-z]{2,})?)+$'),
 		re.compile('^Mount [A-Z][a-z]+-[A-Z][a-z]+$'),
 		re.compile('^&quot;[A-Z][a-z]+(?: [A-Z][a-z]+)*&quot;$'),
 		re.compile('^Peak [1-9][0-9]{2,4}m?\\+?$'),
