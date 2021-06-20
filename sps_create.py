@@ -497,6 +497,7 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Kings River Special Management Unit OCD":      "Kings River SMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Lake Tahoe State Park":                        "Lake Tahoe Nevada State Park",
+	"Mono Basin NSA":                               "Mono Basin National Forest Scenic Area",
 	"Mount Eddy RNA":                               "Mount Eddy Research Natural Area",
 	"Mount Saint Helens National Volcanic Monument":"Mount St. Helens National Volcanic Monument",
 	"Mount Saint Helens NVM":                       "Mount St. Helens National Volcanic Monument",
@@ -532,7 +533,11 @@ class LandMgmtAreaLoJ(LandMgmtArea):
 
 	@classmethod
 	def normalizeName(self, name, peak):
-		if not name.endswith((" Wilderness", " National Forest", " National Park")):
+		if name.endswith((" Wilderness", " National Forest", " National Park", " WSA")):
+			pass
+		elif name.endswith(" Wilderness Study Area"):
+			name = name[:-22] + " WSA"
+		else:
 			err("{} Unexpected land \"{}\"", peak.fmtIdName, name)
 		return self.nameLookup.get(name, name)
 
@@ -632,7 +637,7 @@ def getLoadListsFromTable(pl):
 class TablePeak(object):
 	@classmethod
 	def getPeaks(self, peakListId, fileNameSuffix=""):
-		fileName = "extract/data/{}/{}{}.html".format(
+		fileName = "data/peaklists/{}/{}{}.html".format(
 			peakListId.lower(), self.classId.lower(), fileNameSuffix)
 
 		if not os.path.exists(fileName):
@@ -728,7 +733,7 @@ class PeakPb(TablePeak):
 
 	@classmethod
 	def getPeakFileName(self, peakId):
-		return "extract/data/pb/{}/p{}.html".format(peakId[0], peakId)
+		return "data/peakfiles/pb/{}/p{}.html".format(peakId[0], peakId)
 	@classmethod
 	def getPeakURL(self, peakId):
 		return "https://peakbagger.com/peak.aspx?pid={}".format(peakId)
@@ -830,7 +835,7 @@ class PeakPb(TablePeak):
 	# Other Sierra Peaks:
 		("Gambler's Special", 12927):           'Gamblers Special Peak',
 		('Maggies Peaks-South Summit', 8699):   'Maggies Peaks South',
-		('Mount Lamarck-North Peak', 13464):    'Northwest Lamarck',
+		('Mount Lamarck North', 13464):         'Northwest Lamarck',
 		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
 		('Peak 3560', 11680):                   'Peak 3560m+',
 		('Peak 9980', 9980):                    'Sirretta Peak North',
@@ -1292,11 +1297,12 @@ class PeakPb(TablePeak):
 		self.rangeId, self.rangeName = rangeList[4]
 		self.rangeList = rangeList
 
-	quadPattern = re.compile(
-		'^([A-Za-z]+(?: [A-Za-z]+)*)  O[34][0-9]1[0-9][0-9][a-h][1-8]  1:24,000$'
-	)
+	quadPattern = {
+		'US': re.compile('^([A-Za-z]+(?: [A-Za-z]+)*)  O[34][0-9]1[0-9][0-9][a-h][1-8]  1:24,000$'),
+		'MX': re.compile('^([A-Za-z]+(?: [A-Za-z]+)*)  [A-Z][0-9]{2}[A-Z][0-9]{2}  1:50,000$'),
+	}
 	def readQuad(self, html):
-		m = self.quadPattern.match(html)
+		m = self.quadPattern[self.country[0]].match(html)
 		if m is None:
 			err("{} Topo Map doesn't match pattern:\n{}", self.fmtIdName, html)
 		self.quadName = m.group(1)
@@ -1398,7 +1404,7 @@ class PeakLoJ(TablePeak):
 
 	@classmethod
 	def getPeakFileName(self, peakId):
-		return "extract/data/loj/{}/p{}.html".format(peakId[0], peakId)
+		return "data/peakfiles/loj/{}/p{}.html".format(peakId[0], peakId)
 	@classmethod
 	def getPeakURL(self, peakId):
 		return "https://listsofjohn.com/peak/{}".format(peakId)
@@ -2080,7 +2086,7 @@ class PeakBB(object):
 		def str2int(s):
 			return int(s) if len(s) < 4 else int(s[:-4]) * 1000 + int(s[-3:])
 
-		fileName = "extract/data/{}/bb.html".format(peakListId.lower())
+		fileName = "data/peaklists/{}/bb.html".format(peakListId.lower())
 
 		if not os.path.exists(fileName):
 			return []
@@ -2284,9 +2290,9 @@ class PeakVR(object):
 
 	@classmethod
 	def getPeaks(self, peakListId=None):
-		peaks1 = self.readTable("extract/data/vr/ca_13ers.html", 147)
-		peaks2 = self.readTable("extract/data/vr/non_13ers.html", 19, "Marginal Failing Peaks")
-		peaks3 = self.readTable("extract/data/vr/non_13ers.html", 58, "Clearly Failing Peaks")
+		peaks1 = self.readTable("data/peaklists/vr/ca_13ers.html", 147)
+		peaks2 = self.readTable("data/peaklists/vr/non_13ers.html", 19, "Marginal Failing Peaks")
+		peaks3 = self.readTable("data/peaklists/vr/non_13ers.html", 58, "Clearly Failing Peaks")
 		return peaks1 + peaks2 + peaks3
 
 	@classmethod
@@ -2605,7 +2611,7 @@ def readListFile(peakListId):
 	sectionPattern = re.compile("^([1-9][0-9]?)\\. ([- &,;0-9A-Za-z]+)$")
 	peakPattern = re.compile("^([1-9][0-9]?)\\.([1-9][0-9]?[ab]?) +([#&'0-9;A-Za-z]+(?: [#&'()0-9;A-Za-z]+)*)")
 
-	fileName = "extract/data/{0}/{0}.txt".format(peakListId.lower())
+	fileName = "data/peaklists/{0}/{0}.txt".format(peakListId.lower())
 	listFile = open(fileName)
 
 	sections = []
