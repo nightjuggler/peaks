@@ -446,6 +446,7 @@ landNameLookup = {
 	"NAWS China Lake":                              'landDOD',
 	"Olompali State Historic Park":                 'landSP',
 	"Organ Pipe Cactus NM":                         'landNPS',
+	"Pearl Peak RNA":                               'Humboldt-Toiyabe National Forest',
 	"Point Reyes National Seashore":                'landNPS',
 	"Providence Mountains SRA":                     'landSP',
 	"Pyramid Lake Indian Reservation":              'landRez',
@@ -2343,7 +2344,11 @@ def setVR(pl):
 
 def loadPeakFiles(pl):
 	import sps_create
-	sps_create.loadFiles(pl)
+	sps_create.loadPeakFiles(pl)
+
+def loadPeakListFiles(pl):
+	import sps_create
+	sps_create.loadPeakListFiles(pl)
 
 def loadTopoMetadata():
 	import topoview
@@ -2591,6 +2596,7 @@ def main():
 		'json': (writeJSON, checkPeakListArg),
 		'land': (printLandManagementAreas, checkNoArgs),
 		'load': (loadPeakFiles, checkPeakListArg),
+		'loadlist': (loadPeakListFiles, checkPeakListArg),
 		'loadtopo': (loadTopoMetadata, checkNoArgs),
 		'stats': (printStats, checkNoArgs),
 		'sum': (printSummary, checkSumArgs),

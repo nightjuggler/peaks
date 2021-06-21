@@ -494,7 +494,6 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Hart Mountain National Antelope Refuge":       "Hart Mountain NAR",
 	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
 	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
-	"Kings River Special Management Unit OCD":      "Kings River SMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
 	"Lake Tahoe State Park":                        "Lake Tahoe Nevada State Park",
 	"Mono Basin NSA":                               "Mono Basin National Forest Scenic Area",
@@ -583,7 +582,7 @@ def loadURLs(loadLists):
 				os.chmod(filename, mode644)
 
 			command = ["/usr/local/opt/curl/bin/curl", "-o", filename, url]
-			print(" ".join(command))
+			print(*command)
 
 			rc = subprocess.call(command)
 			if rc != 0:
@@ -636,10 +635,13 @@ def getLoadListsFromTable(pl):
 
 class TablePeak(object):
 	@classmethod
-	def getPeaks(self, peakListId, fileNameSuffix=""):
-		fileName = "data/peaklists/{}/{}{}.html".format(
-			peakListId.lower(), self.classId.lower(), fileNameSuffix)
+	def getListFileName(self, peakListId, maxProm=False):
+		return "data/peaklists/{}/{}{}.html".format(
+			peakListId.lower(), self.classId.lower(), "-max" if maxProm else "")
 
+	@classmethod
+	def getPeaks(self, peakListId, maxProm=False):
+		fileName = self.getListFileName(peakListId, maxProm)
 		if not os.path.exists(fileName):
 			return []
 
@@ -755,7 +757,8 @@ class PeakPb(TablePeak):
 			('id', 'name')
 		),
 		'Section': (
-			re.compile('^([1-9]|[0-9]{2})(?:\\.| -) ([- A-Za-z]+(?:\\.? [1-9][0-9]*)?)$'),
+			re.compile('^(?:([1-9]|[0-9]{2})(?:\\.| -) )?([A-Z][a-z]+'
+				'(?:(?: | - |-)[A-Z]?[a-z]+)*(?:\\.? [1-9][0-9]*)?)$'),
 			('sectionNumber', 'sectionName')
 		),
 		'Elev-Ft': (
@@ -778,9 +781,10 @@ class PeakPb(TablePeak):
 	columnMap['Elev-Ft(Opt)'] = columnMap['Elev-Ft']
 	columnMap['Prom-Ft(Opt)'] = columnMap['Prom-Ft']
 	numPeaks = {
-		'DPS':   96,
+		'DPS':   95,
 		'GBP':  115,
-		'HPS':  281,
+		'HPS':  280,
+		'LPC':   86,
 		'NPC':   73,
 		'OGUL':  63,
 		'SPS':  247,
@@ -1089,6 +1093,7 @@ class PeakPb(TablePeak):
 
 		('Billy Goat Peak',               896, 'min'):   879, # 1748m - 1480m           OWP
 		('Billy Goat Peak',               896, 'max'):   912, # 1748m - 1470m           OWP
+		('Cerro Pescadores',             3476, 'max'):  3478, # 1060m                   DPS
 		('Duffer Peak',                    40, 'min'):     0, #                         GBP
 		('Duffer Peak',                   120, 'max'):    80, #                         GBP
 		('East Ord Mountain',            1508, 'max'):  1528, #                         DPS
@@ -1148,7 +1153,7 @@ class PeakPb(TablePeak):
 	def getPeaks(self, peakListId):
 		super_getPeaks = super(PeakPb, self).getPeaks
 		minPeaks = super_getPeaks(peakListId)
-		maxPeaks = super_getPeaks(peakListId, fileNameSuffix='-max')
+		maxPeaks = super_getPeaks(peakListId, True)
 		maxPeaks = {p.id: p for p in maxPeaks}
 
 		for peak in minPeaks:
@@ -1419,7 +1424,7 @@ class PeakLoJ(TablePeak):
 
 	peakNamePattern = (' *('
 		'(?:[A-Z][- \\.0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
-		'(?:"[A-Z][- 0-9A-Za-z]+")|'
+		'(?:"[A-Z][- &0-9;A-Za-z]+")|'
 		'(?:[1-9][0-9]+(?:-[A-Z][ A-Za-z]+)?))'
 	)
 	peakNameRegExp = re.compile('^' + peakNamePattern + '$')
@@ -1483,14 +1488,19 @@ class PeakLoJ(TablePeak):
 			('quadId', 'quadName')
 		),
 		'Section': (
-			re.compile('^([1-9][0-9]?)\\. ([A-Z][a-z]+(?:[- ][A-Z]?[a-z]+)+(?: [1-9][0-9]*)?)$'),
+			re.compile('^(?:(?:([1-9][0-9]?)\\. )?([A-Z][a-z]+(?:[- ][A-Z]?[a-z]+)+'
+				'(?: [1-9][0-9]*)?))?$'),
 			('sectionNumber', 'sectionName')
 		),
 	}
 	numPeaks = {
-		'DPS':   95, # The four Mexican peaks are missing from the LoJ DPS list.
+		# DPS: My list has 99 peaks. Missing from the LoJ list are
+		# (1) the four Mexican peaks, one of which (Cerro Pescadores) is now delisted
+		# (2) the three delisted US peaks (Maturango, Argus, and Navajo)
+		'DPS':   92,
 		'GBP':  115,
 		'HPS':  281,
+		'LPC':   86,
 		'NPC':   73,
 		'OGUL':  63,
 		'SPS':  246, # Pilot Knob (North) is missing from the LoJ SPS list.
@@ -2321,14 +2331,13 @@ class MatchByName(object):
 		name2peak = {}
 
 		def put(name, peak):
-			if name in name2peak:
-				item = name2peak[name]
-				if isinstance(item, list):
-					item.append(peak)
-				else:
-					name2peak[name] = [item, peak]
-			else:
+			item = name2peak.get(name)
+			if not item:
 				name2peak[name] = peak
+			elif isinstance(item, list):
+				item.append(peak)
+			else:
+				name2peak[name] = [item, peak]
 
 		for section in pl.sections:
 			for peak in section.peaks:
@@ -2339,7 +2348,7 @@ class MatchByName(object):
 				peak.matchName = name
 				peak.fmtIdName = "{:5} {:24}".format(peak.id, name)
 				put(name, peak)
-				if peak.otherName is not None:
+				if peak.otherName:
 					put(peak.otherName, peak)
 
 		self.name2peak = name2peak
@@ -2347,7 +2356,7 @@ class MatchByName(object):
 
 	def get(self, peak2):
 		peak = self.name2peak.get(peak2.name)
-		if peak is not None:
+		if peak:
 			if not isinstance(peak, list):
 				peakId = getattr(peak, peak2.classAttrId, None)
 				if peakId != peak2.id:
@@ -2496,7 +2505,7 @@ def checkThirteeners(pl, setVR=False):
 							peak.fmtIdName, colVR.rank, colVR.name, vr.rank, vr.linkName)
 
 def checkData(pl, setProm=False, setVR=False):
-	verbose = pl.id not in ('HPS',)
+	verbose = pl.id not in ('HPS', 'LPC')
 
 	peakClasses = [PeakLoJ, PeakPb]
 	if pl.id in ('SPS', 'OSP'):
@@ -2510,15 +2519,16 @@ def checkData(pl, setProm=False, setVR=False):
 		numMapped = 0
 		peaks = peakClass.getPeaks(pl.id)
 		for peak in peaks:
-			if peakMap.get(peak) is None:
-				if verbose:
-					out("Cannot map '{}' ({})", peak.name, peak.elevation)
-			else:
+			if peakMap.get(peak):
 				numMapped += 1
+			elif verbose:
+				out("Cannot map '{}' ({})", peak.name, peak.elevation)
 		out("Mapped {}/{} peaks", numMapped, len(peaks))
 
 	for peakClass in (PeakLoJ, PeakPb):
 		printTitle("Reading Peak Files - " + peakClass.classTitle)
+		haveList = pl.id in peakClass.numPeaks
+
 		for section in pl.sections:
 			for peak in section.peaks:
 				peakId = getattr(peak, peakClass.classAttrId, None)
@@ -2536,6 +2546,9 @@ def checkData(pl, setProm=False, setVR=False):
 
 				peak3 = getattr(peak, peakClass.classAttrPeak, None)
 				if peak3 is None:
+					if haveList:
+						out("{} Not in {} list on {}",
+							peak.fmtIdName, pl.id, peakClass.classId)
 					peak3 = peakMap.get(peak2)
 					if peak3 is None:
 						out("{} Name doesn't match ({})",
@@ -2582,9 +2595,58 @@ def checkData(pl, setProm=False, setVR=False):
 	if PeakVR in peakClasses:
 		checkThirteeners(pl, setVR)
 
-def loadFiles(pl):
+def loadPeakFiles(pl):
 	loadURLs(getLoadListsFromTable(pl))
 #	loadURLs(getLoadLists(pl))
+
+def loadPeakListFiles(pl):
+	loadList_LoJ = []
+	loadList_Pb = []
+
+	listURL_LoJ = 'https://listsofjohn.com/customlists?lid='
+	listURL_Pb  = 'https://peakbagger.com/list.aspx?lid='
+
+	listId_LoJ = {
+		'DPS':  1183,
+		'GBP':   715,
+		'HPS':   709,
+		'LPC':   712,
+		'NPC':  1411,
+		'OGUL':  113,
+		'SPS':    60,
+	}
+	listId_Pb  = {
+		'DPS':  5053,
+		'GBP':  5056,
+		'HPS':  5052,
+		'LPC':  5054,
+		'NPC':  5006,
+		'OGUL': 5055,
+		'SPS':  5051,
+	}
+
+	def add(loadList, url, filename):
+		if os.path.exists(filename):
+			print(filename, 'already exists')
+		else:
+			loadList.append((url, filename))
+
+	listId = listId_LoJ.get(pl.id)
+	if listId:
+		url = listURL_LoJ + str(listId)
+		add(loadList_LoJ, url, PeakLoJ.getListFileName(pl.id))
+
+	listId = listId_Pb.get(pl.id)
+	if listId:
+		url = listURL_Pb + str(listId)
+		add(loadList_Pb, url, PeakPb.getListFileName(pl.id))
+		add(loadList_Pb, url + '&pt=opt', PeakPb.getListFileName(pl.id, True))
+
+	loadLists = []
+	if loadList_LoJ: loadLists.append(loadList_LoJ)
+	if loadList_Pb:  loadLists.append(loadList_Pb)
+	if loadLists:
+		loadURLs(loadLists)
 
 PeakAttributes = {
 	"GBP": {
