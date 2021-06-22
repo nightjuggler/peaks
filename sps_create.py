@@ -108,6 +108,10 @@ class TableParser(HTMLParser):
 			if self.currentCol is not None:
 				self.currentCol += data
 
+	def handle_entityref(self, name):
+		if name == 'ntilde':
+			self.handle_data('&' + name + ';')
+
 	def __init__(self, fileName, numTables=1, startTag="table", startTagAttributes=None):
 		self.convert_charrefs = False
 		self.reset()
@@ -836,6 +840,8 @@ class PeakPb(TablePeak):
 		('Silver Peak', 8930):                     'Silver Peak (Desolation)',
 		('Silver Peak - Northeast Summit', 10800): 'Silver Peak Northeast',
 		('Silver Peak-Southwest Summit', 10772):   'Silver Peak Southwest',
+	# Lower Peaks Committee
+		('El Montanon', 1808):                  'El Monta&ntilde;on',
 	# Other Sierra Peaks:
 		("Gambler's Special", 12927):           'Gamblers Special Peak',
 		('Maggies Peaks-South Summit', 8699):   'Maggies Peaks South',
@@ -1096,6 +1102,8 @@ class PeakPb(TablePeak):
 		('Cerro Pescadores',             3476, 'max'):  3478, # 1060m                   DPS
 		('Duffer Peak',                    40, 'min'):     0, #                         GBP
 		('Duffer Peak',                   120, 'max'):    80, #                         GBP
+		('El Monta&ntilde;on',           1333, 'min'):  1308, #                         LPC
+		('El Monta&ntilde;on',           1333, 'max'):  1358, #                         LPC
 		('East Ord Mountain',            1508, 'max'):  1528, #                         DPS
 		('Gamblers Special Peak',         263, 'min'):   262, # 80m                     OSP
 		('Gamblers Special Peak',         393, 'max'):   394, # 120m                    OSP
@@ -1423,7 +1431,7 @@ class PeakLoJ(TablePeak):
 		return name.endswith(" National Park")
 
 	peakNamePattern = (' *('
-		'(?:[A-Z][- \\.0-9A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
+		'(?:[A-Z][- &\\.0-9;A-Za-z]+(?:, [A-Z][a-z]+)?(?:-[A-Z][ A-Za-z]+)?(?: \\(HP\\))?)|'
 		'(?:"[A-Z][- &0-9;A-Za-z]+")|'
 		'(?:[1-9][0-9]+(?:-[A-Z][ A-Za-z]+)?))'
 	)
@@ -1836,7 +1844,7 @@ class PeakLoJ(TablePeak):
 		"Quad": (
 			re.compile(
 				'^<a href="/quad\\?q=([1-9][0-9]*)">((?:Mc)?[A-Z][a-z]+(?: [A-Z]?[a-z]+)*'
-				'(?: [A-Z]{2})?)</a>$'
+				'(?: (?:[SN][WE]|[A-D]))?)</a>$'
 			),
 			("quadId", "quadName")
 		),

@@ -40,7 +40,7 @@ peakListsOrdered = [
 	('sps', 'Sierra Peaks Section', 248, 24),
 	('hps', 'Hundred Peaks Section', 67, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
-	('lpc', 'Lower Peaks Committee', 7, 16),
+	('lpc', 'Lower Peaks Committee', 9, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
@@ -420,6 +420,7 @@ landNameLookup = {
 	"Bishop Peak Natural Reserve":                  'City of San Luis Obispo',
 	"California Tahoe Conservancy":                 'landCNRA',
 	"Carrizo Plain National Monument":              'landBLM',
+	"Catalina Island Conservancy":                  'landPrivate',
 	"Giant Sequoia National Monument":              'Sequoia National Forest',
 	"Gold Butte National Monument":                 'landBLM',
 	"Golden Gate National Recreation Area":         'landNPS',
@@ -717,7 +718,7 @@ class USGSTopo(object):
 	sourcesJSON = set()
 	linkPrefix = 'https://ngmdb.usgs.gov/ht-bin/tv_browse.pl?id='
 	linkPattern = re.compile('^[0-9a-f]{32}$')
-	namePattern = re.compile('^(?:Mc)?[A-Z][a-z]+\\.?(?: [A-Z][a-z]+\\.?)*(?: [SN][WE])?$')
+	namePattern = re.compile('^(?:Mc)?[A-Z][a-z]+\\.?(?: [A-Z][a-z]+\\.?)*(?: (?:[SN][WE]|[A-D]))?$')
 	tooltipPattern = re.compile(
 		'^((?:[0-9]{3,4}(?:(?:\\.[0-9])|(?:-[0-9]{3,4}))?m)|(?:[0-9]{3,5}(?:-[0-9]{3,5})?\'))'
 		'(?: \\((MSL|NGVD 29)\\))? USGS ([\\.013567x]+)\' Quad \\(1:([012456]{2,3},[05]00)\\) '
@@ -1383,7 +1384,7 @@ class RE(object):
 		'(?:<br>\\(([A-Z][a-z]+(?: [A-Z][a-z]+)*(?: (?:HP|[1-9][0-9]+|VOR))?)\\))?</td>$'
 	)
 	peakName = (
-		re.compile('^(?:Mc)?[A-Z][a-z]+(?:\'s)?(?: (?:Mc|Le)?[A-Z][a-z]+)*(?: #[1-9])?$'),
+		re.compile('^(?:Mc)?[A-Z][a-z]+(?:\'s)?(?: (?:Mc|Le)?[A-Z][&;a-z]+)*(?: #[1-9])?$'),
 		re.compile('^(?:[A-Z][a-z]+ )+(?:Mountains|Range|Wilderness) HP$'),
 		re.compile('^(?:[A-Z][a-z]+ )+\\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\)$'),
 		re.compile('^(?:[A-Z][a-z]+ )+(?:[A-Z]\\.|St\\.|del|in the|of the|and)(?: [A-Z][a-z]+)+$'),
@@ -1400,8 +1401,8 @@ class RE(object):
 	numMeters = re.compile('^[1-9][0-9]{0,3}(?:\\.[0-9])?$')
 	prominence = re.compile('^[,0-9]+')
 	prominenceTooltip = re.compile(
-		'^(?:\\(([,0-9]+m?) \\+ (10m?|20m?|25|40)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
-		' - (?:\\(([,0-9]+m?) - (10m?|20m?|25|40|80)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
+		'^(?:\\(([,0-9]+m?) \\+ (10m?|20m?|25|40|50)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
+		' - (?:\\(([,0-9]+m?) - (10m?|20m?|25|40|50|80)/2\\)|([,0-9]+(?:(?:\\.[0-9])?m)?))'
 		'(?: \\(([A-Z][A-Za-z]+(?:/[A-Z][A-Za-z]+)*)\\))?(<br>Line Parent: '
 		'[A-Z][a-z]+(?: [A-Z][a-z]+)*(?: \\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\))? \\([,0-9]+\\))?$'
 	)
@@ -1635,7 +1636,7 @@ def elevStr2Int(e):
 
 class SimpleElevation(object):
 	def __init__(self, baseElevation, contourInterval=0, inMeters=False, saddle=False):
-		assert contourInterval in (0, 10, 20, 25, 40, 80)
+		assert contourInterval in (0, 10, 20, 25, 40, 50, 80)
 		assert contourInterval == 0 and inMeters or isinstance(baseElevation, int)
 
 		if saddle:
