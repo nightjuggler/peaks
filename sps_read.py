@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
-	('ocap','Other California Peaks', 86, 15),
+	('ocap','Other California Peaks', 87, 15),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -449,6 +449,7 @@ landNameLookup = {
 	"Organ Pipe Cactus NM":                         'landNPS',
 	"Pearl Peak RNA":                               'Humboldt-Toiyabe National Forest',
 	"Point Reyes National Seashore":                'landNPS',
+	"Pole Mountain Preserve":                       'landSLT',
 	"Providence Mountains SRA":                     'landSP',
 	"Pyramid Lake Indian Reservation":              'landRez',
 	"Reservoir Canyon Natural Reserve":             'City of San Luis Obispo',
@@ -502,6 +503,7 @@ landLinkPattern = {
 }
 landOrder = {landClass: i for i, landClass in enumerate((
 	'landPrivate',
+	'landSLT',      # Sonoma Land Trust - https://sonomalandtrust.org/
 	'landTWC',      # The Wildlands Conservancy - https://www.wildlandsconservancy.org/
 	'landCity',
 	'landCounty',
