@@ -948,7 +948,7 @@ class Elevation(object):
 			if self.source.seriesID == 0:
 				contourIntervals = (10, 20) if inMeters else (20, 25, 40, 50)
 			else:
-				contourIntervals = (80, 50, 25)
+				contourIntervals = (80, 50, 40, 25)
 			if interval not in contourIntervals or elevationMin % interval != 0:
 				raise FormatError("Elevation range in tooltip not valid")
 			self.source.setContourInterval(interval)
