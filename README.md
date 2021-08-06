@@ -27,11 +27,11 @@ I've also started compiling a list of [Sierra Mountain Passes](https://nightjugg
 * [P-Map built on Mapbox.js](https://nightjuggler.com/nature/pmapmb.html?o=sps)
 * [P-Map built on Mapbox GL JS](https://nightjuggler.com/nature/pmapgl.html?o=sps)
 
-The Leaflet/Mapbox.js version of P-Map includes a powerful, extensible menu
-(accessible via the layers icon in the top-left corner)
-with which different base layers and overlays can be selected and point queries can be enabled.
+In the [Leaflet](https://leafletjs.com/) and [Mapbox.js](https://docs.mapbox.com/mapbox.js/) versions of P-Map,
+base layers and overlays can be selected and point queries can be enabled via the layers menu
+in the top-left corner.
 
-Many parameters can also be specified in the URL. For example, the following link
+Many parameters can be specified in the URL. For example, the following link
 opens the map at zoom level 10 (**z=10**),
 centered at a given latitude and longitude (**ll=37.81082,-119.4855**),
 loads a GeoJSON file with data from the Sierra Peaks Section list (see above),
