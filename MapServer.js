@@ -302,21 +302,12 @@ items: {
 					current: {
 		name: 'Current Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/Public_Wildfire_Perimeters_View/FeatureServer',
-		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent',
-			'IRWINID', 'ComplexID'],
-		orderByFields: 'DateCurrent%20DESC',
+			'/Current_WildlandFire_Perimeters/FeatureServer',
+		queryFields: ['OBJECTID', 'poly_IncidentName', 'poly_GISAcres', 'poly_DateCurrent',
+			'irwin_IrwinID'],
+		orderByFields: 'poly_DateCurrent%20DESC',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
-			'wildfire-perimeters">NIFC</a>',
-					},
-					archived: {
-		name: 'Archived Perimeters',
-		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/Archived_Wildfire_Perimeters2/FeatureServer',
-		queryFields: ['OBJECTID', 'ComplexName', 'IncidentName', 'GISAcres', 'DateCurrent'],
-		orderByFields: 'DateCurrent%20DESC',
-		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
-			'archived-wildfire-perimeters-2">NIFC</a>',
+			'nifc::wfigs-current-wildland-fire-perimeters/about">NIFC</a>',
 					},
 					geomac: {
 		name: 'Historic Perimeters|(>10,000 acres)',
@@ -375,7 +366,7 @@ items: {
 			'NASA</a>',
 					},
 				},
-				order: ['modis', 'viirs', 'incidents', 'current', 'perimeters', 'archived',
+				order: ['modis', 'viirs', 'incidents', 'current', 'perimeters',
 					'geomac', 'history', 'ia'],
 			},
 			glims: {
@@ -444,14 +435,6 @@ items: {
 		queryFields: ['OBJECTID', 'status', 'zname_l', 'zname_s'],
 		attribution: '[CAL FIRE]',
 					},
-					scuevac: {
-		name: 'CAL FIRE SCU|Evacuation Zones',
-		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView/FeatureServer',
-		queryLayer: '1',
-		queryFields: ['OBJECTID', 'Level_', 'Name', 'Zone'],
-		attribution: '[CAL FIRE]',
-					},
 					sonomaevac: {
 		name: 'Sonoma County|Evacuation Zones',
 		url: 'https://services1.arcgis.com/P5Mv5GY5S66M8Z1Q/arcgis/rest/services' +
@@ -460,7 +443,7 @@ items: {
 		attribution: '[Sonoma County]',
 					},
 				},
-				order: ['calfire', 'czuevac', 'scuevac', 'sonomaevac'],
+				order: ['calfire', 'czuevac', 'sonomaevac'],
 			},
 			parks: {
 		name: 'State Parks',
@@ -499,10 +482,8 @@ aliases: {
 	'czuevac': 'ca_fire_czuevac',
 	'fires': 'us_fires_current',
 	'modis': 'us_fires_modis',
-	'scuevac': 'ca_fire_scuevac',
 	'us_fires_calfire': 'ca_fire_calfire',
 	'us_fires_czuevac': 'ca_fire_czuevac',
-	'us_fires_scuevac': 'ca_fire_scuevac',
 	'viirs': 'us_fires_viirs',
 },
 order: ['us', 'ca', 'nv'],
@@ -591,7 +572,6 @@ const {
 		blm: blmSpec,
 		counties: countySpec,
 		fires: { items: {
-			archived: arfireSpec,
 			current: fireSpec,
 			incidents: fireIncidentSpec,
 			modis: modisSpec,
@@ -614,7 +594,6 @@ const {
 		fire: { items: {
 			calfire: calfireSpec,
 			czuevac: czuevacSpec,
-			scuevac: scuevacSpec,
 			sonomaevac: sonomaevacSpec,
 		}},
 		parks: caParkSpec,
@@ -945,6 +924,31 @@ function fireName(name, complex = null, inComplex = null)
 
 	return addFire() + ' (' + complex + ')';
 }
+function fireName2(name)
+{
+	if (!name || !(name = name.trim()))
+		return 'Unnamed Fire';
+
+	const j = name.length - 1;
+	if (name.charAt(j) !== ')') {
+		if (name.toLowerCase().endsWith('fire'))
+			return name;
+		return name + ' Fire';
+	}
+
+	const i = name.lastIndexOf('(', j - 1);
+	if (i < 0)
+		return 'Misnamed Fire';
+
+	let complex = name.substring(i + 1, j).trim();
+	if (complex.endsWith(' Cpx'))
+		complex = complex.substring(0, complex.length - 3) + 'Complex';
+	else if (!complex.endsWith(' Complex'))
+		return name;
+
+	name = name.substring(0, i).trim();
+	return (name.toLowerCase().endsWith('fire') ? name : name + ' Fire') + ' (' + complex + ')';
+}
 const IRWIN_InciWeb_Map = new Map();
 function query_IRWIN_InciWeb(IrwinId, setInciWebId)
 {
@@ -1031,6 +1035,21 @@ fireSpec.popup = {
 	template: 'text|br|text|ztf|br|text',
 	show(attr)
 	{
+		const name = fireName2(attr.poly_IncidentName);
+		const date = getDateTime(attr.poly_DateCurrent);
+		const size = formatAcres(attr.poly_GISAcres);
+
+		attr.IRWINID = attr.irwin_IrwinID;
+		linkInciWeb(this, attr);
+		setPopupText(this, name, size, date);
+		return '#FF0000';
+	}
+};
+firePerimeterSpec.style = () => ({color: '#FF0000', weight: 2});
+firePerimeterSpec.popup = {
+	template: 'text|br|text|ztf|br|text',
+	show(attr)
+	{
 		const name = fireName(attr.IncidentName, attr.ComplexName);
 		const date = getDateTime(attr.DateCurrent);
 		const size = formatAcres(attr.GISAcres);
@@ -1039,16 +1058,6 @@ fireSpec.popup = {
 		setPopupText(this, name, size, date);
 		return '#FF0000';
 	}
-};
-arfireSpec.style = () => ({color: '#FFD700', weight: 2});
-arfireSpec.popup = {
-	template: fireSpec.popup.template,
-	show: fireSpec.popup.show,
-};
-firePerimeterSpec.style = () => ({color: '#FF0000', weight: 2});
-firePerimeterSpec.popup = {
-	template: fireSpec.popup.template,
-	show: fireSpec.popup.show,
 };
 calfireSpec.popup = {
 	template: 'text|ztf',
@@ -1081,34 +1090,6 @@ czuevacSpec.style = ({properties: {status}}) => ({
 	weight: 2,
 });
 czuevacSpec.where = 'status <> \'NORMAL\'';
-scuevacSpec.popup = {
-	template: 'text|ztf',
-	show(attr)
-	{
-		let {Level_: type, Name: name, Zone: zone} = attr;
-
-		if (zone)
-			name = name ? zone + ' / ' + name : zone;
-
-		if (type === 'Order' || type === 'Warning') {
-			type = 'Evacuation ' + type;
-			name = name ? ' (Zone ' + name + ')' : '';
-		} else {
-			type = type === 'RePop' ? 'Repopulation Zone' : 'Evacuation Zone';
-			name = name ? ' ' + name : '';
-		}
-
-		setPopupText(this, type + name);
-		return '#FF6347';
-	}
-};
-scuevacSpec.style = ({properties: {Level_: status}}) => ({
-	color: status === 'Order' ? '#FF00FF' :
-		status === 'Warning' ? '#FFFF00' :
-		status === 'RePop' ? '#00FF00' : '#778899',
-	weight: 2,
-});
-scuevacSpec.where = 'Level_ <> \'None\'';
 sonomaevacSpec.popup = {
 	template: 'text|ztf',
 	show(attr)
@@ -1148,11 +1129,9 @@ let querySpecs = [
 	stateSpec,
 	blmSpec,
 	fireSpec,
-	arfireSpec,
 	firePerimeterSpec,
 	calfireSpec,
 	czuevacSpec,
-	scuevacSpec,
 	sonomaevacSpec,
 ];
 /*

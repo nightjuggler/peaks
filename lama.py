@@ -785,12 +785,7 @@ class IRWIN_InciWebQuery(NIFC_BaseQuery):
 
 class NIFC_CurrentPerimetersQuery(NIFC_BaseQuery):
 	name = "NIFC Current Wildfire Perimeters"
-	service = "Public_Wildfire_Perimeters_View"
-	layer = 0 # sr = 4326
-
-class NIFC_ArchivedPerimetersQuery(NIFC_BaseQuery):
-	name = "NIFC Archived Wildfire Perimeters"
-	service = "Archived_Wildfire_Perimeters2"
+	service = "Current_WildlandFire_Perimeters"
 	layer = 0 # sr = 4326
 
 class USA_WildfireIncidentsQuery(Query):
@@ -817,11 +812,6 @@ class CalFireCZU_EvacQuery(NIFC_BaseQuery):
 	name = "Cal Fire CZU Evacuation Zones"
 	service = "CZU_Lightning_Evac_VIEW"
 	layer = 0 # sr = 4326
-
-class CalFireSCU_EvacQuery(NIFC_BaseQuery):
-	name = "Cal Fire SCU Evacuation Zones"
-	service = "2020_SCU_LIGHTNING_COMPLEX_EVAC_PublicView"
-	layer = 1 # sr = 3310
 
 class SonomaEvacAreasQuery(Query):
 	name = "Sonoma County Evacuation Areas"
@@ -1074,7 +1064,6 @@ def main():
 		"ca_parks": CA_StateParksQuery,
 		"calfire": CalFire_UnitsQuery,
 		"calfire_czu_evac": CalFireCZU_EvacQuery,
-		"calfire_scu_evac": CalFireSCU_EvacQuery,
 		"cnra_conservancy": CNRA_ConservancyQuery,
 		"county": TigerCountyQuery,
 		"county_census": CensusCountyQuery,
@@ -1084,7 +1073,6 @@ def main():
 		"fire_incidents": USA_WildfireIncidentsQuery,
 		"fire_perimeters": USA_WildfirePerimetersQuery,
 		"fires_current": NIFC_CurrentPerimetersQuery,
-		"fires_archived": NIFC_ArchivedPerimetersQuery,
 		"fs": USFS_Query,
 		"govunits_blm": GovUnits_BLM_Query,
 		"govunits_nps": GovUnits_NPS_Query,
