@@ -926,15 +926,12 @@ function fireName(name, complex = null, inComplex = null)
 }
 function fireName2(name)
 {
-	if (!name || !(name = name.trim()))
+	if (typeof name !== 'string' || !(name = name.trim()))
 		return 'Unnamed Fire';
 
 	const j = name.length - 1;
-	if (name.charAt(j) !== ')') {
-		if (name.toLowerCase().endsWith('fire'))
-			return name;
-		return name + ' Fire';
-	}
+	if (name.charAt(j) !== ')')
+		return name.toLowerCase().endsWith('fire') ? name : name + ' Fire';
 
 	const i = name.lastIndexOf('(', j - 1);
 	if (i < 0)
@@ -947,7 +944,11 @@ function fireName2(name)
 		return name;
 
 	name = name.substring(0, i).trim();
-	return (name.toLowerCase().endsWith('fire') ? name : name + ' Fire') + ' (' + complex + ')';
+	if (!name)
+		name = 'Unnamed Fire';
+	else if (!name.toLowerCase().endsWith('fire'))
+		name += ' Fire';
+	return name + ' (' + complex + ')';
 }
 const IRWIN_InciWeb_Map = new Map();
 function query_IRWIN_InciWeb(IrwinId, setInciWebId)
