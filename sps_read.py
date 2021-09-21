@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
-	('ocap','Other California Peaks', 87, 15),
+	('ocap','Other California Peaks', 88, 15),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -476,9 +476,10 @@ landNameLookup = {
 	"White Hill Preserve":                  'landCounty',
 
 	# Midpeninsula Regional Open Space District
-	"Monte Bello Open Space Preserve":      'landMROSD',
-	"Russian Ridge Open Space Preserve":    'landMROSD',
-	"Sierra Azul Open Space Preserve":      'landMROSD',
+	"Monte Bello Open Space Preserve":              'landMROSD',
+	'Purisima Creek Redwoods Open Space Preserve':  'landMROSD',
+	"Russian Ridge Open Space Preserve":            'landMROSD',
+	"Sierra Azul Open Space Preserve":              'landMROSD',
 }
 landNameSuffixes = [
 	(' Wilderness',                 'landWild'),
