@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
-	('ocap','Other California Peaks', 88, 15),
+	('ocap','Other California Peaks', 91, 15),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -470,6 +470,7 @@ landNameLookup = {
 
 	# Marin County Parks
 	"Loma Alta Preserve":                   'landCounty',
+	"Little Mountain Preserve":             'landCounty',
 	"Lucas Valley Preserve":                'landCounty',
 	"Mount Burdell Preserve":               'landCounty',
 	"Ring Mountain Preserve":               'landCounty',
