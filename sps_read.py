@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
-	('ocap','Other California Peaks', 91, 15),
+	('ocap','Other California Peaks', 92, 15),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -1389,7 +1389,7 @@ class RE(object):
 	)
 	peakName = (
 		re.compile('^(?:Mc)?[A-Z][a-z]+(?:\'s)?(?: (?:Mc|Le)?[A-Z][&;a-z]+)*(?: #[1-9])?$'),
-		re.compile('^(?:[A-Z][a-z]+ )+(?:Mountains|Range|Wilderness) HP$'),
+		re.compile('^(?:[A-Z][a-z]+ )+(?:Mountains|Range|Ridge|Wilderness) HP$'),
 		re.compile('^(?:[A-Z][a-z]+ )+\\([A-Z][a-z]+(?: [A-Z][a-z]+)*\\)$'),
 		re.compile('^(?:[A-Z][a-z]+ )+(?:[A-Z]\\.|St\\.|del|in the|of the|and)(?: [A-Z][a-z]+)+$'),
 		re.compile('^[A-Z][a-z]+(?:-[a-z]{2,})?(?: [A-Z][a-z]+(?:-[a-z]{2,})?)+$'),
