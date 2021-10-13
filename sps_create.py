@@ -871,6 +871,7 @@ class PeakPb(TablePeak):
 		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
 		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
 		('Peak 1380', 1380):                    'Peak 1390',
+		('Peak 2600', 2600):                    'Peak 2600+',
 		('Snow Mountain', 7056):                'Snow Mountain East',
 	# Other Western Peaks:
 		('Mount Evans-West Peak', 14256):       'West Evans',
@@ -1604,7 +1605,6 @@ class PeakLoJ(TablePeak):
 		('Middle Peak', 2500):                          'Mount Tamalpais Middle Peak',
 		('Mount Tamalpais', 2580):                      'Mount Tamalpais West Peak',
 		('North Peak', 1898):                           'Montara Mountain',
-		('Peak 2620', 2620):                            'Monument Peak',
 		('Pine Ridge', 3020):                           'Pine Ridge HP',
 		('South Peak', 4003):                           'Mount Saint Helena South',
 		('South Yolla Bolly', 8093):                    'South Yolla Bolly Mountain',
