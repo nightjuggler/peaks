@@ -793,99 +793,103 @@ class PeakPb(TablePeak):
 		'OGUL':  63,
 		'SPS':  247,
 	}
-	nameMap = {
+	NAME_MAP = {
 	# Desert Peaks Section:
-		('Chuckwalla Peak', 3446):              'Bunch Benchmark',
-		('Eagle Mountain', 5350):               'Eagle Mountains HP',
-		('Granite Mountain', 6762):             'Granite Peak',
-		('Granite Mountain', 4331):             'Granite Benchmark',
-		('Old Woman Mountain', 5325):           'Old Woman Mountains HP',
-		('Spectre Peak', 4482):                 'Spectre Point',
-		('Stepladder Mountains', 2940):         'Stepladder Mountains HP',
-		('Superstition Benchmark', 5057):       'Superstition Mountain',
+		'13410':   ('Chuckwalla Peak',                   'Bunch Benchmark'),
+		'1514':    ('Eagle Mountain',                    'Eagle Mountains HP'),
+		'3810':    ('Granite Mountain',                  'Granite Benchmark'),
+		'3804':    ('Granite Mountain',                  'Granite Peak'),
+		'3806':    ('Old Woman Mountain',                'Old Woman Mountains HP'),
+		'13411':   ('Spectre Peak',                      'Spectre Point'),
+		'13408':   ('Stepladder Mountains',              'Stepladder Mountains HP'),
+		'4173':    ('Superstition Benchmark',            'Superstition Mountain'),
 	# Hundred Peaks Section:
-		('Black Mountain', 7438):               'Black Mountain #5',
-		('Cannell Point', 8314):                'Cannel Point',
-		('Granite Mountain', 5633):             'Granite Mountain #2',
-		('Monument Peak', 6271):                'Monument Peak #1',
-		('Rabbit Peak', 6640):                  'Rabbit Peak #2',
-		('Toro Peak-West Peak', 8316):          'Toro Peak West',
+		'2882':    ('Black Mountain',                    'Black Mountain #5'),
+		'2867':    ('Cannell Point',                     'Cannel Point'),
+		'1457':    ('Granite Mountain',                  'Granite Mountain #2'),
+		'1465':    ('Monument Peak',                     'Monument Peak #1'),
+		'1508':    ('Rabbit Peak',                       'Rabbit Peak #2'),
+		'44743':   ('Toro Peak-West Peak',               'Toro Peak West'),
 	# Great Basin Peaks / Nevada Peaks Club:
-		('Baker Peak', 12305):                  'Baker Peak East',
-		('Baker Peak-West Summit', 12298):      'Baker Peak',
-		('Duffer Peak-North Peak', 9400):       'Duffer Peak',
-		('Duffer Peak', 9428):                  'Duffer Peak South',
-		('Granite Peak', 8980):                 'Granite Peak (Washoe)',
-		('Granite Peak', 9732):                 'Granite Peak (Humboldt)',
-		('Granite Peak', 11218):                'Granite Peak (Snake Range)',
-		('Morey Peak-North Peak', 10240):       'Morey Peak North',
-		('Mount Grant', 11280):                 'Mount Grant (West)',
-		('Mount Jefferson-North Summit', 11814):'Mount Jefferson North',
-		('Petersen Mountains HP', 7841):        'Petersen Mountain',
+		'60151':   ('Baker Peak-West Summit',            'Baker Peak'),
+		'3573':    ('Baker Peak',                        'Baker Peak East'),
+		'3321':    ('Duffer Peak-North Peak',            'Duffer Peak'),
+		'3322':    ('Duffer Peak',                       'Duffer Peak South'),
+		'3394':    ('Granite Peak',                      'Granite Peak (Humboldt)'),
+		'3577':    ('Granite Peak',                      'Granite Peak (Snake Range)'),
+		'3312':    ('Granite Peak',                      'Granite Peak (Washoe)'),
+		'3609':    ('Mount Grant',                       'Mount Grant (West)'),
+		'3498':    ('Mount Jefferson-North Summit',      'Mount Jefferson North'),
+		'17460':   ('Petersen Mountains HP',             'Petersen Mountain'),
 	# Sierra Peaks Section:
-		('Adams Peak-West Peak', 8197):         'Adams Peak',
-		('Devils Crags', 12400):                'Devil\'s Crag #1',
-		('Mount Morgan', 13748):                'Mount Morgan (South)',
-		('Mount Morgan', 12992):                'Mount Morgan (North)',
-		('Mount Stanford', 13973):              'Mount Stanford (South)',
-		('Mount Stanford', 12838):              'Mount Stanford (North)',
-		('Pilot Knob', 6200):                   'Pilot Knob (South)',
-		('Pilot Knob', 12245):                  'Pilot Knob (North)',
-		('Pyramid Peak', 12779):                'Pyramid Peak (South)',
-		('Pyramid Peak', 9983):                 'Pyramid Peak (North)',
-		('Sawtooth Peak', 8000):                'Sawtooth Peak (South)',
-		('Sawtooth Peak', 12343):               'Sawtooth Peak (North)',
-		('Sierra Buttes Lookout', 8590):        'Sierra Buttes',
+		'69023':   ('Adams Peak-West Peak',              'Adams Peak'),
+		'13541':   ('Devils Crags',                      'Devil\'s Crag #1'),
+		'2650':    ('Mount Morgan',                      'Mount Morgan (North)'),
+		'2662':    ('Mount Morgan',                      'Mount Morgan (South)'),
+		'2652':    ('Mount Stanford',                    'Mount Stanford (North)'),
+		'2786':    ('Mount Stanford',                    'Mount Stanford (South)'),
+		'13544':   ('Pilot Knob',                        'Pilot Knob (North)'),
+		'2868':    ('Pilot Knob',                        'Pilot Knob (South)'),
+		'2569':    ('Pyramid Peak',                      'Pyramid Peak (North)'),
+		'2754':    ('Pyramid Peak',                      'Pyramid Peak (South)'),
+		'13517':   ('Sawtooth Peak',                     'Sawtooth Peak (North)'),
+		'13507':   ('Sawtooth Peak',                     'Sawtooth Peak (South)'),
 	# Tahoe Ogul Peaks:
-		('Silver Peak', 8930):                     'Silver Peak (Desolation)',
-		('Silver Peak - Northeast Summit', 10800): 'Silver Peak Northeast',
-		('Silver Peak-Southwest Summit', 10772):   'Silver Peak Southwest',
+		'26371':   ('Silver Peak',                       'Silver Peak (Desolation)'),
+		'53297':   ('Silver Peak-Southwest Summit',      'Silver Peak Southwest'),
 	# Lower Peaks Committee
-		('El Montanon', 1808):                  'El Monta&ntilde;on',
+		'18343':   ('El Montanon',                       'El Monta&ntilde;on'),
 	# Other Sierra Peaks:
-		("Gambler's Special", 12927):           'Gamblers Special Peak',
-		('Maggies Peaks-South Summit', 8699):   'Maggies Peaks South',
-		('Mount Lamarck North', 13464):         'Northwest Lamarck',
-		('Mount Lola-North Ridge Peak', 8844):  'Mount Lola North',
-		('Peak 3560', 11680):                   'Peak 3560m+',
-		('Peak 9980', 9980):                    'Sirretta Peak North',
-		('Peak 10570', 10570):                  'Peak 3222m',
-		('Pk 10597', 10597):                    'Peak 3230m',
-		('Shepherd Crest', 12040):              'Shepherd Crest East',
-		('Snow Valley Peak-East Peak', 9170):   'Snow Valley Peak East',
-		('The Sisters', 10153):                 'The Sisters East',
-		('Volcanic Ridge', 11501):              'Volcanic Ridge West',
-		('White Mountain', 12057):              'White Mountain (Tioga Pass)',
-		('White Mountain', 11398):              'White Mountain (Sonora Pass)',
+		'37148':   ('Gambler\'s Special',                'Gamblers Special Peak'),
+		'27997':   ('Maggies Peaks-South Summit',        'Maggies Peaks South'),
+		'2548':    ('Mount Lola-North Ridge Peak',       'Mount Lola North'),
+		'16774':   ('Mount Lamarck North',               'Northwest Lamarck'),
+		'83454':   ('Peak 10570',                        'Peak 3222m'),
+		'83353':   ('Pk 10597',                          'Peak 3230m'),
+		'36720':   ('Peak 3560',                         'Peak 3560m+'),
+		'38937':   ('Shepherd Crest',                    'Shepherd Crest East'),
+		'26162':   ('Silver Peak - Northeast Summit',    'Silver Peak Northeast'),
+		'43761':   ('Peak 9980',                         'Sirretta Peak North'),
+		'36459':   ('Snow Valley Peak-East Peak',        'Snow Valley Peak East'),
+		'24114':   ('The Sisters',                       'The Sisters East'),
+		'36717':   ('Volcanic Ridge',                    'Volcanic Ridge West'),
+		'28151':   ('White Mountain',                    'White Mountain (Sonora Pass)'),
+		'38787':   ('White Mountain',                    'White Mountain (Tioga Pass)'),
 	# Other Desert Peaks:
-		('Antelope Buttes HP', 3040):           'Antelope Buttes',
+		'75734':   ('Antelope Buttes HP',                'Antelope Buttes'),
 	# Other California Peaks:
-		('Maguire Peak', 1688):                 'Maguire Peaks West',
-		('Maguire Peaks-East Summit', 1640):    'Maguire Peaks East',
-		('Monument Peak North', 2600):          'Monument Peak',
-		('Mount Saint Helena-East Peak', 4200): 'Mount Saint Helena East',
-		('Mount Saint Helena-South Peak', 4003):'Mount Saint Helena South',
-		('Mount Saint Helena-Southeast Peak', 4023): 'Mount Saint Helena Southeast',
-		('Mount Tamalpais-East Peak', 2572):    'Mount Tamalpais East Peak',
-		('Mount Tamalpais-Middle Peak', 2518):  'Mount Tamalpais Middle Peak',
-		('Mount Tamalpais-West Peak', 2576):    'Mount Tamalpais West Peak',
-		('Peak 1380', 1380):                    'Peak 1390',
-		('Peak 2600', 2600):                    'Peak 2600+',
-		('Snow Mountain', 7056):                'Snow Mountain East',
+		'77712':   ('Maguire Peaks-East Summit',         'Maguire Peaks East'),
+		'27020':   ('Maguire Peak',                      'Maguire Peaks West'),
+		'53478':   ('Monument Peak North',               'Monument Peak'),
+		'1183':    ('Mount Saint Helena-East Peak',      'Mount Saint Helena East'),
+		'40000':   ('Mount Saint Helena-South Peak',     'Mount Saint Helena South'),
+		'53383':   ('Mount Saint Helena-Southeast Peak', 'Mount Saint Helena Southeast'),
+		'1158':    ('Mount Tamalpais-East Peak',         'Mount Tamalpais East Peak'),
+		'16816':   ('Mount Tamalpais-Middle Peak',       'Mount Tamalpais Middle Peak'),
+		'1159':    ('Mount Tamalpais-West Peak',         'Mount Tamalpais West Peak'),
+		'68787':   ('Peak 1380',                         'Peak 1390'),
+		'75602':   ('Peak 2600',                         'Peak 2600+'),
+		'1174':    ('Snow Mountain',                     'Snow Mountain East'),
 	# Other Western Peaks:
-		('Mount Evans-West Peak', 14256):       'West Evans',
-		('Mount Nebo-South Peak', 11877):       'Mount Nebo South',
-		('Mount Saint Helens', 8333):           'Mount St. Helens',
-		('Ruby Dome-East Peak', 11360):         'Ruby Pyramid',
-		('Sourdough Mountain-Lookout Site', 5985): 'Sourdough Mountain Lookout',
-		('Trail Canyon Saddle Peak', 11325):    'Trail Canyon Peak',
-		('Wizard Island Peak', 6933):           'Wizard Island',
+		'30726':   ('Mount Nebo-South Peak',             'Mount Nebo South'),
+		'2353':    ('Mount Saint Helens',                'Mount St. Helens'),
+		'3523':    ('Ruby Dome-East Peak',               'Ruby Pyramid'),
+		'25632':   ('Sourdough Mountain-Lookout Site',   'Sourdough Mountain Lookout'),
+		'23494':   ('Trail Canyon Saddle Peak',          'Trail Canyon Peak'),
+		'32935':   ('Mount Evans-West Peak',             'West Evans'),
+		'2454':    ('Wizard Island Peak',                'Wizard Island'),
 	}
 	@classmethod
-	def normalizeName(self, name, elevation=None):
+	def normalizeName(self, name, peak_id=None):
 		if name.endswith(' High Point'):
 			name = name[:-10] + 'HP'
-		return self.nameMap.get((name, elevation), name)
+		if peak_id:
+			old_and_new_name = self.NAME_MAP.get(peak_id)
+			if old_and_new_name:
+				if name != old_and_new_name[0]:
+					out('Pb name ({}) not as expected ({})', name, old_and_new_name[0])
+				return old_and_new_name[1]
+		return name
 
 	elevationMap = {
 	# Pb DPS Elevation Adjustments:
@@ -1135,7 +1139,7 @@ class PeakPb(TablePeak):
 		self.prominence = str2int(self.prominence) if len(self.prominence) > 0 else None
 
 	def postProcess2(self, maxPeak):
-		self.name = self.normalizeName(self.name, self.elevation)
+		self.name = self.normalizeName(self.name, self.id)
 
 		elevMin = self.elevation
 		elevMin = self.elevationMap.get((self.name, elevMin, 'min'), elevMin)
@@ -1636,7 +1640,7 @@ class PeakLoJ(TablePeak):
 			old_and_new_name = self.NAME_MAP.get(peak_id)
 			if old_and_new_name:
 				if name != old_and_new_name[0]:
-					err("LoJ name ({}) not as expected ({})", name, old_and_new_name[0])
+					out('LoJ name ({}) not as expected ({})', name, old_and_new_name[0])
 				return old_and_new_name[1]
 		return name
 
