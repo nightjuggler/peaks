@@ -869,6 +869,7 @@ class PeakPb(TablePeak):
 		'1159':    ('Mount Tamalpais-West Peak',         'Mount Tamalpais West Peak'),
 		'68787':   ('Peak 1380',                         'Peak 1390'),
 		'75602':   ('Peak 2600',                         'Peak 2600+'),
+		'54010':   ('Pine Ridge HP',                     'Pine Ridge'),
 		'1174':    ('Snow Mountain',                     'Snow Mountain East'),
 	# Other Western Peaks:
 		'30726':   ('Mount Nebo-South Peak',             'Mount Nebo South'),
@@ -1077,8 +1078,8 @@ class PeakPb(TablePeak):
 		('Mount Tamalpais West Peak', 2578, 'max'): 2600,
 		('Peak 1390', 1380, 'min'): 1390,
 		('Peak 1390', 1400, 'max'): 1390,
-		('Pine Ridge HP', 3028, 'min'): 3000,
-		('Pine Ridge HP', 3028, 'max'): 3040,
+		('Pine Ridge', 3028, 'min'): 3000,
+		('Pine Ridge', 3028, 'max'): 3040,
 		('Point Reyes Hill', 1342, 'min'): 1336,
 		('Point Reyes Hill', 1344, 'max'): 1336,
 		('Post Summit', 3456, 'min'): 3455,
@@ -1612,7 +1613,6 @@ class PeakLoJ(TablePeak):
 		'66499':   ('Middle Peak',                  'Mount Tamalpais Middle Peak'),
 		'17267':   ('Mount Tamalpais',              'Mount Tamalpais West Peak'),
 		'66173':   ('Peak 2620',                    'Peak 2600+'),
-		'65170':   ('Pine Ridge',                   'Pine Ridge HP'),
 		'16722':   ('South Yolla Bolly',            'South Yolla Bolly Mountain'),
 		'70389':   ('Twin Peaks, South',            'Twin Peaks'),
 	# Other Western Peaks:
