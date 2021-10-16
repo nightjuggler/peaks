@@ -892,7 +892,7 @@ class PeakPb(TablePeak):
 				return old_and_new_name[1]
 		return name
 
-	elevationMap = {
+	ELEVATION_MAP = {
 	# Pb DPS Elevation Adjustments:
 	#
 	# - Needle Peak
@@ -905,10 +905,8 @@ class PeakPb(TablePeak):
 	#   that instead of rounding down (2939.6' => 2939'), Pb rounded to the nearest foot
 	#   (2939.6' => 2940')
 
-		('Needle Peak', 5801, 'min'): 5804, # 1769m
-		('Needle Peak', 5801, 'max'): 5804, # 1769m
-		('Stepladder Mountains HP', 2940, 'min'): 2920, # 890m
-		('Stepladder Mountains HP', 2940, 'max'): 2953, # 900m
+		'3665':  (5801, 5801, 5804, 5804), # Needle Peak: 1769m
+		'13408': (2940, 2940, 2920, 2953), # Stepladder Mountains HP: 890m-900m
 
 	# Pb SPS Elevation Adjustments:
 	#
@@ -983,25 +981,18 @@ class PeakPb(TablePeak):
 	#   NGVD 29 height" which is given as 8,587'. Since the vertical datum for primary
 	#   elevations on Pb is NGVD 29, it seems that either 8,591' or 8,587' should be used.
 
-		('Basin Mountain', 13200, 'max'): 13181,
-		('Highland Peak', 10936, 'min'): 10935,
-		('Highland Peak', 10936, 'max'): 10935,
-		('Kearsarge Peak', 12615, 'min'): 12618,
-		('Kearsarge Peak', 12615, 'max'): 12618,
-		('Kern Peak', 11480, 'max'): 11520,
-		('Mount Carillon', 13553, 'min'): 13552,
-		('Mount Carillon', 13553, 'max'): 13552,
-		('Mount Jordan', 13343, 'min'): 13344,
-		('Mount Jordan', 13343, 'max'): 13344,
-		('Mount Williamson', 14373, 'min'): 14375,
-		('Mount Williamson', 14373, 'max'): 14375,
-		('Sierra Buttes', 8590, 'min'): 8591,
-		('Sierra Buttes', 8590, 'max'): 8591,
+		'2678':  (13181, 13200, 13181, 13181), # Basin Mountain
+		'2582':  (10936, 10936, 10935, 10935), # Highland Peak
+		'13530': (12615, 12615, 12618, 12618), # Kearsarge Peak
+		'2860':  (11480, 11480, 11480, 11520), # Kern Peak
+		'2824':  (13553, 13553, 13552, 13552), # Mount Carillon
+		'2791':  (13343, 13343, 13344, 13344), # Mount Jordan
+		'2814':  (14373, 14373, 14375, 14375), # Mount Williamson
+		'13567': ( 8590,  8590,  8591,  8591), # Sierra Buttes
 
 	# Pb HPS Elevation Adjustments:
 
-		('San Jacinto Peak', 10839, 'min'): 10804,
-		('San Jacinto Peak', 10839, 'max'): 10804,
+		'1480': (10839, 10839, 10804, 10804), # San Jacinto Peak
 
 	# Pb Elevation Adjustments for Great Basin Peaks / Nevada Peaks Club
 	#
@@ -1023,23 +1014,16 @@ class PeakPb(TablePeak):
 	# - Green Mountain (NPC)
 	#   The last 0 in 10680 was likely misread as an 8 (a contour line bisects it on the 7.5' topo).
 
-		('Bull Mountain', 9934, 'min'): 9920,
-		('Bull Mountain', 9934, 'max'): 9960,
-		('Duffer Peak', 9400, 'min'): 9397,
-		('Duffer Peak', 9440, 'max'): 9397,
-		('Granite Peak (Washoe)', 8980, 'min'): 8960,
-		('Granite Peak (Washoe)', 8980, 'max'): 9000,
-		('Green Mountain', 10688, 'min'): 10680,
-		('Green Mountain', 10688, 'max'): 10680,
-		('Hays Canyon Peak', 7920, 'min'): 7916,
-		('Hays Canyon Peak', 7920, 'max'): 7916,
-		('Morey Peak North', 10248, 'min'): 10240,
-		('Morey Peak North', 10248, 'max'): 10280,
+		'3440':  ( 9934,  9934,  9920,  9960), # Bull Mountain
+		'3321':  ( 9400,  9440,  9397,  9397), # Duffer Peak
+		'3312':  ( 8980,  8980,  8960,  9000), # Granite Peak (Washoe)
+		'24372': (10688, 10688, 10680, 10680), # Green Mountain
+		'3304':  ( 7920,  7920,  7916,  7916), # Hays Canyon Peak
+		'34519': (10248, 10248, 10240, 10280), # Morey Peak North
 
 	# Pb Elevation Adjustments for Other Desert Peaks:
 
-		('Kelso Peak', 4777, 'min'): 4757, # 1450m
-		('Kelso Peak', 4777, 'max'): 4790, # 1460m
+		'3782': (4777, 4777, 4757, 4790), # Kelso Peak: 1450m-1460m
 
 	# Pb Elevation Adjustments for Other Sierra Peaks:
 	#
@@ -1049,47 +1033,30 @@ class PeakPb(TablePeak):
 	#    approximately five feet higher and thus the summit of this peak."
 	#   [https://peakbagger.com/peak.aspx?pid=2660]
 
-		('Duck Lake Peak', 12051, 'min'): 12077, # 3681m
-		('Duck Lake Peak', 12051, 'max'): 12077, # 3681m
-		('Grouse Mountain', 8123, 'max'): 8083,
-		('Lost World Peak', 11353, 'min'): 11447, # 3489m
-		('Lost World Peak', 11353, 'max'): 11447, # 3489m
-		('Shepherd Crest East', 12040, 'min'): 12000,
-		('Shepherd Crest East', 12080, 'max'): 12040,
-		('Mount Starr', 12840, 'min'): 12835,
-		('Mount Starr', 12840, 'max'): 12835,
-		('Peak 3222m', 10570, 'min'): 10571, # 3222m
-		('Peak 3222m', 10570, 'max'): 10571, # 3222m
-		('Peak 3560m+', 11680, 'max'): 11745, # 3580m
+		'38609': (12051, 12051, 12077, 12077), # Duck Lake Peak: 3681m
+		'39925': ( 8083,  8123,  8083,  8083), # Grouse Mountain
+		'36666': (11353, 11353, 11447, 11447), # Lost World Peak: 3489m
+		'38937': (12040, 12080, 12000, 12040), # Shepherd Crest East
+		'2660':  (12840, 12840, 12835, 12835), # Mount Starr
+		'83454': (10570, 10570, 10571, 10571), # Peak 3222m
+		'36720': (11680, 11680, 11680, 11745), # Peak 3560m+: 3560m-3580m
 
 	# Pb Elevation Adjustments for Other California Peaks:
 
-		('Hawk Hill', 920, 'min'): 900,
-		('Hawk Hill', 920, 'max'): 925,
-		('Islay Hill', 780, 'min'): 760,
-		('Islay Hill', 820, 'max'): 800,
-		('Mine Hill', 1728, 'min'): 1720,
-		('Mine Hill', 1728, 'max'): 1760,
-		('Mount Tamalpais East Peak', 2572, 'min'): 2571,
-		('Mount Tamalpais East Peak', 2574, 'max'): 2571,
-		('Mount Tamalpais Middle Peak', 2518, 'min'): 2480,
-		('Mount Tamalpais Middle Peak', 2520, 'max'): 2520,
-		('Mount Tamalpais West Peak', 2576, 'min'): 2560,
-		('Mount Tamalpais West Peak', 2578, 'max'): 2600,
-		('Peak 1390', 1380, 'min'): 1390,
-		('Peak 1390', 1400, 'max'): 1390,
-		('Pine Ridge', 3028, 'min'): 3000,
-		('Pine Ridge', 3028, 'max'): 3040,
-		('Point Reyes Hill', 1342, 'min'): 1336,
-		('Point Reyes Hill', 1344, 'max'): 1336,
-		('Post Summit', 3456, 'min'): 3455,
-		('Post Summit', 3456, 'max'): 3455,
-		('Slacker Hill', 937, 'min'): 925,
-		('Slacker Hill', 937, 'max'): 950,
-		('White Hill', 1434, 'min'): 1430,
-		('White Hill', 1434, 'max'): 1430,
+		'30637': ( 920,  920,  900,  925), # Hawk Hill
+		'24165': ( 780,  820,  760,  800), # Islay Hill
+		'33891': (1728, 1728, 1720, 1760), # Mine Hill
+		'1158':  (2572, 2574, 2571, 2571), # Mount Tamalpais East Peak
+		'16816': (2518, 2520, 2480, 2520), # Mount Tamalpais Middle Peak
+		'1159':  (2576, 2578, 2560, 2600), # Mount Tamalpais West Peak
+		'68787': (1380, 1400, 1390, 1390), # Peak 1390
+		'54010': (3028, 3028, 3000, 3040), # Pine Ridge
+		'1155':  (1342, 1344, 1336, 1336), # Point Reyes Hill
+		'55390': (3456, 3456, 3455, 3455), # Post Summit
+		'64361': ( 937,  937,  925,  950), # Slacker Hill
+		'50114': (1434, 1434, 1430, 1430), # White Hill
 	}
-	prominenceMap = {
+	PROMINENCE_MAP = {
 	# --------------------------
 	# Pb Prominence Adjustments
 	# --------------------------
@@ -1105,32 +1072,21 @@ class PeakPb(TablePeak):
 	#   both downward-sloping sides (east and west) of the saddle at 1390'. LoJ also uses 1395' for
 	#   the average saddle elevation.
 
-		('Billy Goat Peak',               896, 'min'):   879, # 1748m - 1480m           OWP
-		('Billy Goat Peak',               896, 'max'):   912, # 1748m - 1470m           OWP
-		('Cerro Pescadores',             3476, 'max'):  3478, # 1060m                   DPS
-		('Duffer Peak',                    40, 'min'):     0, #                         GBP
-		('Duffer Peak',                   120, 'max'):    80, #                         GBP
-		('El Monta&ntilde;on',           1333, 'min'):  1308, #                         LPC
-		('El Monta&ntilde;on',           1333, 'max'):  1358, #                         LPC
-		('East Ord Mountain',            1508, 'max'):  1528, #                         DPS
-		('Gamblers Special Peak',         263, 'min'):   262, # 80m                     OSP
-		('Gamblers Special Peak',         393, 'max'):   394, # 120m                    OSP
-		('Peak 3222m',                    431, 'min'):   399, # 10570' - 3100m          OSP
-		('Peak 3222m',                    431, 'max'):   465, # 10570' - 3080m          OSP
-		('Peak 3230m',                    394, 'min'):   361, # 3230m - 3120m           OSP
-		('Peak 3230m',                    394, 'max'):   427, # 3230m - 3100m           OSP
-		('Pilot Knob (South)',            720, 'min'):   680, #                         SPS
-		('Pilot Knob (South)',            800, 'max'):   760, #                         SPS
-		('Ring Mountain',                 402, 'min'):   442, # 602'-160'               OCAP
-		('Ring Mountain',                 442, 'max'):   482, # 602'-120'               OCAP
-		('Signal Peak',                  3497, 'max'):  3487, #                         DPS
-		('Slacker Hill',                  274, 'min'):   262, # 937' - 675'             OCAP
-		('Slacker Hill',                  274, 'max'):   287, # 937' - 650'             OCAP
-		('Trail Peak',                    885, 'min'):   845, # 11605' - 10760'         OSP
-		('Trail Peak',                    925, 'max'):   885, # 11605' - 10720'         OSP
-		('Two Teats',                     132, 'min'):   131, # 40m                     OSP
-		('White Hill',                    308, 'min'):   314, # 1434' - 1120'           OCAP
-		('White Hill',                    310, 'max'):   354, # 1434' - 1080'           OCAP
+		'13419': (3346, 3476, 3346, 3478), # DPS Cerro Pescadores 1020m, 1060m
+		'13407': (1488, 1508, 1488, 1528), # DPS East Ord Mountain
+		'4066':  (3477, 3497, 3477, 3487), # DPS Signal Peak
+		'3321':  (  40,  120,    0,   80), # GBP Duffer Peak
+		'18343': (1333, 1333, 1308, 1358), # LPC El Montañon
+		'39129': ( 402,  442,  442,  482), # OCAP Ring Mountain 602'-160', 602'-120'
+		'64361': ( 274,  274,  262,  287), # OCAP Slacker Hill 937'-675', 937'-650'
+		'50114': ( 308,  310,  314,  354), # OCAP White Hill 1434'-1120', 1434'-1080'
+		'37148': ( 263,  393,  262,  394), # OSP Gamblers Special Peak 80m, 120m
+		'83454': ( 431,  431,  399,  465), # OSP Peak 3222m 10570'-3100m, 10570'-3080m
+		'83353': ( 394,  394,  361,  427), # OSP Peak 3230m 3230m-3120m, 3230m-3100m
+		'21601': ( 885,  925,  845,  885), # OSP Trail Peak 11605'-10760', 11605'-10720'
+		'21603': ( 132,  262,  131,  262), # OSP Two Teats 40m, 80m
+		'58159': ( 896,  896,  879,  912), # OWP Billy Goat Peak 1748m-1480m, 1748m-1470m
+		'2868':  ( 720,  800,  680,  760), # SPS Pilot Knob (South)
 	}
 	def postProcess(self, peakListId=None):
 		def str2int(s):
@@ -1142,28 +1098,40 @@ class PeakPb(TablePeak):
 	def postProcess2(self, maxPeak):
 		self.name = self.normalizeName(self.name, self.id)
 
-		elevMin = self.elevation
-		elevMin = self.elevationMap.get((self.name, elevMin, 'min'), elevMin)
-		elevMax = maxPeak.elevation
-		elevMax = self.elevationMap.get((self.name, elevMax, 'max'), elevMax)
+		elev_min = self.elevation
+		prom_min = self.prominence
+		elev_max = maxPeak.elevation
+		prom_max = maxPeak.prominence
 
-		promMin = self.prominence
-		promMin = self.prominenceMap.get((self.name, promMin, 'min'), promMin)
-		promMax = maxPeak.prominence
-		promMax = self.prominenceMap.get((self.name, promMax, 'max'), promMax)
+		proms = self.PROMINENCE_MAP.get(self.id)
+		if proms:
+			old_min, old_max, new_min, new_max = proms
+			if old_min != prom_min or old_max != prom_max:
+				out('Pb prominences ({}, {}) not as expected ({}, {}) for {}',
+					prom_min, prom_max, old_min, old_max, self.name)
+			prom_min = new_min
+			prom_max = new_max
 
-		if elevMin > elevMax:
+		elevs = self.ELEVATION_MAP.get(self.id)
+		if elevs:
+			old_min, old_max, new_min, new_max = elevs
+			if old_min != elev_min or old_max != elev_max:
+				out('Pb elevations ({}, {}) not as expected ({}, {}) for {}',
+					elev_min, elev_max, old_min, old_max, self.name)
+			prom_min += new_min - elev_min
+			prom_max += new_max - elev_max
+			elev_min = new_min
+			elev_max = new_max
+
+		if elev_min > elev_max:
 			err("Pb: Max elevation ({}) must be >= min elevation ({}) for {}",
-				elevMax, elevMin, self.name)
-		if promMin > promMax:
+				elev_max, elev_min, self.name)
+		if prom_min > prom_max:
 			err("Pb: Max prominence ({}) must be >= min prominence ({}) for {}",
-				promMax, promMin, self.name)
+				prom_max, prom_min, self.name)
 
-		promMin += elevMin - self.elevation
-		promMax += elevMax - maxPeak.elevation
-
-		self.elevation = ElevationPb(elevMin, elevMax)
-		self.prominence = (promMin, promMax)
+		self.elevation = ElevationPb(elev_min, elev_max)
+		self.prominence = (prom_min, prom_max)
 
 	@classmethod
 	def getPeaks(self, peakListId):
