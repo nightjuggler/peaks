@@ -1664,20 +1664,25 @@ class PeakLoJ(TablePeak):
 	#   the peak directly east of South Guard Lake! Did LoJ get the elevation from one of these maps?
 	#   I added support for 30' quads so I don't have to make an adjustment for this peak.
 
-		('Adams Peak', 8199): 8197,
-		('Basin Mountain', 13190): 13181,
-		('Mount Baxter', 13140): 4004.0,
-		('Deerhorn Mountain', 13281): 4048.0, # didn't round down: 4048m = 13280.8' (Mt. Brewer 7.5')
-		('Mount Hitchcock', 13186): 4019.0, # didn't round down: 4019m = 13185.7' (1993 Mount Whitney 7.5')
-		('Joe Devel Peak', 13327): 4062.0, # didn't round down: 4062m = 13326.8' (1993 Mount Whitney 7.5')
-		('Mount Mills', 13460): 13451,
-		('Mount Morrison', 12296): 3742.0,
-		('Mount Newcomb', 13422): 4091.0, # didn't round down: 4091m = 13421.9' (1993 Mount Whitney 7.5')
-		('Mount Russell', 14088): 4294.0, # didn't round down: 4294m = 14087.9' (1993 Mount Whitney 7.5')
-		('Seven Gables', 13074): 13075,
-		('Temple Crag', 12976): 3955.0, # didn't round down: 3955m = 12975.7' (1990 Split Mtn. 7.5')
-		('Trojan Peak', 13947): 4251.0, # didn't round down: 4251m = 13946.85' (1993 Mt. Williamson 7.5')
-		('Tunnabora Peak', 13563): 4134.0, # didn't round down: 4134m = 13562.99' (1993 Mount Whitney 7.5')
+		'17460': ( 8199,  8197  ), # Adams Peak
+		'32365': (13190, 13181  ), # Basin Mountain
+		'32339': (13281,  4048.0), # Deerhorn Mountain: didn't round down, 4048m = 13280.8' [1]
+		'32333': (13327,  4062.0), # Joe Devel Peak: didn't round down, 4062m = 13326.8' [2]
+		'32376': (13140,  4004.0), # Mount Baxter
+		'32361': (13186,  4019.0), # Mount Hitchcock: didn't round down, 4019m = 13185.7' [2]
+		'32310': (13460, 13451  ), # Mount Mills
+		'32646': (12296,  3742.0), # Mount Morrison
+		'32311': (13422,  4091.0), # Mount Newcomb: didn't round down, 4091m = 13421.9' [2]
+		'17720': (14088,  4294.0), # Mount Russell: didn't round down, 4294m = 14087.9' [2]
+		'32383': (13074, 13075  ), # Seven Gables
+		'32414': (12976,  3955.0), # Temple Crag: didn't round down, 3955m = 12975.7' [3]
+		'32250': (13947,  4251.0), # Trojan Peak: didn't round down, 4251m = 13946.85' [4]
+		'32292': (13563,  4134.0), # Tunnabora Peak: didn't round down, 4134m = 13562.99' [2]
+
+	# [1] 1993 Mt. Brewer 7.5'
+	# [2] 1993 Mount Whitney 7.5'
+	# [3] 1990 Split Mtn. 7.5'
+	# [4] 1993 Mt. Williamson 7.5'
 
 	# LoJ DPS Elevation Adjustments:
 	#
@@ -1702,12 +1707,12 @@ class PeakLoJ(TablePeak):
 	#    spot elevation and next higher contour." (892m + 900m) / 2 / 0.3048 m/ft = 2939.6 ft
 	#   [https://listsofjohn.com/peak/65349]
 
-		('Boundary Peak', 13143): 13140,
-		('East Ord Mountain', 6169): 6168,
-		('Needle Peak', 5802): 1768.8,
-		('Old Woman Mountains HP', 5325): 1623.0,
-		('Spectre Point', 4483): 4482,
-		('Stepladder Mountains HP', 2939): 895.0,
+		'17755': (13143, 13140  ), # Boundary Peak
+		'59286': ( 6169,  6168  ), # East Ord Mountain
+		'59803': ( 5802,  1768.8), # Needle Peak
+		'17121': ( 5325,  1623.0), # Old Woman Mountains HP
+		'17198': ( 4483,  4482  ), # Spectre Point
+		'65349': ( 2939,   895.0), # Stepladder Mountains HP
 
 	# Other LoJ Elevation Adjustments:
 	#
@@ -1735,20 +1740,20 @@ class PeakLoJ(TablePeak):
 	#    Elevation [11,077'] is interpolation of spot elevation and next higher contour [11,080']."
 	#   [https://listsofjohn.com/peak/40725]
 
-		('Billy Goat Peak',      5735):  1748.0,        # OWP -- LoJ didn't round down
-		('Eagle Peak',           9900):  9892,          # GBP
-		('Kumiva Peak',          8238):  8237,          # GBP
-		('Mount Ian Campbell',  10615): 10616,          # OSP
-		('Verdi Peak',          11077): 11074,          # NPC
+		'16762': ( 9900,  9892  ), # GBP Eagle Peak
+		'16838': ( 8238,  8237  ), # GBP Kumiva Peak
+		'40725': (11077, 11074  ), # NPC Verdi Peak
+		'56325': (10615, 10616  ), # OSP Mount Ian Campbell
+		'46804': ( 5735,  1748.0), # OWP Billy Goat Peak: didn't round down
 	}
 	saddleElevationMap = {
-		('Mount Hitchcock', 12697): 3870.0, # LoJ didn't round down
-		('Humphreys Peak', 6580): 6590, # LoJ seems to have used 6600'-40'/2, but the interval is only 20'
-		('Joe Devel Peak', 12894): 3930.0, # LoJ didn't round down
-		('Kingston Peak', 3582): 1092.1, # LoJ seems to have used 1092m
-		('Peak 3222m', 10138): 3090.0, # LoJ didn't round down
-		('Ring Mountain', 189): 140, # The saddle is between the 120' and 160' contours
-		('Slacker Hill', 663): 662, # The saddle is between the 650' and 675' contours
+		'16689': ( 6580,  6590  ), # DPS Humphreys Peak: maybe used 6600'-40'/2, but the interval is only 20'
+		'16831': ( 3582,  1092.1), # DPS Kingston Peak: maybe used 1092m
+		'32333': (12894,  3930.0), # SPS Joe Devel Peak: didn't round down
+		'32361': (12697,  3870.0), # SPS Mount Hitchcock: didn't round down
+		'56335': (10138,  3090.0), # OSP Peak 3222m: didn't round down
+		'70792': (  189,   140  ), # OCAP Ring Mountain: saddle is between 120' and 160'
+		'70366': (  663,   662  ), # OCAP Slacker Hill: saddle is between 650' and 675'
 	}
 	def postProcess(self, peakListId=None):
 		self.elevation = str2IntLoJ(self.elevation, 'Elevation', self.name)
@@ -1769,8 +1774,12 @@ class PeakLoJ(TablePeak):
 		self.lineParent = self.normalizeName(self.lineParent)
 		self.proximateParent = self.normalizeName(self.proximateParent)
 
-		adjElev = self.elevationMap.get((self.name, self.elevation))
+		adjElev = self.elevationMap.get(self.id)
 		if adjElev is not None:
+			oldElev, adjElev = adjElev
+			if self.elevation != oldElev:
+				out('LoJ elevation ({}) not as expected ({}) for {}',
+					self.elevation, oldElev, self.name)
 			if isinstance(adjElev, float):
 				adjElev = toFeetRoundDown(adjElev)
 
@@ -1781,8 +1790,12 @@ class PeakLoJ(TablePeak):
 
 		self.elevation = ElevationLoJ(self.elevation)
 
-		adjElev = self.saddleElevationMap.get((self.name, self.saddleElev))
+		adjElev = self.saddleElevationMap.get(self.id)
 		if adjElev is not None:
+			oldElev, adjElev = adjElev
+			if self.saddleElev != oldElev:
+				out('LoJ saddle elevation ({}) not as expected ({}) for {}',
+					self.saddleElev, oldElev, self.name)
 			if isinstance(adjElev, float):
 				adjElev = toFeetRoundDown(adjElev)
 
