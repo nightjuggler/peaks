@@ -1840,7 +1840,7 @@ class PeakLoJ(TablePeak):
 		"Quad": (
 			re.compile(
 				'^<a href="/quad\\?q=([1-9][0-9]*)">((?:Mc)?[A-Z][a-z]+(?: [A-Z]?[a-z]+)*'
-				'(?: (?:[SN][WE]|[A-D]))?)</a>$'
+				'(?: (?:OE)?[SN][WE]| [A-D])?)</a>$'
 			),
 			("quadId", "quadName")
 		),

@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 8, 6),
 	('osp', 'Other Sierra Peaks', 87, 27),
-	('ocap','Other California Peaks', 95, 15),
+	('ocap','Other California Peaks', 96, 16),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -689,7 +689,7 @@ class NGSDataSheet(object):
 		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*'
 		'(?: [23])?(?:(?: 1[89][0-9]{2})|(?: VABM [1-9][0-9]{3}))?'
 		'(?:(?: Reset)|(?: RM(?: [12345])?))?)'
-		'|(?:[1-9][0-9]{3,4}(?: VA)?))&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
+		'|(?:[1-9][0-9]{2,4}(?: VA)?))&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 
 	def __init__(self, name, stationID):
 		self.id = stationID
@@ -2008,7 +2008,7 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
 					('OCAP', '6.4'), # Mount Saint Helena Southeast
-					('OCAP','15.1'), # Peak 2440+
+					('OCAP','16.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
@@ -2023,7 +2023,7 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
 					('OCAP', '6.4'), # Mount Saint Helena Southeast
-					('OCAP','15.1'), # Peak 2440+
+					('OCAP','16.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
@@ -2038,8 +2038,7 @@ def readHTML(pl):
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
 					('OCAP', '3.3'), # Peak 7905
-					('OCAP','13.7'), # Kandlbinder Peak
-					('OCAP','15.1'), # Peak 2440+
+					('OCAP','16.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '19.2'), # Peak 3113m
 					('OSP', '19.5'), # Volcanic Ridge East

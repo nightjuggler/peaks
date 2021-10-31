@@ -42,6 +42,14 @@ class TopoView(object):
 			# The map name is "Mount Ritter" - not "Mt Ritter".
 			('map_name', 'Mount Ritter'),
 		),
+		'6577063473810f562eb86f28a182f2ac': (
+			# Extend the 1995/2000 Drakes Bay, CA 7.5' map 1 minute south and 1 minute west
+			# to include Point Reyes Head (the high point near the lighthouse).
+			('min_latitude', '37.98333'), # 37 59 00
+			('max_latitude', '38.12500'), # 38 07 30
+			('min_longitude', '-123.01667'), # -123 01 00
+			('max_longitude', '-122.87500'), # -122 52 30
+		),
 		'6779f96ea62790ea302ed2477296ee7a': (
 			# Shift the min and max longitude for the 1956/1981 Silver Lake, CA 15' map
 			# by 0.00001 degrees east.
@@ -151,12 +159,12 @@ def query(*params):
 def loadQuery(bin_num, topo_id, longitude, latitude):
 	return query(
 		'f=json',
-		'geometry={},{}'.format(longitude, latitude),
-		'geometryType=esriGeometryPoint',
-		'inSR=4326',
-		'spatialRel=esriSpatialRelIntersects',
-		'distance=20',
-		'units=esriSRUnit_Meter',
+#		'geometry={},{}'.format(longitude, latitude),
+#		'geometryType=esriGeometryPoint',
+#		'inSR=4326',
+#		'spatialRel=esriSpatialRelIntersects',
+#		'distance=20',
+#		'units=esriSRUnit_Meter',
 		'outFields=*',
 		'returnGeometry=true',
 		'geometryPrecision=5',
