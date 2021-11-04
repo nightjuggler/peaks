@@ -284,9 +284,9 @@ items: {
 			},
 			w: {
 		name: 'Wilderness Areas',
-		url: 'https://tiles.arcgis.com/tiles/ERdCHt0sNM6dENSD/arcgis/rest/services' +
-			'/Wilderness_in_the_United_States_070820/MapServer',
-		tile: true,
+		url: 'https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services' +
+			'/Wilderness_Areas_in_the_United_States/FeatureServer',
+		queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'Designated', 'Acreage'],
 		opacity: 0.5,
 		attribution: 'Wilderness Institute',
 			},
@@ -587,6 +587,7 @@ const {
 		npsimd: npsimdSpec,
 		nwr: nwrSpec,
 		states: stateSpec,
+		w: wildernessSpec,
 		wsa: wsaSpec,
 	}},
 	ca: { items: {
@@ -794,12 +795,6 @@ nwrSpec.popup = {
 		setPopupText(this, attr.ORGNAME, formatAcres(attr.SUM_GISACRES));
 		return '#FFA07A';
 	}
-};
-const wildernessSpec = {
-	name: 'Wilderness Areas',
-	url: 'https://services1.arcgis.com/ERdCHt0sNM6dENSD/arcgis/rest/services' +
-		'/Wilderness_Areas_in_the_United_States/FeatureServer',
-	queryFields: ['OBJECTID_1', 'NAME', 'WID', 'Agency', 'Designated', 'Acreage'],
 };
 wildernessSpec.popup = {
 	outlineColor: {
@@ -1812,8 +1807,6 @@ initPointQueries(map)
 			spec.setArea(outline.computedArea, attr);
 		popup.update();
 	}
-
-	TileOverlays.items.us.items.w = wildernessSpec;
 
 	querySpecs.forEach(makeToggleQuery);
 	querySpecs = [];
