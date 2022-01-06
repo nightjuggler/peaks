@@ -252,7 +252,7 @@ class Query(object):
 					if value is None:
 						spec = nullSpec
 						value = "null"
-					values.append("{{{}}}".format(spec).format(value))
+					values.append(format(value, spec))
 				print(*values)
 				continue
 
@@ -929,8 +929,8 @@ class GovUnits_Wilderness_Query(Query):
 			fields["agency"] = agency
 
 def processGroupBy(spec):
-	# ./lama.py -q geomac_2000_2018 -w fireyear=2018
-	#           -g fireyear:6/agency:16//count:fireyear:4/sum:gisacres:14,.2f none
+	# python3 lama.py -q geomac_2000_2018 -w fireyear=2018
+	#                 -g fireyear:6/agency:16//count:fireyear:4/sum:gisacres:14,.2f none
 
 	pattern = re.compile("^{field}(?:/{field})*//{stat}:{field}(?:/{stat}:{field})*$".format(
 		field="[_0-9A-Za-z]+(?::[<>]?[0-9]*,?(\\.[0-9]+)?[A-Za-z]?)?",
@@ -946,7 +946,7 @@ def processGroupBy(spec):
 		if ":" in field:
 			field, printSpec = field.split(":")
 			nullSpec = pattern.match(printSpec).group(0)
-			return (field, (":" + printSpec, ":" + nullSpec))
+			return (field, (printSpec, nullSpec))
 		return (field, ("", ""))
 
 	groupFields, spec = spec.split("//")
