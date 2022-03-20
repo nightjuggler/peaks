@@ -33,16 +33,7 @@ class TopoView(object):
 		('gda_item_id',         '[1-9][0-9]{1,7}'),
 	)
 	CORRECTIONS = {
-		'37765a57a94dcef9c4b200874c275c48': (
-			# The pdf (CA_Borrego_296876_1959_62500_geo.pdf) clearly shows 1978 (not 1976)
-			# for the imprint year.
-			('imprint_year', '1978'),
-		),
-		'5c0ab19dcfb1c84069869e95067a7789': (
-			# The map name is "Mount Ritter" - not "Mt Ritter".
-			('map_name', 'Mount Ritter'),
-		),
-		'6577063473810f562eb86f28a182f2ac': (
+		'290045': (
 			# Extend the 1995/2000 Drakes Bay, CA 7.5' map 1 minute south and 1 minute west
 			# to include Point Reyes Head (the high point near the lighthouse).
 			('min_latitude', '37.98333'), # 37 59 00
@@ -50,35 +41,44 @@ class TopoView(object):
 			('min_longitude', '-123.01667'), # -123 01 00
 			('max_longitude', '-122.87500'), # -122 52 30
 		),
-		'6779f96ea62790ea302ed2477296ee7a': (
+		'293349': (
+			# The map name is "Mount Ritter" - not "Mt Ritter".
+			('map_name', 'Mount Ritter'),
+		),
+		'296876': (
+			# The pdf (CA_Borrego_296876_1959_62500_geo.pdf) clearly shows 1978 (not 1976)
+			# for the imprint year.
+			('imprint_year', '1978'),
+		),
+		'296969': (
+			# The map name is "Caliente Mtn." - not "Caliente Mountain".
+			('map_name', 'Caliente Mtn'),
+		),
+		'297086': (
+			# The pdf (CA_Chilcoot_297086_1950_62500_geo.pdf) clearly shows 1983 (not 1993)
+			# for the imprint year.
+			('imprint_year', '1983'),
+		),
+		'298788': (
+			# The pdf (CA_Robbs Peak_298788_1952_62500_geo.pdf) clearly shows 1978 (not 1976)
+			# for the imprint year.
+			('imprint_year', '1978'),
+		),
+		'299952': (
+			# The map name is "Bloody Mtn." - not "Bloody Mountain".
+			('map_name', 'Bloody Mtn'),
+		),
+		'301726': (
 			# Shift the min and max longitude for the 1956/1981 Silver Lake, CA 15' map
 			# by 0.00001 degrees east.
 			# The summit of Round Top is right on the eastern edge of this map.
 			('min_longitude', '-120.251'),
 			('max_longitude', '-120.001'),
 		),
-		'7bdce85700eb4d752b2a89aee57122c9': (
+		'321701': (
 			# I don't see 1976 (or any imprint year) anywhere on this map. So I'm going to
 			# use the most recent year printed on the map (1969).
 			('imprint_year', '1969'),
-		),
-		'8e4e1f8d38139f9679243cf10deaf2db': (
-			# The pdf (CA_Robbs Peak_298788_1952_62500_geo.pdf) clearly shows 1978 (not 1976)
-			# for the imprint year.
-			('imprint_year', '1978'),
-		),
-		'a3333a377bc95e0a6566e2f187588d2b': (
-			# The map name is "Caliente Mtn." - not "Caliente Mountain".
-			('map_name', 'Caliente Mtn'),
-		),
-		'b9670df7a0825087f1013c688a10413f': (
-			# The pdf (CA_Chilcoot_297086_1950_62500_geo.pdf) clearly shows 1983 (not 1993)
-			# for the imprint year.
-			('imprint_year', '1983'),
-		),
-		'dedb68871e7ecbb4e90803ed96c3e5d7': (
-			# The map name is "Bloody Mtn." - not "Bloody Mountain".
-			('map_name', 'Bloody Mtn'),
 		),
 	}
 	def __init__(self, values):
@@ -271,10 +271,12 @@ def compare(sources):
 	if topos is None:
 		return
 
-	for topo_id, corrections in TopoView.CORRECTIONS.items():
-		topo = topos.get(topo_id)
+	scans = {topo.scan_id: topo for topo in topos.values()}
+
+	for scan_id, corrections in TopoView.CORRECTIONS.items():
+		topo = scans.get(scan_id)
 		if not topo:
-			print("Skipping corrections for", topo_id, "- not in", CSV_FILENAME)
+			print("Skipping corrections for", scan_id, "- not in", CSV_FILENAME)
 			continue
 		for name, value in corrections:
 			setattr(topo, name, value)
@@ -330,3 +332,8 @@ def compare(sources):
 			for diff in diffs:
 				print('--', diff)
 			print()
+
+if __name__ == '__main__':
+	import sys
+	if len(sys.argv) == 2 and sys.argv[1] == 'reload':
+		reload()

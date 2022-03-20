@@ -2358,6 +2358,16 @@ def loadTopoMetadata():
 	import topoview
 	topoview.load(USGSTopo.sources)
 
+def newTopoLink(pl):
+	import topoview
+	old_topos = topoview.read_csv()
+	new_topos = topoview.read_new()
+
+	for topo in USGSTopo.sources.values():
+		topo.linkSuffix = new_topos[old_topos[topo.id].scan_id].md5
+
+	writeHTML(pl)
+
 def setLandManagement(peak):
 	peakPb = peak.peakbaggerPeak
 
@@ -2602,6 +2612,7 @@ def main():
 		'load': (loadPeakFiles, checkPeakListArg),
 		'loadlist': (loadPeakListFiles, checkPeakListArg),
 		'loadtopo': (loadTopoMetadata, checkNoArgs),
+		'newtopo': (newTopoLink, checkPeakListArg),
 		'stats': (printStats, checkNoArgs),
 		'sum': (printSummary, checkSumArgs),
 	}
