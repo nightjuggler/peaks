@@ -857,6 +857,7 @@ class PeakPb(TablePeak):
 		'38787':   ('White Mountain',                    'White Mountain (Tioga Pass)'),
 	# Other Desert Peaks:
 		'75734':   ('Antelope Buttes HP',                'Antelope Buttes'),
+		'30942':   ('Kelso Dunes HP',                    'Kelso Dunes'),
 	# Other California Peaks:
 		'77712':   ('Maguire Peaks-East Summit',         'Maguire Peaks East'),
 		'27020':   ('Maguire Peak',                      'Maguire Peaks West'),
@@ -1080,6 +1081,7 @@ class PeakPb(TablePeak):
 		'39129': ( 402,  442,  442,  482), # OCAP Ring Mountain 602'-160', 602'-120'
 		'64361': ( 274,  274,  262,  287), # OCAP Slacker Hill 937'-675', 937'-650'
 		'50114': ( 308,  310,  314,  354), # OCAP White Hill 1434'-1120', 1434'-1080'
+		'30942': ( 539,  539,  522,  554), # ODP Kelso Dunes 949m-790m, 949m-780m
 		'37148': ( 263,  393,  262,  394), # OSP Gamblers Special Peak 80m, 120m
 		'83454': ( 431,  431,  399,  465), # OSP Peak 3222m 10570'-3100m, 10570'-3080m
 		'83353': ( 394,  394,  361,  427), # OSP Peak 3230m 3230m-3120m, 3230m-3100m
@@ -1571,6 +1573,8 @@ class PeakLoJ(TablePeak):
 		'56075':   ('Volcanic Ridge, West',         'Volcanic Ridge West'),
 		'56098':   ('White Mountain',               'White Mountain (Sonora Pass)'),
 		'32725':   ('White Mountain',               'White Mountain (Tioga Pass)'),
+	# Other Desert Peaks:
+		'64907':   ('Kelso Dunes HP',               'Kelso Dunes'),
 	# Other California Peaks:
 		'214878':  ('Maguire Peaks, East',          'Maguire Peaks East'),
 		'68664':   ('Maguire Peaks, West',          'Maguire Peaks West'),
@@ -1745,6 +1749,7 @@ class PeakLoJ(TablePeak):
 		'40725': (11077, 11074  ), # NPC Verdi Peak
 		'56325': (10615, 10616  ), # OSP Mount Ian Campbell
 		'46804': ( 5735,  1748.0), # OWP Billy Goat Peak: didn't round down
+		'17916': (13449, 13442  ), # OWP Gilbert Peak: used elevation printed on benchmark
 	}
 	saddleElevationMap = {
 		'16689': ( 6580,  6590  ), # DPS Humphreys Peak: maybe used 6600'-40'/2, but the interval is only 20'
