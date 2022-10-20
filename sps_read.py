@@ -44,7 +44,7 @@ peakListsOrdered = [
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
-	('osp', 'Other Sierra Peaks', 87, 27),
+	('osp', 'Other Sierra Peaks', 90, 27),
 	('ocap','Other California Peaks', 97, 16),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
@@ -800,6 +800,8 @@ class USGSTopo(object):
 			name = name[:-5] + " Mountain"
 		elif name[-4:] == " Mtn":
 			name = name[:-4] + " Mountain"
+		elif name[-5:] == " Res.":
+			name = name[:-5] + " Reservoir"
 
 		if peak.quad is None:
 			peak.quad = name

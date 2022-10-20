@@ -1,6 +1,6 @@
 #!/bin/bash
 
-script="/usr/local/opt/python/bin/python3 ./sps_read.py"
+script="/usr/local/bin/python3.9 ./sps_read.py"
 diff="/usr/bin/diff"
 
 if $script land | $diff misc/landstats.txt - >/dev/null

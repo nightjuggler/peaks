@@ -841,8 +841,9 @@ class PeakPb(TablePeak):
 		'18343':   ('El Montanon',                       'El Monta&ntilde;on'),
 	# Other Sierra Peaks:
 		'37148':   ('Gambler\'s Special',                'Gamblers Special Peak'),
-		'27997':   ('Maggies Peaks-South Summit',        'Maggies Peaks South'),
-		'2548':    ('Mount Lola-North Ridge Peak',       'Mount Lola North'),
+		'30991':   ('Highland Peak - South Peak',        'Highland Peak South'),
+		'27997':   ('Maggies Peaks - South Summit',      'Maggies Peaks South'),
+		'2548':    ('Mount Lola - North Ridge Peak',     'Mount Lola North'),
 		'16774':   ('Mount Lamarck North',               'Northwest Lamarck'),
 		'83454':   ('Peak 10570',                        'Peak 3222m'),
 		'83353':   ('Pk 10597',                          'Peak 3230m'),
@@ -850,7 +851,7 @@ class PeakPb(TablePeak):
 		'38937':   ('Shepherd Crest',                    'Shepherd Crest East'),
 		'26162':   ('Silver Peak - Northeast Summit',    'Silver Peak Northeast'),
 		'43761':   ('Peak 9980',                         'Sirretta Peak North'),
-		'36459':   ('Snow Valley Peak-East Peak',        'Snow Valley Peak East'),
+		'36459':   ('Snow Valley Peak - East Peak',      'Snow Valley Peak East'),
 		'24114':   ('The Sisters',                       'The Sisters East'),
 		'36717':   ('Volcanic Ridge',                    'Volcanic Ridge West'),
 		'28151':   ('White Mountain',                    'White Mountain (Sonora Pass)'),
@@ -1557,6 +1558,7 @@ class PeakLoJ(TablePeak):
 		'56930':   ('Twin Peaks, East',             'Twin Peaks'),
 	# Other Sierra Peaks:
 		'32721':   ('Peak 12076',                   'Duck Lake Peak'),
+		'56253':   ('Peak 10824',                   'Highland Peak South'),
 		'56086':   ('Peak 11446',                   'Lost World Peak'),
 		'57026':   ('Maggies Peaks, South',         'Maggies Peaks South'),
 		'56503':   ('Peak 9970',                    'Mariuolumne Dome'),
@@ -1856,7 +1858,7 @@ class PeakLoJ(TablePeak):
 		"Saddle": (
 			re.compile(
 				"^<a href=\"/(?:qmap|mapf)\\?"
-				"lat=(-?[0-9]{1,2}\\.[0-9]{1,4})&"
+				"lat=(-?[0-9]{1,2}\\.[0-9]{1,5})&"
 				"lon=(-?[0-9]{1,3}\\.[0-9]{1,4})&z=15\">([,0-9]+)'</a>$"
 			),
 			("saddleLat", "saddleLng", "saddleElev")
