@@ -343,12 +343,12 @@ function addFeatureLayer(layerId, map)
 function createMap(options)
 {
 	const baseLayers = [
-		['o',  {name: 'Outdoors',          style: 'mapbox://styles/mapbox/outdoors-v11'              }],
-		['s',  {name: 'Satellite',         style: 'mapbox://styles/mapbox/satellite-v9'              }],
-		['sts',{name: 'Satellite Streets', style: 'mapbox://styles/mapbox/satellite-streets-v11'     }],
-		['st', {name: 'Streets',           style: 'mapbox://styles/mapbox/streets-v11'               }],
-		['np', {name: 'Nav Preview',       style: 'mapbox://styles/mapbox/navigation-preview-day-v4' }],
-		['ng', {name: 'Nav Guidance',      style: 'mapbox://styles/mapbox/navigation-guidance-day-v4'}],
+		['o',  {name: 'Outdoors',          style: 'mapbox://styles/mapbox/outdoors-v12'         }],
+		['s',  {name: 'Satellite',         style: 'mapbox://styles/mapbox/satellite-v9'         }],
+		['sts',{name: 'Satellite Streets', style: 'mapbox://styles/mapbox/satellite-streets-v12'}],
+		['st', {name: 'Streets',           style: 'mapbox://styles/mapbox/streets-v12'          }],
+		['n',  {name: 'Nav Day',           style: 'mapbox://styles/mapbox/navigation-day-v1'    }],
+		['nn', {name: 'Nav Night',         style: 'mapbox://styles/mapbox/navigation-night-v1'  }],
 	];
 	const featureLayers = [
 		['mp200me', {name: 'Montenegro P200m'}],
