@@ -425,18 +425,26 @@ function createMap(options)
 		] : [
 ['link',
 [['rel', 'stylesheet'],
-['href', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css'],
-['integrity', 'sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=='],
+['href', 'https://unpkg.com/leaflet@1.9.3/dist/leaflet.css'],
+['integrity', 'sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI='],
 ['crossorigin', '']]],
 ['script',
-[['src', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'],
-['integrity', 'sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=='],
+[['src', 'https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'],
+['integrity', 'sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM='],
 ['crossorigin', '']]]
 		];
+/*
+Either of the following can be used to generate the integrity hash:
+(1) openssl sha256 -binary esri-leaflet.js | openssl base64
+(short for "openssl dgst -sha256 -binary esri-leaflet.js | openssl enc -base64")
+or
+(2) shasum -a 256 -b esri-leaflet.js | cut -d ' ' -f 1 | xxd -r -p | base64
+See also https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+*/
 	elements.push(
 ['script',
-[['src', 'https://unpkg.com/esri-leaflet@3.0.2/dist/esri-leaflet.js'],
-['integrity', 'sha512-myckXhaJsP7Q7MZva03Tfme/MSF5a6HC2xryjAM4FxPLHGqlh5VALCbywHnzs2uPoF/4G/QVXyYDDSkp5nPfig=='],
+[['src', 'https://unpkg.com/esri-leaflet@3.0.9/dist/esri-leaflet.js'],
+['integrity', 'sha256-u7xQ+7Fz2Qhy+eRMq28ZDiHqhrGhXhW9L47Eh+kWEAo='],
 ['crossorigin', '']]]);
 
 	const nextNode = document.getElementById('tooltipcss');
