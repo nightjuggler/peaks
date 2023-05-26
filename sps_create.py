@@ -507,6 +507,8 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Organ Pipe Cactus National Monument":          "Organ Pipe Cactus NM",
 	"Providence Mountains State Recreation Area":   "Providence Mountains SRA",
 	"Red Rock Canyon National Conservation Area":   "Red Rock Canyon NCA",
+	"Santa Monica Mountains "
+	"National Recreation Area":                     "Santa Monica Mountains NRA",
 	"Steens Mountain National Recreation Lands":    "Steens Mountain CMPA",
 	}
 
@@ -1306,6 +1308,8 @@ class PeakPb(TablePeak):
 		if i < 0:
 			err("{} Maps HTML doesn't match pattern:\n{}", self.fmtIdName, html)
 		self.name = html[34:i]
+		if self.name[-1] == "(":
+			self.name = self.name[:-1]
 		if self.name[-5:] == "<br/>":
 			self.name = self.name[:-5]
 
@@ -1556,6 +1560,8 @@ class PeakLoJ(TablePeak):
 		'56905':   ('Silver Peak',                  'Silver Peak (Desolation)'),
 		'160214':  ('Silver Peak',                  'Silver Peak Southwest'),
 		'56930':   ('Twin Peaks, East',             'Twin Peaks'),
+	# Lower Peaks Committee
+		'65168':   ('Boney Mountain',               'Tri Peaks'),
 	# Other Sierra Peaks:
 		'32721':   ('Peak 12076',                   'Duck Lake Peak'),
 		'56253':   ('Peak 10824',                   'Highland Peak South'),
