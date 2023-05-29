@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 90, 27),
-	('ocap','Other California Peaks', 97, 16),
+	('ocap','Other California Peaks', 98, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -421,6 +421,7 @@ landNameLookup = {
 	"California Tahoe Conservancy":                 'landCNRA',
 	"Carrizo Plain National Monument":              'landBLM',
 	"Catalina Island Conservancy":                  'landPrivate',
+	"Dos Vientos Open Space":                       'landCity', # 'City of Thousand Oaks'
 	"Giant Sequoia National Monument":              'Sequoia National Forest',
 	"Gold Butte National Monument":                 'landBLM',
 	"Golden Gate National Recreation Area":         'landNPS',
