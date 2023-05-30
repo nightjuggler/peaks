@@ -862,26 +862,26 @@ class PeakPb(TablePeak):
 		'75734':   ('Antelope Buttes HP',                'Antelope Buttes'),
 		'30942':   ('Kelso Dunes HP',                    'Kelso Dunes'),
 	# Other California Peaks:
-		'77712':   ('Maguire Peaks-East Summit',         'Maguire Peaks East'),
+		'77712':   ('Maguire Peaks - East Summit',       'Maguire Peaks East'),
 		'27020':   ('Maguire Peak',                      'Maguire Peaks West'),
 		'53478':   ('Monument Peak North',               'Monument Peak'),
-		'1183':    ('Mount Saint Helena-East Peak',      'Mount Saint Helena East'),
-		'40000':   ('Mount Saint Helena-South Peak',     'Mount Saint Helena South'),
-		'53383':   ('Mount Saint Helena-Southeast Peak', 'Mount Saint Helena Southeast'),
-		'1158':    ('Mount Tamalpais-East Peak',         'Mount Tamalpais East Peak'),
-		'16816':   ('Mount Tamalpais-Middle Peak',       'Mount Tamalpais Middle Peak'),
-		'1159':    ('Mount Tamalpais-West Peak',         'Mount Tamalpais West Peak'),
+		'1183':    ('Mount Saint Helena - East Peak',      'Mount Saint Helena East'),
+		'40000':   ('Mount Saint Helena - South Peak',     'Mount Saint Helena South'),
+		'53383':   ('Mount Saint Helena - Southeast Peak', 'Mount Saint Helena Southeast'),
+		'1158':    ('Mount Tamalpais - East Peak',       'Mount Tamalpais East Peak'),
+		'16816':   ('Mount Tamalpais - Middle Peak',     'Mount Tamalpais Middle Peak'),
+		'1159':    ('Mount Tamalpais - West Peak',       'Mount Tamalpais West Peak'),
 		'68787':   ('Peak 1380',                         'Peak 1390'),
-		'75602':   ('Peak 2600',                         'Peak 2600+'),
+		'75602':   ('Peak 2625',                         'Peak 2600+'),
 		'54010':   ('Pine Ridge HP',                     'Pine Ridge'),
 		'1174':    ('Snow Mountain',                     'Snow Mountain East'),
 	# Other Western Peaks:
-		'30726':   ('Mount Nebo-South Peak',             'Mount Nebo South'),
+		'30726':   ('Mount Nebo - South Peak',           'Mount Nebo South'),
 		'2353':    ('Mount Saint Helens',                'Mount St. Helens'),
-		'3523':    ('Ruby Dome-East Peak',               'Ruby Pyramid'),
-		'25632':   ('Sourdough Mountain-Lookout Site',   'Sourdough Mountain Lookout'),
+		'3523':    ('Ruby Dome - East Peak',             'Ruby Pyramid'),
+		'25632':   ('Sourdough Mountain - Lookout Site', 'Sourdough Mountain Lookout'),
 		'23494':   ('Trail Canyon Saddle Peak',          'Trail Canyon Peak'),
-		'32935':   ('Mount Evans-West Peak',             'West Evans'),
+		'32935':   ('Mount Evans - West Peak',           'West Evans'),
 		'2454':    ('Wizard Island Peak',                'Wizard Island'),
 	}
 	@classmethod
@@ -1054,10 +1054,11 @@ class PeakPb(TablePeak):
 		'16816': (2518, 2520, 2480, 2520), # Mount Tamalpais Middle Peak
 		'1159':  (2576, 2578, 2560, 2600), # Mount Tamalpais West Peak
 		'68787': (1380, 1400, 1390, 1390), # Peak 1390
+		'75602': (2625, 2625, 2600, 2640), # Peak 2600+
 		'54010': (3028, 3028, 3000, 3040), # Pine Ridge
 		'1155':  (1342, 1344, 1336, 1336), # Point Reyes Hill
 		'55390': (3456, 3456, 3455, 3455), # Post Summit
-		'64361': ( 937,  937,  925,  950), # Slacker Hill
+		'64361': ( 942,  942,  925,  950), # Slacker Hill
 		'50114': (1434, 1434, 1430, 1430), # White Hill
 	}
 	PROMINENCE_MAP = {
@@ -1082,7 +1083,7 @@ class PeakPb(TablePeak):
 		'3321':  (  40,  120,    0,   80), # GBP Duffer Peak
 		'18343': (1333, 1333, 1308, 1358), # LPC El Montañon
 		'39129': ( 402,  442,  442,  482), # OCAP Ring Mountain 602'-160', 602'-120'
-		'64361': ( 274,  274,  262,  287), # OCAP Slacker Hill 937'-675', 937'-650'
+		'64361': ( 271,  271,  267,  292), # OCAP Slacker Hill 942'-675', 942'-650'
 		'50114': ( 308,  310,  314,  354), # OCAP White Hill 1434'-1120', 1434'-1080'
 		'30942': ( 539,  539,  522,  554), # ODP Kelso Dunes 949m-790m, 949m-780m
 		'37148': ( 263,  393,  262,  394), # OSP Gamblers Special Peak 80m, 120m
@@ -1769,6 +1770,14 @@ class PeakLoJ(TablePeak):
 		'70366': (  663,   662  ), # OCAP Slacker Hill: saddle is between 650' and 675'
 	}
 	def postProcess(self, peakListId=None):
+		def override(attr1, attr2):
+			value = getattr(self, attr2, None)
+			if value is not None:
+				setattr(self, attr1, value)
+		override('elevation', 'mapElevation')
+		override('saddleElev', 'saddleMapElev')
+		override('prominence', 'mapProminence')
+
 		self.elevation = str2IntLoJ(self.elevation, 'Elevation', self.name)
 		self.saddleElev = str2IntLoJ(self.saddleElev, 'Saddle elevation', self.name)
 		self.prominence = str2IntLoJ(self.prominence, 'Prominence', self.name)
@@ -1820,6 +1829,9 @@ class PeakLoJ(TablePeak):
 		if peakListId == 'NPC':
 			assert 'NV' in self.state
 
+	elevationPattern = "((?:[1-9][0-9]?(?:,[0-9]{3}|[0-9]?))|0)'"
+	lidarPattern = f"(?: <a>\\(LiDAR\\)</a> <span>map: {elevationPattern}</span>)?"
+
 	parentPeakPattern = re.compile(
 		'^<a href="/(?:(?:peak/([1-9][0-9]*))|'
 		'(?:mapf\\?lat=-?[0-9]{1,2}\\.[0-9]{1,4}&lon=-?[0-9]{1,3}\\.[0-9]{1,4}))">' +
@@ -1827,7 +1839,7 @@ class PeakLoJ(TablePeak):
 	)
 	peakFilePatterns = {
 		"Coords": (
-			re.compile("^([0-9]{1,2}\\.[0-9]{1,4})N, ([0-9]{1,3}\\.[0-9]{1,4})W"),
+			re.compile("^([0-9]{1,2}\\.[0-9]{1,5})N, ([0-9]{1,3}\\.[0-9]{1,5})W"),
 			("latitude", "longitude")
 		),
 		"County": (
@@ -1835,8 +1847,8 @@ class PeakLoJ(TablePeak):
 			("counties",)
 		),
 		"Elevation": (
-			re.compile("^ ([1-9][0-9]?(?:,[0-9]{3}|[0-9]?))'$"),
-			("elevation",)
+			re.compile(f"^ {elevationPattern}{lidarPattern}$"),
+			("elevation", "mapElevation")
 		),
 		"Isolation": (
 			re.compile("^([0-9]+\\.[0-9]{2}) miles$"),
@@ -1858,16 +1870,17 @@ class PeakLoJ(TablePeak):
 			("quadId", "quadName")
 		),
 		"Rise": (
-			re.compile("^([1-9][0-9]?(?:,[0-9]{3}|[0-9]?))'$"),
-			("prominence",)
+			re.compile(f"^{elevationPattern}{lidarPattern}$"),
+			("prominence", "mapProminence")
 		),
 		"Saddle": (
 			re.compile(
 				"^<a href=\"/(?:qmap|mapf)\\?"
 				"lat=(-?[0-9]{1,2}\\.[0-9]{1,5})&"
-				"lon=(-?[0-9]{1,3}\\.[0-9]{1,4})&z=15\">([,0-9]+)'</a>$"
+				"lon=(-?[0-9]{1,3}\\.[0-9]{1,5})&z=15\">"
+				f"{elevationPattern}</a>{lidarPattern}$"
 			),
-			("saddleLat", "saddleLng", "saddleElev")
+			("saddleLat", "saddleLng", "saddleElev", "saddleMapElev")
 		),
 		"YDSClass": (
 			re.compile(
