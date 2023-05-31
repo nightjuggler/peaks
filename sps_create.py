@@ -840,6 +840,7 @@ class PeakPb(TablePeak):
 		'26371':   ('Silver Peak',                       'Silver Peak (Desolation)'),
 		'53297':   ('Silver Peak-Southwest Summit',      'Silver Peak Southwest'),
 	# Lower Peaks Committee
+		'13460':   ('Saddle Peak East',                  'Saddle Peak'),
 		'18343':   ('El Montanon',                       'El Monta&ntilde;on'),
 	# Other Sierra Peaks:
 		'37148':   ('Gambler\'s Special',                'Gamblers Special Peak'),
@@ -997,6 +998,10 @@ class PeakPb(TablePeak):
 	# Pb HPS Elevation Adjustments:
 
 		'1480': (10839, 10839, 10804, 10804), # San Jacinto Peak
+
+	# Pb LPC Elevation Adjustments:
+
+		'13460': (2786, 2788, 2825, 2850), # Saddle Peak
 
 	# Pb Elevation Adjustments for Great Basin Peaks / Nevada Peaks Club
 	#
@@ -1755,6 +1760,7 @@ class PeakLoJ(TablePeak):
 
 		'16762': ( 9900,  9892  ), # GBP Eagle Peak
 		'16838': ( 8238,  8237  ), # GBP Kumiva Peak
+		'65594': ( 2830,  2837  ), # LPC Saddle Peak
 		'40725': (11077, 11074  ), # NPC Verdi Peak
 		'56325': (10615, 10616  ), # OSP Mount Ian Campbell
 		'46804': ( 5735,  1748.0), # OWP Billy Goat Peak: didn't round down
