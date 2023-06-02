@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 90, 27),
-	('ocap','Other California Peaks', 98, 17),
+	('ocap','Other California Peaks', 102, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -421,6 +421,7 @@ landNameLookup = {
 	"California Tahoe Conservancy":                 'landCNRA',
 	"Carrizo Plain National Monument":              'landBLM',
 	"Catalina Island Conservancy":                  'landPrivate',
+	"Conejo Canyons Open Space":                    'landCity',
 	"Dos Vientos Open Space":                       'landCity', # 'City of Thousand Oaks'
 	"Giant Sequoia National Monument":              'Sequoia National Forest',
 	"Gold Butte National Monument":                 'landBLM',
@@ -462,6 +463,7 @@ landNameLookup = {
 	"Steens Mountain CMPA":                         'landBLM',
 	"Tohono O'odham Nation":                        'landRez',
 	"Twin Peaks Natural Area":                      'landCity',
+	"Wildwood Park":                                'landCity',
 	"Wind Wolves Preserve":                         'landTWC',
 
 	# East Bay Regional Park District
@@ -2013,6 +2015,7 @@ def readHTML(pl):
 				if line != emptyCell or (pl.id, peak.id) not in (
 					('OCAP', '6.4'), # Mount Saint Helena Southeast
 					('OCAP','16.1'), # Peak 2440+
+					('OCAP','17.2'), # Elliott Mountain
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
@@ -2028,6 +2031,8 @@ def readHTML(pl):
 				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
 					('OCAP', '6.4'), # Mount Saint Helena Southeast
 					('OCAP','16.1'), # Peak 2440+
+					('OCAP','17.2'), # Elliott Mountain
+					('OCAP','17.3'), # Lizard Rock
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
