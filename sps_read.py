@@ -40,7 +40,7 @@ peakListsOrdered = [
 	('sps', 'Sierra Peaks Section', 248, 24),
 	('hps', 'Hundred Peaks Section', 67, 32),
 	('ogul','Tahoe Ogul Peaks', 63, 15),
-	('lpc', 'Lower Peaks Committee', 20, 16),
+	('lpc', 'Lower Peaks Committee', 23, 16),
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
@@ -455,6 +455,7 @@ landNameLookup = {
 	"Providence Mountains SRA":                     'landSP',
 	"Pyramid Lake Indian Reservation":              'landRez',
 	"Reservoir Canyon Natural Reserve":             'City of San Luis Obispo',
+	"Rocky Peak Park":                              'landMRCA',
 	"San Gabriel Mountains NM":                     'landFS',
 	"Sand to Snow National Monument":               'landFS',
 	"Santa Rosa and San Jacinto Mountains NM":      'landBLM',
@@ -509,6 +510,7 @@ landLinkPattern = {
 }
 landOrder = {landClass: i for i, landClass in enumerate((
 	'landPrivate',
+	'landMRCA',     # Mountains Recreation and Conservation Authority - https://mrca.ca.gov/
 	'landSLT',      # Sonoma Land Trust - https://sonomalandtrust.org/
 	'landTWC',      # The Wildlands Conservancy - https://www.wildlandsconservancy.org/
 	'landCity',
@@ -690,8 +692,8 @@ class NGSDataSheet(object):
 	linkPrefix = 'https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox='
 	tooltipPattern = re.compile(
 		'^([1-9][0-9]{2,3}(?:\\.[0-9]{1,2})?m) \\(NAVD 88\\) NGS Data Sheet '
-		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]+)*'
-		'(?: [23])?(?:(?: 1[89][0-9]{2})|(?: VABM [1-9][0-9]{3}))?'
+		'&quot;((?:(?:Mc)?[A-Z][a-z]+(?: [A-Z][a-z]*)*'
+		'(?: [123])?(?:(?: 1[89][0-9]{2})|(?: VABM [1-9][0-9]{3}))?'
 		'(?:(?: Reset)|(?: RM(?: [12345])?))?)'
 		'|(?:[1-9][0-9]{2,4}(?: VA)?))&quot; \\(([A-Z]{2}[0-9]{4})\\)$')
 

@@ -354,7 +354,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'https://forecast.weather.gov/MapClick.php?lon=' + latLong[1] + '&lat=' + latLong[0]);
 
 	addMapLink(listNode, 'NGS Datasheets (Radial Search)',
-		'https://www.ngs.noaa.gov/cgi-bin/ds_radius.prl' +
+		'https://geodesy.noaa.gov/cgi-bin/ds_radius.prl' +
 		'?FormatBox=Decimal%20Degrees' +
 		'&selectedFormat=Decimal%20Degrees' +
 		'&DLatBox=' + latLong[0] +
@@ -362,9 +362,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		'&RadBox=1' +
 		'&TypeSelected=X-0' +
 		'&StabilSelected=0' +
-		'&SubmitBtn=Submit' +
-		'&dump_app_trace=false' +
-		'&db_debug=false');
+		'&SubmitBtn=Submit');
 
 	addMapLink(listNode, 'OpenStreetMap',
 		'https://www.openstreetmap.org/#map=16/' + latLong[0] + '/' + latLong[1] + '&layers=C');
