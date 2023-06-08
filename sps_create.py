@@ -1001,6 +1001,7 @@ class PeakPb(TablePeak):
 
 	# Pb LPC Elevation Adjustments:
 
+		'13456': (4484, 4484, 4483, 4483), # Keys Peak
 		'13460': (2786, 2788, 2825, 2850), # Saddle Peak
 
 	# Pb Elevation Adjustments for Great Basin Peaks / Nevada Peaks Club
