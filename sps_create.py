@@ -840,6 +840,7 @@ class PeakPb(TablePeak):
 		'26371':   ('Silver Peak',                       'Silver Peak (Desolation)'),
 		'53297':   ('Silver Peak-Southwest Summit',      'Silver Peak Southwest'),
 	# Lower Peaks Committee
+		'13444':   ('Slide Mountain Lookout',            'Slide Mountain'),
 		'13460':   ('Saddle Peak East',                  'Saddle Peak'),
 		'18343':   ('El Montanon',                       'El Monta&ntilde;on'),
 	# Other Sierra Peaks:
