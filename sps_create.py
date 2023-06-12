@@ -499,6 +499,7 @@ class LandMgmtAreaPb(LandMgmtArea):
 	"Hawthorne Army Ammunition Depot":              "Hawthorne Army Depot",
 	"Indian Peak State Game Management Area":       "Indian Peaks WMA",
 	"Lake Mead National Recreation Area":           "Lake Mead NRA",
+	"Lake Perris State Recreation Area":            "Lake Perris SRA",
 	"Lake Tahoe State Park":                        "Lake Tahoe Nevada State Park",
 	"Mono Basin NSA":                               "Mono Basin National Forest Scenic Area",
 	"Mount Eddy RNA":                               "Mount Eddy Research Natural Area",
@@ -1089,6 +1090,7 @@ class PeakPb(TablePeak):
 		'4066':  (3477, 3497, 3477, 3487), # DPS Signal Peak
 		'3321':  (  40,  120,    0,   80), # GBP Duffer Peak
 		'18343': (1333, 1333, 1308, 1358), # LPC El Montañon
+		'13455': ( 716,  716,  711,  721), # LPC Saddleback Butte 3651'-2940', 3651'-2930'
 		'39129': ( 402,  442,  442,  482), # OCAP Ring Mountain 602'-160', 602'-120'
 		'64361': ( 271,  271,  267,  292), # OCAP Slacker Hill 942'-675', 942'-650'
 		'50114': ( 308,  310,  314,  354), # OCAP White Hill 1434'-1120', 1434'-1080'
@@ -1570,6 +1572,7 @@ class PeakLoJ(TablePeak):
 		'56930':   ('Twin Peaks, East',             'Twin Peaks'),
 	# Lower Peaks Committee
 		'65168':   ('Boney Mountain',               'Tri Peaks'),
+		'64842':   ('Verdugo Mountains HP',         'Verdugo Mountain'),
 	# Other Sierra Peaks:
 		'32721':   ('Peak 12076',                   'Duck Lake Peak'),
 		'56253':   ('Peak 10824',                   'Highland Peak South'),
@@ -1763,6 +1766,7 @@ class PeakLoJ(TablePeak):
 		'16762': ( 9900,  9892  ), # GBP Eagle Peak
 		'16838': ( 8238,  8237  ), # GBP Kumiva Peak
 		'65594': ( 2830,  2837  ), # LPC Saddle Peak
+		'63660': ( 3654,  3651  ), # LPC Saddleback Butte
 		'40725': (11077, 11074  ), # NPC Verdi Peak
 		'56325': (10615, 10616  ), # OSP Mount Ian Campbell
 		'46804': ( 5735,  1748.0), # OWP Billy Goat Peak: didn't round down
