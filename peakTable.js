@@ -302,12 +302,6 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	const listNode = document.createElement('ul');
 
-	addMapLink(listNode, 'Andrew Kirmse P300 Peaks',
-		'https://fusiontables.googleusercontent.com/embedviz?' +
-		'q=select+col0+from+1oAUIuqAirzAY_wkouZLdM4nRYyZ1p4TAg3p6aD2T' +
-		'&viz=MAP&h=false&lat=' + latLong[0] + '&lng=' + latLong[1] +
-		'&t=4&z=13&l=col0&y=8&tmplt=9&hml=TWO_COL_LAT_LNG');
-
 	if (peakFlags.BigSur)
 		addMapLink(listNode, 'Big Sur Trailmap',
 			'https://bigsurtrailmap.net/interactivemap.html?mode=trailmap&latlon=' +

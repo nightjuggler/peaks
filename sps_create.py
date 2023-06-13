@@ -1765,6 +1765,7 @@ class PeakLoJ(TablePeak):
 
 		'16762': ( 9900,  9892  ), # GBP Eagle Peak
 		'16838': ( 8238,  8237  ), # GBP Kumiva Peak
+		'64652': ( 3228,  3226  ), # LPC Eagle Peak
 		'65594': ( 2830,  2837  ), # LPC Saddle Peak
 		'63660': ( 3654,  3651  ), # LPC Saddleback Butte
 		'40725': (11077, 11074  ), # NPC Verdi Peak
