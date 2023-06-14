@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 90, 27),
-	('ocap','Other California Peaks', 102, 17),
+	('ocap','Other California Peaks', 103, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -472,6 +472,7 @@ landNameLookup = {
 	# East Bay Regional Park District
 	"Mission Peak Regional Preserve":       'landEBRPD',
 	"Ohlone Regional Wilderness":           'landEBRPD',
+	"Pleasanton Ridge Regional Park":       'landEBRPD',
 	"Sibley Volcanic Regional Preserve":    'landEBRPD',
 	"Sunol Regional Wilderness":            'landEBRPD',
 
@@ -503,7 +504,7 @@ landNameSuffixes = [
 landMgmtPattern = re.compile('^(?:<a href="([^"]+)">([- &\'.;A-Za-z]+)</a>( HP)?)|([- \'.A-Za-z]+)')
 landLinkPattern = {
 	'landWild':     re.compile('^https://wilderness\\.net/visit-wilderness/\\?ID=[0-9]+$'),
-	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[_a-z]+/$'),
+	'landEBRPD':    re.compile('^https://www\\.ebparks\\.org/parks/[-a-z]+$'),
 	'landFS':       re.compile('^https://www\\.fs\\.usda\\.gov/(?:visit/)?[-a-z]+$'),
 	'landFWS':      re.compile('^https://www\\.fws\\.gov/refuge/[_a-z]+/$'),
 	'landMROSD':    re.compile('^https://www\\.openspace\\.org/preserves/[-a-z]+$'),
