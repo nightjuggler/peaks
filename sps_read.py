@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 90, 27),
-	('ocap','Other California Peaks', 103, 17),
+	('ocap','Other California Peaks', 105, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -2051,7 +2051,7 @@ def readHTML(pl):
 			m = RE.peakbagger.match(line)
 			if m is None:
 				if line != emptyCell or (pl.id, peak.id) not in (
-					('OCAP', '3.3'), # Peak 7905
+					('OCAP', '3.5'), # Peak 7905
 					('OCAP','16.1'), # Peak 2440+
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '19.2'), # Peak 3113m
