@@ -44,7 +44,7 @@ peakListsOrdered = [
 	('gbp', 'Great Basin Peaks', 120, 14),
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
-	('osp', 'Other Sierra Peaks', 90, 27),
+	('osp', 'Other Sierra Peaks', 92, 27),
 	('ocap','Other California Peaks', 105, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
@@ -2024,6 +2024,7 @@ def readHTML(pl):
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
+					('OSP', '27.5'), # Peak 7136
 					('OWP',  '1.1'), # Sourdough Mountain Lookout
 				):
 					badLine()
@@ -2041,6 +2042,7 @@ def readHTML(pl):
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
+					('OSP', '27.5'), # Peak 7136
 					('OWP',  '1.1'), # Sourdough Mountain Lookout
 				):
 					badLine()
@@ -2056,6 +2058,7 @@ def readHTML(pl):
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '19.2'), # Peak 3113m
 					('OSP', '19.5'), # Volcanic Ridge East
+					('OSP', '27.5'), # Peak 7136
 				):
 					badLine()
 			else:

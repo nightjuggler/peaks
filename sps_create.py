@@ -851,7 +851,7 @@ class PeakPb(TablePeak):
 		'2548':    ('Mount Lola - North Ridge Peak',     'Mount Lola North'),
 		'16774':   ('Mount Lamarck North',               'Northwest Lamarck'),
 		'83454':   ('Peak 10570',                        'Peak 3222m'),
-		'83353':   ('Pk 10597',                          'Peak 3230m'),
+		'83353':   ('Peak 10597',                        'Peak 3230m'),
 		'36720':   ('Peak 3560',                         'Peak 3560m+'),
 		'38937':   ('Shepherd Crest',                    'Shepherd Crest East'),
 		'26162':   ('Silver Peak - Northeast Summit',    'Silver Peak Northeast'),
@@ -1098,7 +1098,7 @@ class PeakPb(TablePeak):
 		'30942': ( 539,  539,  522,  554), # ODP Kelso Dunes 949m-790m, 949m-780m
 		'37148': ( 263,  393,  262,  394), # OSP Gamblers Special Peak 80m, 120m
 		'83454': ( 431,  431,  399,  465), # OSP Peak 3222m 10570'-3100m, 10570'-3080m
-		'83353': ( 394,  394,  361,  427), # OSP Peak 3230m 3230m-3120m, 3230m-3100m
+		'83353': ( 394,  426,  361,  427), # OSP Peak 3230m 3230m-3120m, 3230m-3100m
 		'21601': ( 885,  925,  845,  885), # OSP Trail Peak 11605'-10760', 11605'-10720'
 		'21603': ( 132,  262,  131,  262), # OSP Two Teats 40m, 80m
 		'58159': ( 896,  896,  879,  912), # OWP Billy Goat Peak 1748m-1480m, 1748m-1470m
@@ -1579,8 +1579,8 @@ class PeakLoJ(TablePeak):
 		'56253':   ('Peak 10824',                   'Highland Peak South'),
 		'56086':   ('Peak 11446',                   'Lost World Peak'),
 		'57026':   ('Maggies Peaks, South',         'Maggies Peaks South'),
-		'56503':   ('Peak 9970',                    'Mariuolumne Dome'),
 		'32307':   ('Peak 13464',                   'Northwest Lamarck'),
+		'32543':   ('Peak 12587',                   'Peak 12573'),
 		'56427':   ('Peak 10213',                   'Peak 3113m'),
 		'56335':   ('Peak 10570',                   'Peak 3222m'),
 		'56330':   ('Peak 10597',                   'Peak 3230m'),
