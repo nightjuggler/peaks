@@ -1071,15 +1071,20 @@ calfireSpec.popup = {
 	}
 };
 czuevacSpec.popup = {
+	statusMap: {
+		'ORDER': 'Evacuation Order',
+		'WARNING': 'Evacuation Warning',
+		'ADVISORY': 'Evacuation Advisory',
+		'WARNING-ADVISORY': 'Evacuation Warning/Advisory',
+		'REPOPULATION': 'Repopulation Zone',
+	},
 	template: 'text|ztf|br|text',
 	show(attr)
 	{
 		let {status: type, zname_l: name, zname_s: abbr} = attr;
 
-		type = type === 'ORDER' ? 'Evacuation Order' :
-			type === 'WARNING' ? 'Evacuation Warning' :
-			type === 'REPOPULATION' ? 'Repopulation Zone' : 'Evacuation Zone';
-		if (abbr)
+		type = this.statusMap[type] || 'Evacuation Zone';
+		if (abbr && !name.endsWith(abbr))
 			name += ' (' + abbr + ')';
 
 		setPopupText(this, type, name);
