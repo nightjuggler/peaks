@@ -785,8 +785,13 @@ class IRWIN_InciWebQuery(NIFC_BaseQuery):
 
 class NIFC_CurrentPerimetersQuery(NIFC_BaseQuery):
 	name = "NIFC Current Wildfire Perimeters"
-	service = "Current_WildlandFire_Perimeters"
+	service = "WFIGS_Interagency_Perimeters_Current"
 	layer = 0 # sr = 4326
+
+class NIFC_CurrentIncidentsQuery(NIFC_BaseQuery):
+	name = "NIFC Current Wildfire Incidents"
+	service = "WFIGS_Incident_Locations_Current"
+	layer = 0 # sr = 4269
 
 class USA_WildfireIncidentsQuery(Query):
 	name = "USA Wildfire Incidents"
@@ -801,6 +806,13 @@ class USA_WildfirePerimetersQuery(Query):
 	service = "USA_Wildfires_v1"
 	serverType = "Feature"
 	layer = 1 # sr = 4326
+
+class FIRIS_Query(Query):
+	name = "FIRIS Perimeters"
+	home = "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services"
+	service = "FIRIS_FIRE_PERIMETERS_PUBLIC_view"
+	serverType = "Feature"
+	layer = 2
 
 class CalFire_UnitsQuery(Query):
 	name = "Cal Fire Units"
@@ -1073,6 +1085,8 @@ def main():
 		"fire_incidents": USA_WildfireIncidentsQuery,
 		"fire_perimeters": USA_WildfirePerimetersQuery,
 		"fires_current": NIFC_CurrentPerimetersQuery,
+		"fires_current_incidents": NIFC_CurrentIncidentsQuery,
+		"firis": FIRIS_Query,
 		"fs": USFS_Query,
 		"govunits_blm": GovUnits_BLM_Query,
 		"govunits_nps": GovUnits_NPS_Query,
