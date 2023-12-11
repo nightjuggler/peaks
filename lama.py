@@ -832,13 +832,6 @@ class SonomaEvacAreasQuery(Query):
 	serverType = "Feature"
 	layer = 0 # sr = 102100 (3857)
 
-class SonomaEvacZonesQuery(Query):
-	name = "Sonoma County Evacuation Zones"
-	home = "https://services1.arcgis.com/P5Mv5GY5S66M8Z1Q/arcgis/rest/services"
-	service = "Sonoma_County_Evacuation_Zone_Reference"
-	serverType = "Feature"
-	layer = 0 # sr = 102100 (3857)
-
 class NASA_MODIS_Query(Query):
 	name = "MODIS"
 	home = "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services"
@@ -1106,7 +1099,6 @@ def main():
 		"slo": SLO_OpenSpaceQuery,
 		"sma": BLM_SMA_Query,
 		"sonoma_evac_areas": SonomaEvacAreasQuery,
-		"sonoma_evac_zones": SonomaEvacZonesQuery,
 		"state": TigerStateQuery,
 		"topo": USGS_TopoQuery,
 		"topoview": USGS_TopoViewQuery,

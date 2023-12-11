@@ -441,8 +441,8 @@ items: {
 					sonomaevac: {
 		name: 'Sonoma County|Evacuation Zones',
 		url: 'https://services1.arcgis.com/P5Mv5GY5S66M8Z1Q/arcgis/rest/services' +
-			'/Sonoma_County_Evacuation_Zone_Reference/FeatureServer',
-		queryFields: ['OBJECTID', 'Number', 'Status'],
+			'/Sonoma_County_Evacuation_Areas_public/FeatureServer',
+		queryFields: ['OBJECTID', 'ZoneNumber', 'zone_status'],
 		attribution: '[Sonoma County]',
 					},
 				},
@@ -1097,7 +1097,7 @@ sonomaevacSpec.popup = {
 	template: 'text|ztf',
 	show(attr)
 	{
-		const {Status: type, Number: zone} = attr;
+		const {zone_status: type, ZoneNumber: zone} = attr;
 
 		const text = type === 'Evacuation Order' || type === 'Evacuation Warning' ?
 			type + ' (Zone ' + zone + ')' : 'Evacuation Zone ' + zone;
