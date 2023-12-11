@@ -238,15 +238,10 @@ items: {
 			nps: {
 		name: 'National Parks',
 		url: 'https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services' +
-			'/NPS_Park_Boundaries/FeatureServer',
+			'/NPS_Land_Resources_Division_Boundary_and_Tract_Data_Service/FeatureServer',
+		queryLayer: '2',
 		queryFields: ['OBJECTID', 'UNIT_NAME', 'UNIT_CODE'],
 		attribution: '[National Park Service]',
-			},
-			npsimd: {
-		name: 'National Parks (IMD)',
-		url: 'https://irmaservices.nps.gov/arcgis/rest/services/IMDData/IMD_Boundaries_wgs/MapServer',
-		queryFields: ['OBJECTID', 'UNITNAME', 'UNITCODE'],
-		attribution: '[NPS Inventory and Monitoring Division]',
 			},
 			govunits: {
 				name: 'USGS National Map',
@@ -302,12 +297,12 @@ items: {
 					current: {
 		name: 'Current Perimeters',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/Current_WildlandFire_Perimeters/FeatureServer',
+			'/WFIGS_Interagency_Perimeters_Current/FeatureServer',
 		queryFields: ['OBJECTID', 'poly_IncidentName', 'poly_GISAcres', 'poly_DateCurrent',
-			'irwin_IrwinID'],
+			'poly_IRWINID'],
 		orderByFields: 'poly_DateCurrent%20DESC',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
-			'nifc::wfigs-current-wildland-fire-perimeters/about">NIFC</a>',
+			'nifc::wfigs-current-interagency-fire-perimeters/about">NIFC</a>',
 					},
 					geomac: {
 		name: 'Historic Perimeters|(>10,000 acres)',
@@ -325,12 +320,12 @@ items: {
 					all: {
 		name: 'All Years|(>100,000 acres)',
 		url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services' +
-			'/Interagency_Fire_Perimeter_History_All_Years_Read_Only/FeatureServer',
-		queryFields: ['FID', 'FIRE_YEAR', 'INCIDENT', 'GIS_ACRES'],
+			'/InterAgencyFirePerimeterHistory_All_Years_View/FeatureServer',
+		queryFields: ['OBJECTID', 'FIRE_YEAR', 'INCIDENT', 'GIS_ACRES'],
 		orderByFields: 'FIRE_YEAR,INCIDENT',
 		where: 'GIS_ACRES > 99999',
 		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
-			'interagency-fire-perimeter-history-all-years">NIFC</a>'
+			'nifc::interagencyfireperimeterhistory-all-years-view/about">NIFC</a>'
 					},
 		},
 		order: ['all']
@@ -355,15 +350,15 @@ items: {
 		name: 'MODIS',
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
 			'/MODIS_Thermal_v1/FeatureServer',
-		attribution: '<a href="https://www.arcgis.com/home/item.html?id=b8f4033069f141729ffb298b7418b653">' +
-			'NASA</a>',
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/maps/' +
+			'b8f4033069f141729ffb298b7418b653/about">NASA</a>',
 					},
 					viirs: {
 		name: 'VIIRS',
 		url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services' +
 			'/Satellite_VIIRS_Thermal_Hotspots_and_Fire_Activity/FeatureServer',
-		attribution: '<a href="https://www.arcgis.com/home/item.html?id=dece90af1a0242dcbf0ca36d30276aa3">' +
-			'NASA</a>',
+		attribution: '<a href="https://data-nifc.opendata.arcgis.com/datasets/' +
+			'esri2::satellite-viirs-thermal-hotspots-and-fire-activity/about">NASA</a>',
 					},
 				},
 				order: ['modis', 'viirs', 'incidents', 'current', 'perimeters',
@@ -389,7 +384,6 @@ items: {
 			'fs',
 			'fsrd',
 			'nps',
-			'npsimd',
 			'states',
 			'fsonda',
 			'fssima',
@@ -584,7 +578,6 @@ const {
 		fssima: fssimaSpec,
 		nlcs: nlcsSpec,
 		nps: npsSpec,
-		npsimd: npsimdSpec,
 		nwr: nwrSpec,
 		states: stateSpec,
 		w: wildernessSpec,
@@ -631,9 +624,6 @@ const {
 	fssimaSpec.opacity = 0.5;
 
 	npsSpec.style = () => ({color: '#FFFF00', fillOpacity: 0.5, stroke: false});
-
-	npsimdSpec.dynamicLayers = simpleFillLayer(0, [255, 255, 0, 255]);
-	npsimdSpec.opacity = 0.5;
 }
 function makePopupDiv(spec)
 {
@@ -711,8 +701,7 @@ npsSpec.popup = {
 	template: 'boldlink|ztf',
 	show(attr)
 	{
-		let [code, name] = this === npsSpec.popup ?
-			[attr.UNIT_CODE, attr.UNIT_NAME] : [attr.UNITCODE, attr.UNITNAME];
+		let [code, name] = [attr.UNIT_CODE, attr.UNIT_NAME];
 
 		code = code.toLowerCase();
 		if (code === 'kica' || code === 'sequ') code = 'seki';
@@ -722,10 +711,6 @@ npsSpec.popup = {
 
 		return '#FFFF00';
 	}
-};
-npsimdSpec.popup = {
-	template: npsSpec.popup.template,
-	show: npsSpec.popup.show,
 };
 nlcsSpec.popup = {
 	designation: {
@@ -1035,7 +1020,7 @@ fireSpec.popup = {
 		const date = getDateTime(attr.poly_DateCurrent);
 		const size = formatAcres(attr.poly_GISAcres);
 
-		attr.IRWINID = attr.irwin_IrwinID;
+		attr.IRWINID = attr.poly_IRWINID;
 		linkInciWeb(this, attr);
 		setPopupText(this, name, size, date);
 		return '#FF0000';
@@ -1108,7 +1093,6 @@ sonomaevacSpec.style = ({properties: {Status: status}}) => ({
 let querySpecs = [
 	aiannhSpec,
 	npsSpec,
-	npsimdSpec,
 	nlcsSpec,
 	fsSpec,
 	fsrdSpec,
@@ -1276,7 +1260,7 @@ let querySpecs = [
 
 	const {items, order} = TileOverlays.items.us.items.fires.items.ia;
 	const {url, queryFields, orderByFields} = items.all;
-
+/*
 	for (const [id, name, size] of [
 		['year', 'Previous Year', 1000],
 		['decade', 'Current Decade', 20000],
@@ -1294,6 +1278,7 @@ let querySpecs = [
 		};
 		order.push(id);
 	}
+*/
 	for (const id of order)
 	{
 		const spec = items[id];
@@ -1328,7 +1313,7 @@ modisSpec.pointToLayer = function(feature, latlng) {
 		fillOpacity: 0.5,
 	});
 };
-viirsSpec.where = 'frp >= 1 AND esritimeutc >= CURRENT_TIMESTAMP - 2';
+viirsSpec.where = 'frp >= 1 AND hours_old <= 24';
 viirsSpec.pointToLayer = function(feature, latlng) {
 	const frp = feature.properties.frp;
 
