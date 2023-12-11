@@ -416,6 +416,15 @@ items: {
 			fire: {
 				name: 'Wildfires',
 				items: {
+					firis: {
+		name: 'FIRIS Perimeters',
+		url: 'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services' +
+			'/FIRIS_FIRE_PERIMETERS_PUBLIC_view/FeatureServer',
+		queryLayer: '2',
+		queryFields: ['OBJECTID', 'type', 'mission', 'area_acres', 'modify_date'],
+		orderByFields: 'modify_date%20DESC',
+		attribution: '[FIRIS]',
+					},
 					calfire: {
 		name: 'CAL FIRE Units',
 		url: 'https://egis.fire.ca.gov/arcgis/rest/services/FRAP/CalFireUnits/MapServer',
@@ -437,7 +446,7 @@ items: {
 		attribution: '[Sonoma County]',
 					},
 				},
-				order: ['calfire', 'czuevac', 'sonomaevac'],
+				order: ['firis', 'calfire', 'czuevac', 'sonomaevac'],
 			},
 			parks: {
 		name: 'State Parks',
@@ -475,6 +484,7 @@ aliases: {
 	'calfire': 'ca_fire_calfire',
 	'czuevac': 'ca_fire_czuevac',
 	'fires': 'us_fires_current',
+	'firis': 'ca_fire_firis',
 	'modis': 'us_fires_modis',
 	'us_fires_calfire': 'ca_fire_calfire',
 	'us_fires_czuevac': 'ca_fire_czuevac',
@@ -586,6 +596,7 @@ const {
 	ca: { items: {
 		cpad: cpadSpec,
 		fire: { items: {
+			firis: firisSpec,
 			calfire: calfireSpec,
 			czuevac: czuevacSpec,
 			sonomaevac: sonomaevacSpec,
@@ -1040,6 +1051,17 @@ firePerimeterSpec.popup = {
 		return '#FF0000';
 	}
 };
+firisSpec.style = () => ({color: '#FF0000', weight: 2});
+firisSpec.popup = {
+	template: 'text|br|text|br|text|ztf|br|text',
+	show(attr)
+	{
+		setPopupText(this, attr.mission, attr.type,
+			formatAcres(attr.area_acres),
+			getDateTime(attr.modify_date));
+		return '#FF0000';
+	}
+};
 calfireSpec.popup = {
 	template: 'text|ztf',
 	show(attr)
@@ -1110,6 +1132,7 @@ let querySpecs = [
 	blmSpec,
 	fireSpec,
 	firePerimeterSpec,
+	firisSpec,
 	calfireSpec,
 	czuevacSpec,
 	sonomaevacSpec,
