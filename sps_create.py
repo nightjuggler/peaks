@@ -122,7 +122,7 @@ class TableParser(HTMLParser):
 		self.tableDepth = 0
 		self.tables = []
 
-		fileObj = open(fileName, encoding="ascii", errors="backslashreplace")
+		fileObj = open(fileName)
 
 		while self.numTables > 0:
 			bytes = fileObj.read(1000)
@@ -161,7 +161,7 @@ class TableReader(object):
 		self.bytes = ""
 		self.rowNum = 0
 		self.colNum = 0
-		self.fileObj = open(fileName, encoding="ascii", errors="backslashreplace")
+		self.fileObj = open(fileName)
 
 		if upper:
 			self.TABLE, self.TR, self.TD, self.TH = ("TABLE", "TR", "TD", "TH")
@@ -301,7 +301,7 @@ def toFeetRoundDown(meters):
 def toMeters(feet):
 	return int(feet * 0.3048 + 0.5)
 
-def str2IntLoJ(s, description, peakName):
+def str2IntLoJ(s, description, peak):
 	if RE.numLT1k.match(s):
 		return int(s)
 	if RE.numGE1k.match(s):
@@ -309,7 +309,7 @@ def str2IntLoJ(s, description, peakName):
 	if s == "0":
 		return 0
 
-	err("{} '{}' ({}) doesn't match expected pattern", description, s, peakName)
+	err("{} {} doesn't match expected pattern: {}", peak.name, description, s)
 
 def str2IntPb(s, description, peak):
 	if RE.numLT10k.match(s):
@@ -760,7 +760,7 @@ class PeakPb(TablePeak):
 			None
 		),
 		'Peak': (
-			re.compile('^<a href=peak\\.aspx\\?pid=([1-9][0-9]*)>([- A-Za-z]+)</a>$'),
+			re.compile('^<a href=peak\\.aspx\\?pid=([1-9][0-9]*)>([- A-Za-zñ]+)</a>$'),
 			('id', 'name')
 		),
 		'Section': (
@@ -798,7 +798,7 @@ class PeakPb(TablePeak):
 	}
 	NAME_MAP = {
 	# Desert Peaks Section:
-		'13410':   ('Chuckwalla Peak',                   'Bunch Benchmark'),
+		'13410':   ('Chuckwalla Mountain',               'Bunch Benchmark'),
 		'1514':    ('Eagle Mountain',                    'Eagle Mountains HP'),
 		'3810':    ('Granite Mountain',                  'Granite Benchmark'),
 		'3804':    ('Granite Mountain',                  'Granite Peak'),
@@ -812,20 +812,20 @@ class PeakPb(TablePeak):
 		'1457':    ('Granite Mountain',                  'Granite Mountain #2'),
 		'1465':    ('Monument Peak',                     'Monument Peak #1'),
 		'1508':    ('Rabbit Peak',                       'Rabbit Peak #2'),
-		'44743':   ('Toro Peak-West Peak',               'Toro Peak West'),
+		'44743':   ('Toro Peak - West Peak',             'Toro Peak West'),
 	# Great Basin Peaks / Nevada Peaks Club:
-		'60151':   ('Baker Peak-West Summit',            'Baker Peak'),
+		'60151':   ('Baker Peak - West Summit',          'Baker Peak'),
 		'3573':    ('Baker Peak',                        'Baker Peak East'),
-		'3321':    ('Duffer Peak-North Peak',            'Duffer Peak'),
+		'3321':    ('Duffer Peak - North Peak',          'Duffer Peak'),
 		'3322':    ('Duffer Peak',                       'Duffer Peak South'),
 		'3394':    ('Granite Peak',                      'Granite Peak (Humboldt)'),
 		'3577':    ('Granite Peak',                      'Granite Peak (Snake Range)'),
 		'3312':    ('Granite Peak',                      'Granite Peak (Washoe)'),
 		'3609':    ('Mount Grant',                       'Mount Grant (West)'),
-		'3498':    ('Mount Jefferson-North Summit',      'Mount Jefferson North'),
+		'3498':    ('Mount Jefferson - North Summit',    'Mount Jefferson North'),
 		'17460':   ('Petersen Mountains HP',             'Petersen Mountain'),
 	# Sierra Peaks Section:
-		'69023':   ('Adams Peak-West Peak',              'Adams Peak'),
+		'69023':   ('Adams Peak - West Peak',            'Adams Peak'),
 		'13541':   ('Devils Crags',                      'Devil\'s Crag #1'),
 		'2650':    ('Mount Morgan',                      'Mount Morgan (North)'),
 		'2662':    ('Mount Morgan',                      'Mount Morgan (South)'),
@@ -839,11 +839,11 @@ class PeakPb(TablePeak):
 		'13507':   ('Sawtooth Peak',                     'Sawtooth Peak (South)'),
 	# Tahoe Ogul Peaks:
 		'26371':   ('Silver Peak',                       'Silver Peak (Desolation)'),
-		'53297':   ('Silver Peak-Southwest Summit',      'Silver Peak Southwest'),
+		'53297':   ('Silver Peak - Southwest Summit',    'Silver Peak Southwest'),
 	# Lower Peaks Committee
 		'13444':   ('Slide Mountain Lookout',            'Slide Mountain'),
 		'13460':   ('Saddle Peak East',                  'Saddle Peak'),
-		'18343':   ('El Montanon',                       'El Monta&ntilde;on'),
+		'18343':   ('El Montañon',                       'El Monta&ntilde;on'),
 	# Other Sierra Peaks:
 		'37148':   ('Gambler\'s Special',                'Gamblers Special Peak'),
 		'30991':   ('Highland Peak - South Peak',        'Highland Peak South'),
@@ -1009,13 +1009,6 @@ class PeakPb(TablePeak):
 
 	# Pb Elevation Adjustments for Great Basin Peaks / Nevada Peaks Club
 	#
-	# - Bull Mountain
-	#   "Field observations by visitors to this mountain indicate that the main point shown here is
-	#    about 8 or 9 feet higher than the nearby Dunn Benchmark. So the elevation of the large contour
-	#    to the east of the benchmark is shown as 9934 feet. The terrain is very gentle and most
-	#    peakbaggers will visit both spots anyway."
-	#   [https://peakbagger.com/peak.aspx?pid=3440]
-	#
 	# - Hays Canyon Peak
 	#   "Field observations show that the highest point on this flat-topped mountain is near the
 	#    7916-foot benchmark. The two tiny 7920-foot contours north of the benchmark are about 10 feet
@@ -1027,8 +1020,9 @@ class PeakPb(TablePeak):
 	# - Green Mountain (NPC)
 	#   The last 0 in 10680 was likely misread as an 8 (a contour line bisects it on the 7.5' topo).
 
-		'3440':  ( 9934,  9934,  9920,  9960), # Bull Mountain
+		'3440':  ( 9940,  9940,  9920,  9960), # Bull Mountain
 		'3321':  ( 9400,  9440,  9397,  9397), # Duffer Peak
+		'132632':( 9923,  9923,  9925,  9925), # Dunn Benchmark
 		'3312':  ( 8980,  8980,  8960,  9000), # Granite Peak (Washoe)
 		'24372': (10688, 10688, 10680, 10680), # Green Mountain
 		'3304':  ( 7920,  7920,  7916,  7916), # Hays Canyon Peak
@@ -1069,6 +1063,11 @@ class PeakPb(TablePeak):
 		'55390': (3456, 3456, 3455, 3455), # Post Summit
 		'64361': ( 942,  942,  925,  950), # Slacker Hill
 		'50114': (1434, 1434, 1430, 1430), # White Hill
+
+	# Pb Elevation Adjustments for Other Western Peaks:
+
+		'5142':  (12666, 12666, 12662, 12662), # Borah Peak
+		'2353':  ( 8321,  8321,  8333,  8333), # Mount St. Helens
 	}
 	PROMINENCE_MAP = {
 	# --------------------------
@@ -1173,7 +1172,7 @@ class PeakPb(TablePeak):
 		"(?:Wilderness/Special Area: ([- ()/A-Za-z]+))?$"
 	)
 	def readLandManagement(self, land):
-		land = land.replace("\\xe2\\x80\\x99", "'") # Tohono O'odham Nation
+		land = land.replace("\u2019", "'") # Tohono O'odham Nation
 		land = land.replace("Palen/McCoy", "Palen-McCoy")
 		m = self.landPattern.match(land)
 		if m is None:
@@ -1275,11 +1274,14 @@ class PeakPb(TablePeak):
 		maxPeak.prominence = maxProm1
 
 	def readLatLng(self, html):
-		latlng = html.split("<br/>")[1]
-		assert latlng.endswith(" (Dec Deg)")
-		latlng = latlng[:-10].split(", ")
-		latlng = map(lambda d: str(round(float(d), 5)), latlng)
-		self.latitude, self.longitude = latlng
+		for latlng in html.split("<br/>"):
+			if latlng.endswith(" (Dec Deg)"):
+				lat, lng = latlng[:-10].split(", ")
+				self.latitude = str(round(float(lat), 5))
+				self.longitude = str(round(float(lng), 5))
+				break
+		else:
+			err("{} Unable to read lat/lng", self.fmtIdName)
 
 	rangePattern = re.compile(
 		'^(Range[23456]|Continent): <a href="range\\.aspx\\?rid=([1-9][0-9]*)">'
@@ -1303,13 +1305,19 @@ class PeakPb(TablePeak):
 		self.rangeList = rangeList
 
 	quadPattern = {
-		'US': re.compile('^([A-Za-z]+(?: [A-Za-z]+)*)  O[34][0-9]1[0-9][0-9][a-h][1-8]  1:24,000$'),
-		'MX': re.compile('^([A-Za-z]+(?: [A-Za-z]+)*)  [A-Z][0-9]{2}[A-Z][0-9]{2}  1:50,000$'),
+		'US': re.compile(
+			'^US Geological Survey \\(1:24,000\\)<br/>'
+			'Sheet: ([A-Za-z]+(?: [A-Za-z]+)*) \\(O[34][0-9]1[0-9][0-9][a-h][1-8]\\)<br/>$'
+		),
+		'MX': re.compile(
+			'^INEGI \\(1:50,000\\)<br/>'
+			'Sheet: ([A-Za-z]+(?: [A-Za-z]+)*) \\([A-Z][0-9]{2}[A-Z][0-9]{2}\\)<br/>$'
+		),
 	}
 	def readQuad(self, html):
 		m = self.quadPattern[self.country[0]].match(html)
 		if m is None:
-			err("{} Topo Map doesn't match pattern:\n{}", self.fmtIdName, html)
+			err("{} Map Source doesn't match pattern:\n{}", self.fmtIdName, html)
 		self.quadName = m.group(1)
 
 	def readName(self, html):
@@ -1324,9 +1332,9 @@ class PeakPb(TablePeak):
 		if self.name[-5:] == "<br/>":
 			self.name = self.name[:-5]
 
-	def readCountry(self, countries):
+	def readCountry(self, html):
 		self.country = []
-		for country in countries:
+		for country in html.split("<br/>"):
 			if country.endswith(" (Highest Point)"):
 				country = country[:-16]
 			code = countryNameMap.get(country)
@@ -1334,9 +1342,9 @@ class PeakPb(TablePeak):
 				err("{} Cannot get country code for {}", self.fmtIdName, country)
 			self.country.append(code)
 
-	def readState(self, states):
+	def readState(self, html):
 		self.state = []
-		for state in states:
+		for state in html.split("<br/>"):
 			if state.endswith(" (Highest Point)"):
 				state = state[:-16]
 			code = stateNameMap.get(state)
@@ -1346,24 +1354,17 @@ class PeakPb(TablePeak):
 
 	def readPeakFile(self, fileName):
 		tables = TableParser(fileName, numTables=3, startTag="h1").tables
+		info = dict(row for row in tables[1] if len(row) == 2)
 
 		maxPeak = PeakPb()
-
 		self.readElevation(maxPeak, tables[0][0][1]) # First table, first row, second column
+		if maxPeak.elevation is None:
+			self.readElevationInfo(maxPeak, info["Elevation Info"])
 
-		for row in tables[1]:
-			if row[0] == "Elevation Info:":
-				if maxPeak.elevation is None:
-					self.readElevationInfo(maxPeak, row[1])
-
-			elif row[0] == "Latitude/Longitude (WGS84)":
-				self.readLatLng(row[1])
-
-			elif row[0] == "Country":
-				self.readCountry(row[1].split("<br/>"))
-
-			elif row[0] == "State/Province":
-				self.readState(row[1].split("<br/>"))
+		self.readLatLng(info["Latitude/Longitude (WGS84)"])
+		self.readCountry(info["Country"])
+		self.readState(info["State/Province"])
+		self.readQuad(info["Map Source"])
 
 		self.landManagement = []
 		for row in tables[2]:
@@ -1375,9 +1376,6 @@ class PeakPb(TablePeak):
 
 			elif row[0] == "Ownership":
 				self.readLandManagement(row[1])
-
-			elif row[0] == "Topo Map":
-				self.readQuad(row[1])
 
 			elif row[0].startswith("<b>Dynamic Map</b>"):
 				self.readName(row[0][18:])
@@ -1448,9 +1446,9 @@ class PeakLoJ(TablePeak):
 		),
 		'Saddle': (
 			re.compile(
-				'^<b><a href="/qmap\\?'
-				'lat=(-?[0-9]{1,2}\\.[0-9]{4})&amp;'
-				'lon=(-?[0-9]{1,3}\\.[0-9]{4})&amp;z=15" '
+				'^<b><a href="/mapf\\?'
+				'lat=(-?[0-9]{1,2}\\.[0-9]{5})&amp;'
+				'lon=(-?[0-9]{1,3}\\.[0-9]{5})&amp;z=15" '
 				'target="_blank">([,0-9]+)\'</a>&nbsp;</b>$'
 			),
 			('saddleLat', 'saddleLng', 'saddleElev')
@@ -1493,6 +1491,10 @@ class PeakLoJ(TablePeak):
 			re.compile('^(?:(?:([1-9][0-9]?)\\. )?([A-Z][a-z]+(?:[- ][A-Z]?[a-z]+)+'
 				'(?: [1-9][0-9]*)?))?$'),
 			('sectionNumber', 'sectionName')
+		),
+		'LiDAR': (
+			re.compile('^(yes|summit only)?$'),
+			('lidar',)
 		),
 	}
 	numPeaks = {
@@ -1784,17 +1786,16 @@ class PeakLoJ(TablePeak):
 		'70366': (  663,   662  ), # OCAP Slacker Hill: saddle is between 650' and 675'
 	}
 	def postProcess(self, peakListId=None):
-		def override(attr1, attr2):
-			value = getattr(self, attr2, None)
-			if value is not None:
-				setattr(self, attr1, value)
-		override('elevation', 'mapElevation')
-		override('saddleElev', 'saddleMapElev')
-		override('prominence', 'mapProminence')
-
-		self.elevation = str2IntLoJ(self.elevation, 'Elevation', self.name)
-		self.saddleElev = str2IntLoJ(self.saddleElev, 'Saddle elevation', self.name)
-		self.prominence = str2IntLoJ(self.prominence, 'Prominence', self.name)
+		for attr in ('elevation', 'saddleElev', 'prominence'):
+			value = str2IntLoJ(getattr(self, attr), attr, self)
+			lidar_attr = attr + 'Lidar'
+			lidar_value = getattr(self, lidar_attr, None)
+			if lidar_value is None:
+				setattr(self, attr, value)
+			else:
+				lidar_value = str2IntLoJ(lidar_value, lidar_attr, self)
+				setattr(self, lidar_attr, value)
+				setattr(self, attr, lidar_value)
 
 		assert self.prominence == self.elevation - self.saddleElev
 
@@ -1862,7 +1863,7 @@ class PeakLoJ(TablePeak):
 		),
 		"Elevation": (
 			re.compile(f"^ {elevationPattern}{lidarPattern}$"),
-			("elevation", "mapElevation")
+			("elevation", "elevationLidar")
 		),
 		"Isolation": (
 			re.compile("^([0-9]+\\.[0-9]{2}) miles$"),
@@ -1885,7 +1886,7 @@ class PeakLoJ(TablePeak):
 		),
 		"Rise": (
 			re.compile(f"^{elevationPattern}{lidarPattern}$"),
-			("prominence", "mapProminence")
+			("prominence", "prominenceLidar")
 		),
 		"Saddle": (
 			re.compile(
@@ -1894,7 +1895,7 @@ class PeakLoJ(TablePeak):
 				"lon=(-?[0-9]{1,3}\\.[0-9]{1,5})&z=15\">"
 				f"{elevationPattern}</a>{lidarPattern}$"
 			),
-			("saddleLat", "saddleLng", "saddleElev", "saddleMapElev")
+			("saddleLat", "saddleLng", "saddleElev", "saddleElevLidar")
 		),
 		"YDSClass": (
 			re.compile(
@@ -2013,8 +2014,30 @@ class PeakLoJ(TablePeak):
 		LandMgmtAreaLoJ.addAll(self)
 
 	def compare(self, other):
-		for attr in ("id", "name", "elevation", "prominence", "saddleLat", "saddleLng", "saddleElev",
-			"lineParent", "proximateParent", "isolation", "state", "counties", "quadId", "quadName"):
+		attrs = [
+			"id",
+			"name",
+			"saddleLat",
+			"saddleLng",
+			"lineParent",
+			"proximateParent",
+			"isolation",
+			"state",
+			"counties",
+			"quadId",
+			"quadName",
+		]
+		if getattr(other, 'lidar', None):
+			other.elevationLidar = other.elevation.feet
+			other.elevation = self.elevation
+			other.prominenceLidar = other.prominence
+			other.prominence = self.prominence
+			other.saddleElevLidar = other.saddleElev
+			other.saddleElev = self.saddleElev
+			attrs.extend(("elevationLidar", "prominenceLidar", "saddleElevLidar"))
+		else:
+			attrs.extend(("elevation", "prominence", "saddleElev"))
+		for attr in attrs:
 			v1 = getattr(self, attr)
 			v2 = getattr(other, attr)
 			if v1 != v2:
