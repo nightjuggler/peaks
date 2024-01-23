@@ -415,6 +415,7 @@ class LandMgmtArea(object):
 landNameLookup = {
 	"Agua Tibia Research Natural Area":             'Agua Tibia Wilderness',
 	"Antelope Valley California Poppy Reserve":     'landSP',
+	"Avi Kwa Ame National Monument":                'landBLM',
 	"Basin and Range National Monument":            'landBLM',
 	"Berryessa Snow Mountain National Monument":    'landBLM',
 	"Bishop Peak Natural Reserve":                  'City of San Luis Obispo',

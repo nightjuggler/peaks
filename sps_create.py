@@ -493,6 +493,7 @@ class LandMgmtAreaPb(LandMgmtArea):
 	nameLookup = {
 	"Antelope Valley California Poppy Reserve "
 	"State Natural Reserve":                        "Antelope Valley California Poppy Reserve",
+	"Avi Kwame National Monument":                  "Avi Kwa Ame National Monument",
 	"Desert National Wildlife Range":               "Desert National Wildlife Refuge",
 	"Giant Sequoia NM":                             "Giant Sequoia National Monument",
 	"Hart Mountain National Antelope Refuge":       "Hart Mountain NAR",
