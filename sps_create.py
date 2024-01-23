@@ -1172,6 +1172,8 @@ class PeakPb(TablePeak):
 		"(?:Wilderness/Special Area: ([- ()/A-Za-z]+))?$"
 	)
 	def readLandManagement(self, land):
+		self.landManagement = []
+		if land is None: return
 		land = land.replace("\u2019", "'") # Tohono O'odham Nation
 		land = land.replace("Palen/McCoy", "Palen-McCoy")
 		m = self.landPattern.match(land)
@@ -1287,9 +1289,9 @@ class PeakPb(TablePeak):
 		'^(Range[23456]|Continent): <a href="range\\.aspx\\?rid=([1-9][0-9]*)">'
 		'((?:Mc|Le)?[A-Z][a-z]+(?: U\\.S\\.)?(?:[- ][A-Z]?[a-z]+)*)(?: \\(Highest Point\\))?</a>$'
 	)
-	def readRanges(self, rangeLines):
+	def readRanges(self, html):
 		rangeList = []
-		for line in rangeLines:
+		for line in html.split("<br/>"):
 			if line == "":
 				continue
 			m = self.rangePattern.match(line)
@@ -1320,17 +1322,22 @@ class PeakPb(TablePeak):
 			err("{} Map Source doesn't match pattern:\n{}", self.fmtIdName, html)
 		self.quadName = m.group(1)
 
-	def readName(self, html):
-		if html[:34] != "\n<br/><iframe></iframe>\n<br/><img>":
-			err("{} Maps HTML doesn't match pattern:\n{}", self.fmtIdName, html)
-		i = html.find("<img>", 34)
-		if i < 0:
-			err("{} Maps HTML doesn't match pattern:\n{}", self.fmtIdName, html)
-		self.name = html[34:i]
-		if self.name[-1] == "(":
-			self.name = self.name[:-1]
-		if self.name[-5:] == "<br/>":
-			self.name = self.name[:-5]
+	def readName(self, table):
+		prefix = "Nearby Peak Searches:<br/>"
+		suffix = "<br/><br/>"
+		for row in table:
+			if len(row) == 1 and row[0].startswith(prefix) and row[0].endswith(suffix):
+				lines = row[0].removeprefix(prefix).removesuffix(suffix).split("<br/>")
+				break
+		else:
+			err("{} Cannot read peak name!", self.fmtIdName)
+
+		prefix = f"<a href=\"search.aspx?tid=E&pid={self.id}\">Elevation Ladder from "
+		suffix = "</a>\n"
+		if len(lines) == 3 and lines[1].startswith(prefix) and lines[1].endswith(suffix):
+			self.name = lines[1].removeprefix(prefix).removesuffix(suffix)
+		else:
+			err("{} Cannot read peak name!", self.fmtIdName)
 
 	def readCountry(self, html):
 		self.country = []
@@ -1365,20 +1372,12 @@ class PeakPb(TablePeak):
 		self.readCountry(info["Country"])
 		self.readState(info["State/Province"])
 		self.readQuad(info["Map Source"])
+		self.readName(tables[1])
 
-		self.landManagement = []
-		for row in tables[2]:
-			if row[0] == "<a>Prominence</a>\n":
-				self.readProminence(maxPeak, row[1])
-
-			elif row[0] == "Ranges":
-				self.readRanges(row[1].split("<br/>"))
-
-			elif row[0] == "Ownership":
-				self.readLandManagement(row[1])
-
-			elif row[0].startswith("<b>Dynamic Map</b>"):
-				self.readName(row[0][18:])
+		info = dict(row for row in tables[2] if len(row) == 2)
+		self.readProminence(maxPeak, info["<a>Prominence</a>\n"])
+		self.readRanges(info["Ranges"])
+		self.readLandManagement(info.get("Ownership"))
 
 		self.postProcess2(maxPeak)
 		LandMgmtAreaPb.addAll(self)
@@ -1811,8 +1810,8 @@ class PeakLoJ(TablePeak):
 		self.lineParent = self.normalizeName(self.lineParent)
 		self.proximateParent = self.normalizeName(self.proximateParent)
 
-		adjElev = self.elevationMap.get(self.id)
-		if adjElev is not None:
+		lidar = getattr(self, 'lidar', '')
+		if not lidar and (adjElev := self.elevationMap.get(self.id)):
 			oldElev, adjElev = adjElev
 			if self.elevation != oldElev:
 				out('LoJ elevation ({}) not as expected ({}) for {}',
@@ -1827,8 +1826,7 @@ class PeakLoJ(TablePeak):
 
 		self.elevation = ElevationLoJ(self.elevation)
 
-		adjElev = self.saddleElevationMap.get(self.id)
-		if adjElev is not None:
+		if lidar != 'yes' and (adjElev := self.saddleElevationMap.get(self.id)):
 			oldElev, adjElev = adjElev
 			if self.saddleElev != oldElev:
 				out('LoJ saddle elevation ({}) not as expected ({}) for {}',
@@ -1839,7 +1837,8 @@ class PeakLoJ(TablePeak):
 			elevDiff = adjElev - self.saddleElev
 			assert elevDiff != 0
 			self.saddleElev = adjElev
-			self.prominence -= elevDiff
+			if not lidar:
+				self.prominence -= elevDiff
 
 		if peakListId == 'NPC':
 			assert 'NV' in self.state
@@ -2027,14 +2026,20 @@ class PeakLoJ(TablePeak):
 			"quadId",
 			"quadName",
 		]
-		if getattr(other, 'lidar', None):
+		lidar = getattr(other, 'lidar', None)
+		if lidar:
 			other.elevationLidar = other.elevation.feet
 			other.elevation = self.elevation
+			attrs.append("elevationLidar")
 			other.prominenceLidar = other.prominence
 			other.prominence = self.prominence
-			other.saddleElevLidar = other.saddleElev
-			other.saddleElev = self.saddleElev
-			attrs.extend(("elevationLidar", "prominenceLidar", "saddleElevLidar"))
+			attrs.append("prominenceLidar")
+			if lidar == 'yes':
+				other.saddleElevLidar = other.saddleElev
+				other.saddleElev = self.saddleElev
+				attrs.append("saddleElevLidar")
+			else:
+				attrs.append("saddleElev")
 		else:
 			attrs.extend(("elevation", "prominence", "saddleElev"))
 		for attr in attrs:
