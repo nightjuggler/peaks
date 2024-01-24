@@ -169,7 +169,7 @@ class Peak(object):
 		self.isEmblem = False
 		self.isMtneer = False
 		self.landClass = None
-		self.landManagement = None
+		self.landManagement = []
 		self.delisted = False
 		self.suspended = False
 
@@ -580,7 +580,7 @@ def parseLandManagement(htmlFile, peak):
 			return
 		raise FormatError("Empty land management column")
 
-	peak.landManagement = landList = []
+	landList = peak.landManagement
 
 	while True:
 		m = landMgmtPattern.match(line)
@@ -1127,7 +1127,7 @@ def parseElevation(htmlFile, peak):
 	if line[:4] != '<td>':
 		badLine()
 
-	latlng = (float(peak.latitude), float(peak.longitude))
+	latlng = float(peak.latitude), float(peak.longitude)
 
 	while True:
 		line = line[4:]

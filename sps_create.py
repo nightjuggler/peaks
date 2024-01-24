@@ -696,8 +696,7 @@ class TablePeak(object):
 		return getattr(peak2, attr, None)
 
 	def checkLand(self, peak):
-		land1 = peak.landManagement
-		land1 = {} if land1 is None else {area.name: area for area in land1}
+		land1 = {area.name: area for area in peak.landManagement}
 
 		def getArea(name):
 			return land1.get(name) if self.expectLandNPS(name) else land1.pop(name, None)
@@ -1279,9 +1278,7 @@ class PeakPb(TablePeak):
 	def readLatLng(self, html):
 		for latlng in html.split("<br/>"):
 			if latlng.endswith(" (Dec Deg)"):
-				lat, lng = latlng[:-10].split(", ")
-				self.latitude = str(round(float(lat), 5))
-				self.longitude = str(round(float(lng), 5))
+				self.latitude, self.longitude = latlng[:-10].split(", ")
 				break
 		else:
 			err("{} Unable to read lat/lng", self.fmtIdName)
@@ -2919,8 +2916,8 @@ def createList(pl, peakLists, peakClass, sectionClass, setLandManagement, verbos
 				peakPb = peak.peakbaggerPeak
 				peakLoJ = peak.listsOfJohnPeak
 
-				peak.latitude = peakPb.latitude
-				peak.longitude = peakPb.longitude
+				peak.latitude = str(round(float(peakPb.latitude), 5))
+				peak.longitude = str(round(float(peakPb.longitude), 5))
 				peak.elevations = [peakPb.elevation]
 				peak.prominences = [peakLoJ.prominence]
 
