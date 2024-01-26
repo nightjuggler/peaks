@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 92, 27),
-	('ocap','Other California Peaks', 106, 17),
+	('ocap','Other California Peaks', 108, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -2022,6 +2022,7 @@ def readHTML(pl):
 					('OCAP', '6.4'), # Mount Saint Helena Southeast
 					('OCAP','16.1'), # Peak 2440+
 					('OCAP','17.2'), # Elliott Mountain
+					('OCAP','17.7'), # Pop Top
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
@@ -2040,6 +2041,7 @@ def readHTML(pl):
 					('OCAP','16.1'), # Peak 2440+
 					('OCAP','17.2'), # Elliott Mountain
 					('OCAP','17.3'), # Lizard Rock
+					('OCAP','17.7'), # Pop Top
 					('OSP', '17.4'), # Ruby Mesa
 					('OSP', '27.2'), # Snow Valley Peak East
 					('OSP', '27.3'), # Herlan Peak South
