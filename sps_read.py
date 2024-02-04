@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 92, 27),
-	('ocap','Other California Peaks', 108, 17),
+	('ocap','Other California Peaks', 110, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -420,6 +420,7 @@ landNameLookup = {
 	"Berryessa Snow Mountain National Monument":    'landBLM',
 	"Bishop Peak Natural Reserve":                  'City of San Luis Obispo',
 	"California Tahoe Conservancy":                 'landCNRA',
+	"Cameron Nature Preserve":                      'landMRCA',
 	"Carrizo Plain National Monument":              'landBLM',
 	"Catalina Island Conservancy":                  'landPrivate',
 	"Conejo Canyons Open Space":                    'landCity',

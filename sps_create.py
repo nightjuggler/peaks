@@ -876,6 +876,7 @@ class PeakPb(TablePeak):
 		'16816': ('Mount Tamalpais - Middle Peak',            'Mount Tamalpais Middle Peak'),
 		'1159':  ('Mount Tamalpais - West Peak',              'Mount Tamalpais West Peak'),
 		'68787': ('Peak 1380',                                'Peak 1390'),
+		'71935': ('Peak 1470',                                'Peak 1475+'),
 		'99574': ('Peak 1680',                                'Peak 1680+'),
 		'75602': ('Peak 2625',                                'Peak 2600+'),
 		'54010': ('Pine Ridge HP',                            'Pine Ridge'),
@@ -1058,6 +1059,7 @@ class PeakPb(TablePeak):
 		'16816': (2518, 2520, 2480, 2520), # Mount Tamalpais Middle Peak
 		'1159':  (2576, 2578, 2560, 2600), # Mount Tamalpais West Peak
 		'68787': (1380, 1400, 1390, 1390), # Peak 1390
+		'71935': (1470, 1470, 1475, 1500), # Peak 1475+
 		'75602': (2625, 2625, 2600, 2640), # Peak 2600+
 		'54010': (3028, 3028, 3000, 3040), # Pine Ridge
 		'1155':  (1342, 1344, 1336, 1336), # Point Reyes Hill
@@ -1092,6 +1094,8 @@ class PeakPb(TablePeak):
 		'3321':  (  40,  120,    0,   80), # GBP Duffer Peak
 		'18343': (1333, 1333, 1308, 1358), # LPC El Montañon
 		'13455': ( 716,  716,  711,  721), # LPC Saddleback Butte 3651'-2940', 3651'-2930'
+		'27588': (  82,   82,   44,   69), # OCAP Mesa Peak 1844'-1800', 1844'-1775'
+		'71935': ( 560,  560,  545,  570), # OCAP Peak 1475+ 1470'-925', 1470'-900'
 		'39129': ( 402,  442,  442,  482), # OCAP Ring Mountain 602'-160', 602'-120'
 		'64361': ( 271,  271,  267,  292), # OCAP Slacker Hill 942'-675', 942'-650'
 		'50114': ( 308,  310,  314,  354), # OCAP White Hill 1434'-1120', 1434'-1080'
@@ -1604,6 +1608,7 @@ class PeakLoJ(TablePeak):
 		'66302':   ('East Peak',                    'Mount Tamalpais East Peak'),
 		'66499':   ('Middle Peak',                  'Mount Tamalpais Middle Peak'),
 		'17267':   ('Mount Tamalpais',              'Mount Tamalpais West Peak'),
+		'69235':   ('Peak 1470',                    'Peak 1475+'),
 		'68691':   ('Peak 1690',                    'Peak 1680+'),
 		'66173':   ('Peak 2620',                    'Peak 2600+'),
 		'16722':   ('South Yolla Bolly',            'South Yolla Bolly Mountain'),
@@ -1771,6 +1776,7 @@ class PeakLoJ(TablePeak):
 		'65594': ( 2830,  2837  ), # LPC Saddle Peak
 		'63660': ( 3654,  3651  ), # LPC Saddleback Butte
 		'40725': (11077, 11074  ), # NPC Verdi Peak
+		'69235': ( 1470,  1487  ), # OCAP Peak 1475+
 		'56325': (10615, 10616  ), # OSP Mount Ian Campbell
 		'46804': ( 5735,  1748.0), # OWP Billy Goat Peak: didn't round down
 		'17916': (13449, 13442  ), # OWP Gilbert Peak: used elevation printed on benchmark
@@ -1781,6 +1787,8 @@ class PeakLoJ(TablePeak):
 		'32333': (12894,  3930.0), # SPS Joe Devel Peak: didn't round down
 		'32361': (12697,  3870.0), # SPS Mount Hitchcock: didn't round down
 		'56335': (10138,  3090.0), # OSP Peak 3222m: didn't round down
+		'68193': ( 1762,  1787  ), # OCAP Mesa Peak: saddle is between 1775' and 1800'
+		'69235': (  910,   912  ), # OCAP Peak 1475+: saddle is between 900' and 925'
 		'70792': (  189,   140  ), # OCAP Ring Mountain: saddle is between 120' and 160'
 		'70366': (  663,   662  ), # OCAP Slacker Hill: saddle is between 650' and 675'
 	}
