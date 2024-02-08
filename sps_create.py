@@ -1608,6 +1608,7 @@ class PeakLoJ(TablePeak):
 		'66302':   ('East Peak',                    'Mount Tamalpais East Peak'),
 		'66499':   ('Middle Peak',                  'Mount Tamalpais Middle Peak'),
 		'17267':   ('Mount Tamalpais',              'Mount Tamalpais West Peak'),
+		'68256':   ('Peak 1821',                    'North Ranch Peak'),
 		'69235':   ('Peak 1470',                    'Peak 1475+'),
 		'68691':   ('Peak 1690',                    'Peak 1680+'),
 		'66173':   ('Peak 2620',                    'Peak 2600+'),

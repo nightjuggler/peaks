@@ -313,8 +313,8 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	if (peakFlags.state_CA)
 		addMapLink(listNode, 'California Protected Areas (CPAD)',
-			'http://www.mapcollaborator.org/cpad/?base=topo&y=' + latLong[0] + '&x=' +
-			latLong[1] + '&z=12&layers=mapcollab_cpadng_cpad_ownership&opacs=50');
+			'https://www.mapcollaborator.org/cpad/?base=topo&y=' + latLong[0] + '&x=' +
+			latLong[1] + '&z=12&layers=cpad_ownership&opacs=50');
 
 	addMapLink(listNode, 'CalTopo with Land Management',
 		'https://caltopo.com/map.html#ll=' + latCommaLong + '&z=14&b=t&o=r&n=0.25&a=sma');
@@ -398,7 +398,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 		encodeURIComponent(JSON.stringify(terriaObject(latitude, longitude))));
 
 	addMapLink(listNode, 'USGS TopoView',
-		'https://ngmdb.usgs.gov/maps/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
+		'https://ngmdb.usgs.gov/topoview/viewer/#15/' + latLong[0] + '/' + latLong[1]);
 
 	addMapLink(listNode, 'Water & Climate Center', wccLink(latLong[0], latLong[1]));
 

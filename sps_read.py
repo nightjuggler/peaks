@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 92, 27),
-	('ocap','Other California Peaks', 110, 17),
+	('ocap','Other California Peaks', 111, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -451,6 +451,7 @@ landNameLookup = {
 	"Mount St. Helens National Volcanic Monument":  'Gifford Pinchot National Forest',
 	"Navajo Nation":                                'landRez',
 	"NAWS China Lake":                              'landDOD',
+	"North Ranch Open Space":                       'landCity',
 	"Olompali State Historic Park":                 'landSP',
 	"Organ Pipe Cactus NM":                         'landNPS',
 	"Pearl Peak RNA":                               'Humboldt-Toiyabe National Forest',
