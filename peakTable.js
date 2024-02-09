@@ -379,9 +379,9 @@ function createMapLinkBox(latCommaLong, peakFlags)
 	addMapLink(listNode, 'SkyVector',
 		'https://skyvector.com/?ll=' + latCommaLong + '&chart=301&zoom=1');
 
-	addMapLink(listNode, 'USGS Elevation Point Query',
-		'https://nationalmap.gov/epqs/pqs.php' +
-		'?x=' + latLong[1] + '&y=' + latLong[0] + '&units=Feet&output=json');
+	addMapLink(listNode, 'USGS Elevation Point Query', // https://apps.nationalmap.gov/epqs/
+		'https://epqs.nationalmap.gov/v1/json' +
+		'?x=' + latLong[1] + '&y=' + latLong[0] + '&units=Feet&wkid=4326&includeDate=True');
 
 	addMapLink(listNode, 'USGS National Map (Basic)',
 		'https://viewer.nationalmap.gov/basic/?basemap=b1&zoom=15&bbox=' +
