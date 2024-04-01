@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import math
 
 radiansPerDegree = 0.0174532925199433 # round(math.pi / 180.0, 16)
@@ -201,29 +200,29 @@ class AlbersSphere(object):
 
 		return longitude, latitude / radiansPerDegree
 
-def check(projection, input, expectedOutput, roundDigits=4, inverse=False):
-	inputFields = ('longitude', 'latitude')
-	outputFields = ('x', 'y')
+def printValues(a, b, end=': '):
+	print(f'({a[0]}, {a[1]}) => ({b[0]}, {b[1]})', end=end)
+
+def check(projection, inputValues, expectedOutput, roundDigits=4, inverse=False):
+	inputFields = 'lng', 'lat'
+	outputFields = 'x', 'y'
 
 	if inverse:
 		inputFields, outputFields = outputFields, inputFields
-		output = projection.inverse(*input)
+		output = projection.inverse(*inputValues)
 	else:
-		output = projection.project(*input)
+		output = projection.project(*inputValues)
 
-	print '({}, {}) => ({}, {})'.format(*(inputFields + outputFields))
-
+	printValues(inputFields, outputFields)
 	roundedOutput = [round(o, roundDigits) for o in output]
-	expected = all([o == e for o, e in zip(roundedOutput, expectedOutput)])
+	printValues(inputValues, roundedOutput)
 
-	print '\t({}, {}) => ({}, {})'.format(input[0], input[1], roundedOutput[0], roundedOutput[1]),
-
-	if expected:
-		print u'\u2713'
+	if roundedOutput == list(expectedOutput):
+		print('OK')
 	else:
-		print u'\u2717'
-		print '\tExpected:'
-		print '\t({}, {}) => ({}, {})'.format(input[0], input[1], expectedOutput[0], expectedOutput[1])
+		print('FAIL')
+		print('Expected: ', end='')
+		printValues(inputValues, expectedOutput, end='\n')
 
 	return output
 
@@ -231,8 +230,8 @@ def test1():
 	#
 	# Numerical Example from page 291 of "Map Projections"
 	#
-	lnglat = (-75, 35)
-	xy = (0.2952720, 0.2416774)
+	lnglat = -75, 35
+	xy = 0.2952720, 0.2416774
 
 	projection = AlbersSphere(-96.0, 23.0, 29.5, 45.5, 1)
 	output = check(projection, lnglat, xy, roundDigits=7)
@@ -247,8 +246,8 @@ def test1():
 	#
 	projection = AlbersEllipsoid(-96.0, 23.0, 29.5, 45.5, Clarke_1866_Ellipsoid)
 
-	lnglat = (-75, 35)
-	xy = (1885472.7, 1535925.0)
+	lnglat = -75, 35
+	xy = 1885472.7, 1535925.0
 	xy = check(projection, lnglat, xy, roundDigits=1)
 	check(projection, xy, lnglat, roundDigits=0, inverse=True)
 
@@ -256,11 +255,11 @@ def test1():
 	# The following two tests check inverse projection when the latitude is +90 or -90 degrees
 	# (when abs(q) should be equal to qlat90).
 	#
-	lnglat = (-120.0, 90.0)
+	lnglat = -120.0, 90.0
 	xy = projection.project(*lnglat)
 	check(projection, xy, lnglat, inverse=True)
 
-	lnglat = (-120.0, -90.0)
+	lnglat = -120.0, -90.0
 	xy = projection.project(*lnglat)
 	check(projection, xy, lnglat, inverse=True)
 
@@ -274,8 +273,8 @@ def test2():
 	#
 	projection = CaliforniaAlbers()
 
-	xy = (140545.134, -71493.1984)
-	expectedLngLat = (-118.410863, 37.362647)
+	xy = 140545.134, -71493.1984
+	expectedLngLat = -118.410863, 37.362647
 
 	lnglat = check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
 	check(projection, lnglat, xy)
