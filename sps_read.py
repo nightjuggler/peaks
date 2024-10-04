@@ -1254,7 +1254,7 @@ class SimpleColumn(object):
 		return self(m.group())
 
 class ColumnHPS(SimpleColumn):
-	prefix = '<td><a href="http://www.hundredpeaks.org/guides/'
+	prefix = '<td><a href="https://hundredpeaks.org/guides/'
 	suffix = '.htm">HPS</a></td>\n'
 	pattern = re.compile('^[0-9]{2}[a-z]$')
 
