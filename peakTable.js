@@ -327,7 +327,7 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	if (peakFlags.CC)
 		addMapLink(listNode, 'Closed Contour',
-			'http://www.closedcontour.com/sps/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
+			'http://sps.closedcontour.com/?zoom=7&lat=' + latLong[0] + '&lon=' + latLong[1]);
 
 	addMapLink(listNode, 'GIS Surfer',
 		'https://mappingsupport.com/p2/gissurfer.php?center=' + latCommaLong + '&zoom=14&basemap=USA_basemap');
@@ -584,6 +584,8 @@ function decorateTable()
 	for (const a of document.getElementsByTagName('a'))
 		if (a.hostname === 'caltopo.com' && a.href.substring(a.href.length - 4) === '&b=t')
 			a.href += '&o=r&n=0.2';
+		else if (a.hostname === 'www.petesthousandpeaks.com')
+			a.href = 'https://web.archive.org/web/20221127154952/' + a.href
 
 	const firstRow = peakTableFirstRow();
 
