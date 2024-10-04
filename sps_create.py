@@ -2331,7 +2331,7 @@ class PeakVR(object):
 			self.rank = int(self.rank)
 
 	def __str__(self):
-		return '<td><a href="http://vulgarianramblers.org/peak_detail.php?peak_name={}">{}</a></td>\n'.format(
+		return '<td><a href="https://vulgarianramblers.org/peak_detail.php?peak_name={}">{}</a></td>\n'.format(
 			self.linkName, "VR" if self.rank is None else "#" + str(self.rank))
 
 	@classmethod

@@ -1264,7 +1264,7 @@ class ColumnPY(SimpleColumn):
 	pattern = re.compile('^[a-z]+$')
 
 class ColumnVR(object):
-	spec = '<td><a href="http://vulgarianramblers.org/peak_detail.php?peak_name={}">{}</a></td>\n'
+	spec = '<td><a href="https://vulgarianramblers.org/peak_detail.php?peak_name={}">{}</a></td>\n'
 	pattern = toRegExp(spec, '([-%0-9A-Za-z]+)', '((?:#[1-9][0-9]{0,2})|VR)')
 
 	def __init__(self, name, rank=None):
