@@ -1444,7 +1444,7 @@ class RE(object):
 		'lon=(-[0-9]{1,3}\\.[0-9]{1,6})&lat=([0-9]{1,2}\\.[0-9]{1,6})">WX</a></td>$'
 	)
 	climbedDate = re.compile('^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}')
-	climbedLink = re.compile('^/photos/([0-9A-Za-z]+(?:/best)?/(?:index[0-9][0-9]\\.html)?)">')
+	climbedLink = re.compile('^/photos/((?:[0-9A-Za-z]+/){1,2}(?:index[0-9]{2}\\.html)?)">')
 	climbedWithLink = re.compile('^(https?://[-\\./0-9A-Za-z]+)">')
 	climbedWithName = re.compile('^[A-Z](?:[a-z]+|[A-Z]{1,2})(?: [A-Z][a-z]+)*')
 
