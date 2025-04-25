@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 97, 27),
-	('ocap','Other California Peaks', 111, 17),
+	('ocap','Other California Peaks', 112, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -469,6 +469,7 @@ landNameLookup = {
 	"Steens Mountain CMPA":                         'landBLM',
 	"Tohono O'odham Nation":                        'landRez',
 	"Twin Peaks Natural Area":                      'landCity',
+	"Ventu Park Open Space":                        'landCity',
 	"Wildwood Park":                                'landCity',
 	"Wind Wolves Preserve":                         'landTWC',
 
@@ -2019,55 +2020,54 @@ def readHTML(pl):
 
 			line = htmlFile.next()
 			m = RE.bobBurd.match(line)
-			if m is None:
-				if line != emptyCell or (pl.id, peak.id) not in (
-					('OCAP', '6.4'), # Mount Saint Helena Southeast
-					('OCAP','16.1'), # Peak 2440+
-					('OCAP','17.2'), # Elliott Mountain
-					('OCAP','17.7'), # Pop Top
-					('OSP', '17.4'), # Ruby Mesa
-					('OSP', '27.2'), # Snow Valley Peak East
-					('OSP', '27.3'), # Herlan Peak South
-					('OSP', '27.5'), # Peak 7136
-					('OWP',  '1.1'), # Sourdough Mountain Lookout
-				):
-					badLine()
-			else:
+			if m:
 				peak.bobBurdId = m.group(1)
+			elif line != emptyCell or (pl.id, peak.id) not in (
+				('OCAP', '6.4'), # Mount Saint Helena Southeast
+				('OCAP','16.1'), # Peak 2440+
+				('OCAP','17.2'), # Elliott Mountain
+				('OCAP','17.6'), # Angel Vista
+				('OCAP','17.8'), # Pop Top
+				('OSP', '17.4'), # Ruby Mesa
+				('OSP', '27.2'), # Snow Valley Peak East
+				('OSP', '27.3'), # Herlan Peak South
+				('OSP', '27.5'), # Peak 7136
+				('OWP',  '1.1'), # Sourdough Mountain Lookout
+			):
+				badLine()
 
 			line = htmlFile.next()
 			m = RE.listsOfJohn.match(line)
-			if m is None:
-				if line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
-					('OCAP', '6.4'), # Mount Saint Helena Southeast
-					('OCAP','16.1'), # Peak 2440+
-					('OCAP','17.2'), # Elliott Mountain
-					('OCAP','17.3'), # Lizard Rock
-					('OCAP','17.7'), # Pop Top
-					('OSP', '17.4'), # Ruby Mesa
-					('OSP', '27.2'), # Snow Valley Peak East
-					('OSP', '27.3'), # Herlan Peak South
-					('OSP', '27.5'), # Peak 7136
-					('OWP',  '1.1'), # Sourdough Mountain Lookout
-				):
-					badLine()
-			else:
+			if m:
 				peak.listsOfJohnId = m.group(1)
+			elif line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
+				('OCAP', '6.4'), # Mount Saint Helena Southeast
+				('OCAP','16.1'), # Peak 2440+
+				('OCAP','17.2'), # Elliott Mountain
+				('OCAP','17.3'), # Lizard Rock
+				('OCAP','17.6'), # Angel Vista
+				('OCAP','17.8'), # Pop Top
+				('OSP', '17.4'), # Ruby Mesa
+				('OSP', '27.2'), # Snow Valley Peak East
+				('OSP', '27.3'), # Herlan Peak South
+				('OSP', '27.5'), # Peak 7136
+				('OWP',  '1.1'), # Sourdough Mountain Lookout
+			):
+				badLine()
 
 			line = htmlFile.next()
 			m = RE.peakbagger.match(line)
-			if m is None:
-				if line != emptyCell or (pl.id, peak.id) not in (
-					('OCAP', '3.5'), # Peak 7905
-					('OCAP','16.1'), # Peak 2440+
-					('OSP', '17.4'), # Ruby Mesa
-					('OSP', '19.2'), # Peak 3113m
-					('OSP', '19.5'), # Volcanic Ridge East
-					('OSP', '27.5'), # Peak 7136
-				):
-					badLine()
-			else:
+			if m:
 				peak.peakbaggerId = m.group(1)
+			elif line != emptyCell or (pl.id, peak.id) not in (
+				('OCAP', '3.5'), # Peak 7905
+				('OCAP','16.1'), # Peak 2440+
+				('OSP', '17.4'), # Ruby Mesa
+				('OSP', '19.2'), # Peak 3113m
+				('OSP', '19.5'), # Volcanic Ridge East
+				('OSP', '27.5'), # Peak 7136
+			):
+				badLine()
 
 			if pl.column12 is not None:
 				line = htmlFile.next()
