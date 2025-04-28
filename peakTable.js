@@ -302,6 +302,8 @@ function createMapLinkBox(latCommaLong, peakFlags)
 
 	const listNode = document.createElement('ul');
 
+	addMapLink(listNode, 'Apple Maps', 'https://maps.apple.com/frame?map=hybrid&z=18&center=' + latCommaLong);
+
 	if (peakFlags.BigSur)
 		addMapLink(listNode, 'Big Sur Trailmap',
 			'https://bigsurtrailmap.net/interactivemap.html?mode=trailmap&latlon=' +
