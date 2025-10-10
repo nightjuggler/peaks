@@ -1,4 +1,5 @@
 import math
+import sys
 
 radiansPerDegree = 0.0174532925199433 # round(math.pi / 180, 16)
 
@@ -218,7 +219,7 @@ def check(projection, inputValues, expectedOutput, roundDigits=6, inverse=False)
 
 	return output
 
-def test1():
+def test1(args):
 	#
 	# Numerical Example from page 291 of "Map Projections"
 	#
@@ -254,7 +255,7 @@ def test1():
 	xy = projection.project(*lnglat)
 	check(projection, xy, lnglat, inverse=True)
 
-def test2():
+def test2(args):
 	#
 	# Location of the BLM Field Office in Bishop, CA
 	# from http://www.blm.gov/ca/gis/GeodatabasesZIP/admu_v10.gdb.zip
@@ -296,7 +297,104 @@ def test2():
 		AlbersSphere(*spec, R).setFalseNorthing(falseNorthing),
 	):
 		check(projection, xy, expectedLngLat, inverse=True)
+#
+# https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system#Simplified_formulae
+#
+def utm_values():
+	a = WGS_84_Ellipsoid.a / 1000
+	f = WGS_84_Ellipsoid.f
+	n = f / (2 - f)
+	r = a / (1 + n) * (1 + n**2/4 + n**4/64) # https://en.wikipedia.org/wiki/Earth_radius#Rectifying_radius
+	return n, n**2, n**3, 0.9996*r
+
+def ll2utm(args):
+	lat, lng = args[:2]
+	args[:2] = []
+
+	lat = float(lat)
+	lng = float(lng)
+	assert -80 <= lat <= 84
+	assert -180 < lng < 180
+
+	y0 = 10_000 if lat < 0 else 0
+	zone = 60 - -int(lng-180)//6
+	lng0 = zone*6 - 183
+	lat = lat*radiansPerDegree
+	lng = (lng-lng0)*radiansPerDegree
+
+	sin = math.sin
+	cos = math.cos
+	sinh = math.sinh
+	cosh = math.cosh
+	atanh = math.atanh
+
+	n, nn, nnn, k = utm_values()
+	alpha = n/2 - nn*2/3 + nnn*5/16, nn*13/48 - nnn*3/5, nnn*61/240
+
+	t = 2*math.sqrt(n) / (1 + n)
+	t = sinh(atanh(sin(lat)) - t*atanh(t*sin(lat)))
+	xi = math.atan2(t, cos(lng))
+	eta = atanh(sin(lng) / math.sqrt(1 + t**2))
+
+	northing = y0 + k*(xi + sum(a*sin(2*j*xi)*cosh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+	easting = 500 + k*(eta + sum(a*cos(2*j*xi)*sinh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+
+	spec = ',.3f'
+	print(zone, format(northing*1000, spec), format(easting*1000, spec))
+
+def utm2ll(args):
+	zone, northing, easting = args[:3]
+	args[:3] = []
+
+	y0 = 0
+	if zone.endswith(('S', 's')):
+		y0 = 10_000
+		zone = zone[:-1]
+	elif zone.endswith(('N', 'n')):
+		zone = zone[:-1]
+	zone = int(zone)
+	assert 1 <= zone <= 60
+
+	northing = float(northing.replace(',', '')) / 1000
+	easting = float(easting.replace(',', '')) / 1000
+
+	sin = math.sin
+	cos = math.cos
+	sinh = math.sinh
+	cosh = math.cosh
+
+	n, nn, nnn, k = utm_values()
+	beta = n/2 - nn*2/3 + nnn*37/96, nn/48 + nnn/15, nnn*17/480
+	delta = n*2 - nn*2/3 - nnn*2, nn*7/3 - nnn*8/5, nnn*56/15
+
+	xi0 = (northing - y0) / k
+	eta0 = (easting - 500) / k
+
+	xi = xi0 - sum(b*sin(2*j*xi0)*cosh(2*j*eta0) for j, b in enumerate(beta, start=1))
+	eta = eta0 - sum(b*cos(2*j*xi0)*sinh(2*j*eta0) for j, b in enumerate(beta, start=1))
+
+	chi = math.asin(sin(xi) / cosh(eta))
+	lat = chi + sum(d*sin(2*j*chi) for j, d in enumerate(delta, start=1))
+	lng = math.atan2(sinh(eta), cos(xi))
+
+	lat = round(lat/radiansPerDegree, 6)
+	lng = round(lng/radiansPerDegree + zone*6 - 183, 6)
+
+	print(lat, lng)
+
+def main(args):
+	cmds = {
+		'll2utm': ll2utm,
+		'utm2ll': utm2ll,
+		'test1': test1,
+		'test2': test2,
+	}
+	def err(args):
+		sys.exit(f'Usage: python3 {prog} {"|".join(cmds)} ...')
+
+	prog = args.pop(0)
+	while args:
+		cmds.get(args.pop(0), err)(args)
 
 if __name__ == '__main__':
-	test1()
-	test2()
+	main(sys.argv)
