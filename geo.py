@@ -1,15 +1,11 @@
 import math
 
-radiansPerDegree = 0.0174532925199433 # round(math.pi / 180.0, 16)
+radiansPerDegree = 0.0174532925199433 # round(math.pi / 180, 16)
 
 class Spheroid(object):
 	def __init__(self, equatorialRadius, inverseFlattening):
 		self.a = equatorialRadius
-
-		if inverseFlattening == 0 or inverseFlattening is None:
-			self.f = 0.0
-		else:
-			self.f = 1.0 / inverseFlattening
+		self.f = 1 / inverseFlattening if inverseFlattening else 0
 
 		# a = equatorial radius (aka semi-major axis)
 		# b = polar radius (aka semi-minor axis)
@@ -21,9 +17,9 @@ class Spheroid(object):
 		self.ee = self.f * (2 - self.f)
 		self.e = math.sqrt(self.ee)
 
-Clarke_1866_Ellipsoid = Spheroid(6378206.4, 294.9786982) # See https://en.wikipedia.org/wiki/North_American_Datum
-GRS_1980_Ellipsoid = Spheroid(6378137.0, 298.257222101) # See https://en.wikipedia.org/wiki/GRS_80
-WGS_84_Ellipsoid = Spheroid(6378137.0, 298.257223563) # See https://en.wikipedia.org/wiki/World_Geodetic_System
+Clarke_1866_Ellipsoid = Spheroid(6_378_206.4, 294.9786982) # https://en.wikipedia.org/wiki/North_American_Datum
+GRS_1980_Ellipsoid = Spheroid(6_378_137, 298.257222101) # https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980
+WGS_84_Ellipsoid = Spheroid(6_378_137, 298.257223563) # https://en.wikipedia.org/wiki/World_Geodetic_System
 
 class AlbersEllipsoid(object):
 	#
@@ -47,11 +43,11 @@ class AlbersEllipsoid(object):
 		self.C = m1*m1 + self.n*q1
 		self.p0 = self.spheroid.a * math.sqrt(self.C - self.n*q0) / self.n
 
-		if self.spheroid.f == 0:
+		if not self.spheroid.f:
 			self.p0 *= 2
 
-		self.falseEasting = 0.0
-		self.falseNorthing = 0.0
+		self.falseEasting = 0
+		self.falseNorthing = 0
 
 	def setFalseEasting(self, falseEasting):
 		self.falseEasting = falseEasting
@@ -66,7 +62,7 @@ class AlbersEllipsoid(object):
 		sinlat = math.sin(latitude)
 		coslat = math.cos(latitude)
 
-		if self.spheroid.f == 0:
+		if not self.spheroid.f:
 			return coslat, sinlat
 
 		e = self.spheroid.e
@@ -85,7 +81,7 @@ class AlbersEllipsoid(object):
 		theta = self.n * (longitude - self.originLongitude) * radiansPerDegree
 		p = self.spheroid.a * math.sqrt(self.C - self.n*q) / self.n
 
-		if self.spheroid.f == 0:
+		if not self.spheroid.f:
 			theta /= 2
 			p *= 2
 
@@ -99,7 +95,7 @@ class AlbersEllipsoid(object):
 		e = self.spheroid.e
 		ee = self.spheroid.ee
 		n = self.n
-		if self.spheroid.f == 0:
+		if not self.spheroid.f:
 			n /= 2
 
 		x -= self.falseEasting
@@ -111,9 +107,9 @@ class AlbersEllipsoid(object):
 		q = (self.C - p*p*n*n/(a*a)) / n
 
 		longitude = self.originLongitude + theta / n / radiansPerDegree
-		latitude = math.asin(q / 2.0)
+		latitude = math.asin(q / 2)
 
-		if self.spheroid.f == 0:
+		if not self.spheroid.f:
 			return longitude, latitude / radiansPerDegree
 
 		qlat90 = 1 - (1 - ee)/(2*e) * math.log((1 - e) / (1 + e))
@@ -138,7 +134,7 @@ class AlbersEllipsoid(object):
 		return longitude, latitude / radiansPerDegree
 
 def CaliforniaAlbers():
-	return AlbersEllipsoid(-120.0, 0.0, 34.0, 40.5, GRS_1980_Ellipsoid).setFalseNorthing(-4000000.0)
+	return AlbersEllipsoid(-120, 0, 34, 40.5, GRS_1980_Ellipsoid).setFalseNorthing(-4_000_000)
 
 class AlbersSphere(object):
 	#
@@ -159,12 +155,12 @@ class AlbersSphere(object):
 		s2 = math.sin(lat2 * radiansPerDegree)
 		c1 = math.cos(lat1 * radiansPerDegree)
 
-		self.n = (s1 + s2) / 2.0
+		self.n = (s1 + s2) / 2
 		self.C = c1*c1 + 2*self.n*s1
 		self.p0 = R * math.sqrt(self.C - 2*self.n*s0) / self.n
 
-		self.falseEasting = 0.0
-		self.falseNorthing = 0.0
+		self.falseEasting = 0
+		self.falseNorthing = 0
 
 	def setFalseEasting(self, falseEasting):
 		self.falseEasting = falseEasting
@@ -200,10 +196,10 @@ class AlbersSphere(object):
 
 		return longitude, latitude / radiansPerDegree
 
-def printValues(a, b, end=': '):
-	print(f'({a[0]}, {a[1]}) => ({b[0]}, {b[1]})', end=end)
+def csv(v): return ', '.join(map(str, v))
+def csv2csv(a, b): return f'({csv(a)}) => ({csv(b)})'
 
-def check(projection, inputValues, expectedOutput, roundDigits=4, inverse=False):
+def check(projection, inputValues, expectedOutput, roundDigits=6, inverse=False):
 	inputFields = 'lng', 'lat'
 	outputFields = 'x', 'y'
 
@@ -213,16 +209,12 @@ def check(projection, inputValues, expectedOutput, roundDigits=4, inverse=False)
 	else:
 		output = projection.project(*inputValues)
 
-	printValues(inputFields, outputFields)
 	roundedOutput = [round(o, roundDigits) for o in output]
-	printValues(inputValues, roundedOutput)
-
-	if roundedOutput == list(expectedOutput):
-		print('OK')
-	else:
-		print('FAIL')
-		print('Expected: ', end='')
-		printValues(inputValues, expectedOutput, end='\n')
+	result = ('OK',) if roundedOutput == list(expectedOutput) else (
+		'FAIL\nExpected', csv2csv(inputValues, expectedOutput))
+	print(
+		csv2csv(inputFields, outputFields),
+		csv2csv(inputValues, roundedOutput), *result, sep=': ')
 
 	return output
 
@@ -230,36 +222,35 @@ def test1():
 	#
 	# Numerical Example from page 291 of "Map Projections"
 	#
+	spec = -96, 23, 29.5, 45.5
 	lnglat = -75, 35
-	xy = 0.2952720, 0.2416774
+	expected_xy = 0.2952720, 0.2416774
 
-	projection = AlbersSphere(-96.0, 23.0, 29.5, 45.5, 1)
-	output = check(projection, lnglat, xy, roundDigits=7)
-	check(projection, output, lnglat, roundDigits=0, inverse=True)
-
-	projection = AlbersEllipsoid(-96.0, 23.0, 29.5, 45.5, Spheroid(1, 0))
-	output = check(projection, lnglat, xy, roundDigits=7)
-	check(projection, output, lnglat, roundDigits=0, inverse=True)
+	for projection in (
+		AlbersSphere(*spec, 1),
+		AlbersEllipsoid(*spec, Spheroid(1, 0)),
+	):
+		xy = check(projection, lnglat, expected_xy, roundDigits=7)
+		check(projection, xy, lnglat, inverse=True)
 
 	#
-	# Numerical Example from page 292 of "Map Projections"
+	# Numerical Example from pages 292-294 of "Map Projections"
 	#
-	projection = AlbersEllipsoid(-96.0, 23.0, 29.5, 45.5, Clarke_1866_Ellipsoid)
+	projection = AlbersEllipsoid(*spec, Clarke_1866_Ellipsoid)
+	expected_xy = 1_885_472.7, 1_535_925.0
 
-	lnglat = -75, 35
-	xy = 1885472.7, 1535925.0
-	xy = check(projection, lnglat, xy, roundDigits=1)
-	check(projection, xy, lnglat, roundDigits=0, inverse=True)
+	xy = check(projection, lnglat, expected_xy, roundDigits=1)
+	check(projection, xy, lnglat, inverse=True)
 
 	#
 	# The following two tests check inverse projection when the latitude is +90 or -90 degrees
 	# (when abs(q) should be equal to qlat90).
 	#
-	lnglat = -120.0, 90.0
+	lnglat = -120, 90
 	xy = projection.project(*lnglat)
 	check(projection, xy, lnglat, inverse=True)
 
-	lnglat = -120.0, -90.0
+	lnglat = -120, -90
 	xy = projection.project(*lnglat)
 	check(projection, xy, lnglat, inverse=True)
 
@@ -276,7 +267,7 @@ def test2():
 	xy = 140545.134, -71493.1984
 	expectedLngLat = -118.410863, 37.362647
 
-	lnglat = check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
+	lnglat = check(projection, xy, expectedLngLat, inverse=True)
 	check(projection, lnglat, xy)
 
 	#
@@ -290,15 +281,21 @@ def test2():
 	# Since the original projection used the GRS 1980 ellipsoid, the location resulting
 	# from the inverse projection here is some 12.5 miles away from the correct location:
 	#
-	# https://mappingsupport.com/p/gmap4.php?t=h&z=11&label=on&markers=37.182288,-118.412701%5EIncorrect%20Location||37.362647,-118.410863%5ECorrect%20Location
+	# https://mappingsupport.com/p2/gissurfer.php?basemap=Open_Street_Map&data=label=on||37.182288,-118.412701^Incorrect+Location||37.362647,-118.410863^Correct+Location
 	#
-	R = GRS_1980_Ellipsoid.a # Equatorial Radius of the Earth
-
-	projection = AlbersEllipsoid(-120.0, 0.0, 34.0, 40.5, Spheroid(R, 0)).setFalseNorthing(-4000000.0)
-	check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
-
-	projection = AlbersSphere(-120.0, 0.0, 34.0, 40.5, R).setFalseNorthing(-4000000.0)
-	check(projection, xy, expectedLngLat, roundDigits=6, inverse=True)
+	*spec, R, falseNorthing = (
+		projection.originLongitude,
+		projection.originLatitude,
+		projection.standardParallel1,
+		projection.standardParallel2,
+		projection.spheroid.a,
+		projection.falseNorthing,
+	)
+	for projection in (
+		AlbersEllipsoid(*spec, Spheroid(R, 0)).setFalseNorthing(falseNorthing),
+		AlbersSphere(*spec, R).setFalseNorthing(falseNorthing),
+	):
+		check(projection, xy, expectedLngLat, inverse=True)
 
 if __name__ == '__main__':
 	test1()
