@@ -1,4 +1,5 @@
 import math
+import re
 import sys
 
 radiansPerDegree = 0.0174532925199433 # round(math.pi / 180, 16)
@@ -219,7 +220,7 @@ def check(projection, inputValues, expectedOutput, roundDigits=6, inverse=False)
 
 	return output
 
-def test1(args):
+def test1(args, config):
 	#
 	# Numerical Example from page 291 of "Map Projections"
 	#
@@ -255,7 +256,7 @@ def test1(args):
 	xy = projection.project(*lnglat)
 	check(projection, xy, lnglat, inverse=True)
 
-def test2(args):
+def test2(args, config):
 	#
 	# Location of the BLM Field Office in Bishop, CA
 	# from http://www.blm.gov/ca/gis/GeodatabasesZIP/admu_v10.gdb.zip
@@ -300,27 +301,43 @@ def test2(args):
 #
 # https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system#Simplified_formulae
 #
-def utm_values():
-	a = WGS_84_Ellipsoid.a / 1000
-	f = WGS_84_Ellipsoid.f
+def utm_values(spheroid):
+	a = spheroid.a / 1000
+	f = spheroid.f
 	n = f / (2 - f)
 	r = a / (1 + n) * (1 + n**2/4 + n**4/64) # https://en.wikipedia.org/wiki/Earth_radius#Rectifying_radius
 	return n, n**2, n**3, 0.9996*r
 
-def ll2utm(args):
+def ll2utm(args, config):
+	if len(args) < 2:
+		return 'Please specify the latitude and longitude!'
 	lat, lng = args[:2]
 	args[:2] = []
 
+	pattern = re.compile('-?[0-9]{1,3}(?:\\.[0-9]{1,14})?')
+	if not pattern.fullmatch(lat):
+		return 'Please specify a valid latitude!'
+	if not pattern.fullmatch(lng):
+		return 'Please specify a valid longitude!'
 	lat = float(lat)
 	lng = float(lng)
-	assert -80 <= lat <= 84
-	assert -180 < lng < 180
+	if not (-80 <= lat <= 84):
+		return 'Please specify a latitude between -80 and 84!'
+	if not (-180 <= lng <= 180):
+		return 'Please specify a longitude between -180 and 180!'
 
-	y0 = 10_000 if lat < 0 else 0
-	zone = 60 - -int(lng-180)//6
-	lng0 = zone*6 - 183
-	lat = lat*radiansPerDegree
-	lng = (lng-lng0)*radiansPerDegree
+	falseNorth = 10_000 if lat < 0 else 0
+	falseEast = 500
+
+	if abs(lng) == 180:
+		lng = -180
+		zone = 1
+	else:
+		zone = 60 - -int(lng-180)//6
+
+	lng += 183 - zone*6 # Equivalent to lng = lng-lng0 where lng0 = zone*6 - 183
+	lng *= radiansPerDegree
+	lat *= radiansPerDegree
 
 	sin = math.sin
 	cos = math.cos
@@ -328,7 +345,7 @@ def ll2utm(args):
 	cosh = math.cosh
 	atanh = math.atanh
 
-	n, nn, nnn, k = utm_values()
+	n, nn, nnn, k = utm_values(config.spheroid)
 	alpha = n/2 - nn*2/3 + nnn*5/16, nn*13/48 - nnn*3/5, nnn*61/240
 
 	t = 2*math.sqrt(n) / (1 + n)
@@ -336,39 +353,53 @@ def ll2utm(args):
 	xi = math.atan2(t, cos(lng))
 	eta = atanh(sin(lng) / math.sqrt(1 + t**2))
 
-	northing = y0 + k*(xi + sum(a*sin(2*j*xi)*cosh(2*j*eta) for j, a in enumerate(alpha, start=1)))
-	easting = 500 + k*(eta + sum(a*cos(2*j*xi)*sinh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+	north = k*(xi + sum(a*sin(2*j*xi)*cosh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+	east = k*(eta + sum(a*cos(2*j*xi)*sinh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+	north = (falseNorth + north)*1000
+	east = (falseEast + east)*1000
 
-	spec = ',.3f'
-	print(zone, format(northing*1000, spec), format(easting*1000, spec))
+	print(f'{zone} {north:,.3f} {east:,.3f}')
 
-def utm2ll(args):
-	zone, northing, easting = args[:3]
+def utm2ll(args, config):
+	if len(args) < 3:
+		return 'Please specify the UTM zone, northing, and easting!'
+	zone, north, east = args[:3]
 	args[:3] = []
 
-	y0 = 0
+	if not re.fullmatch('[1-9][0-9]?[NnSs]?', zone):
+		return 'Please specify a valid UTM zone!'
+
+	falseNorth = 0
+	falseEast = 500
 	if zone.endswith(('S', 's')):
-		y0 = 10_000
+		falseNorth = 10_000
 		zone = zone[:-1]
 	elif zone.endswith(('N', 'n')):
 		zone = zone[:-1]
 	zone = int(zone)
-	assert 1 <= zone <= 60
+	if not (1 <= zone <= 60):
+		return 'Please specify a UTM zone between 1 and 60!'
 
-	northing = float(northing.replace(',', '')) / 1000
-	easting = float(easting.replace(',', '')) / 1000
+	pattern = re.compile('(?:0|[1-9][0-9]{0,6}|[1-9][0-9]{0,2}(?:,[0-9]{3}){1,2})(?:\\.[0-9]{1,10})?')
+	if not pattern.fullmatch(north):
+		return 'Please specify a valid northing!'
+	if not pattern.fullmatch(east):
+		return 'Please specify a valid easting!'
+
+	north = float(north.replace(',', '')) / 1000
+	east = float(east.replace(',', '')) / 1000
 
 	sin = math.sin
 	cos = math.cos
 	sinh = math.sinh
 	cosh = math.cosh
 
-	n, nn, nnn, k = utm_values()
+	n, nn, nnn, k = utm_values(config.spheroid)
 	beta = n/2 - nn*2/3 + nnn*37/96, nn/48 + nnn/15, nnn*17/480
 	delta = n*2 - nn*2/3 - nnn*2, nn*7/3 - nnn*8/5, nnn*56/15
 
-	xi0 = (northing - y0) / k
-	eta0 = (easting - 500) / k
+	xi0 = (north - falseNorth) / k
+	eta0 = (east - falseEast) / k
 
 	xi = xi0 - sum(b*sin(2*j*xi0)*cosh(2*j*eta0) for j, b in enumerate(beta, start=1))
 	eta = eta0 - sum(b*cos(2*j*xi0)*sinh(2*j*eta0) for j, b in enumerate(beta, start=1))
@@ -382,19 +413,49 @@ def utm2ll(args):
 
 	print(lat, lng)
 
+class Config(object):
+	def __init__(self, name):
+		self.name = name
+		self.spheroid = WGS_84_Ellipsoid
+
+def set_grs80(args, config):
+	config.spheroid = GRS_1980_Ellipsoid
+
+def set_wgs84(args, config):
+	config.spheroid = WGS_84_Ellipsoid
+
+def help(args, config):
+	t = '  '
+	print(f"""
+Usage:
+{t}python3 {config.name} <command> ...
+
+Commands:
+{t}ll2utm <latitude> <longitude>         Convert latitude and longitude to UTM zone, northing, and easting
+{t}utm2ll <zone> <northing> <easting>    Convert UTM zone, northing, and easting to latitude and longitude
+{t}grs80                                 Use the GRS 80 ellipsoid for conversions/projections
+{t}wgs84                                 Use the WGS 84 ellipsoid for conversions/projections
+""")
+
+def bad_command(args, config):
+	return 'Please specify a valid command!'
+
 def main(args):
-	cmds = {
+	commands = {
+		'help': help,
 		'll2utm': ll2utm,
 		'utm2ll': utm2ll,
+		'grs80': set_grs80,
+		'wgs84': set_wgs84,
 		'test1': test1,
 		'test2': test2,
 	}
-	def err(args):
-		sys.exit(f'Usage: python3 {prog} {"|".join(cmds)} ...')
-
-	prog = args.pop(0)
+	config = Config(args.pop(0))
 	while args:
-		cmds.get(args.pop(0), err)(args)
+		err_msg = commands.get(args.pop(0), bad_command)(args, config)
+		if err_msg:
+			help(args, config)
+			sys.exit(err_msg)
 
 if __name__ == '__main__':
 	main(sys.argv)
