@@ -198,6 +198,89 @@ class AlbersSphere(object):
 
 		return longitude, latitude / radiansPerDegree
 
+class UTM(object):
+	#
+	# https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system#Simplified_formulae
+	#
+	def __init__(self, spheroid):
+		a = spheroid.a / 1000 # meters -> kilometers
+		f = spheroid.f
+		n = f / (2 - f)
+		# https://en.wikipedia.org/wiki/Earth_radius#Rectifying_radius
+		r = a / (1 + n) * (1 + n**2/4 + n**4/64)
+		self.n = n
+		self.k = 0.9996*r
+
+	def project(self, lng, lat):
+		falseNorth = 10_000 if lat < 0 else 0
+		falseEast = 500
+
+		if abs(lng) == 180:
+			lng = -180
+			zone = 1
+		else:
+			zone = 60 - -int(lng-180)//6
+		lng0 = zone*6 - 183
+		if lat < 0:
+			zone = -zone
+
+		lng -= lng0
+		lng *= radiansPerDegree
+		lat *= radiansPerDegree
+
+		sin = math.sin
+		cos = math.cos
+		sinh = math.sinh
+		cosh = math.cosh
+		atanh = math.atanh
+
+		k = self.k
+		n = self.n
+		nn = n*n
+		nnn = nn*n
+
+		alpha = n/2 - nn*2/3 + nnn*5/16, nn*13/48 - nnn*3/5, nnn*61/240
+
+		t = 2*math.sqrt(n) / (1 + n)
+		t = sinh(atanh(sin(lat)) - t*atanh(t*sin(lat)))
+		xi = math.atan2(t, cos(lng))
+		eta = atanh(sin(lng) / math.sqrt(1 + t**2))
+
+		north = k*(xi + sum(a*sin(2*j*xi)*cosh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+		east = k*(eta + sum(a*cos(2*j*xi)*sinh(2*j*eta) for j, a in enumerate(alpha, start=1)))
+
+		return zone, (falseEast + east)*1000, (falseNorth + north)*1000
+
+	def inverse(self, east, north, zone):
+		falseNorth = 0 if zone > 0 else 10_000
+		falseEast = 500
+
+		sin = math.sin
+		cos = math.cos
+		sinh = math.sinh
+		cosh = math.cosh
+
+		k = self.k
+		n = self.n
+		nn = n*n
+		nnn = nn*n
+
+		beta = n/2 - nn*2/3 + nnn*37/96, nn/48 + nnn/15, nnn*17/480
+		delta = n*2 - nn*2/3 - nnn*2, nn*7/3 - nnn*8/5, nnn*56/15
+
+		xi0 = (north/1000 - falseNorth) / k
+		eta0 = (east/1000 - falseEast) / k
+
+		xi = xi0 - sum(b*sin(2*j*xi0)*cosh(2*j*eta0) for j, b in enumerate(beta, start=1))
+		eta = eta0 - sum(b*cos(2*j*xi0)*sinh(2*j*eta0) for j, b in enumerate(beta, start=1))
+
+		chi = math.asin(sin(xi) / cosh(eta))
+		lat = chi + sum(d*sin(2*j*chi) for j, d in enumerate(delta, start=1))
+		lng = math.atan2(sinh(eta), cos(xi))
+		lng0 = abs(zone)*6 - 183
+
+		return lng0 + lng/radiansPerDegree, lat/radiansPerDegree
+
 def csv(v): return ', '.join(map(str, v))
 def csv2csv(a, b): return f'({csv(a)}) => ({csv(b)})'
 
@@ -298,15 +381,6 @@ def test2(args, config):
 		AlbersSphere(*spec, R).setFalseNorthing(falseNorthing),
 	):
 		check(projection, xy, expectedLngLat, inverse=True)
-#
-# https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system#Simplified_formulae
-#
-def utm_values(spheroid):
-	a = spheroid.a / 1000
-	f = spheroid.f
-	n = f / (2 - f)
-	r = a / (1 + n) * (1 + n**2/4 + n**4/64) # https://en.wikipedia.org/wiki/Earth_radius#Rectifying_radius
-	return n, n**2, n**3, 0.9996*r
 
 def ll2utm(args, config):
 	if len(args) < 2:
@@ -326,38 +400,7 @@ def ll2utm(args, config):
 	if not (-180 <= lng <= 180):
 		return 'Please specify a longitude between -180 and 180!'
 
-	falseNorth = 10_000 if lat < 0 else 0
-	falseEast = 500
-
-	if abs(lng) == 180:
-		lng = -180
-		zone = 1
-	else:
-		zone = 60 - -int(lng-180)//6
-
-	lng += 183 - zone*6 # Equivalent to lng = lng-lng0 where lng0 = zone*6 - 183
-	lng *= radiansPerDegree
-	lat *= radiansPerDegree
-
-	sin = math.sin
-	cos = math.cos
-	sinh = math.sinh
-	cosh = math.cosh
-	atanh = math.atanh
-
-	n, nn, nnn, k = utm_values(config.spheroid)
-	alpha = n/2 - nn*2/3 + nnn*5/16, nn*13/48 - nnn*3/5, nnn*61/240
-
-	t = 2*math.sqrt(n) / (1 + n)
-	t = sinh(atanh(sin(lat)) - t*atanh(t*sin(lat)))
-	xi = math.atan2(t, cos(lng))
-	eta = atanh(sin(lng) / math.sqrt(1 + t**2))
-
-	north = k*(xi + sum(a*sin(2*j*xi)*cosh(2*j*eta) for j, a in enumerate(alpha, start=1)))
-	east = k*(eta + sum(a*cos(2*j*xi)*sinh(2*j*eta) for j, a in enumerate(alpha, start=1)))
-	north = (falseNorth + north)*1000
-	east = (falseEast + east)*1000
-
+	zone, east, north = UTM(config.spheroid).project(lng, lat)
 	print(f'{zone} {north:,.3f} {east:,.3f}')
 
 def utm2ll(args, config):
@@ -366,18 +409,10 @@ def utm2ll(args, config):
 	zone, north, east = args[:3]
 	args[:3] = []
 
-	if not re.fullmatch('[1-9][0-9]?[NnSs]?', zone):
+	if not re.fullmatch('-?[1-9][0-9]?', zone):
 		return 'Please specify a valid UTM zone!'
-
-	falseNorth = 0
-	falseEast = 500
-	if zone.endswith(('S', 's')):
-		falseNorth = 10_000
-		zone = zone[:-1]
-	elif zone.endswith(('N', 'n')):
-		zone = zone[:-1]
 	zone = int(zone)
-	if not (1 <= zone <= 60):
+	if not (1 <= abs(zone) <= 60):
 		return 'Please specify a UTM zone between 1 and 60!'
 
 	pattern = re.compile('(?:0|[1-9][0-9]{0,6}|[1-9][0-9]{0,2}(?:,[0-9]{3}){1,2})(?:\\.[0-9]{1,10})?')
@@ -385,33 +420,11 @@ def utm2ll(args, config):
 		return 'Please specify a valid northing!'
 	if not pattern.fullmatch(east):
 		return 'Please specify a valid easting!'
+	north = float(north.replace(',', ''))
+	east = float(east.replace(',', ''))
 
-	north = float(north.replace(',', '')) / 1000
-	east = float(east.replace(',', '')) / 1000
-
-	sin = math.sin
-	cos = math.cos
-	sinh = math.sinh
-	cosh = math.cosh
-
-	n, nn, nnn, k = utm_values(config.spheroid)
-	beta = n/2 - nn*2/3 + nnn*37/96, nn/48 + nnn/15, nnn*17/480
-	delta = n*2 - nn*2/3 - nnn*2, nn*7/3 - nnn*8/5, nnn*56/15
-
-	xi0 = (north - falseNorth) / k
-	eta0 = (east - falseEast) / k
-
-	xi = xi0 - sum(b*sin(2*j*xi0)*cosh(2*j*eta0) for j, b in enumerate(beta, start=1))
-	eta = eta0 - sum(b*cos(2*j*xi0)*sinh(2*j*eta0) for j, b in enumerate(beta, start=1))
-
-	chi = math.asin(sin(xi) / cosh(eta))
-	lat = chi + sum(d*sin(2*j*chi) for j, d in enumerate(delta, start=1))
-	lng = math.atan2(sinh(eta), cos(xi))
-
-	lat = round(lat/radiansPerDegree, 6)
-	lng = round(lng/radiansPerDegree + zone*6 - 183, 6)
-
-	print(lat, lng)
+	lng, lat = UTM(config.spheroid).inverse(east, north, zone)
+	print(round(lat, 6), round(lng, 6))
 
 class Config(object):
 	def __init__(self, name):
@@ -455,7 +468,7 @@ def main(args):
 		err_msg = commands.get(args.pop(0), bad_command)(args, config)
 		if err_msg:
 			help(args, config)
-			sys.exit(err_msg)
+			return err_msg
 
 if __name__ == '__main__':
-	main(sys.argv)
+	sys.exit(main(sys.argv))
