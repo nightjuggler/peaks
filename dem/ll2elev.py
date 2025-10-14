@@ -16,13 +16,13 @@ def get_units(src):
 	units = src.units[0]
 	if units:
 		assert units == 'US survey foot'
-		units, units2, to_units2, wr = 'feet', 'meters', to_meters, 60
+		radius, units, precision, u2, p2, to_u2 = 60, 'feet', 1, 'meters', 2, to_meters
 	else:
-		units, units2, to_units2, wr = 'meters', 'feet', to_feet, 20
+		radius, units, precision, u2, p2, to_u2 = 20, 'meters', 2, 'feet', 1, to_feet
 	def elev_str(elev):
-		return f'{elev:.1f} {units} = {to_units2(elev):.1f} {units2}'
+		return f'{elev:.{precision}f} {units} = {to_u2(elev):.{p2}f} {u2}'
 
-	return units, elev_str, wr
+	return radius, units, elev_str
 
 def process(src, lat, lng):
 	in_lat, lat_digits = lat
@@ -30,8 +30,8 @@ def process(src, lat, lng):
 	lat = in_lat
 	lng = in_lng
 
-	units, elev_str, wr = get_units(src)
-	ww = 2*wr + 1
+	wr, units, elev_str = get_units(src)
+	ww = 2*wr + 1 # wr = window radius, ww = window width
 
 	(x,), (y,) = warp.transform(WGS84, src.crs, [lng], [lat])
 	row, col = src.index(x, y)
