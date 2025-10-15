@@ -249,7 +249,7 @@ class UTM(object):
 		north = k*(xi + sum(a*sin(2*j*xi)*cosh(2*j*eta) for j, a in enumerate(alpha, start=1)))
 		east = k*(eta + sum(a*cos(2*j*xi)*sinh(2*j*eta) for j, a in enumerate(alpha, start=1)))
 
-		return zone, (falseEast + east)*1000, (falseNorth + north)*1000
+		return (falseEast + east)*1000, (falseNorth + north)*1000, zone
 
 	def inverse(self, east, north, zone):
 		falseNorth = 0 if zone > 0 else 10_000
@@ -400,7 +400,7 @@ def ll2utm(args, config):
 	if not (-180 <= lng <= 180):
 		return 'Please specify a longitude between -180 and 180!'
 
-	zone, east, north = UTM(config.spheroid).project(lng, lat)
+	east, north, zone = UTM(config.spheroid).project(lng, lat)
 	print(f'{zone} {north:,.3f} {east:,.3f}')
 
 def utm2ll(args, config):
