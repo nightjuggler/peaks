@@ -216,15 +216,14 @@ class UTM(object):
 		falseEast = 500
 
 		if abs(lng) == 180:
-			lng = -180
 			zone = 1
+			lng = -3 # 180 E/W is 3 degrees west of zone 1's central meridian at 177 W
 		else:
 			zone = 60 - -int(lng-180)//6
-		lng0 = zone*6 - 183
+			lng -= zone*6 - 183
 		if lat < 0:
 			zone = -zone
 
-		lng -= lng0
 		lng *= radiansPerDegree
 		lat *= radiansPerDegree
 
