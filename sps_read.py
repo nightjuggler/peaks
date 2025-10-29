@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 97, 27),
-	('ocap','Other California Peaks', 117, 17),
+	('ocap','Other California Peaks', 118, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
