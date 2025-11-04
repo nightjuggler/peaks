@@ -39,7 +39,7 @@ def process(src, lat, lng):
 #	assert row, col == src.index(x2, y2)
 	w = rasterio.windows.Window(col-wr, row-wr, ww, ww)
 	elevs = src.read(indexes=1, window=w)
-	elev = elevs[wr][wr]
+	elev = elevs[wr, wr]
 
 	print('\nElevation at the converted input latitude/longitude:')
 	print(f'{lng:.6f} {lat:.6f} => {x:.3f} {y:.3f} => {col} {row} => {x2:.3f} {y2:.3f}')
