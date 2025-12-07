@@ -113,8 +113,7 @@ class TableParser(HTMLParser):
 			self.handle_data('&' + name + ';')
 
 	def __init__(self, fileName, numTables=1, startTag="table", startTagAttributes=None):
-		self.convert_charrefs = False
-		self.reset()
+		super().__init__(convert_charrefs=False)
 
 		self.numTables = numTables
 		self.startTag = startTag
@@ -122,15 +121,11 @@ class TableParser(HTMLParser):
 		self.tableDepth = 0
 		self.tables = []
 
-		fileObj = open(fileName)
-
-		while self.numTables > 0:
-			bytes = fileObj.read(1000)
-			if bytes == "":
-				break
-			self.feed(bytes)
-
-		fileObj.close()
+		with open(fileName) as fileObj:
+			while self.numTables > 0:
+				bytes = fileObj.read(1000)
+				if not bytes: break
+				self.feed(bytes)
 
 class TableReader(object):
 	def err(self, message, *args, **kwargs):
