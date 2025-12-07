@@ -846,6 +846,7 @@ class PeakPb(TablePeak):
 		'18343':   ('El Montañon',                       'El Monta&ntilde;on'),
 	# Other Sierra Peaks:
 		'37148':   ('Gambler\'s Special',                'Gamblers Special Peak'),
+		'89489':   ('Herlan Peak - South Peak',          'Herlan Peak South'),
 		'30991':   ('Highland Peak - South Peak',        'Highland Peak South'),
 		'27997':   ('Maggies Peaks - South Summit',      'Maggies Peaks South'),
 		'2548':    ('Mount Lola - North Ridge Peak',     'Mount Lola North'),
@@ -1045,7 +1046,7 @@ class PeakPb(TablePeak):
 		'38609': (12051, 12051, 12077, 12077), # Duck Lake Peak: 3681m
 		'39925': ( 8083,  8123,  8083,  8083), # Grouse Mountain
 		'36666': (11353, 11353, 11447, 11447), # Lost World Peak: 3489m
-		'38937': (12040, 12080, 12000, 12040), # Shepherd Crest East
+		'38937': (12017, 12017, 12000, 12040), # Shepherd Crest East
 		'2660':  (12840, 12840, 12835, 12835), # Mount Starr
 		'83454': (10570, 10570, 10571, 10571), # Peak 3222m
 		'36720': (11680, 11680, 11680, 11745), # Peak 3560m+: 3560m-3580m
@@ -1238,8 +1239,8 @@ class PeakPb(TablePeak):
 	prominencePattern = re.compile(
 		"^(?:<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
 		"\\(Detailed prominence information\\)<br/>)?<a>Clean Prominence</a>\n"
-		": ([,0-9]+) (ft|m)/([,0-9]+) (ft|m)<br/><a>Optimistic Prominence</a>\n"
-		": ([,0-9]+) \\3/([,0-9]+) \\5<br/><a>(?:Line Parent</a>\n"
+		": ([,0-9]+) (ft|m)/([,0-9]+) (ft|m)<br/>(?:<a>Optimistic Prominence</a>\n"
+		": ([,0-9]+) \\3/([,0-9]+) \\5<br/>)?<a>(?:Line Parent</a>\n"
 		": <a href=\"peak\\.aspx\\?pid=([1-9][0-9]*)\">([- 0-9A-Za-z]+)</a>\n<br/><a>)?Key Col</a>\n"
 		": ([A-Z][a-z]+(?:[- /][A-Za-z]+)*(?:, [A-Z]{2})?)?([,0-9]+) \\3/([,0-9]+) \\5$"
 	)
@@ -1262,8 +1263,12 @@ class PeakPb(TablePeak):
 
 		minProm1 = str2IntPb(minProm1, "Clean prominence ({})".format(unit1), self)
 		minProm2 = str2IntPb(minProm2, "Clean prominence ({})".format(unit2), self)
-		maxProm1 = str2IntPb(maxProm1, "Optimistic prominence ({})".format(unit1), self)
-		maxProm2 = str2IntPb(maxProm2, "Optimistic prominence ({})".format(unit2), self)
+		if maxProm1 is None:
+			maxProm1 = minProm1
+			maxProm2 = minProm2
+		else:
+			maxProm1 = str2IntPb(maxProm1, "Optimistic prominence ({})".format(unit1), self)
+			maxProm2 = str2IntPb(maxProm2, "Optimistic prominence ({})".format(unit2), self)
 		maxSaddleElev1 = str2IntPb(maxSaddleElev1, "Max saddle elevation ({})".format(unit1), self)
 		maxSaddleElev2 = str2IntPb(maxSaddleElev2, "Max saddle elevation ({})".format(unit2), self)
 
@@ -1311,8 +1316,8 @@ class PeakPb(TablePeak):
 
 	quadPattern = {
 		'US': re.compile(
-			'^US Geological Survey \\(1:24,000\\)<br/>'
-			'Sheet: ([A-Za-z]+(?: [A-Za-z]+)*) \\(O[34][0-9]1[0-9][0-9][a-h][1-8]\\)<br/>$'
+			'^US Geological Survey \\(1:24,000\\)(?: - Main Source)?<br/>'
+			'Sheet: ([A-Za-z]+(?: [A-Za-z]+)*) \\(O[34][0-9]1[0-9][0-9][a-h][1-8]\\)<br/>'
 		),
 		'MX': re.compile(
 			'^INEGI \\(1:50,000\\)<br/>'
@@ -1580,7 +1585,7 @@ class PeakLoJ(TablePeak):
 		'64842':   ('Verdugo Mountains HP',         'Verdugo Mountain'),
 	# Other Sierra Peaks:
 		'32721':   ('Peak 12076',                   'Duck Lake Peak'),
-		'56253':   ('Peak 10824',                   'Highland Peak South'),
+		'56253':   ('Peak 10820',                   'Highland Peak South'),
 		'56086':   ('Peak 11446',                   'Lost World Peak'),
 		'57026':   ('Maggies Peaks, South',         'Maggies Peaks South'),
 		'32307':   ('Peak 13464',                   'Northwest Lamarck'),
@@ -1592,7 +1597,7 @@ class PeakLoJ(TablePeak):
 		'32393':   ('Peak 13074',                   'Rosco Peak'),
 		'32731':   ('Shepherd Crest, East',         'Shepherd Crest East'),
 		'56257':   ('Silver Peak',                  'Silver Peak Northeast'),
-		'56489':   ('Peak 9980',                    'Sirretta Peak North'),
+		'56489':   ('Peak 9989',                    'Sirretta Peak North'),
 		'56141':   ('Volcanic Ridge, East',         'Volcanic Ridge East'),
 		'56075':   ('Volcanic Ridge, West',         'Volcanic Ridge West'),
 		'56098':   ('White Mountain',               'White Mountain (Sonora Pass)'),
@@ -1805,7 +1810,9 @@ class PeakLoJ(TablePeak):
 				setattr(self, lidar_attr, value)
 				setattr(self, attr, lidar_value)
 
-		assert self.prominence == self.elevation - self.saddleElev
+		if self.prominence != self.elevation - self.saddleElev:
+			out("{} prominence ({}) != elevation ({}) - saddleElev ({})", self.fmtIdName,
+				self.prominence, self.elevation, self.saddleElev)
 
 		if isinstance(self.state, str):
 			self.state = self.state.split(', ')
