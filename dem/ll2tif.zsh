@@ -32,7 +32,7 @@ ll2tif_opr() {
 	print -f 'USGS_OPR_%s_%04d%04d.tif\n' $project $x $y
 }
 #
-# The USGS_1M_10_x[x]y[y]_CA_SantaClaraCounty_2020_A20.tif tiles at
+# The USGS_1M_10_x{x}y{y}_CA_SantaClaraCounty_2020_A20.tif tiles at
 # https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/Elevation/1m/Projects/CA_SantaClaraCounty_2020_A20/
 # use EPSG 26910 (https://epsg.io/26910) (NAD83 / UTM zone 10N)
 #
