@@ -1611,6 +1611,8 @@ class PeakLoJ(TablePeak):
 		'68256':   ('Peak 1821',                    'North Ranch Peak'),
 		'69235':   ('Peak 1470',                    'Peak 1475+'),
 		'68691':   ('Peak 1690',                    'Peak 1680+'),
+		'67908':   ('Peak 1940',                    'Peak 1920+'),
+		'152577':  ('Peak 2540',                    'Peak 2520+'),
 		'66173':   ('Peak 2620',                    'Peak 2600+'),
 		'61438':   ('Peak 4780',                    'Peak 4760+'),
 		'16722':   ('South Yolla Bolly',            'South Yolla Bolly Mountain'),

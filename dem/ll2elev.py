@@ -1,4 +1,4 @@
-#!/usr/local/Cellar/rasterio/1.4.3_2/libexec/bin/python
+#!/usr/local/Cellar/rasterio/1.4.4/libexec/bin/python
 import os.path
 import re
 import sys
