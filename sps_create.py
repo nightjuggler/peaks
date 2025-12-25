@@ -1602,6 +1602,7 @@ class PeakLoJ(TablePeak):
 	# Other California Peaks:
 		'214878':  ('Maguire Peaks, East',          'Maguire Peaks East'),
 		'68664':   ('Maguire Peaks, West',          'Maguire Peaks West'),
+		'69913':   ('Maisies Peak',                 'Maisie\'s Peak'),
 		'68054':   ('North Peak',                   'Montara Mountain'),
 		'171141':  ('Peak 2620',                    'Monument Peak'),
 		'214916':  ('South Peak',                   'Mount Saint Helena South'),
