@@ -6,7 +6,7 @@
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.js"></script>
-<link href="tooltip.css" rel="stylesheet">
+<link href="tooltip.css" rel="stylesheet" id="tooltipcss">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
 <style>
@@ -80,18 +80,22 @@ function validKey(key)
 {
 	return key.length <= 8 && /^[a-z][0-9a-z]*$/.test(key);
 }
-function parseLatLng(q, v)
+function toLngLat(v)
 {
 	const m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
-	if (m === null) return;
+	if (!m) return null;
 
 	const lat = parseFloat(m[1]);
-	if (lat < -90 || lat > 90) return;
+	if (lat < -90 || lat > 90) return null;
 
 	const lng = parseFloat(m[2]);
-	if (lng < -180 || lng > 180) return;
+	if (lng < -180 || lng > 180) return null;
 
-	q.ll = [lng, lat];
+	return [lng, lat];
+}
+function parseLatLng(q, v)
+{
+	if (v = toLngLat(v)) q.ll = v;
 }
 function parseZoom(q, v)
 {
@@ -135,6 +139,61 @@ function parseFeatureLayer(q, v)
 	if (validKey(v) && q.featureLayerLookup.has(v))
 		q.featureLayers.add(v);
 }
+function parseGeodesic(q, v)
+{
+	let bearing = null;
+	let lnglat2 = null;
+
+	// gd=[<lat1>,<lng1>:]<bearing>[:<distance><units>]
+	// gd=[<lat1>,<lng1>:]:<lat2>,<lng2>[:]
+
+	const parts = v.split(':');
+	v = parts.shift();
+	let lnglat = toLngLat(v);
+	if (lnglat) {
+		if (parts.length === 0) return;
+		v = parts.shift();
+	}
+	if (v === '') {
+		if (parts.length === 0) return;
+		v = parts.shift();
+		if (!(lnglat2 = toLngLat(v))) return;
+	}
+	else if (/^[0-9]{1,3}$/.test(v)) {
+		bearing = parseInt(v, 10);
+		if (bearing >= 360) return;
+		if (bearing > 180) bearing -= 360;
+	}
+	else return;
+
+	if (lnglat)
+		q.gdll = lnglat;
+	else
+		if (!(lnglat = q.gdll || q.ll)) return;
+
+	(q.geoLib.features ??= []).push({
+		add: addGeodesic,
+		bearing: bearing,
+		color: q.paintColor,
+		geojson: q.geoLib.geojson,
+		id: 'geodesic' + (++q.geodesicCount),
+		lnglat: lnglat,
+		lnglat2: lnglat2,
+		width: q.paintWidth,
+	});
+}
+function parseGeoLib(q, v)
+{
+	if (validKey(v) && (v = q.geoLibs.get(v)))
+		q.geoLib = v;
+}
+function parsePaint(q, v)
+{
+	if (!/^[0-9A-Fa-f]{6}(?:,[1-9])?$/.test(v)) return;
+	q.paintColor = '#' + v.substring(0, 6);
+	if (v.length > 7)
+		q.paintWidth = parseInt(v.substring(7), 10);
+}
 function parseQueryString(queryString)
 {
 	const q = window.location.search;
@@ -144,8 +203,11 @@ function parseQueryString(queryString)
 	const handlers = {
 		b: parseBaseLayer,
 		f: parseFeatureLayer,
+		gd: parseGeodesic,
+		lib: parseGeoLib,
 		ll: parseLatLng,
 		o: parseOverlay,
+		paint: parsePaint,
 		rx: parsePitch,
 		rz: parseBearing,
 		z: parseZoom,
@@ -340,6 +402,67 @@ function addFeatureLayer(layerId, map)
 		map.getCanvas().style.cursor = '';
 	});
 }
+function geodesic_Turf({bearing, lnglat, lnglat2})
+{
+	if (bearing === null) {
+		bearing = turf.bearing(lnglat, lnglat2);
+	}
+	const options = {units: 'radians'};
+	const point1 = turf.point(lnglat);
+	const point2 = turf.destination(point1, Math.PI/2, bearing, options);
+	const point3 = turf.destination(point1, Math.PI, bearing, options);
+	const point4 = turf.destination(point1, Math.PI + Math.PI/2, bearing, options);
+	return turf.combine(turf.featureCollection([
+		turf.greatCircle(point1, point2),
+		turf.greatCircle(point2, point3),
+		turf.greatCircle(point3, point4),
+		turf.greatCircle(point4, point1),
+	]));
+}
+function geodesic_GeographicLib({bearing, lnglat: [lng, lat], lnglat2})
+{
+	const geo = geodesic.Geodesic;
+	if (bearing === null) {
+		const [lng2, lat2] = lnglat2;
+		bearing = geo.WGS84.Inverse(lat, lng, lat2, lng2, geo.AZIMUTH).azi1;
+	}
+	const flags = geo.LATITUDE | geo.LONGITUDE | geo.LONG_UNROLL;
+	const line = geo.WGS84.Line(lat, lng, bearing, flags);
+	const coords = [[lng, lat]];
+	let arcLen = 1;
+	while (arcLen <= 360) {
+		const pos = line.ArcPosition(arcLen++, flags);
+		coords.push([pos.lon2, pos.lat2]);
+	}
+	if (bearing >= 0) lng += 360; else lng -= 360;
+	coords.push([lng, lat]);
+	return {
+		'type': 'Feature',
+		'geometry': {'type': 'LineString', 'coordinates': coords}
+	};
+}
+function addGeodesic(map, feature)
+{
+	const geojson = feature.geojson(feature);
+	if (!geojson) return;
+	map.addLayer({
+		'id': feature.id,
+		'type': 'line',
+		'source': {'type': 'geojson', 'data': geojson},
+		'layout': {'line-cap': 'round', 'line-join': 'round'},
+		'paint': {'line-color': feature.color, 'line-width': feature.width, 'line-opacity': 0.8},
+	});
+}
+function addGeoLibFeatures(map, geoLib)
+{
+	const nextNode = document.getElementById('tooltipcss');
+	const script = document.createElement('script');
+	script.onload = function() {
+		geoLib.features.forEach(feature => feature.add(map, feature));
+	};
+	nextNode.parentNode.insertBefore(script, nextNode);
+	script.src = geoLib.src;
+}
 function createMap(options)
 {
 	const baseLayers = [
@@ -350,11 +473,16 @@ function createMap(options)
 		['n',  {name: 'Nav Day',           style: 'mapbox://styles/mapbox/navigation-day-v1'    }],
 		['nn', {name: 'Nav Night',         style: 'mapbox://styles/mapbox/navigation-night-v1'  }],
 		['d',  {name: 'Standard',          style: 'mapbox://styles/mapbox/standard'             }],
+		['ds', {name: 'Standard Satellite',style: 'mapbox://styles/mapbox/standard-satellite'   }],
 	];
 	const featureLayers = [
 		['mp200me', {name: 'Montenegro P200m'}],
 		['p5k',     {name: 'World P5K'       }],
 	];
+	const geoLibraries = new Map([
+		['geo', {src: 'geodesic.js', geojson: geodesic_GeographicLib}],
+		['turf', {src: 'https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js', geojson: geodesic_Turf}],
+	]);
 	const peakLists = [
 		['dps', {name: 'Desert Peaks Section'  }],
 		['gbp', {name: 'Great Basin Peaks List'}],
@@ -374,6 +502,11 @@ function createMap(options)
 		bearing: 0,
 		featureLayers: new Set(),
 		featureLayerLookup: new Map(featureLayers),
+		geodesicCount: 0,
+		geoLib: geoLibraries.get('turf'),
+		geoLibs: geoLibraries,
+		paintColor: '#ff00ff',
+		paintWidth: 5,
 		peakLists: new Set(),
 		peakListLookup: new Map(peakLists),
 		pitch: 0,
@@ -563,6 +696,10 @@ function createMap(options)
 			}
 		});
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
+
+		for (const geoLib of geoLibraries.values())
+			if (geoLib.features)
+				addGeoLibFeatures(map, geoLib);
 	});
 }
 window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createMap); });
