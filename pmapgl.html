@@ -143,26 +143,26 @@ function parseGeodesic(q, v)
 {
 	let bearing = null;
 	let lnglat2 = null;
+	let bearingAllow = true;
+	let lnglat2Allow = false;
 
 	// gd=[<lat1>,<lng1>:]<bearing>[:<distance><units>]
-	// gd=[<lat1>,<lng1>:]:<lat2>,<lng2>[:]
+	// gd=[<lat1>,<lng1>]:<lat2>,<lng2>[:]
 
 	const parts = v.split(':');
 	v = parts.shift();
 	let lnglat = toLngLat(v);
-	if (lnglat) {
-		if (parts.length === 0) return;
-		v = parts.shift();
+	if (lnglat || v === '') {
+		lnglat2Allow = true;
+		if (v === '') bearingAllow = false;
+		if (!(v = parts.shift())) return;
 	}
-	if (v === '') {
-		if (parts.length === 0) return;
-		v = parts.shift();
-		if (!(lnglat2 = toLngLat(v))) return;
-	}
-	else if (/^[0-9]{1,3}$/.test(v)) {
-		bearing = parseInt(v, 10);
+	if (bearingAllow && /^[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v)) {
+		bearing = parseFloat(v);
 		if (bearing >= 360) return;
 		if (bearing > 180) bearing -= 360;
+	}
+	else if (lnglat2Allow && (lnglat2 = toLngLat(v))) {
 	}
 	else return;
 
@@ -189,10 +189,14 @@ function parseGeoLib(q, v)
 }
 function parsePaint(q, v)
 {
-	if (!/^[0-9A-Fa-f]{6}(?:,[1-9])?$/.test(v)) return;
-	q.paintColor = '#' + v.substring(0, 6);
-	if (v.length > 7)
-		q.paintWidth = parseInt(v.substring(7), 10);
+	const parts = v.split(',');
+	v = parts.shift();
+	if (/^[0-9A-Fa-f]{6}$/.test(v))
+		q.paintColor = '#' + v;
+	else if (v !== '') return;
+	if (!(v = parts.shift())) return;
+	if (/^[1-9]$/.test(v))
+		q.paintWidth = parseInt(v, 10);
 }
 function parseQueryString(queryString)
 {
@@ -428,14 +432,12 @@ function geodesic_GeographicLib({bearing, lnglat: [lng, lat], lnglat2})
 	}
 	const flags = geo.LATITUDE | geo.LONGITUDE | geo.LONG_UNROLL;
 	const line = geo.WGS84.Line(lat, lng, bearing, flags);
-	const coords = [[lng, lat]];
-	let arcLen = 1;
+	const coords = [];
+	let arcLen = 0;
 	while (arcLen <= 360) {
 		const pos = line.ArcPosition(arcLen++, flags);
 		coords.push([pos.lon2, pos.lat2]);
 	}
-	if (bearing >= 0) lng += 360; else lng -= 360;
-	coords.push([lng, lat]);
 	return {
 		'type': 'Feature',
 		'geometry': {'type': 'LineString', 'coordinates': coords}
