@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.22.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.23.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.23.0/mapbox-gl.js"></script>
 <link href="tooltip.css" rel="stylesheet" id="tooltipcss">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
@@ -131,7 +131,7 @@ function parseOverlay(q, v)
 }
 function parseBaseLayer(q, v)
 {
-	if (validKey(v) && (v = q.baseLayerLookup.get(v)))
+	if (validKey(v) && (v = q.baseLayers.get(v)))
 		q.baseLayer = v;
 }
 function parseFeatureLayer(q, v)
@@ -467,16 +467,16 @@ function addGeoLibFeatures(map, geoLib)
 }
 function createMap(options)
 {
-	const baseLayers = [
-		['o',  {name: 'Outdoors',          style: 'mapbox://styles/mapbox/outdoors-v12'         }],
-		['s',  {name: 'Satellite',         style: 'mapbox://styles/mapbox/satellite-v9'         }],
+	const baseLayers = new Map([
+		['d',  {name: 'Standard',          style: 'mapbox://styles/mapbox/standard'             }],
+		['s',  {name: 'Satellite',         style: 'mapbox://styles/mapbox/standard-satellite'   }],
+		['sat',{name: 'Satellite v9',      style: 'mapbox://styles/mapbox/satellite-v9'         }],
 		['sts',{name: 'Satellite Streets', style: 'mapbox://styles/mapbox/satellite-streets-v12'}],
 		['st', {name: 'Streets',           style: 'mapbox://styles/mapbox/streets-v12'          }],
 		['n',  {name: 'Nav Day',           style: 'mapbox://styles/mapbox/navigation-day-v1'    }],
 		['nn', {name: 'Nav Night',         style: 'mapbox://styles/mapbox/navigation-night-v1'  }],
-		['d',  {name: 'Standard',          style: 'mapbox://styles/mapbox/standard'             }],
-		['ds', {name: 'Standard Satellite',style: 'mapbox://styles/mapbox/standard-satellite'   }],
-	];
+		['o',  {name: 'Outdoors',          style: 'mapbox://styles/mapbox/outdoors-v12'         }],
+	]);
 	const featureLayers = [
 		['mp200me', {name: 'Montenegro P200m'}],
 		['p5k',     {name: 'World P5K'       }],
@@ -499,8 +499,8 @@ function createMap(options)
 		['owp', {name: 'Other Western Peaks'   }],
 	];
 	const queryString = {
-		baseLayer: baseLayers[0][1],
-		baseLayerLookup: new Map(baseLayers),
+		baseLayer: baseLayers.get('d'),
+		baseLayers: baseLayers,
 		bearing: 0,
 		featureLayers: new Set(),
 		featureLayerLookup: new Map(featureLayers),
@@ -531,7 +531,7 @@ function createMap(options)
 	map.addControl(new mapboxgl.ScaleControl({unit: 'imperial'}), 'bottom-left');
 
 	const layerControl = new LayerControl(map, queryString.baseLayer);
-	baseLayers.forEach(([, baseLayer]) => layerControl.addLayer(baseLayer));
+	for (const layer of baseLayers.values()) layerControl.addLayer(layer);
 
 	let mapBounds = [[-124.4, 32.5], [-114.1, 42]]; // California
 	let mapBoundsFromOverlay = false;
