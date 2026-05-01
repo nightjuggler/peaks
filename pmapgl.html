@@ -141,13 +141,15 @@ function parseFeatureLayer(q, v)
 }
 function parseGeodesic(q, v)
 {
-	let bearing = null;
-	let lnglat2 = null;
+	let bearing;
+	let lnglat2;
 	let bearingAllow = true;
 	let lnglat2Allow = false;
+	let distance;
+	let points;
 
-	// gd=[<lat1>,<lng1>:]<bearing>[:<distance><units>]
-	// gd=[<lat1>,<lng1>]:<lat2>,<lng2>[:]
+	// gd=[<lat1>,<lng1>:]<bearing>[:<points>pts][:<distance><units>]
+	// gd=[<lat1>,<lng1>]:<lat2>,<lng2>[:<points>pts][:[<distance><units>]]
 
 	const parts = v.split(':');
 	v = parts.shift();
@@ -159,26 +161,44 @@ function parseGeodesic(q, v)
 	}
 	if (bearingAllow && /^[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v)) {
 		bearing = parseFloat(v);
-		if (bearing >= 360) return;
+		if (bearing > 360) return;
 		if (bearing > 180) bearing -= 360;
 	}
-	else if (lnglat2Allow && (lnglat2 = toLngLat(v))) {
+	else if (!(lnglat2Allow && (lnglat2 = toLngLat(v)))) return;
+
+	while (parts.length) {
+		v = parts.shift();
+		if (!points && /^[1-9][0-9]{0,4}pts$/.test(v)) {
+			points = parseInt(v.substring(0, v.length-1), 10);
+			continue;
+		}
+		if (distance) return;
+		if (v === '') {
+			if (!lnglat2) return;
+			distance = [];
+			continue;
+		}
+		const m = v.match(/^(-?[0-9]{1,8}(?:\.[0-9]{1,8})?)([a-z]{1,3})$/);
+		if (!m || !(distance = q.geoLib.distance(parseFloat(m[1]), m[2]))) return;
 	}
-	else return;
 
 	if (lnglat)
 		q.gdll = lnglat;
 	else
 		if (!(lnglat = q.gdll || q.ll)) return;
 
+	if (distance?.length === 0) q.gdll = lnglat2;
+
 	(q.geoLib.features ??= []).push({
 		add: addGeodesic,
-		bearing: bearing,
+		bearing,
 		color: q.paintColor,
-		geojson: q.geoLib.geojson,
+		distance,
+		geojson: q.geoLib.geodesic,
 		id: 'geodesic' + (++q.geodesicCount),
-		lnglat: lnglat,
-		lnglat2: lnglat2,
+		lnglat,
+		lnglat2,
+		points,
 		width: q.paintWidth,
 	});
 }
@@ -325,7 +345,7 @@ addOverlay(name, markers)
 {
 	const ctrl = this;
 
-	if (ctrl.div.lastChild && ctrl.div.lastChild.firstChild.type === 'radio')
+	if (ctrl.div.lastChild?.firstChild.type === 'radio')
 		ctrl.div.appendChild(document.createElement('hr'));
 
 	const div = document.createElement('div');
@@ -406,47 +426,11 @@ function addFeatureLayer(layerId, map)
 		map.getCanvas().style.cursor = '';
 	});
 }
-function geodesic_Turf({bearing, lnglat, lnglat2})
-{
-	if (bearing === null) {
-		bearing = turf.bearing(lnglat, lnglat2);
-	}
-	const options = {units: 'radians'};
-	const point1 = turf.point(lnglat);
-	const point2 = turf.destination(point1, Math.PI/2, bearing, options);
-	const point3 = turf.destination(point1, Math.PI, bearing, options);
-	const point4 = turf.destination(point1, Math.PI + Math.PI/2, bearing, options);
-	return turf.combine(turf.featureCollection([
-		turf.greatCircle(point1, point2),
-		turf.greatCircle(point2, point3),
-		turf.greatCircle(point3, point4),
-		turf.greatCircle(point4, point1),
-	]));
-}
-function geodesic_GeographicLib({bearing, lnglat: [lng, lat], lnglat2})
-{
-	const geo = geodesic.Geodesic;
-	if (bearing === null) {
-		const [lng2, lat2] = lnglat2;
-		bearing = geo.WGS84.Inverse(lat, lng, lat2, lng2, geo.AZIMUTH).azi1;
-	}
-	const flags = geo.LATITUDE | geo.LONGITUDE | geo.LONG_UNROLL;
-	const line = geo.WGS84.Line(lat, lng, bearing, flags);
-	const coords = [];
-	let arcLen = 0;
-	while (arcLen <= 360) {
-		const pos = line.ArcPosition(arcLen++, flags);
-		coords.push([pos.lon2, pos.lat2]);
-	}
-	return {
-		'type': 'Feature',
-		'geometry': {'type': 'LineString', 'coordinates': coords}
-	};
-}
 function addGeodesic(map, feature)
 {
 	const geojson = feature.geojson(feature);
 	if (!geojson) return;
+
 	map.addLayer({
 		'id': feature.id,
 		'type': 'line',
@@ -465,6 +449,80 @@ function addGeoLibFeatures(map, geoLib)
 	nextNode.parentNode.insertBefore(script, nextNode);
 	script.src = geoLib.src;
 }
+function geoLib_Turf()
+{
+	const distanceMap = new Map([
+		['m',   n => [n, 'meters']],
+		['km',  n => [n, 'kilometers']],
+		['mi',  n => [n, 'miles']],
+		['deg', n => [n, 'degrees']],
+		['rad', n => [n, 'radians']],
+	]);
+	function geodesic({bearing, distance, lnglat, lnglat2, points})
+	{
+		if (lnglat2)
+			bearing = turf.bearing(lnglat, lnglat2);
+
+		const options = {units: 'degrees'};
+		const point1 = turf.point(lnglat);
+		const point2 = turf.destination(point1,  90, bearing, options);
+		const point3 = turf.destination(point1, 180, bearing, options);
+		const point4 = turf.destination(point1, 270, bearing, options);
+		return turf.combine(turf.featureCollection([
+			turf.greatCircle(point1, point2),
+			turf.greatCircle(point2, point3),
+			turf.greatCircle(point3, point4),
+			turf.greatCircle(point4, point1),
+		]));
+	}
+	return {
+		distance(n, units) { return distanceMap.get(units)?.(n); },
+		geodesic,
+		src: 'https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js',
+	};
+}
+function geoLib_GeographicLib()
+{
+	const distanceMap = new Map([
+		['m',   n => [false, n]],
+		['km',  n => [false, n*1000]],
+		['mi',  n => [false, n*1609.344]], // 5280 ft/mi * 12 in/ft * 0.0254 m/in
+		['deg', n => [true,  n]],
+		['rad', n => [true,  n*180/Math.PI]],
+	]);
+	function geodesicLine({bearing, distance, lnglat: [lng, lat], lnglat2, points})
+	{
+		const g = geodesic.Geodesic;
+		if (lnglat2) {
+			const [lng2, lat2] = lnglat2;
+			const r = g.WGS84.Inverse(lat, lng, lat2, lng2);
+			bearing = r.azi1;
+			if (distance?.length === 0)
+				distance = [false, r.s12];
+		}
+		const [arcmode, totalDistance] = distance || [true, 360];
+		const delta = totalDistance / (points ??= 360);
+		distance = 0;
+
+		const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
+		const line = g.WGS84.Line(lat, lng, bearing, flags);
+		const coords = [[lng, lat]];
+		while (points--) {
+			distance += delta;
+			const r = line.GenPosition(arcmode, distance, flags);
+			coords.push([r.lon2, r.lat2]);
+		}
+		return {
+			'type': 'Feature',
+			'geometry': {'type': 'LineString', 'coordinates': coords}
+		};
+	}
+	return {
+		distance(n, units) { return distanceMap.get(units)?.(n); },
+		geodesic: geodesicLine,
+		src: 'geodesic.js',
+	};
+}
 function createMap(options)
 {
 	const baseLayers = new Map([
@@ -482,8 +540,8 @@ function createMap(options)
 		['p5k',     {name: 'World P5K'       }],
 	];
 	const geoLibraries = new Map([
-		['geo', {src: 'geodesic.js', geojson: geodesic_GeographicLib}],
-		['turf', {src: 'https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js', geojson: geodesic_Turf}],
+		['geo',  geoLib_GeographicLib()],
+		['turf', geoLib_Turf()],
 	]);
 	const peakLists = [
 		['dps', {name: 'Desert Peaks Section'  }],
