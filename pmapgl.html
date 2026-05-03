@@ -516,22 +516,32 @@ function geoLib_GeographicLib()
 			const r = line.GenPosition(arcmode, distance, flags);
 			lat = Math.round(r.lat2 * 1e8) / 1e8;
 			lng = Math.round(r.lon2 * 1e8) / 1e8;
+			if (lat > 85 || lat < -85) {
+				prevLng = undefined;
+				continue;
+			}
 			let lngNorm = lng % 360;
 			if (lngNorm > 180)
 				lngNorm -= 360;
 			else if (lngNorm < -180)
 				lngNorm += 360;
+			if (prevLng === undefined) {
+				prevLng = lng;
+				prevLngNorm = lngNorm;
+				lines.push(coords = [[lngNorm, lat]]);
+				continue;
+			}
 			const lngDiff = lng - prevLng;
 			prevLng = lng;
 			lng = prevLngNorm + lngDiff;
 			coords.push([lng, lat]);
-			if (lngDiff > 0) {
-				if (lng >= 180) {
+			if (lng >= 180) {
+				if (lngDiff > 0) {
 					if (lng === 180) lngNorm = -180;
 					lines.push(coords = [[lngNorm, lat]]);
 				}
-			} else if (lngDiff < 0) {
-				if (lng <= -180) {
+			} else if (lng <= -180) {
+				if (lngDiff < 0) {
 					if (lng === -180) lngNorm = 180;
 					lines.push(coords = [[lngNorm, lat]]);
 				}
