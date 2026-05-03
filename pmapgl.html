@@ -175,7 +175,7 @@ function parseGeodesic(q, v)
 		if (distance) return;
 		if (v === '') {
 			if (!lnglat2) return;
-			distance = [];
+			distance = true;
 			continue;
 		}
 		const m = v.match(/^(-?[0-9]{1,8}(?:\.[0-9]{1,8})?)([a-z]{1,3})$/);
@@ -187,7 +187,7 @@ function parseGeodesic(q, v)
 	else
 		if (!(lnglat = q.gdll || q.ll)) return;
 
-	if (distance?.length === 0) q.gdll = lnglat2;
+	if (distance === true) q.gdll = lnglat2;
 
 	(q.geoLib.features ??= []).push({
 		add: addGeodesic,
@@ -497,24 +497,57 @@ function geoLib_GeographicLib()
 			const [lng2, lat2] = lnglat2;
 			const r = g.WGS84.Inverse(lat, lng, lat2, lng2);
 			bearing = r.azi1;
-			if (distance?.length === 0)
+			if (distance === true)
 				distance = [false, r.s12];
 		}
 		const [arcmode, totalDistance] = distance || [true, 360];
-		const delta = totalDistance / (points ??= 360);
+		const step = totalDistance / (points ??= 360);
 		distance = 0;
 
 		const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
 		const line = g.WGS84.Line(lat, lng, bearing, flags);
-		const coords = [[lng, lat]];
+		let coords = [[lng, lat]];
+		const lines = [coords];
+		let prevLng = lng;
+		let prevLngNorm = lng;
+
 		while (points--) {
-			distance += delta;
+			distance += step;
 			const r = line.GenPosition(arcmode, distance, flags);
-			coords.push([r.lon2, r.lat2]);
+			lat = Math.round(r.lat2 * 1e8) / 1e8;
+			lng = Math.round(r.lon2 * 1e8) / 1e8;
+			let lngNorm = lng % 360;
+			if (lngNorm > 180)
+				lngNorm -= 360;
+			else if (lngNorm < -180)
+				lngNorm += 360;
+			const lngDiff = lng - prevLng;
+			prevLng = lng;
+			lng = prevLngNorm + lngDiff;
+			coords.push([lng, lat]);
+			if (lngDiff > 0) {
+				if (lng >= 180) {
+					if (lng === 180) lngNorm = -180;
+					lines.push(coords = [[lngNorm, lat]]);
+				}
+			} else if (lngDiff < 0) {
+				if (lng <= -180) {
+					if (lng === -180) lngNorm = 180;
+					lines.push(coords = [[lngNorm, lat]]);
+				}
+			}
+			prevLngNorm = lngNorm;
 		}
+		if (coords.length === 1) lines.pop();
 		return {
 			'type': 'Feature',
-			'geometry': {'type': 'LineString', 'coordinates': coords}
+			'geometry': lines.length === 1 ? {
+				'type': 'LineString',
+				'coordinates': lines[0],
+			} : {
+				'type': 'MultiLineString',
+				'coordinates': lines,
+			},
 		};
 	}
 	return {
