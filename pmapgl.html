@@ -449,6 +449,73 @@ function addGeoLibFeatures(map, geoLib)
 	nextNode.parentNode.insertBefore(script, nextNode);
 	script.src = geoLib.src;
 }
+function geoLine(firstPoint, nextPoint, bearing, distance, numPoints)
+{
+	const step = distance / (numPoints ??= 360);
+	distance = 0;
+
+	let [lng, lat] = firstPoint;
+	let coords = [firstPoint];
+	const lines = [coords];
+	let prevLng = lng;
+	let prevLngNorm = lng;
+
+	while (numPoints--) {
+		distance += step;
+		[lng, lat] = nextPoint(distance);
+		lat = Math.round(lat * 1e8) / 1e8;
+		lng = Math.round(lng * 1e8) / 1e8;
+		if (lat > 85 || lat < -85) {
+			prevLng = undefined;
+			continue;
+		}
+		if (prevLng !== undefined) {
+			if (bearing >= 0) {
+				while (lng < prevLng) lng += 360;
+			} else {
+				while (lng > prevLng) lng -= 360;
+			}
+		}
+		let lngNorm = lng % 360;
+		if (lngNorm > 180)
+			lngNorm -= 360;
+		else if (lngNorm < -180)
+			lngNorm += 360;
+		if (prevLng === undefined) {
+			prevLng = lng;
+			prevLngNorm = lngNorm;
+			lines.push(coords = [[lngNorm, lat]]);
+			continue;
+		}
+		const lngDiff = lng - prevLng;
+		prevLng = lng;
+		lng = prevLngNorm + lngDiff;
+		coords.push([lng, lat]);
+		if (lng >= 180) {
+			if (lngDiff > 0) {
+				if (lng === 180) lngNorm = -180;
+				lines.push(coords = [[lngNorm, lat]]);
+			}
+		} else if (lng <= -180) {
+			if (lngDiff < 0) {
+				if (lng === -180) lngNorm = 180;
+				lines.push(coords = [[lngNorm, lat]]);
+			}
+		}
+		prevLngNorm = lngNorm;
+	}
+	if (coords.length === 1) lines.pop();
+	return {
+		'type': 'Feature',
+		'geometry': lines.length === 1 ? {
+			'type': 'LineString',
+			'coordinates': lines[0],
+		} : {
+			'type': 'MultiLineString',
+			'coordinates': lines,
+		},
+	};
+}
 function geoLib_Turf()
 {
 	const distanceMap = new Map([
@@ -460,20 +527,19 @@ function geoLib_Turf()
 	]);
 	function geodesic({bearing, distance, lnglat, lnglat2, points})
 	{
-		if (lnglat2)
+		if (lnglat2) {
+			if (distance === true) {
+				const units = 'degrees';
+				distance = [turf.distance(lnglat, lnglat2, {units}), units];
+			}
 			bearing = turf.bearing(lnglat, lnglat2);
-
-		const options = {units: 'degrees'};
-		const point1 = turf.point(lnglat);
-		const point2 = turf.destination(point1,  90, bearing, options);
-		const point3 = turf.destination(point1, 180, bearing, options);
-		const point4 = turf.destination(point1, 270, bearing, options);
-		return turf.combine(turf.featureCollection([
-			turf.greatCircle(point1, point2),
-			turf.greatCircle(point2, point3),
-			turf.greatCircle(point3, point4),
-			turf.greatCircle(point4, point1),
-		]));
+		}
+		const [totalDistance, units] = distance || [360, 'degrees'];
+		const options = {units};
+		function nextPoint(distance) {
+			return turf.destination(lnglat, distance, bearing, options).geometry.coordinates;
+		}
+		return geoLine(lnglat, nextPoint, bearing, totalDistance, points);
 	}
 	return {
 		distance(n, units) { return distanceMap.get(units)?.(n); },
@@ -490,8 +556,9 @@ function geoLib_GeographicLib()
 		['deg', n => [true,  n]],
 		['rad', n => [true,  n*180/Math.PI]],
 	]);
-	function geodesicLine({bearing, distance, lnglat: [lng, lat], lnglat2, points})
+	function geodesicLine({bearing, distance, lnglat, lnglat2, points})
 	{
+		const [lng, lat] = lnglat;
 		const g = geodesic.Geodesic;
 		if (lnglat2) {
 			const [lng2, lat2] = lnglat2;
@@ -501,64 +568,13 @@ function geoLib_GeographicLib()
 				distance = [false, r.s12];
 		}
 		const [arcmode, totalDistance] = distance || [true, 360];
-		const step = totalDistance / (points ??= 360);
-		distance = 0;
-
 		const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
 		const line = g.WGS84.Line(lat, lng, bearing, flags);
-		let coords = [[lng, lat]];
-		const lines = [coords];
-		let prevLng = lng;
-		let prevLngNorm = lng;
-
-		while (points--) {
-			distance += step;
+		function nextPoint(distance) {
 			const r = line.GenPosition(arcmode, distance, flags);
-			lat = Math.round(r.lat2 * 1e8) / 1e8;
-			lng = Math.round(r.lon2 * 1e8) / 1e8;
-			if (lat > 85 || lat < -85) {
-				prevLng = undefined;
-				continue;
-			}
-			let lngNorm = lng % 360;
-			if (lngNorm > 180)
-				lngNorm -= 360;
-			else if (lngNorm < -180)
-				lngNorm += 360;
-			if (prevLng === undefined) {
-				prevLng = lng;
-				prevLngNorm = lngNorm;
-				lines.push(coords = [[lngNorm, lat]]);
-				continue;
-			}
-			const lngDiff = lng - prevLng;
-			prevLng = lng;
-			lng = prevLngNorm + lngDiff;
-			coords.push([lng, lat]);
-			if (lng >= 180) {
-				if (lngDiff > 0) {
-					if (lng === 180) lngNorm = -180;
-					lines.push(coords = [[lngNorm, lat]]);
-				}
-			} else if (lng <= -180) {
-				if (lngDiff < 0) {
-					if (lng === -180) lngNorm = 180;
-					lines.push(coords = [[lngNorm, lat]]);
-				}
-			}
-			prevLngNorm = lngNorm;
+			return [r.lon2, r.lat2];
 		}
-		if (coords.length === 1) lines.pop();
-		return {
-			'type': 'Feature',
-			'geometry': lines.length === 1 ? {
-				'type': 'LineString',
-				'coordinates': lines[0],
-			} : {
-				'type': 'MultiLineString',
-				'coordinates': lines,
-			},
-		};
+		return geoLine(lnglat, nextPoint, bearing, totalDistance, points);
 	}
 	return {
 		distance(n, units) { return distanceMap.get(units)?.(n); },
