@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Peak Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.23.0/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.23.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.23.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.23.1/mapbox-gl.js"></script>
 <link href="tooltip.css" rel="stylesheet" id="tooltipcss">
 <script src="tooltip.js"></script>
 <link href="pmap.css" rel="stylesheet">
@@ -765,14 +765,10 @@ function createMap(options)
 			'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
 		});
 		map.setTerrain({'source': 'mapbox-dem', 'exaggeration': 1.5});
-		map.addLayer({
-			'id': 'sky',
-			'type': 'sky',
-			'paint': {
-				'sky-type': 'atmosphere',
-				'sky-atmosphere-sun': [0.0, 0.0],
-				'sky-atmosphere-sun-intensity': 15
-			}
+		map.setFog({
+			'range': [10, 20],
+			'horizon-blend': 0.05,
+			'star-intensity': 0.85,
 		});
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
 		if (queryString.geodesics) loadGeoLib(map, queryString.geodesics);
