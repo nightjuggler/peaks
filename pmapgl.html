@@ -146,7 +146,7 @@ function parseGeodesic(q, v)
 	let bearingAllow = true;
 	let lnglat2Allow = false;
 	let distance;
-	let points;
+	let numPoints;
 
 	// gd=[<lat1>,<lng1>:]<bearing>[:<points>pts][:<distance><units>]
 	// gd=[<lat1>,<lng1>]:<lat2>,<lng2>[:<points>pts][:[<distance><units>]]
@@ -168,8 +168,8 @@ function parseGeodesic(q, v)
 
 	while (parts.length) {
 		v = parts.shift();
-		if (!points && /^[1-9][0-9]{0,4}pts$/.test(v)) {
-			points = parseInt(v.substring(0, v.length-1), 10);
+		if (!numPoints && /^[1-9][0-9]{0,4}pts$/.test(v)) {
+			numPoints = parseInt(v.substring(0, v.length-1), 10);
 			continue;
 		}
 		if (distance) return;
@@ -189,23 +189,22 @@ function parseGeodesic(q, v)
 
 	if (distance === true) q.gdll = lnglat2;
 
-	(q.geoLib.features ??= []).push({
-		add: addGeodesic,
+	(q.geodesics ??= []).push({
 		bearing,
 		color: q.paintColor,
 		distance,
-		geojson: q.geoLib.geodesic,
-		id: 'geodesic' + (++q.geodesicCount),
+		geoSystem: q.geoSystem ??= q.geoLib.geoSystems.get('0'),
+		id: q.geodesics.length + 1,
 		lnglat,
 		lnglat2,
-		points,
+		numPoints,
 		width: q.paintWidth,
 	});
 }
-function parseGeoLib(q, v)
+function parseGeoSystem(q, v)
 {
-	if (validKey(v) && (v = q.geoLibs.get(v)))
-		q.geoLib = v;
+	if (/^[0-9a-z]{1,5}$/.test(v) && (v = q.geoLib.geoSystems.get(v)))
+		q.geoSystem = v;
 }
 function parsePaint(q, v)
 {
@@ -228,7 +227,7 @@ function parseQueryString(queryString)
 		b: parseBaseLayer,
 		f: parseFeatureLayer,
 		gd: parseGeodesic,
-		lib: parseGeoLib,
+		gs: parseGeoSystem,
 		ll: parseLatLng,
 		o: parseOverlay,
 		paint: parsePaint,
@@ -426,32 +425,33 @@ function addFeatureLayer(layerId, map)
 		map.getCanvas().style.cursor = '';
 	});
 }
-function addGeodesic(map, feature)
+function addGeodesics(map, geodesics)
 {
-	const geojson = feature.geojson(feature);
-	if (!geojson) return;
+	for (const gd of geodesics)
+	{
+		const geojson = geodesicLine(gd);
+		if (!geojson) continue;
 
-	map.addLayer({
-		'id': feature.id,
-		'type': 'line',
-		'source': {'type': 'geojson', 'data': geojson},
-		'layout': {'line-cap': 'round', 'line-join': 'round'},
-		'paint': {'line-color': feature.color, 'line-width': feature.width, 'line-opacity': 0.8},
-	});
+		map.addLayer({
+			'id': 'geodesic' + gd.id,
+			'type': 'line',
+			'source': {'type': 'geojson', 'data': geojson},
+			'layout': {'line-cap': 'round', 'line-join': 'round'},
+			'paint': {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8},
+		});
+	}
 }
-function addGeoLibFeatures(map, geoLib)
+function loadGeoLib(map, geodesics)
 {
 	const nextNode = document.getElementById('tooltipcss');
 	const script = document.createElement('script');
-	script.onload = function() {
-		geoLib.features.forEach(feature => feature.add(map, feature));
-	};
+	script.onload = () => addGeodesics(map, geodesics);
 	nextNode.parentNode.insertBefore(script, nextNode);
-	script.src = geoLib.src;
+	script.src = 'geodesic.js';
 }
-function geoLine(firstPoint, nextPoint, bearing, distance, numPoints)
+function generateGeodesic(firstPoint, nextPoint, distance, numPoints = 360)
 {
-	const step = distance / (numPoints ??= 360);
+	const step = distance / numPoints;
 	distance = 0;
 
 	let [lng, lat] = firstPoint;
@@ -468,13 +468,6 @@ function geoLine(firstPoint, nextPoint, bearing, distance, numPoints)
 		if (lat > 85 || lat < -85) {
 			prevLng = undefined;
 			continue;
-		}
-		if (prevLng !== undefined) {
-			if (bearing >= 0) {
-				while (lng < prevLng) lng += 360;
-			} else {
-				while (lng > prevLng) lng -= 360;
-			}
 		}
 		let lngNorm = lng % 360;
 		if (lngNorm > 180)
@@ -516,39 +509,30 @@ function geoLine(firstPoint, nextPoint, bearing, distance, numPoints)
 		},
 	};
 }
-function geoLib_Turf()
+function geodesicLine(gd)
 {
-	const distanceMap = new Map([
-		['m',   n => [n, 'meters']],
-		['km',  n => [n, 'kilometers']],
-		['mi',  n => [n, 'miles']],
-		['deg', n => [n, 'degrees']],
-		['rad', n => [n, 'radians']],
-	]);
-	function geodesic({bearing, distance, lnglat, lnglat2, points})
-	{
-		if (lnglat2) {
-			if (distance === true) {
-				const units = 'degrees';
-				distance = [turf.distance(lnglat, lnglat2, {units}), units];
-			}
-			bearing = turf.bearing(lnglat, lnglat2);
-		}
-		const [totalDistance, units] = distance || [360, 'degrees'];
-		const options = {units};
-		function nextPoint(distance) {
-			return turf.destination(lnglat, distance, bearing, options).geometry.coordinates;
-		}
-		return geoLine(lnglat, nextPoint, bearing, totalDistance, points);
+	const [lng, lat] = gd.lnglat;
+	const g = geodesic.Geodesic;
+	const gs = gd.geoSystem(g);
+	if (gd.lnglat2) {
+		const [lng2, lat2] = gd.lnglat2;
+		const r = gs.Inverse(lat, lng, lat2, lng2);
+		gd.bearing = r.azi1;
+		if (gd.distance === true)
+			gd.distance = [false, r.s12];
 	}
-	return {
-		distance(n, units) { return distanceMap.get(units)?.(n); },
-		geodesic,
-		src: 'https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js',
-	};
+	const [arcmode, distance] = gd.distance || [true, 360];
+	const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
+	const line = gs.Line(lat, lng, gd.bearing, flags);
+	function nextPoint(distance) {
+		const r = line.GenPosition(arcmode, distance, flags);
+		return [r.lon2, r.lat2];
+	}
+	return generateGeodesic(gd.lnglat, nextPoint, distance, gd.numPoints);
 }
-function geoLib_GeographicLib()
+function geographicLib()
 {
+	let sphere;
 	const distanceMap = new Map([
 		['m',   n => [false, n]],
 		['km',  n => [false, n*1000]],
@@ -556,30 +540,12 @@ function geoLib_GeographicLib()
 		['deg', n => [true,  n]],
 		['rad', n => [true,  n*180/Math.PI]],
 	]);
-	function geodesicLine({bearing, distance, lnglat, lnglat2, points})
-	{
-		const [lng, lat] = lnglat;
-		const g = geodesic.Geodesic;
-		if (lnglat2) {
-			const [lng2, lat2] = lnglat2;
-			const r = g.WGS84.Inverse(lat, lng, lat2, lng2);
-			bearing = r.azi1;
-			if (distance === true)
-				distance = [false, r.s12];
-		}
-		const [arcmode, totalDistance] = distance || [true, 360];
-		const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
-		const line = g.WGS84.Line(lat, lng, bearing, flags);
-		function nextPoint(distance) {
-			const r = line.GenPosition(arcmode, distance, flags);
-			return [r.lon2, r.lat2];
-		}
-		return geoLine(lnglat, nextPoint, bearing, totalDistance, points);
-	}
 	return {
 		distance(n, units) { return distanceMap.get(units)?.(n); },
-		geodesic: geodesicLine,
-		src: 'geodesic.js',
+		geoSystems: new Map([
+			['0', g => (sphere ??= new g.Geodesic(6371008.8, 0))],
+			['84', g => g.WGS84],
+		]),
 	};
 }
 function createMap(options)
@@ -598,10 +564,6 @@ function createMap(options)
 		['mp200me', {name: 'Montenegro P200m'}],
 		['p5k',     {name: 'World P5K'       }],
 	];
-	const geoLibraries = new Map([
-		['geo',  geoLib_GeographicLib()],
-		['turf', geoLib_Turf()],
-	]);
 	const peakLists = [
 		['dps', {name: 'Desert Peaks Section'  }],
 		['gbp', {name: 'Great Basin Peaks List'}],
@@ -621,9 +583,7 @@ function createMap(options)
 		bearing: 0,
 		featureLayers: new Set(),
 		featureLayerLookup: new Map(featureLayers),
-		geodesicCount: 0,
-		geoLib: geoLibraries.get('turf'),
-		geoLibs: geoLibraries,
+		geoLib: geographicLib(),
 		paintColor: '#ff00ff',
 		paintWidth: 5,
 		peakLists: new Set(),
@@ -815,10 +775,7 @@ function createMap(options)
 			}
 		});
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
-
-		for (const geoLib of geoLibraries.values())
-			if (geoLib.features)
-				addGeoLibFeatures(map, geoLib);
+		if (queryString.geodesics) loadGeoLib(map, queryString.geodesics);
 	});
 }
 window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createMap); });
