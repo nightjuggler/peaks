@@ -248,18 +248,18 @@ function parseQueryString(queryString)
 
 	if (typeof q !== 'string' || q.charAt(0) !== '?') return;
 
-	const handlers = {
-		b: parseBaseLayer,
-		f: parseFeatureLayer,
-		gd: parseGeodesic,
-		gs: parseGeoSystem,
-		ll: parseLatLng,
-		o: parseOverlay,
-		paint: parsePaint,
-		rx: parsePitch,
-		rz: parseBearing,
-		z: parseZoom,
-	};
+	const handlers = new Map([
+		['b', parseBaseLayer],
+		['f', parseFeatureLayer],
+		['gd', parseGeodesic],
+		['gs', parseGeoSystem],
+		['ll', parseLatLng],
+		['o', parseOverlay],
+		['paint', parsePaint],
+		['rx', parsePitch],
+		['rz', parseBearing],
+		['z', parseZoom],
+	]);
 
 	for (const s of q.substring(1).split('&'))
 	{
@@ -268,8 +268,8 @@ function parseQueryString(queryString)
 		const k = s.substring(0, i);
 		const v = s.substring(i + 1);
 
-		if (validKey(k) && handlers.hasOwnProperty(k))
-			handlers[k](queryString, v);
+		if (validKey(k) && handlers.has(k))
+			handlers.get(k)(queryString, v);
 	}
 }
 const svgNS = 'http://www.w3.org/2000/svg';
