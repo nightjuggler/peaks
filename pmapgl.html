@@ -139,88 +139,77 @@ function parseFeatureLayer(q, v)
 	if (validKey(v) && q.featureLayerLookup.has(v))
 		q.featureLayers.add(v);
 }
-function parseGdEmpty(g, v)
-{
-	if (v !== '') return false;
-	if (g.lnglat2) {
-		if (g.distance) return null;
-		g.distance = true;
-		return true;
-	}
-	if (g.bearing === undefined && g.lnglat === undefined) {
-		g.lnglat = false;
-		return true;
-	}
-	return null;
-}
 function parseGdBearing(g, v)
 {
+	if (g.bearing !== undefined || g.lnglat2) return false;
 	if (!/^[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v)) return false;
-	if (g.bearing !== undefined || g.lnglat2 || g.lnglat === false) return null;
 	let bearing = parseFloat(v);
-	if (bearing > 360) return null;
+	if (bearing > 360) return false;
 	if (bearing > 180) bearing -= 360;
 	g.bearing = bearing;
 	return true;
 }
-function parseGdLatLng(g, v)
+function parseGdLatLngFrom(g, v)
 {
+	if (g.lnglat) return false;
 	if (!(v = toLngLat(v))) return false;
-	if (g.bearing !== undefined || g.lnglat2) return null;
-	if (g.lnglat === undefined)
-		g.lnglat = v;
-	else
-		g.lnglat2 = v;
+	g.lnglat = v;
+	return true;
+}
+function parseGdLatLngTo(g, v)
+{
+	if (g.bearing !== undefined || g.lnglat2) return false;
+	if (!(v = toLngLat(v))) return false;
+	g.lnglat2 = v;
 	return true;
 }
 function parseGdNumPoints(g, v)
 {
-	if (!/^[1-9][0-9]{0,4}pts$/.test(v)) return false;
-	if (g.numPoints) return null;
+	if (g.numPoints) return false;
+	if (!/^[1-9][0-9]{0,4}$/.test(v)) return false;
 	g.numPoints = parseInt(v, 10);
 	return true;
 }
 function parseGdDistance(g, v, q)
 {
-	const m = v.match(/^(-?[0-9]{1,8}(?:\.[0-9]{1,8})?)([a-z]{1,3})$/);
-	if (!m) return false;
-	if (g.distance) return null;
-	const d = q.geoLib.distance(parseFloat(m[1]), m[2]);
-	if (!d) return null;
-	g.distance = d;
+	if (g.distance) return false;
+	v = v.match(/^(-?[0-9]{1,8}(?:\.[0-9]{1,8})?)([a-z]{1,3})$/);
+	if (!v) return false;
+	v = q.geoLib.distance(parseFloat(v[1]), v[2]);
+	if (!v) return false;
+	g.distance = v;
 	return true;
 }
 function parseGeodesic(q, v)
 {
-	// gd=[<lat1>,<lng1>:]<bearing>[:<points>pts][:<distance><units>]
-	// gd=[<lat1>,<lng1>]:<lat2>,<lng2>[:<points>pts][:[<distance><units>]]
-
 	const g = {
 		color: q.paintColor,
 		width: q.paintWidth,
 	};
-	const handlers = [
-		parseGdEmpty,
-		parseGdBearing,
-		parseGdLatLng,
-		parseGdNumPoints,
-		parseGdDistance,
-	];
+	const handlers = new Map([
+		['bear', parseGdBearing],
+		['for', parseGdDistance],
+		['from', parseGdLatLngFrom],
+		['pts', parseGdNumPoints],
+		['to', parseGdLatLngTo],
+	]);
 	for (v of v.split(':'))
-		for (const fn of handlers)
-		{
-			const result = fn(g, v, q);
-			if (result) break;
-			if (result === null) return;
+	{
+		const i = v.indexOf('=');
+		if (i < 0) {
+			if (!parseGdBearing(g, v)) return;
+			continue;
 		}
-
+		const k = v.substring(0, i);
+		if (!validKey(k) || !handlers.get(k)?.(g, v.substring(i+1), q)) return;
+	}
 	if (g.bearing === undefined && !g.lnglat2) return;
 	if (g.lnglat)
 		q.gdll = g.lnglat;
 	else
 		if (!(g.lnglat = q.gdll || q.ll)) return;
 
-	if (g.distance === true) q.gdll = g.lnglat2;
+	if (g.lnglat2 && !g.distance) q.gdll = g.lnglat2;
 
 	(q.geodesics ??= []).push(g);
 	g.id = q.geodesics.length;
@@ -543,8 +532,7 @@ function geodesicLine(gd)
 		const [lng2, lat2] = gd.lnglat2;
 		const r = gs.Inverse(lat, lng, lat2, lng2);
 		gd.bearing = r.azi1;
-		if (gd.distance === true)
-			gd.distance = [false, r.s12];
+		gd.distance ??= [false, r.s12];
 	}
 	const [arcmode, distance] = gd.distance || [true, 360];
 	const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
