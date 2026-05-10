@@ -196,11 +196,7 @@ function parseGeodesic(q, v)
 	for (v of v.split(':'))
 	{
 		const i = v.indexOf('=');
-		if (i < 0) {
-			if (!parseGdBearing(g, v)) return;
-			continue;
-		}
-		const k = v.substring(0, i);
+		const k = i >= 0 ? v.substring(0, i) : 'bear';
 		if (!validKey(k) || !handlers.get(k)?.(g, v.substring(i+1), q)) return;
 	}
 	if (g.bearing === undefined && !g.lnglat2) return;
