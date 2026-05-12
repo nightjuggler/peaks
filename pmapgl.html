@@ -139,6 +139,13 @@ function parseFeatureLayer(q, v)
 	if (validKey(v) && q.featureLayerLookup.has(v))
 		q.featureLayers.add(v);
 }
+function parseGdAnimation(g, v)
+{
+	if (g.animation) return false;
+	if (!/^[1-9][0-9]{2,4}$/.test(v)) return false;
+	g.animation = parseInt(v, 10);
+	return true;
+}
 function parseGdBearing(g, v)
 {
 	if (g.bearing !== undefined || g.lnglat2) return false;
@@ -187,6 +194,7 @@ function parseGeodesic(q, v)
 		width: q.paintWidth,
 	};
 	const handlers = new Map([
+		['anim', parseGdAnimation],
 		['bear', parseGdBearing],
 		['for', parseGdDistance],
 		['from', parseGdLatLngFrom],
@@ -208,7 +216,7 @@ function parseGeodesic(q, v)
 	if (g.lnglat2 && !g.distance) q.gdll = g.lnglat2;
 
 	(q.geodesics ??= []).push(g);
-	g.id = q.geodesics.length;
+	g.id = 'gd' + q.geodesics.length;
 	g.geoSystem = q.geoSystem ??= q.geoLib.geoSystems.get('0');
 }
 function parseGeoSystem(q, v)
@@ -435,17 +443,95 @@ function addFeatureLayer(layerId, map)
 		map.getCanvas().style.cursor = '';
 	});
 }
+function geoJsonLines(lines)
+{
+	return {
+		'type': 'Feature',
+		'geometry': lines.length === 1 ? {
+			'type': 'LineString',
+			'coordinates': lines[0],
+		} : {
+			'type': 'MultiLineString',
+			'coordinates': lines,
+		},
+	};
+}
+function animateGeodesic(map, gd)
+{
+	let currentLine = 0;
+	const previousLines = [];
+	const progressStops = gd.progress;
+	const gdSrc = gd.id + 'Src';
+	const animId = gd.id + 'Anim';
+	const animSrc = animId + 'Src';
+	const layout = {'line-cap': 'round', 'line-join': 'round'};
+	const paint = {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8};
+
+	function addOrUpdateGdLayer(lines)
+	{
+		lines = geoJsonLines(lines);
+		if (currentLine === 0)
+			map.addSource(gdSrc, {type: 'geojson', data: lines}).
+				addLayer({id: gd.id, type: 'line', source: gdSrc, layout, paint});
+		else
+			map.getSource(gdSrc).setData(lines);
+	}
+
+	const animData = {type: 'LineString', coordinates: gd.lines[0]};
+	map.addSource(animSrc, {type: 'geojson', data: animData, lineMetrics: true}).
+		addLayer({id: animId, type: 'line', source: animSrc, layout, paint});
+
+	const normalize = ([lng, lat]) => {
+		lat = Math.round(lat * 1e8) / 1e8;
+		lng = Math.round(lng * 1e8) / 1e8;
+		lng %= 360;
+		if (lng > 180) lng -= 360; else
+		if (lng < -180) lng += 360;
+		return [lng, lat];
+	};
+	const panOptions = {animate: false}; // or {curve: 1, duration: 10, easing: t => t}
+	const startTime = performance.now();
+
+	function animate(currentTime)
+	{
+		let progress = Math.min((currentTime - startTime) / gd.animation, 1);
+		map.panTo(normalize(gd.nextPoint(progress * gd.distance)), panOptions);
+		if (progress === 1) {
+			addOrUpdateGdLayer(gd.lines);
+			map.removeLayer(animId).removeSource(animSrc);
+			return;
+		}
+		let i = currentLine;
+		while (progress > progressStops[i])
+			previousLines.push(gd.lines[i++]);
+		if (i !== currentLine) {
+			addOrUpdateGdLayer(previousLines);
+			animData.coordinates = gd.lines[i];
+			map.getSource(animSrc).setData(animData);
+			currentLine = i;
+		}
+		const end = progressStops[i];
+		const start = i && progressStops[i-1];
+		progress = (progress - start) / (end - start);
+		map.setPaintProperty(animId, 'line-gradient',
+			['step', ['line-progress'], gd.color, progress, 'transparent']);
+		requestAnimationFrame(animate);
+	}
+	requestAnimationFrame(animate);
+}
 function addGeodesics(map, geodesics)
 {
 	for (const gd of geodesics)
 	{
-		const geojson = geodesicLine(gd);
-		if (!geojson) continue;
-
+		if (!geodesicLine(gd)) continue;
+		if (gd.animation) {
+			animateGeodesic(map, gd);
+			continue;
+		}
 		map.addLayer({
-			'id': 'geodesic' + gd.id,
+			'id': gd.id,
 			'type': 'line',
-			'source': {'type': 'geojson', 'data': geojson},
+			'source': {'type': 'geojson', 'data': geoJsonLines(gd.lines)},
 			'layout': {'line-cap': 'round', 'line-join': 'round'},
 			'paint': {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8},
 		});
@@ -459,17 +545,28 @@ function loadGeoLib(map, geodesics)
 	nextNode.parentNode.insertBefore(script, nextNode);
 	script.src = 'geodesic.js';
 }
-function generateGeodesic(firstPoint, nextPoint, distance, numPoints = 360)
+function generateGeodesic(gd)
 {
-	const step = distance / numPoints;
-	distance = 0;
+	let {
+		distance: totalDistance,
+		lnglat: firstPoint,
+		nextPoint,
+		numPoints = 360,
+	} = gd;
 
 	let [lng, lat] = firstPoint;
 	let coords = [firstPoint];
-	const lines = [coords];
+	const lines = gd.lines = [coords];
+	const progress = gd.progress = [];
 	let prevLng = lng;
 	let prevLngNorm = lng;
+	const step = totalDistance / numPoints;
+	let distance = 0;
 
+	const newLine = firstPoint => {
+		lines.push(coords = [firstPoint]);
+		progress.push(Math.round(distance / totalDistance * 1e8) / 1e8);
+	};
 	while (numPoints--) {
 		distance += step;
 		[lng, lat] = nextPoint(distance);
@@ -487,7 +584,7 @@ function generateGeodesic(firstPoint, nextPoint, distance, numPoints = 360)
 		if (prevLng === undefined) {
 			prevLng = lng;
 			prevLngNorm = lngNorm;
-			lines.push(coords = [[lngNorm, lat]]);
+			newLine([lngNorm, lat]);
 			continue;
 		}
 		const lngDiff = lng - prevLng;
@@ -497,27 +594,22 @@ function generateGeodesic(firstPoint, nextPoint, distance, numPoints = 360)
 		if (lng >= 180) {
 			if (lngDiff > 0) {
 				if (lng === 180) lngNorm = -180;
-				lines.push(coords = [[lngNorm, lat]]);
+				newLine([lngNorm, lat]);
 			}
 		} else if (lng <= -180) {
 			if (lngDiff < 0) {
 				if (lng === -180) lngNorm = 180;
-				lines.push(coords = [[lngNorm, lat]]);
+				newLine([lngNorm, lat]);
 			}
 		}
 		prevLngNorm = lngNorm;
 	}
-	if (coords.length === 1) lines.pop();
-	return {
-		'type': 'Feature',
-		'geometry': lines.length === 1 ? {
-			'type': 'LineString',
-			'coordinates': lines[0],
-		} : {
-			'type': 'MultiLineString',
-			'coordinates': lines,
-		},
-	};
+	if (coords.length === 1) {
+		lines.pop();
+		progress.pop();
+	}
+	progress.push(1);
+	return gd;
 }
 function geodesicLine(gd)
 {
@@ -531,13 +623,14 @@ function geodesicLine(gd)
 		gd.distance ??= [false, r.s12];
 	}
 	const [arcmode, distance] = gd.distance || [true, 360];
+	gd.distance = distance;
 	const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
 	const line = gs.Line(lat, lng, gd.bearing, flags);
-	function nextPoint(distance) {
+	gd.nextPoint = distance => {
 		const r = line.GenPosition(arcmode, distance, flags);
 		return [r.lon2, r.lat2];
-	}
-	return generateGeodesic(gd.lnglat, nextPoint, distance, gd.numPoints);
+	};
+	return generateGeodesic(gd);
 }
 function geographicLib()
 {
