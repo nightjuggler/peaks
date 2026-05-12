@@ -443,39 +443,34 @@ function addFeatureLayer(layerId, map)
 		map.getCanvas().style.cursor = '';
 	});
 }
-function geoJsonLines(lines)
+function geoJsonLines(lines, collection = false)
 {
-	return {
-		'type': 'Feature',
-		'geometry': lines.length === 1 ? {
-			'type': 'LineString',
-			'coordinates': lines[0],
-		} : {
-			'type': 'MultiLineString',
-			'coordinates': lines,
-		},
+	return collection ? {
+		type: 'FeatureCollection',
+		features: lines.map((line, index) => ({
+			type: 'Feature',
+			properties: {index},
+			geometry: {type: 'LineString', coordinates: line},
+		})),
+	} : {
+		type: 'Feature',
+		geometry: lines.length === 1 ?
+			{type: 'LineString', coordinates: lines[0]} :
+			{type: 'MultiLineString', coordinates: lines},
 	};
 }
 function animateGeodesic(map, gd)
 {
 	let currentLine = 0;
-	const previousLines = [];
 	const progressStops = gd.progress;
-	const gdSrc = gd.id + 'Src';
 	const animId = gd.id + 'Anim';
 	const animSrc = animId + 'Src';
 	const layout = {'line-cap': 'round', 'line-join': 'round'};
-	const paint = {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8};
+	const paint = {'line-color': 'transparent', 'line-width': gd.width, 'line-opacity': 0.8};
 
-	function addOrUpdateGdLayer(lines)
-	{
-		lines = geoJsonLines(lines);
-		if (currentLine === 0)
-			map.addSource(gdSrc, {type: 'geojson', data: lines}).
-				addLayer({id: gd.id, type: 'line', source: gdSrc, layout, paint});
-		else
-			map.getSource(gdSrc).setData(lines);
-	}
+	map.addLayer({id: gd.id, type: 'line',
+		source: {type: 'geojson', data: geoJsonLines(gd.lines, true)},
+		layout, paint});
 
 	const animData = {type: 'LineString', coordinates: gd.lines[0]};
 	map.addSource(animSrc, {type: 'geojson', data: animData, lineMetrics: true}).
@@ -483,9 +478,8 @@ function animateGeodesic(map, gd)
 
 	const normalize = ([lng, lat]) => {
 		lat = Math.round(lat * 1e8) / 1e8;
-		lng = Math.round(lng * 1e8) / 1e8;
-		lng %= 360;
-		if (lng > 180) lng -= 360; else
+		lng = Math.round(lng * 1e8) / 1e8 % 360;
+		if (lng >  180) lng -= 360; else
 		if (lng < -180) lng += 360;
 		return [lng, lat];
 	};
@@ -497,15 +491,15 @@ function animateGeodesic(map, gd)
 		let progress = Math.min((currentTime - startTime) / gd.animation, 1);
 		map.panTo(normalize(gd.nextPoint(progress * gd.distance)), panOptions);
 		if (progress === 1) {
-			addOrUpdateGdLayer(gd.lines);
+			map.setPaintProperty(gd.id, 'line-color', gd.color);
 			map.removeLayer(animId).removeSource(animSrc);
 			return;
 		}
 		let i = currentLine;
-		while (progress > progressStops[i])
-			previousLines.push(gd.lines[i++]);
+		while (progress > progressStops[i]) ++i;
 		if (i !== currentLine) {
-			addOrUpdateGdLayer(previousLines);
+			map.setPaintProperty(gd.id, 'line-color',
+				['step', ['get', 'index'], gd.color, i, 'transparent']);
 			animData.coordinates = gd.lines[i];
 			map.getSource(animSrc).setData(animData);
 			currentLine = i;
