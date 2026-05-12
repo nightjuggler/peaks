@@ -466,40 +466,40 @@ function animateGeodesic(map, gd)
 	const animId = gd.id + 'Anim';
 	const animSrc = animId + 'Src';
 	const layout = {'line-cap': 'round', 'line-join': 'round'};
-	const paint = {'line-color': 'transparent', 'line-width': gd.width, 'line-opacity': 0.8};
+	const paint = {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8};
 
 	map.addLayer({id: gd.id, type: 'line',
 		source: {type: 'geojson', data: geoJsonLines(gd.lines, true)},
-		layout, paint});
+		filter: false, layout, paint});
 
 	const animData = {type: 'LineString', coordinates: gd.lines[0]};
+	paint['line-color'] = 'transparent';
 	map.addSource(animSrc, {type: 'geojson', data: animData, lineMetrics: true}).
 		addLayer({id: animId, type: 'line', source: animSrc, layout, paint});
 
-	const normalize = ([lng, lat]) => {
+	const normalize = (lat, lng) => {
 		lat = Math.round(lat * 1e8) / 1e8;
 		lng = Math.round(lng * 1e8) / 1e8 % 360;
 		if (lng >  180) lng -= 360; else
 		if (lng < -180) lng += 360;
 		return [lng, lat];
 	};
-	const panOptions = {animate: false}; // or {curve: 1, duration: 10, easing: t => t}
 	const startTime = performance.now();
 
 	function animate(currentTime)
 	{
 		let progress = Math.min((currentTime - startTime) / gd.animation, 1);
-		map.panTo(normalize(gd.nextPoint(progress * gd.distance)), panOptions);
+		const r = gd.nextPoint(progress * gd.distance);
+		map.easeTo({center: normalize(r.lat2, r.lon2), animate: false, bearing: r.azi2 - 90});
 		if (progress === 1) {
-			map.setPaintProperty(gd.id, 'line-color', gd.color);
+			map.setFilter(gd.id, null);
 			map.removeLayer(animId).removeSource(animSrc);
 			return;
 		}
 		let i = currentLine;
 		while (progress > progressStops[i]) ++i;
 		if (i !== currentLine) {
-			map.setPaintProperty(gd.id, 'line-color',
-				['step', ['get', 'index'], gd.color, i, 'transparent']);
+			map.setFilter(gd.id, ['<', ['get', 'index'], i]);
 			animData.coordinates = gd.lines[i];
 			map.getSource(animSrc).setData(animData);
 			currentLine = i;
@@ -562,10 +562,9 @@ function generateGeodesic(gd)
 		progress.push(Math.round(distance / totalDistance * 1e8) / 1e8);
 	};
 	while (numPoints--) {
-		distance += step;
-		[lng, lat] = nextPoint(distance);
-		lat = Math.round(lat * 1e8) / 1e8;
-		lng = Math.round(lng * 1e8) / 1e8;
+		const r = nextPoint(distance += step);
+		lat = Math.round(r.lat2 * 1e8) / 1e8;
+		lng = Math.round(r.lon2 * 1e8) / 1e8;
 		if (lat > 85 || lat < -85) {
 			prevLng = undefined;
 			continue;
@@ -618,12 +617,9 @@ function geodesicLine(gd)
 	}
 	const [arcmode, distance] = gd.distance || [true, 360];
 	gd.distance = distance;
-	const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | g.LONG_UNROLL;
+	const flags = g.LATITUDE | g.LONGITUDE | g.AZIMUTH | g.DISTANCE_IN | g.LONG_UNROLL;
 	const line = gs.Line(lat, lng, gd.bearing, flags);
-	gd.nextPoint = distance => {
-		const r = line.GenPosition(arcmode, distance, flags);
-		return [r.lon2, r.lat2];
-	};
+	gd.nextPoint = distance => line.GenPosition(arcmode, distance, flags);
 	return generateGeodesic(gd);
 }
 function geographicLib()
