@@ -517,12 +517,10 @@ function addGeodesics(map, geodesics)
 {
 	for (const gd of geodesics)
 	{
-		if (!geodesicLine(gd)) continue;
-		if (gd.animation) {
+		if (!gd.lines && !geodesicLine(gd)) continue;
+		if (gd.animation)
 			animateGeodesic(map, gd);
-			continue;
-		}
-		map.addLayer({
+		else map.addLayer({
 			'id': gd.id,
 			'type': 'line',
 			'source': {'type': 'geojson', 'data': geoJsonLines(gd.lines)},
