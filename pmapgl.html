@@ -141,9 +141,9 @@ function parseFeatureLayer(q, v)
 }
 function parseGdAnimation(g, v)
 {
-	if (g.animation) return false;
+	if (g.animationDuration) return false;
 	if (!/^[1-9][0-9]{2,4}$/.test(v)) return false;
-	g.animation = parseInt(v, 10);
+	g.animationDuration = parseInt(v, 10);
 	return true;
 }
 function parseGdBearing(g, v)
@@ -333,6 +333,7 @@ constructor(map, currentLayer)
 	this.map = map;
 	this.div = div;
 	this.currentLayer = currentLayer;
+	this.state = 0;
 }
 addLayer(layer)
 {
@@ -349,6 +350,7 @@ addLayer(layer)
 		ctrl.currentLayer = layer;
 		input.checked = true;
 		ctrl.map.setStyle(layer.style, {diff: false});
+		ctrl.state += 1;
 	}
 
 	const div = document.createElement('div');
@@ -443,7 +445,7 @@ function addFeatureLayer(layerId, map)
 		map.getCanvas().style.cursor = '';
 	});
 }
-function geoJsonLines(lines, collection = false)
+function geodesicJson({lines, animationDuration: collection})
 {
 	return collection ? {
 		type: 'FeatureCollection',
@@ -459,23 +461,27 @@ function geoJsonLines(lines, collection = false)
 			{type: 'MultiLineString', coordinates: lines},
 	};
 }
-function animateGeodesic(map, gd)
+function geodesicLayer(gd, animationParams)
 {
-	let currentLine = 0;
-	const progressStops = gd.progress;
-	const animId = gd.id + 'Anim';
-	const animSrc = animId + 'Src';
-	const layout = {'line-cap': 'round', 'line-join': 'round'};
-	const paint = {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8};
+	const [id, source, color] = animationParams ||
+		[gd.id, {type: 'geojson', data: geodesicJson(gd)}, gd.color];
 
-	map.addLayer({id: gd.id, type: 'line',
-		source: {type: 'geojson', data: geoJsonLines(gd.lines, true)},
-		filter: false, layout, paint});
+	return {id, type: 'line', source,
+		layout: {'line-cap': 'round', 'line-join': 'round'},
+		paint: {'line-color': color, 'line-width': gd.width, 'line-opacity': 0.8}};
+}
+function animateGeodesic(map, gd, layerControl)
+{
+	const layer = geodesicLayer(gd);
+	layer.filter = false;
+	map.addLayer(layer);
 
+	const animLayer = layer.id + 'Anim';
+	const animSource = animLayer + 'Src';
 	const animData = {type: 'LineString', coordinates: gd.lines[0]};
-	paint['line-color'] = 'transparent';
-	map.addSource(animSrc, {type: 'geojson', data: animData, lineMetrics: true}).
-		addLayer({id: animId, type: 'line', source: animSrc, layout, paint});
+
+	map.addSource(animSource, {type: 'geojson', data: animData, lineMetrics: true}).
+		addLayer(geodesicLayer(gd, [animLayer, animSource, 'transparent']));
 
 	const normalize = (lat, lng) => {
 		lat = Math.round(lat * 1e8) / 1e8;
@@ -484,58 +490,61 @@ function animateGeodesic(map, gd)
 		if (lng < -180) lng += 360;
 		return [lng, lat];
 	};
+	const state = layerControl.state;
+	const duration = gd.animationDuration;
+	const progressStops = gd.progress;
 	const startTime = performance.now();
+	let currentLine = 0;
 
 	function animate(currentTime)
 	{
-		let progress = Math.min((currentTime - startTime) / gd.animation, 1);
+		if (state !== layerControl.state) return;
+		let progress = Math.min((currentTime - startTime) / duration, 1);
 		const r = gd.nextPoint(progress * gd.distance);
 		map.easeTo({center: normalize(r.lat2, r.lon2), animate: false, bearing: r.azi2 - 90});
 		if (progress === 1) {
-			map.setFilter(gd.id, null);
-			map.removeLayer(animId).removeSource(animSrc);
+			map.setFilter(layer.id, null);
+			map.removeLayer(animLayer).removeSource(animSource);
 			return;
 		}
 		let i = currentLine;
 		while (progress > progressStops[i]) ++i;
 		if (i !== currentLine) {
-			map.setFilter(gd.id, ['<', ['get', 'index'], i]);
+			map.setFilter(layer.id, ['<', ['get', 'index'], i]);
 			animData.coordinates = gd.lines[i];
-			map.getSource(animSrc).setData(animData);
+			map.getSource(animSource).setData(animData);
 			currentLine = i;
 		}
 		const end = progressStops[i];
 		const start = i && progressStops[i-1];
 		progress = (progress - start) / (end - start);
-		map.setPaintProperty(animId, 'line-gradient',
+		map.setPaintProperty(animLayer, 'line-gradient',
 			['step', ['line-progress'], gd.color, progress, 'transparent']);
 		requestAnimationFrame(animate);
 	}
 	requestAnimationFrame(animate);
 }
-function addGeodesics(map, geodesics)
+function addGeodesics(map, geodesics, layerControl)
 {
 	for (const gd of geodesics)
 	{
-		if (!gd.lines && !geodesicLine(gd)) continue;
-		if (gd.animation)
-			animateGeodesic(map, gd);
-		else map.addLayer({
-			'id': gd.id,
-			'type': 'line',
-			'source': {'type': 'geojson', 'data': geoJsonLines(gd.lines)},
-			'layout': {'line-cap': 'round', 'line-join': 'round'},
-			'paint': {'line-color': gd.color, 'line-width': gd.width, 'line-opacity': 0.8},
-		});
+		if (!geodesicLine(gd)) continue;
+		if (gd.animationDuration)
+			animateGeodesic(map, gd, layerControl);
+		else
+			map.addLayer(geodesicLayer(gd));
 	}
 }
-function loadGeoLib(map, geodesics)
+function loadScript(id, src, callback)
 {
+	if (document.getElementById(id)) { callback(); return; }
 	const nextNode = document.getElementById('tooltipcss');
+	if (!nextNode) return;
 	const script = document.createElement('script');
-	script.onload = () => addGeodesics(map, geodesics);
+	script.id = id;
+	script.onload = callback;
+	script.src = src;
 	nextNode.parentNode.insertBefore(script, nextNode);
-	script.src = 'geodesic.js';
 }
 function generateGeodesic(gd)
 {
@@ -604,6 +613,7 @@ function generateGeodesic(gd)
 }
 function geodesicLine(gd)
 {
+	if (gd.lines) return gd;
 	const [lng, lat] = gd.lnglat;
 	const g = geodesic.Geodesic;
 	const gs = gd.geoSystem(g);
@@ -862,7 +872,8 @@ function createMap(options)
 			'star-intensity': 0.85,
 		});
 		queryString.featureLayers.forEach(layerId => addFeatureLayer(layerId, map));
-		if (queryString.geodesics) loadGeoLib(map, queryString.geodesics);
+		if (queryString.geodesics) loadScript('geodesicjs', 'geodesic.js',
+			() => addGeodesics(map, queryString.geodesics, layerControl));
 	});
 }
 window.addEventListener('DOMContentLoaded', function() { createMapboxMap(createMap); });
