@@ -80,18 +80,17 @@ function validKey(key)
 {
 	return key.length <= 8 && /^[a-z][0-9a-z]*$/.test(key);
 }
+function parseCoord(v, limit)
+{
+	return /^-?[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v) &&
+		(v = parseFloat(v)) >= -limit && v <= limit ? v : null;
+}
 function toLngLat(v)
 {
-	const m = v.match(/^(-?[0-9]{1,3}(?:\.[0-9]{1,8})?),(-?[0-9]{1,3}(?:\.[0-9]{1,8})?)$/);
-	if (!m) return null;
-
-	const lat = parseFloat(m[1]);
-	if (lat < -90 || lat > 90) return null;
-
-	const lng = parseFloat(m[2]);
-	if (lng < -180 || lng > 180) return null;
-
-	return [lng, lat];
+	let lat, lng;
+	return (v = v.split(',')).length === 2 &&
+		(lat = parseCoord(v[0], 90)) !== null &&
+		(lng = parseCoord(v[1], 180)) !== null ? [lng, lat] : null;
 }
 function parseLatLng(q, v)
 {
@@ -235,6 +234,33 @@ function parsePaint(q, v)
 	if (/^[1-9]$/.test(v))
 		q.paintWidth = parseInt(v, 10);
 }
+function parseProjArgs(name, args)
+{
+	let center, lat1, lat2;
+	return args.length === 3 &&
+		(center = toLngLat(args[0])) &&
+		(lat1 = parseCoord(args[1], 90)) !== null &&
+		(lat2 = parseCoord(args[2], 90)) !== null ?
+		{name, center, parallels: [lat1, lat2]} : null;
+}
+function parseProjection(q, v)
+{
+	const [key, ...args] = v.split(':');
+	if (!/^[a-z]{1,2}$/.test(key)) return;
+
+	const projections = new Map([
+		['a', ['albers', parseProjArgs]],
+		['ee', ['equalEarth']],
+		['er', ['equirectangular']],
+		['g', ['globe']],
+		['l', ['lambertConformalConic', parseProjArgs]],
+		['m', ['mercator']],
+		['ne', ['naturalEarth']],
+		['wt', ['winkelTripel']],
+	]);
+	const [name, handler] = projections.get(key) || [];
+	if (name) q.projection = handler?.(name, args) || name;
+}
 function parseQueryString(queryString)
 {
 	const q = window.location.search;
@@ -249,6 +275,7 @@ function parseQueryString(queryString)
 		['ll', parseLatLng],
 		['o', parseOverlay],
 		['paint', parsePaint],
+		['proj', parseProjection],
 		['rx', parsePitch],
 		['rz', parseBearing],
 		['z', parseZoom],
@@ -698,6 +725,7 @@ function createMap(options)
 		peakLists: new Set(),
 		peakListLookup: new Map(peakLists),
 		pitch: 0,
+		projection: 'globe',
 	};
 
 	parseQueryString(queryString);
@@ -709,6 +737,7 @@ function createMap(options)
 	options.style = queryString.baseLayer.style;
 	options.bearing = queryString.bearing;
 	options.pitch = queryString.pitch;
+	options.projection = queryString.projection;
 	options.zoom = 6;
 
 	const map = new mapboxgl.Map(options);
