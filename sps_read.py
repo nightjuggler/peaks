@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 98, 27),
-	('ocap','Other California Peaks', 122, 17),
+	('ocap','Other California Peaks', 123, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -467,6 +467,7 @@ landNameLookup = {
 	"Santa Monica Mountains NRA":                   'landNPS',
 	"Spring Mountains NRA":                         'Humboldt-Toiyabe National Forest',
 	"Steens Mountain CMPA":                         'landBLM',
+	"Tarantula Hill Open Space":                    'landCity',
 	"Tohono O'odham Nation":                        'landRez',
 	"Twin Peaks Natural Area":                      'landCity',
 	"Ventu Park Open Space":                        'landCity',
@@ -2027,8 +2028,8 @@ def readHTML(pl):
 				('OCAP', '6.4'), # Mount Saint Helena Southeast
 				('OCAP','16.1'), # Peak 2440+
 				('OCAP','17.2'), # Elliott Mountain
-				('OCAP','17.6'), # Angel Vista
-				('OCAP','17.8'), # Pop Top
+				('OCAP','17.7'), # Angel Vista
+				('OCAP','17.9'), # Pop Top
 				('OSP', '17.4'), # Ruby Mesa
 				('OSP', '27.2'), # Snow Valley Peak East
 				('OSP', '27.3'), # Herlan Peak South
@@ -2046,8 +2047,8 @@ def readHTML(pl):
 				('OCAP','16.1'), # Peak 2440+
 				('OCAP','17.2'), # Elliott Mountain
 				('OCAP','17.3'), # Lizard Rock
-				('OCAP','17.6'), # Angel Vista
-				('OCAP','17.8'), # Pop Top
+				('OCAP','17.7'), # Angel Vista
+				('OCAP','17.9'), # Pop Top
 				('OSP', '17.4'), # Ruby Mesa
 				('OSP', '27.2'), # Snow Valley Peak East
 				('OSP', '27.3'), # Herlan Peak South
