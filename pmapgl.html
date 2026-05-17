@@ -80,6 +80,15 @@ function validKey(key)
 {
 	return key.length <= 8 && /^[a-z][0-9a-z]*$/.test(key);
 }
+function parseParams(params, handlers, noKeyHandler, ...args)
+{
+	let i, k;
+	for (const v of params)
+		if ((i = v.indexOf('=')) < 0)
+			noKeyHandler?.(v, ...args);
+		else if (validKey(k = v.substring(0, i)))
+			handlers.get(k)?.(v.substring(i + 1), ...args);
+}
 function parseCoord(v, limit)
 {
 	return /^-?[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v) &&
@@ -92,101 +101,92 @@ function toLngLat(v)
 		(lat = parseCoord(v[0], 90)) !== null &&
 		(lng = parseCoord(v[1], 180)) !== null ? [lng, lat] : null;
 }
-function parseLatLng(q, v)
+function parseLatLng(v, q)
 {
 	if (v = toLngLat(v)) q.ll = v;
 }
-function parseZoom(q, v)
+function parseZoom(v, q)
 {
-	if (!/^[1-9][0-9]?(?:\.[0-9]{1,3})?$/.test(v)) return;
-
-	const zoom = parseFloat(v);
-	if (zoom < 1 || zoom > 22) return;
-
-	q.zoom = zoom;
+	if (/^[1-9][0-9]?(?:\.[0-9]{1,3})?$/.test(v) &&
+		(v = parseFloat(v)) >= 1 && v <= 22) q.zoom = v;
 }
-function parseBearing(q, v)
+function parseBearing(v, q)
 {
-	if (!/^[1-9][0-9]{0,2}$/.test(v)) return;
-
-	const bearing = parseInt(v, 10);
-	if (bearing > 359) return;
-
-	q.bearing = bearing;
+	if (/^[1-9][0-9]{0,2}$/.test(v) &&
+		(v = parseInt(v, 10)) < 360) q.bearing = v;
 }
-function parsePitch(q, v)
+function parsePitch(v, q)
 {
-	if (!/^[1-9][0-9]?$/.test(v)) return;
-
-	const pitch = parseInt(v, 10);
-	if (pitch > 85) return;
-
-	q.pitch = pitch;
+	if (/^[1-9][0-9]?$/.test(v) &&
+		(v = parseInt(v, 10)) <= 85) q.pitch = v;
 }
-function parseOverlay(q, v)
+function parseOverlay(v, q)
 {
 	if (validKey(v) && q.peakListLookup.has(v))
 		q.peakLists.add(v);
 }
-function parseBaseLayer(q, v)
+function parseBaseLayer(v, q)
 {
 	if (validKey(v) && (v = q.baseLayers.get(v)))
 		q.baseLayer = v;
 }
-function parseFeatureLayer(q, v)
+function parseFeatureLayer(v, q)
 {
 	if (validKey(v) && q.featureLayerLookup.has(v))
 		q.featureLayers.add(v);
 }
-function parseGdAnimation(g, v)
+function parseAnimDuration(v, g)
 {
-	if (g.animationDuration) return false;
-	if (!/^[1-9][0-9]{2,4}$/.test(v)) return false;
-	g.animationDuration = parseInt(v, 10);
-	return true;
+	if (/^[1-9][0-9]{2,4}$/.test(v))
+		g.animationDuration = parseInt(v, 10);
 }
-function parseGdBearing(g, v)
+function parseAnimBearing(v, g)
 {
-	if (g.bearing !== undefined || g.lnglat2) return false;
-	if (!/^[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v)) return false;
-	let bearing = parseFloat(v);
-	if (bearing > 360) return false;
-	if (bearing > 180) bearing -= 360;
-	g.bearing = bearing;
-	return true;
+	if (!v)
+		g.animationBearing = null;
+	else if (/^[-+][0-9]{1,3}$/.test(v) && Math.abs(v = parseInt(v, 10)) <= 180)
+		g.animationBearing = z => z + v;
 }
-function parseGdLatLngFrom(g, v)
+function parseGdAnimation(v, g)
 {
-	if (g.lnglat) return false;
-	if (!(v = toLngLat(v))) return false;
-	g.lnglat = v;
-	return true;
+	const handlers = new Map([['bear', parseAnimBearing]]);
+	parseParams(v.split(','), handlers, parseAnimDuration, g);
 }
-function parseGdLatLngTo(g, v)
+function parseGdBearing(v, g)
 {
-	if (g.bearing !== undefined || g.lnglat2) return false;
-	if (!(v = toLngLat(v))) return false;
-	g.lnglat2 = v;
-	return true;
+	if (/^[0-9]{1,3}(?:\.[0-9]{1,8})?$/.test(v) && (v = parseFloat(v)) <= 360)
+	{
+		g.bearing = v > 180 ? v - 360 : v;
+		g.lnglat2 = undefined;
+	}
 }
-function parseGdNumPoints(g, v)
+function parseGdLatLngFrom(v, g)
 {
-	if (g.numPoints) return false;
-	if (!/^[1-9][0-9]{0,4}$/.test(v)) return false;
-	g.numPoints = parseInt(v, 10);
-	return true;
+	if (v = toLngLat(v)) g.lnglat = v;
 }
-function parseGdDistance(g, v, q)
+function parseGdLatLngTo(v, g)
 {
-	if (g.distance) return false;
-	v = v.match(/^(-?[0-9]{1,8}(?:\.[0-9]{1,8})?)([a-z]{1,3})$/);
-	if (!v) return false;
-	v = q.geoLib.distance(parseFloat(v[1]), v[2]);
-	if (!v) return false;
-	g.distance = v;
-	return true;
+	if (v = toLngLat(v)) { g.lnglat2 = v; g.bearing = undefined; }
 }
-function parseGeodesic(q, v)
+function parseGdNumPoints(v, g)
+{
+	if (/^[1-9][0-9]{0,4}$/.test(v))
+		g.numPoints = parseInt(v, 10);
+}
+function toDistance(v, q)
+{
+	return (v = v.match(/^(-?[0-9]{1,8}(?:\.[0-9]{1,8})?)([a-z]{1,3})$/)) &&
+		q.geoLib.distance(parseFloat(v[1]), v[2]);
+}
+function parseGdDistance(v, g, q)
+{
+	if (v = toDistance(v, q)) g.distance = v;
+}
+function parseGdSkipDistance(v, g, q)
+{
+	if (v = toDistance(v, q)) g.skipDistance = v;
+}
+function parseGeodesic(v, q)
 {
 	const g = {
 		color: q.paintColor,
@@ -198,14 +198,10 @@ function parseGeodesic(q, v)
 		['for', parseGdDistance],
 		['from', parseGdLatLngFrom],
 		['pts', parseGdNumPoints],
+		['skip', parseGdSkipDistance],
 		['to', parseGdLatLngTo],
 	]);
-	for (v of v.split(':'))
-	{
-		const i = v.indexOf('=');
-		const k = i >= 0 ? v.substring(0, i) : 'bear';
-		if (!validKey(k) || !handlers.get(k)?.(g, v.substring(i+1), q)) return;
-	}
+	parseParams(v.split(':'), handlers, parseGdBearing, g, q);
 	if (g.bearing === undefined && !g.lnglat2) return;
 	if (g.lnglat)
 		q.gdll = g.lnglat;
@@ -218,12 +214,12 @@ function parseGeodesic(q, v)
 	g.id = 'gd' + q.geodesics.length;
 	g.geoSystem = q.geoSystem ??= q.geoLib.geoSystems.get('0');
 }
-function parseGeoSystem(q, v)
+function parseGeoSystem(v, q)
 {
 	if (/^[0-9a-z]{1,5}$/.test(v) && (v = q.geoLib.geoSystems.get(v)))
 		q.geoSystem = v;
 }
-function parsePaint(q, v)
+function parsePaint(v, q)
 {
 	const parts = v.split(',');
 	v = parts.shift();
@@ -243,7 +239,7 @@ function parseProjArgs(name, args)
 		(lat2 = parseCoord(args[2], 90)) !== null ?
 		{name, center, parallels: [lat1, lat2]} : null;
 }
-function parseProjection(q, v)
+function parseProjection(v, q)
 {
 	const [key, ...args] = v.split(':');
 	if (!/^[a-z]{1,2}$/.test(key)) return;
@@ -281,16 +277,7 @@ function parseQueryString(queryString)
 		['z', parseZoom],
 	]);
 
-	for (const s of q.substring(1).split('&'))
-	{
-		const i = s.indexOf('=');
-		if (i < 1 || i === s.length - 1) continue;
-		const k = s.substring(0, i);
-		const v = s.substring(i + 1);
-
-		if (validKey(k) && handlers.has(k))
-			handlers.get(k)(queryString, v);
-	}
+	parseParams(q.substring(1).split('&'), handlers, undefined, queryString);
 }
 const svgNS = 'http://www.w3.org/2000/svg';
 function peakIcon(p)
@@ -517,6 +504,10 @@ function animateGeodesic(map, gd, layerControl)
 		if (lng < -180) lng += 360;
 		return [lng, lat];
 	};
+	const easeOptions = {animate: false};
+	let bearing = gd.animationBearing;
+	if (bearing === undefined && map.getProjection().name === 'globe')
+		bearing = z => z - 90;
 	const state = layerControl.state;
 	const duration = gd.animationDuration;
 	const progressStops = gd.progress;
@@ -528,7 +519,9 @@ function animateGeodesic(map, gd, layerControl)
 		if (state !== layerControl.state) return;
 		let progress = Math.min((currentTime - startTime) / duration, 1);
 		const r = gd.nextPoint(progress * gd.distance);
-		map.easeTo({center: normalize(r.lat2, r.lon2), animate: false, bearing: r.azi2 - 90});
+		easeOptions.center = normalize(r.lat2, r.lon2);
+		if (bearing) easeOptions.bearing = bearing(r.azi2);
+		map.easeTo(easeOptions);
 		if (progress === 1) {
 			map.setFilter(layer.id, null);
 			map.removeLayer(animLayer).removeSource(animSource);
@@ -641,7 +634,7 @@ function generateGeodesic(gd)
 function geodesicLine(gd)
 {
 	if (gd.lines) return gd;
-	const [lng, lat] = gd.lnglat;
+	let [lng, lat] = gd.lnglat;
 	const g = geodesic.Geodesic;
 	const gs = gd.geoSystem(g);
 	if (gd.lnglat2) {
@@ -653,8 +646,17 @@ function geodesicLine(gd)
 	const [arcmode, distance] = gd.distance || [true, 360];
 	gd.distance = distance;
 	const flags = g.LATITUDE | g.LONGITUDE | g.AZIMUTH | g.DISTANCE_IN | g.LONG_UNROLL;
-	const line = gs.Line(lat, lng, gd.bearing, flags);
+	let line = gs.Line(lat, lng, gd.bearing, flags);
 	gd.nextPoint = distance => line.GenPosition(arcmode, distance, flags);
+	if (gd.skipDistance) {
+		const [arcmode2, distance2] = gd.skipDistance;
+		const flags2 = g.LATITUDE | g.LONGITUDE | g.AZIMUTH | g.DISTANCE_IN;
+		const r = line.GenPosition(arcmode2, distance2, flags2);
+		lat = Math.round(r.lat2 * 1e8) / 1e8;
+		lng = Math.round(r.lon2 * 1e8) / 1e8;
+		gd.lnglat = [lng, lat];
+		line = gs.Line(lat, lng, gd.bearing = r.azi2, flags);
+	}
 	return generateGeodesic(gd);
 }
 function geographicLib()
