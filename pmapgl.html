@@ -223,14 +223,13 @@ function parseGeoSystem(v, q)
 }
 function parsePaint(v, q)
 {
-	const parts = v.split(',');
-	v = parts.shift();
-	if (/^[0-9A-Fa-f]{6}$/.test(v))
-		q.paintColor = '#' + v;
-	else if (v !== '') return;
-	if (!(v = parts.shift())) return;
-	if (/^[1-9]$/.test(v))
-		q.paintWidth = parseInt(v, 10);
+	for (v of v.split(','))
+	{
+		if (/^[0-9A-Fa-f]{6}$/.test(v))
+			q.paintColor = '#' + v;
+		else if (/^[1-9]$/.test(v))
+			q.paintWidth = parseInt(v, 10);
+	}
 }
 function parseProjArgs(name, args)
 {
@@ -427,14 +426,15 @@ function addFeatureLayer(layerId, map)
 			'data': 'json/peaks/' + layerId + '.json'
 		},
 		'paint': {
-			'circle-color': ['step', ['get', 'p'], '#FFA500',
-				399, '#FFFF00',
-				599, '#00BFFF',
-				799, '#FF00FF',
-				999, '#4B0082'],
-			'circle-radius': ['step', ['get', 'p'], 5, 399, 6, 599, 7, 799, 8, 999, 9],
+			'circle-color': ['step', ['get', 'p'],
+				'#FFA500',  400, //         Prominence <  400: Orange
+				'#FFFF00',  600, //  400 <= Prominence <  600: Yellow
+				'#00BFFF',  800, //  600 <= Prominence <  800: DeepSkyBlue
+				'#FF00FF', 1000, //  800 <= Prominence < 1000: Fuchsia
+				'#4B0082'],      // 1000 <= Prominence       : Indigo
+			'circle-radius': ['step', ['get', 'p'], 5, 400, 6, 600, 7, 800, 8, 1000, 9],
 			'circle-stroke-color': '#FF0000',
-			'circle-stroke-width': ['step', ['get', 'p'], 1, 399, 2],
+			'circle-stroke-width': ['step', ['get', 'p'], 1, 400, 2],
 		}
 	});
 	map.on('click', layerId, function(e) {
