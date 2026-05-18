@@ -497,13 +497,6 @@ function animateGeodesic(map, gd, layerControl)
 	map.addSource(animSource, {type: 'geojson', data: animData, lineMetrics: true}).
 		addLayer(geodesicLayer(gd, [animLayer, animSource, 'transparent']));
 
-	const normalize = (lat, lng) => {
-		lat = Math.round(lat * 1e8) / 1e8;
-		lng = Math.round(lng * 1e8) / 1e8 % 360;
-		if (lng >  180) lng -= 360; else
-		if (lng < -180) lng += 360;
-		return [lng, lat];
-	};
 	const easeOptions = {animate: false};
 	let bearing = gd.animationBearing;
 	if (bearing === undefined && map.getProjection().name === 'globe')
@@ -518,9 +511,9 @@ function animateGeodesic(map, gd, layerControl)
 	{
 		if (state !== layerControl.state) return;
 		let progress = Math.min((currentTime - startTime) / duration, 1);
-		const r = gd.nextPoint(progress * gd.distance);
-		easeOptions.center = normalize(r.lat2, r.lon2);
-		if (bearing) easeOptions.bearing = bearing(r.azi2);
+		const [point, azi] = gd.normPoint(progress * gd.distance);
+		easeOptions.center = point;
+		if (bearing) easeOptions.bearing = bearing(azi);
 		map.easeTo(easeOptions);
 		if (progress === 1) {
 			map.setFilter(layer.id, null);
@@ -548,7 +541,7 @@ function addGeodesics(map, geodesics, layerControl)
 {
 	for (const gd of geodesics)
 	{
-		if (!geodesicLine(gd)) continue;
+		if (!generateGeodesic(gd)) continue;
 		if (gd.animationDuration)
 			animateGeodesic(map, gd, layerControl);
 		else
@@ -566,21 +559,17 @@ function loadScript(id, src, callback)
 	script.src = src;
 	nextNode.parentNode.insertBefore(script, nextNode);
 }
-function generateGeodesic(gd)
+function generateGeodesicPoints(gd)
 {
-	let {
-		distance: totalDistance,
-		lnglat: firstPoint,
-		nextPoint,
-		numPoints = 360,
-	} = gd;
-
-	let [lng, lat] = firstPoint;
-	let coords = [firstPoint];
+	let [lng, lat] = gd.lnglat;
+	let coords = [[lng, lat]];
 	const lines = gd.lines = [coords];
 	const progress = gd.progress = [];
 	let prevLng = lng;
 	let prevLngNorm = lng;
+	let numPoints = gd.numPoints || 360;
+	const nextPoint = gd.nextPoint;
+	const totalDistance = gd.distance;
 	const step = totalDistance / numPoints;
 	let distance = 0;
 
@@ -589,9 +578,7 @@ function generateGeodesic(gd)
 		progress.push(Math.round(distance / totalDistance * 1e8) / 1e8);
 	};
 	while (numPoints--) {
-		const r = nextPoint(distance += step);
-		lat = Math.round(r.lat2 * 1e8) / 1e8;
-		lng = Math.round(r.lon2 * 1e8) / 1e8;
+		[lng, lat] = nextPoint(distance += step);
 		if (lat > 85 || lat < -85) {
 			prevLng = undefined;
 			continue;
@@ -631,33 +618,39 @@ function generateGeodesic(gd)
 	progress.push(1);
 	return gd;
 }
-function geodesicLine(gd)
+function generateGeodesic(gd)
 {
 	if (gd.lines) return gd;
-	let [lng, lat] = gd.lnglat;
 	const g = geodesic.Geodesic;
 	const gs = gd.geoSystem(g);
+	function geodesicPoint(arcmode, azi)
+	{
+		const [lng, lat] = gd.lnglat;
+		const flags = g.LATITUDE | g.LONGITUDE | g.DISTANCE_IN | (azi ? g.AZIMUTH : g.LONG_UNROLL);
+		const line = gs.Line(lat, lng, gd.bearing, flags);
+		return distance => {
+			const r = line.GenPosition(arcmode, distance, flags);
+			const lat = Math.round(r.lat2 * 1e8) / 1e8;
+			const lng = Math.round(r.lon2 * 1e8) / 1e8;
+			return azi ? [[lng, lat], r.azi2] : [lng, lat];
+		};
+	}
 	if (gd.lnglat2) {
+		const [lng, lat] = gd.lnglat;
 		const [lng2, lat2] = gd.lnglat2;
 		const r = gs.Inverse(lat, lng, lat2, lng2);
 		gd.bearing = r.azi1;
 		gd.distance ??= [false, r.s12];
 	}
-	const [arcmode, distance] = gd.distance || [true, 360];
-	gd.distance = distance;
-	const flags = g.LATITUDE | g.LONGITUDE | g.AZIMUTH | g.DISTANCE_IN | g.LONG_UNROLL;
-	let line = gs.Line(lat, lng, gd.bearing, flags);
-	gd.nextPoint = distance => line.GenPosition(arcmode, distance, flags);
 	if (gd.skipDistance) {
 		const [arcmode2, distance2] = gd.skipDistance;
-		const flags2 = g.LATITUDE | g.LONGITUDE | g.AZIMUTH | g.DISTANCE_IN;
-		const r = line.GenPosition(arcmode2, distance2, flags2);
-		lat = Math.round(r.lat2 * 1e8) / 1e8;
-		lng = Math.round(r.lon2 * 1e8) / 1e8;
-		gd.lnglat = [lng, lat];
-		line = gs.Line(lat, lng, gd.bearing = r.azi2, flags);
+		[gd.lnglat, gd.bearing] = geodesicPoint(arcmode2, true)(distance2);
 	}
-	return generateGeodesic(gd);
+	const [arcmode, distance] = gd.distance || [true, 360];
+	gd.distance = distance;
+	gd.nextPoint = geodesicPoint(arcmode);
+	gd.normPoint = geodesicPoint(arcmode, true);
+	return generateGeodesicPoints(gd);
 }
 function geographicLib()
 {
