@@ -137,8 +137,10 @@ function parseFeatureLayer(v, q)
 }
 function parseAnimDuration(v, g)
 {
-	if (/^[1-9][0-9]{2,4}$/.test(v))
+	if (/^[1-9][0-9]{2,5}$/.test(v))
 		g.animationDuration = parseInt(v, 10);
+	else if (v === 'nofollow')
+		g.animationFollow = null;
 }
 function parseAnimBearing(v, g)
 {
@@ -502,6 +504,7 @@ function animateGeodesic(map, gd, layerControl)
 	if (bearing === undefined && map.getProjection().name === 'globe')
 		bearing = z => z - 90;
 	const state = layerControl.state;
+	const follow = gd.animationFollow !== null;
 	const duration = gd.animationDuration;
 	const progressStops = gd.progress;
 	const startTime = performance.now();
@@ -511,10 +514,12 @@ function animateGeodesic(map, gd, layerControl)
 	{
 		if (state !== layerControl.state) return;
 		let progress = Math.min((currentTime - startTime) / duration, 1);
-		const [point, azi] = gd.normPoint(progress * gd.distance);
-		easeOptions.center = point;
-		if (bearing) easeOptions.bearing = bearing(azi);
-		map.easeTo(easeOptions);
+		if (follow) {
+			const [point, azi] = gd.normPoint(progress * gd.distance);
+			easeOptions.center = point;
+			if (bearing) easeOptions.bearing = bearing(azi);
+			map.easeTo(easeOptions);
+		}
 		if (progress === 1) {
 			map.setFilter(layer.id, null);
 			map.removeLayer(animLayer).removeSource(animSource);
