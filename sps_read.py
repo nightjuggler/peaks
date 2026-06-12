@@ -45,7 +45,7 @@ peakListsOrdered = [
 	('npc', 'Nevada Peaks Club', 76, 6),
 	('odp', 'Other Desert Peaks', 10, 6),
 	('osp', 'Other Sierra Peaks', 98, 27),
-	('ocap','Other California Peaks', 123, 17),
+	('ocap','Other California Peaks', 124, 17),
 	('owp', 'Other Western Peaks', 21, 10),
 ]
 
@@ -2027,9 +2027,9 @@ def readHTML(pl):
 			elif line != emptyCell or (pl.id, peak.id) not in (
 				('OCAP', '6.4'), # Mount Saint Helena Southeast
 				('OCAP','16.1'), # Peak 2440+
-				('OCAP','17.2'), # Elliott Mountain
-				('OCAP','17.7'), # Angel Vista
-				('OCAP','17.9'), # Pop Top
+				('OCAP','17.3'), # Elliott Mountain
+				('OCAP','17.8'), # Angel Vista
+				('OCAP','17.10'),# Pop Top
 				('OSP', '17.4'), # Ruby Mesa
 				('OSP', '27.2'), # Snow Valley Peak East
 				('OSP', '27.3'), # Herlan Peak South
@@ -2045,10 +2045,10 @@ def readHTML(pl):
 			elif line != emptyCell or peak.countryUS and (pl.id, peak.id) not in (
 				('OCAP', '6.4'), # Mount Saint Helena Southeast
 				('OCAP','16.1'), # Peak 2440+
-				('OCAP','17.2'), # Elliott Mountain
-				('OCAP','17.3'), # Lizard Rock
-				('OCAP','17.7'), # Angel Vista
-				('OCAP','17.9'), # Pop Top
+				('OCAP','17.3'), # Elliott Mountain
+				('OCAP','17.4'), # Lizard Rock
+				('OCAP','17.8'), # Angel Vista
+				('OCAP','17.10'),# Pop Top
 				('OSP', '17.4'), # Ruby Mesa
 				('OSP', '27.2'), # Snow Valley Peak East
 				('OSP', '27.3'), # Herlan Peak South
