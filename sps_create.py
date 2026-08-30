@@ -849,7 +849,6 @@ class PeakPb(TablePeak):
 		'83454':   ('Peak 10570',                        'Peak 3222m'),
 		'83353':   ('Peak 10597',                        'Peak 3230m'),
 		'36720':   ('Peak 3560',                         'Peak 3560m+'),
-		'38937':   ('Shepherd Crest',                    'Shepherd Crest East'),
 		'26162':   ('Silver Peak - Northeast Summit',    'Silver Peak Northeast'),
 		'43761':   ('Peak 9980',                         'Sirretta Peak North'),
 		'36459':   ('Snow Valley Peak - East Peak',      'Snow Valley Peak East'),
@@ -1041,7 +1040,6 @@ class PeakPb(TablePeak):
 		'38609': (12051, 12051, 12077, 12077), # Duck Lake Peak: 3681m
 		'39925': ( 8083,  8123,  8083,  8083), # Grouse Mountain
 		'36666': (11353, 11353, 11447, 11447), # Lost World Peak: 3489m
-		'38937': (12017, 12017, 12000, 12040), # Shepherd Crest East
 		'2660':  (12840, 12840, 12835, 12835), # Mount Starr
 		'83454': (10570, 10570, 10571, 10571), # Peak 3222m
 		'36720': (11680, 11680, 11680, 11745), # Peak 3560m+: 3560m-3580m
@@ -1148,6 +1146,8 @@ class PeakPb(TablePeak):
 
 		self.elevation = ElevationPb(elev_min, elev_max)
 		self.prominence = (prom_min, prom_max)
+		if getattr(self, "elevationFromLidar", False):
+			self.elevation = None
 
 	@classmethod
 	def getPeaks(self, peakListId):
@@ -1187,10 +1187,10 @@ class PeakPb(TablePeak):
 			self.landManagement.extend(wilderness.split("/"))
 
 	elevationPattern1 = re.compile(
-		"^<h2>Elevation: ([1-9][0-9]{2,3}|[1-9][0-9],[0-9]{3})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
+		"^<h2>Elevation: ([1-9][0-9]{2,3}|1[0-9],[0-9]{3})(\\+?) feet, ([1-9][0-9]{2,3})\\2 meters</h2>$"
 	)
 	elevationPattern2 = re.compile(
-		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9]{2,3}|[1-9][0-9],[0-9]{3})\\2 feet</h2>$"
+		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9]{2,3}|1[0-9],[0-9]{3})\\2 feet</h2>$"
 	)
 	def readElevation(self, maxPeak, html):
 		m = self.elevationPattern1.match(html)
@@ -1202,7 +1202,6 @@ class PeakPb(TablePeak):
 		else:
 			feet, isRange, meters = m.groups()
 
-		isRange = (isRange == "+")
 		feet = str2IntPb(feet, "Elevation in feet", self)
 		meters = str2IntPb(meters, "Elevation in meters", self)
 		if toMeters(feet) != meters:
@@ -1217,9 +1216,7 @@ class PeakPb(TablePeak):
 	def readElevationInfo(self, maxPeak, html):
 		m = self.elevationRangePattern.match(html)
 		if m is None:
-			print(self.fmtIdName, "Elevation Info doesn't match pattern")
-			maxPeak.elevation = self.elevation
-			return
+			err("{} Elevation Info doesn't match pattern:\n{}", self.fmtIdName, html)
 
 		minElev, maxElev, elevUnit = m.groups()
 		minElev = str2IntPb(minElev, "Minimum elevation", self)
@@ -1230,6 +1227,35 @@ class PeakPb(TablePeak):
 
 		assert minElev == self.elevation
 		maxPeak.elevation = maxElev
+
+	elevationLidarPattern = re.compile(
+		"^Summit:([1-9][0-9]{2,3}|1[0-9],[0-9]{3}) feet"
+		" \\(NAVD88 Vertical Datum\\)<br/>"
+		"Source/Method: Lidar(-refined from point cloud)?<br/>"
+	)
+	elevationSummitPattern = re.compile(
+		"^Summit:(?:(?:([1-9][0-9]{2,3}|1[0-9],[0-9]{3}) feet)|(?:([1-9][0-9]{2,3}) meters))<br/>"
+		"NAVD88 Elevation <a>\\(\\?\\)</a>\n:([1-9][0-9]{2,3}|1[0-9],[0-9]{3}) ft / ([1-9][0-9]{2,3}) m$"
+	)
+	elevationDiffGPSPattern = re.compile(
+		"^Summit:([1-9][0-9]{2,3}|1[0-9],[0-9]{3}) feet"
+		"(?:(?: \\(NGVD29 Vertical Datum\\))?<br/>"
+		"NAVD88 Elevation <a>\\(\\?\\)</a>\n:([1-9][0-9]{2,3}|1[0-9],[0-9]{3}) ft / ([1-9][0-9]{2,3}) m)?"
+		"<br/>Source/Method: (Differential GPS|Lidar)$"
+	)
+	def readElevationInfo2(self, html):
+		if html is None: return
+		if m := self.elevationLidarPattern.match(html):
+			elev = str2IntPb(m.group(1), "Lidar elevation", self)
+			if elev != self.elevation:
+				err("{} Lidar elevation ({}) != {} feet", self.fmtIdName, elev, self.elevation)
+			self.elevationFromLidar = True
+			return
+		if m := self.elevationSummitPattern.match(html):
+			return
+		if m := self.elevationDiffGPSPattern.match(html):
+			return
+		err("{} Elevation Info doesn't match pattern:\n{}", self.fmtIdName, html)
 
 	prominencePattern = re.compile(
 		"^(?:<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
@@ -1370,6 +1396,8 @@ class PeakPb(TablePeak):
 		self.readElevation(maxPeak, tables[0][0][1]) # First table, first row, second column
 		if maxPeak.elevation is None:
 			self.readElevationInfo(maxPeak, info["Elevation Info"])
+		else:
+			self.readElevationInfo2(info.get("Elevation Info"))
 
 		self.readLatLng(info["Latitude/Longitude (WGS84)"])
 		self.readCountry(info["Country"])
@@ -1590,7 +1618,7 @@ class PeakLoJ(TablePeak):
 		'56330':   ('Peak 10597',                   'Peak 3230m'),
 		'56004':   ('Peak 11712',                   'Peak 3560m+'),
 		'32393':   ('Peak 13074',                   'Rosco Peak'),
-		'32731':   ('Shepherd Crest, East',         'Shepherd Crest East'),
+		'32731':   ('Shepherd Crest, East',         'Shepherd Crest'),
 		'56257':   ('Silver Peak',                  'Silver Peak Northeast'),
 		'56489':   ('Peak 9989',                    'Sirretta Peak North'),
 		'56141':   ('Volcanic Ridge, East',         'Volcanic Ridge East'),
