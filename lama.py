@@ -330,9 +330,9 @@ class USFS_Query(Query):
 	service = "EDW/EDW_ForestSystemBoundaries_01"
 	layer = 1 # sr = 102100 (3857)
 	fields = [
-#		("OBJECTID", "id"),
-#		("REGION", "region"),
-		("FORESTNAME", "forest"),
+#		("objectid", "id"),
+#		("region", "region"),
+		("forestname", "forest"),
 	]
 	printSpec = "{forest}"
 
@@ -342,11 +342,11 @@ class USFS_CountyQuery(Query):
 	service = "EDW/EDW_County_01"
 	layer = 1 # sr = 102100 (3857)
 	fields = [
-#		("OBJECTID", "id"),
-#		("COUNTYNAME", "county"),       # "White Pine" or "Carson City"
-		("LEGAL_NAME", "name"),         # "White Pine County" or "Carson City"
-#		("STATENAME", "state"),         # "Nevada"
-		("STATE_POSTAL_ABBR", "state"), # "NV"
+#		("objectid", "id"),
+#		("countyname", "county"),       # "White Pine" or "Carson City"
+		("legal_name", "name"),         # "White Pine County" or "Carson City"
+#		("statename", "state"),         # "Nevada"
+		("state_postal_abbr", "state"), # "NV"
 	]
 	printSpec = "{name}, {state}"
 
@@ -356,10 +356,10 @@ class USFS_RangerDistrictQuery(Query):
 	service = "EDW/EDW_RangerDistricts_01"
 	layer = 1 # sr = 102100 (3857)
 	fields = [
-#		("OBJECTID", "id"),
-#		("REGION", "region"),
-		("FORESTNAME", "forest"),
-		("DISTRICTNAME", "district"),
+#		("objectid", "id"),
+#		("region", "region"),
+		("forestname", "forest"),
+		("districtname", "district"),
 	]
 	printSpec = "{forest} ({district})"
 
@@ -368,7 +368,7 @@ class USFS_OtherNationalDesignatedArea_Query(Query):
 	home = "https://apps.fs.usda.gov/arcx/rest/services"
 	service = "EDW/EDW_OtherNationalDesignatedArea_01" # e.g. National Scenic Area
 	layer = 0
-	fields = [("FULLNAME", "name")]
+	fields = [("fullname", "name")]
 	printSpec = "{name}"
 
 class USFS_SpecialInterestManagementArea_Query(Query):
@@ -376,7 +376,7 @@ class USFS_SpecialInterestManagementArea_Query(Query):
 	home = "https://apps.fs.usda.gov/arcx/rest/services"
 	service = "EDW/EDW_SpecialInterestManagementArea_01" # e.g. Research Natural Area
 	layer = 0
-	fields = [("AREANAME", "name"), ("AREATYPE", "type"), ("GIS_ACRES", "acres")]
+	fields = [("areaname", "name"), ("areatype", "type"), ("gis_acres", "acres")]
 	printSpec = "{name} {type} ({acres:,.0f} acres)"
 
 	@classmethod
@@ -389,7 +389,7 @@ class USFS_Wilderness_Query(Query):
 	home = "https://apps.fs.usda.gov/arcx/rest/services"
 	service = "EDW/EDW_Wilderness_01"
 	layer = 0
-	fields = [("WILDERNESSNAME", "name"), ("GIS_ACRES", "acres"), ("WID", "wid")]
+	fields = [("wildernessname", "name"), ("gis_acres", "acres"), ("wid", "wid")]
 	printSpec = "{name} ({acres:,.0f} acres) https://wilderness.net/visit-wilderness/?ID={wid}"
 
 class BLM_Query(Query):
@@ -411,17 +411,12 @@ class BLM_NLCS_Query(Query):
 	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
 	service = "lands/BLM_Natl_NLCS_NM_NCA_poly"
 	layer = 1 # sr = 102100 (3857)
-	fields = makePrefixedFields(
-		("Monuments_NCAs_SimilarDesignation2015", (
-#			("OBJECTID", "id"),
-			("sma_code", "code"),
-			("NCA_NAME", "name"),
-			("STATE_GEOG", "state"),
-		)),
-		("nlcs_desc", (
-#			("WEBLINK", "url"),
-		)),
-	)
+	fields = [
+#		("OBJECTID", "id"),
+		("sma_code", "code"),
+		("STATE_GEOG", "state"),
+		("NCA_NAME", "name"),
+	]
 	printSpec = "{name} ({code}) ({state})"
 
 class BLM_SMA_Query(Query):
@@ -446,14 +441,12 @@ class BLM_WSA_Query(Query):
 	home = "https://gis.blm.gov/arcgis/rest/services" # 10.41
 	service = "lands/BLM_Natl_NLCS_WLD_WSA"
 	layer = 1 # sr = 102100 (3857)
-	fields = makePrefixedFields(
-		("nlcs_wsa_poly", (
-#			("OBJECTID", "id"),
-			("NLCS_NAME", "name"),
-			("ADMIN_ST", "state"),
-			("WSA_RCMND", "rcmnd"),
-		)),
-	)
+	fields = [
+#		("OBJECTID", "id"),
+		("NLCS_NAME", "name"),
+		("WSA_RCMND", "rcmnd"),
+		("ADMIN_ST", "state"),
+	]
 	printSpec = "{name} ({state}) ({rcmnd})"
 
 class USGS_CountyQuery(Query):

@@ -138,13 +138,7 @@ items: {
 		// Layer 1 renders solid fills (color:[255,128,0,255]) without labels.
 		exportLayers: '1',
 		opacity: 0.5,
-		queryFields: [
-			'Monuments_NCAs_SimilarDesignation2015.OBJECTID',
-			'Monuments_NCAs_SimilarDesignation2015.sma_code',
-			'Monuments_NCAs_SimilarDesignation2015.NCA_NAME',
-			'Monuments_NCAs_SimilarDesignation2015.STATE_GEOG',
-			'nlcs_desc.WEBLINK',
-		],
+		queryFields: ['OBJECTID', 'sma_code', 'STATE_GEOG', 'NCA_NAME'],
 		attribution: '[Bureau of Land Management]',
 			},
 			blmw: {
@@ -159,12 +153,7 @@ items: {
 		url: 'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_NLCS_WLD_WSA/MapServer',
 		exportLayers: '1',
 		opacity: 0.5,
-		queryFields: [
-			'nlcs_wsa_poly.OBJECTID',
-			'nlcs_wsa_poly.NLCS_NAME',
-			'nlcs_wsa_poly.ADMIN_ST',
-			'nlcs_wsa_poly.WSA_RCMND',
-		],
+		queryFields: ['OBJECTID', 'NLCS_NAME', 'WSA_RCMND', 'ADMIN_ST'],
 		attribution: '[Bureau of Land Management]',
 			},
 			states: {
@@ -207,32 +196,32 @@ items: {
 		name: 'National Forests',
 		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer',
 		queryLayer: '1',
-		queryFields: ['OBJECTID', 'FORESTNAME'],
+		queryFields: ['objectid', 'forestname'],
 		attribution: '[U.S. Forest Service]',
 			},
 			fsrd: {
 		name: 'National Forest|Ranger Districts',
 		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RangerDistricts_01/MapServer',
 		queryLayer: '1',
-		queryFields: ['OBJECTID', 'FORESTNAME', 'DISTRICTNAME'],
+		queryFields: ['objectid', 'forestname', 'districtname'],
 		attribution: '[U.S. Forest Service]',
 			},
 			fsw: {
 		name: 'Wilderness Areas (USFS)',
 		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer',
-		queryFields: ['OBJECTID', 'WILDERNESSNAME', 'GIS_ACRES', 'WID'],
+		queryFields: ['objectid', 'wildernessname', 'gis_acres', 'wid'],
 		attribution: '[U.S. Forest Service]',
 			},
 			fsonda: {
 		name: 'USFS Other National|Designated Areas',
 		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_OtherNationalDesignatedArea_01/MapServer',
-		queryFields: ['OBJECTID', 'AREANAME', 'AREATYPE'],
+		queryFields: ['objectid', 'areaname', 'areatype'],
 		attribution: '[U.S. Forest Service]',
 			},
 			fssima: {
 		name: 'USFS Special Interest|Management Areas',
 		url: 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer',
-		queryFields: ['OBJECTID', 'AREANAME', 'AREATYPE', 'GIS_ACRES'],
+		queryFields: ['objectid', 'areaname', 'areatype', 'gis_acres'],
 		attribution: '[U.S. Forest Service]',
 			},
 			nps: {
@@ -732,23 +721,10 @@ nlcsSpec.popup = {
 		'BLM_NCA': 'National Conservation Area',
 		'BLM_NM': 'National Monument',
 	},
-	template: 'boldlink|br|text|ztf',
+	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		const name = attr['Monuments_NCAs_SimilarDesignation2015.NCA_NAME'];
-		const code = attr['Monuments_NCAs_SimilarDesignation2015.sma_code'];
-		const state = attr['Monuments_NCAs_SimilarDesignation2015.STATE_GEOG'];
-		const link = setPopupLink(this, attr['nlcs_desc.WEBLINK']);
-
-		if (link.protocol !== 'https:')
-			link.protocol = 'https:';
-		if (link.host !== 'www.blm.gov')
-			link.host = 'www.blm.gov';
-		if (!link.href.startsWith('https://www.blm.gov/programs/') &&
-			!(link.href.startsWith('https://www.blm.gov/nlcs_web/') && link.href.endsWith('.html')))
-			link.href = 'https://www.blm.gov/';
-
-		setPopupText(this, name, '(' + code + ') (' + state + ')');
+		setPopupText(this, attr.NCA_NAME, '(' + attr.sma_code + ') (' + attr.STATE_GEOG + ')');
 		return '#800000';
 	}
 };
@@ -756,7 +732,7 @@ fsSpec.popup = {
 	template: 'boldtext|ztf',
 	show(attr)
 	{
-		setPopupText(this, attr.FORESTNAME);
+		setPopupText(this, attr.forestname);
 		return '#FFFF00';
 	}
 };
@@ -764,7 +740,7 @@ fsrdSpec.popup = {
 	template: 'boldtext|br|text|ztf',
 	show(attr)
 	{
-		setPopupText(this, attr.FORESTNAME, '(' + attr.DISTRICTNAME + ')');
+		setPopupText(this, attr.forestname, '(' + attr.districtname + ')');
 		return '#008080';
 	}
 };
@@ -772,7 +748,7 @@ fsondaSpec.popup = {
 	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		setPopupText(this, attr.AREANAME, attr.AREATYPE);
+		setPopupText(this, attr.areaname, attr.areatype);
 		return '#0000CD';
 	}
 };
@@ -780,7 +756,7 @@ fssimaSpec.popup = {
 	template: 'text|br|text|br|text|ztf',
 	show(attr)
 	{
-		setPopupText(this, attr.AREANAME, attr.AREATYPE, formatAcres(attr.GIS_ACRES));
+		setPopupText(this, attr.areaname, attr.areatype, formatAcres(attr.gis_acres));
 		return '#CD0000';
 	}
 };
@@ -818,8 +794,8 @@ wsaSpec.popup = {
 	template: 'text|br|text|ztf',
 	show(attr)
 	{
-		setPopupText(this, attr['nlcs_wsa_poly.NLCS_NAME'],
-			'(' + attr['nlcs_wsa_poly.ADMIN_ST'] + ') (' + attr['nlcs_wsa_poly.WSA_RCMND'] + ')');
+		setPopupText(this, attr.NLCS_NAME,
+			'(' + attr.ADMIN_ST + ') (' + attr.WSA_RCMND + ')');
 		return '#B22222';
 	}
 };
