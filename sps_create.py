@@ -1192,21 +1192,30 @@ class PeakPb(TablePeak):
 	elevationPattern2 = re.compile(
 		"^<h2>Elevation: ([1-9][0-9]{2,3})(\\+?) meters, ([1-9][0-9]{2,3}|1[0-9],[0-9]{3})\\2 feet</h2>$"
 	)
+	elevationPattern3 = re.compile(
+		"^<h2>Elevation: ([,0-9]+)\\.([0-9]) feet, ([,0-9]+)\\.([0-9]) meters</h2>$"
+	)
 	def readElevation(self, maxPeak, html):
-		m = self.elevationPattern1.match(html)
-		if m is None:
-			m = self.elevationPattern2.match(html)
-			if m is None:
-				err("{} Elevation doesn't match pattern:\n{}", self.fmtIdName, html)
-			meters, isRange, feet = m.groups()
-		else:
+		tenthsFt = None
+		if m := self.elevationPattern1.match(html):
 			feet, isRange, meters = m.groups()
+		elif m := self.elevationPattern2.match(html):
+			meters, isRange, feet = m.groups()
+		elif m := self.elevationPattern3.match(html):
+			isRange = None
+			feet, tenthsFt, meters, tenthsM = m.groups()
+		else:
+			err("{} Elevation doesn't match pattern:\n{}", self.fmtIdName, html)
 
 		feet = str2IntPb(feet, "Elevation in feet", self)
 		meters = str2IntPb(meters, "Elevation in meters", self)
+		if tenthsFt:
+			feet = feet*10 + int(tenthsFt)
+			meters = meters*10 + int(tenthsM)
 		if toMeters(feet) != meters:
 			err("{} Elevation in feet ({}) != {} meters", self.fmtIdName, feet, meters)
-
+		if tenthsFt:
+			feet //= 10
 		self.elevation = feet
 		maxPeak.elevation = None if isRange else feet
 
@@ -1229,7 +1238,7 @@ class PeakPb(TablePeak):
 		maxPeak.elevation = maxElev
 
 	elevationLidarPattern = re.compile(
-		"^Summit:([1-9][0-9]{2,3}|1[0-9],[0-9]{3}) feet"
+		"^Summit:([1-9][0-9]{2,3}|1[0-9],[0-9]{3})(?:\\.[0-9])? feet"
 		" \\(NAVD88 Vertical Datum\\)<br/>"
 		"Source/Method: Lidar(-refined from point cloud)?<br/>"
 	)
@@ -1260,10 +1269,11 @@ class PeakPb(TablePeak):
 	prominencePattern = re.compile(
 		"^(?:<a href=\"KeyCol\\.aspx\\?pid=([1-9][0-9]*)\">Key Col Page</a>\n"
 		"\\(Detailed prominence information\\)<br/>)?<a>Clean Prominence</a>\n"
-		": ([,0-9]+) (ft|m)/([,0-9]+) (ft|m)<br/>(?:<a>Optimistic Prominence</a>\n"
+		": ([,0-9]+)(?:\\.[0-9])? (ft|m)/([,0-9]+)(?:\\.[0-9])? (ft|m)<br/>(?:<a>Optimistic Prominence</a>\n"
 		": ([,0-9]+) \\3/([,0-9]+) \\5<br/>)?<a>(?:Line Parent</a>\n"
 		": <a href=\"peak\\.aspx\\?pid=([1-9][0-9]*)\">([- 0-9A-Za-z]+)</a>\n<br/><a>)?Key Col</a>\n"
-		": ([A-Z][a-z]+(?:[- /][A-Za-z]+)*(?:, [A-Z]{2})?)?([,0-9]+) \\3/([,0-9]+) \\5$"
+		": ([A-Z][a-z]+(?:[- /][A-Za-z]+)*(?:, [A-Z]{2})?)?"
+		"([,0-9]+)(?:\\.[0-9])? \\3/([,0-9]+)(?:\\.[0-9])? \\5$"
 	)
 	def readProminence(self, maxPeak, html):
 		m = self.prominencePattern.match(html)
@@ -1400,7 +1410,7 @@ class PeakPb(TablePeak):
 			self.readElevationInfo2(info.get("Elevation Info"))
 
 		self.readLatLng(info["Latitude/Longitude (WGS84)"])
-		self.readCountry(info["Country"])
+		self.readCountry(info.get("Country") or info["Nation"])
 		self.readState(info["State/Province"])
 		self.readQuad(info["Map Source"])
 		self.readName(tables[1])
